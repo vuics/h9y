@@ -92,7 +92,8 @@ const conf = {
   },
 
   snake: {
-    url: process.env.SNAKE_URL || 'http://127.0.0.1:5000/v1',
+    // url: process.env.SNAKE_URL || 'http://127.0.0.1:5000/v1',
+    url: process.env.SNAKE_URL || 'http://127.0.0.1:6699/v1',
   },
 
   smtp: {
