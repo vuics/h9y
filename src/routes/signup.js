@@ -81,7 +81,7 @@ app.post('/', async (req, res, next) => {
   const mail = await transporter.sendMail({
     from: conf.smtp.from,
     to: user.email,
-    subject: 'Welcome to Quantum Copilot!',
+    subject: 'Welcome to AZ1!',
     text: `
 Hi ${user.firstName},
 
