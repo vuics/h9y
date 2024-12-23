@@ -128,6 +128,7 @@ export const revealConf = () => {
   delete publicConf.db.sslPass
   delete publicConf.jwt.secret
   delete publicConf.db.url
+  delete publicConf.smtp.pass
   delete publicConf.stripe
 
   return publicConf
