@@ -1,0 +1,75 @@
+import { Router } from 'express'
+import passport from 'passport'
+import lodash from 'lodash'
+const { has } = lodash
+import { Verbose } from '../services.js'
+
+const verbose = Verbose('sd:routes/login'); verbose('')
+const router = Router()
+
+const rememberMe = (req, res, next) => {
+  // FIXME: this does not work
+  if (!!req.body.rememberme) {
+    req.session.cookie.expires = false
+  } else {
+    const period = 3 * 24 * 3600 * 1000 // 3 days
+    req.session.cookie.expires = new Date(Date.now() + period);
+    req.session.cookie.maxAge = period
+  }
+  next()
+}
+
+router.post('/', rememberMe, (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) {
+      return next(err)
+    }
+
+    // verbose('user:', user)
+    if (!user) {
+      // verbose('Login: user not found (or wrong credentials)')
+      return res.status(403).json({
+        result: 'error',
+        message: 'User not found or wrong credentials.'
+      })
+    }
+
+    req.login(user, err => {
+      if (err) {
+        return next(err)
+      }
+
+      res.json({
+        result: 'ok',
+        message: 'Logged in',
+        user: {
+          _id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone,
+          roles: user.roles,
+        }
+      })
+
+      verbose(`User ${req.user.email} logged in at ${Date.now()}. UserId: ${req.user._id}`)
+    })
+  })(req, res, next)
+})
+
+router.get('/status', (req, res) => {
+  res.json({
+    result: 'ok',
+    isAuthenticated: req.isAuthenticated(),
+    user: !has(req, 'user') ? {} : {
+      _id: req.user._id,
+      email: req.user.email,
+      firstName: req.user.firstName,
+      lastName: req.user.lastName,
+      phone: req.user.phone,
+      roles: req.user.roles,
+    }
+  })
+})
+
+export default router
