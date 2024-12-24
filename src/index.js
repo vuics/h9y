@@ -28,6 +28,9 @@ import { sendError } from './middleware/errors.js'
 // Connect to MongoDB through Mongoose driver
 import './mongo.js'
 
+// Connect to ArangoDB
+import './arango.js'
+
 const verbose = Verbose('sd:index'); verbose('')
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = conf.node.tlsRejectUnauthorized

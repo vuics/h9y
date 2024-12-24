@@ -69,6 +69,16 @@ const conf = {
     sslPass: process.env.DB_SSL_PASS || null
   },
 
+  arangodb: {
+    enable: bool(process.env.ARANGODB_ENABLE || false),
+    url: process.env.ARANGODB_URL || 'mongodb://localhost:8529',
+    database: process.env.ARANGODB_DATABASE || 'selfdev',
+    auth: {
+      username: process.env.ARANGODB_AUTH_USERNAME || 'root',
+      password: process.env.ARANGODB_AUTH_PASSWORD || '',
+    },
+  },
+
   jwt: {
     issuer: process.env.JWT_ISSUER || 'self-developing-dev',
     jwks: process.env.JWT_JWKS || null,

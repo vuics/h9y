@@ -17,6 +17,7 @@
   "author": "Artem Arakcheev",
   "license": "UNLICENSED",
   "dependencies": {
+    "arangojs": "^5.8.0",
     "axios": "^1.5.0",
     "bluebird": "^3.7.2",
     "compression": "^1.7.4",
