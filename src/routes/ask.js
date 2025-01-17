@@ -23,29 +23,6 @@ const ask = async (req, res, next) => {
     const dialog = new Dialog({ userId: req.user._id, prompt, reply })
     res.json({ result: 'ok', reply })
     await dialog.save()
-
-    // Code for execution
-    // verbose('prompt:', prompt)
-    // if (prompt[0]==='!') {
-    //   const exec = util.promisify(exec);
-    //   const command = prompt.substring(1);
-    //   verbose('ask command:',command)
-    //   async function execute() {
-    //     const { stdout, stderr } = await exec(command);
-    //     console.log('execute stdout:', stdout);
-    //     console.log('execute stderr:', stderr);
-    //   }
-    //   await execute();
-    //   res.json({ result: 'ok', reply: stdout || stderr })
-    // } else {
-    //   const response = await axios.get(`${conf.snake.url}/ask`, {
-    //     params: { prompt }
-    //   })
-    //   const reply = response.data
-    //   const dialog = new Dialog({ userId: req.user._id, prompt, reply })
-    //   res.json({ result: 'ok', reply })
-    //   await dialog.save()
-    // }
   } catch (err) {
     res.json({ result: 'error', message: err.toString()})
   }
