@@ -103,8 +103,13 @@ const conf = {
     interest: bool(process.env.RESOURCE_INTEREST || true),
   },
 
+  agency: {
+    enable: bool(process.env.AGENCY_ENABLE || true),
+    url: process.env.AGENCY_URL || 'http://127.0.0.1:6600/v1',
+  },
+
   snake: {
-    // url: process.env.SNAKE_URL || 'http://127.0.0.1:5000/v1',
+    enbale: bool(process.env.SNAKE_ENABLE || false),
     url: process.env.SNAKE_URL || 'http://127.0.0.1:6699/v1',
   },
 

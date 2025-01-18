@@ -15,11 +15,21 @@ const ask = async (req, res, next) => {
   // verbose('ask req.user:', req.user)
   try {
     const { prompt } = req.body
+    let reply = ''
     // verbose('prompt:', prompt)
-    const response = await axios.get(`${conf.snake.url}/ask`, {
-      params: { prompt }
-    })
-    const reply = response.data
+    if (conf.agency.enable) {
+      const response = await axios.post(`${conf.agency.url}/chat`, {
+        prompt
+      })
+      reply = response.data.content
+    } else if (conf.snake.enable) {
+      const response = await axios.get(`${conf.snake.url}/ask`, {
+        params: { prompt }
+      })
+      reply = response.data
+    } else {
+      throw new Error('No AI service available')
+    }
     const dialog = new Dialog({ userId: req.user._id, prompt, reply })
     res.json({ result: 'ok', reply })
     await dialog.save()
