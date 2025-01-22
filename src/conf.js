@@ -45,7 +45,7 @@ const conf = {
 
   cors: {
     enabled: bool(process.env.CORS_ENABLED || true),
-    whitelist: arr(process.env.CORS_WHITELIST || 'http://localhost:3000,https://localhost:3000,https://qc.vuics.com'),
+    whitelist: arr(process.env.CORS_WHITELIST || 'http://localhost:3000,https://localhost:3000'),
   },
 
   session: {
@@ -80,7 +80,7 @@ const conf = {
   },
 
   jwt: {
-    issuer: process.env.JWT_ISSUER || 'self-developing-dev',
+    issuer: process.env.JWT_ISSUER || 'selfde-jwt-issuer',
     jwks: process.env.JWT_JWKS || null,
 
     secret: process.env.JWT_SECRET || 'SF-Jwt-$ecreT',
