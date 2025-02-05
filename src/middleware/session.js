@@ -17,7 +17,7 @@ export default session({
   cookie: {
     maxAge: conf.session.maxAge, // 1000 * 60 * 60 * 24 * 7, // 7 days
     httpOnly: conf.session.httpOnly,
-    // sameSite: conf.session.sameSite,
+    sameSite: conf.session.sameSite,
     secure: conf.ssl.enable, // Enable for HTTPS only
     path: '/'
   },

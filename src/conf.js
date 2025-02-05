@@ -53,7 +53,7 @@ const conf = {
     maxAge: process.env.SESSION_MAX_AGE || (1000 * 3600 * 24 * 7), // 7 days
     secret: process.env.SESSION_SECRET || '!Se1f!DEV!$ecret',
     httpOnly: bool(process.env.SESSION_HTTP_ONLY || true),
-    // sameSite: process.env.SESSION_SAME_SITE || 'strict',
+    sameSite: process.env.SESSION_SAME_SITE || 'lax',
     proxy: bool(process.env.SESSION_PROXY || true),
   },
 
