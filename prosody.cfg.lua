@@ -91,6 +91,8 @@ modules_enabled = {
 		--"welcome"; -- Welcome users who register accounts
 
   "conversejs";
+  "muc_mam";
+  "http";
 }
 
 -- These modules are auto-loaded, but should you want
@@ -101,8 +103,8 @@ modules_disabled = {
 	-- "s2s"; -- Handle server-to-server connections
 	-- "posix"; -- POSIX functionality, sends server to background, etc.
 
-  "mod_bosh";
-  "mod_websocket";
+  -- "mod_bosh";
+  -- "mod_websocket";
 
 }
 
@@ -145,6 +147,7 @@ limits = {
 -- For more information see https://prosody.im/doc/authentication
 
 authentication = "internal_hashed"
+-- authentication = "any"
 -- authentication = "anonymous"
 
 -- Many authentication providers, including the default one, allow you to
@@ -227,6 +230,7 @@ VirtualHost "localhost"
 
 
 --VirtualHost "example.com"
+VirtualHost "selfdev-prosody.dev.local"
 
 ------ Components ------
 -- You can specify components to add hosts that provide special services,
@@ -238,8 +242,23 @@ VirtualHost "localhost"
 --- Store MUC messages in an archive and allow users to access it
 --modules_enabled = { "muc_mam" }
 
+Component "conference.selfdev-prosody.dev.local" "muc"
+  name = "The selfdev-prosody chatrooms server"
+  restrict_room_creation = false
+
 ---Set up a file sharing component
 --Component "share.example.com" "http_file_share"
+Component "share.selfdev-prosody.dev.local" "http_file_share"
+    -- modules_disabled = { "s2s" }
+    -- -- Change the Limit to 100MB:
+    -- http_file_share_size_limit = 1024 * 1024 * 100
+    -- http_file_share_expires_after = "2 weeks"
+    -- -- Set it to the same as the apache host above:
+    -- http_external_url = "https://share.selfdev-prosody.dev.local/"
+    -- -- here you see how we can manipulate the path:
+    -- http_paths = {
+    --     file_share = "/"; --Serve from the base URL
+    -- }
 
 ---Set up an external component (default component port is 5347)
 --
@@ -251,6 +270,11 @@ VirtualHost "localhost"
 --	component_secret = "password"
 
 
+http_ports = { 5280 }
+http_interfaces = { "selfdev-prosody.dev.local" }
+http_host = "selfdev-prosody.dev.local"
+http_default_host = "selfdev-prosody.dev.local"
+
 ---------- End of the Prosody Configuration file ----------
 -- You usually **DO NOT** want to add settings here at the end, as they would
 -- only apply to the last defined VirtualHost or Component.
@@ -261,4 +285,10 @@ VirtualHost "localhost"
 --
 -- For more information see https://prosody.im/doc/configure
 
-
+conversejs_options = {
+    debug = true;
+    view_mode = "fullscreen";
+    -- view_mode = "overlayed";
+    -- view_mode = "mobile";
+    -- view_mode = "embedded";
+}

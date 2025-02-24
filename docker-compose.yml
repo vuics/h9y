@@ -3,7 +3,7 @@ version: '3.8'
 services:
 
   selfdev-prosody:
-    # hostname: selfdev-prosody.dev.local
+    hostname: selfdev-prosody.dev.local
     image: selfdev-prosody:v0.0.1
     build:
       context: .
@@ -16,4 +16,6 @@ services:
       - 5280:5280
       - 5281:5281
       - 5347:5347
+    volumes:
+    - ./prosody.cfg.lua:/etc/prosody/prosody.cfg.lua
 
