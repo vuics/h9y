@@ -121,6 +121,7 @@ s2s_secure_auth = true
 -- even when s2s_secure_auth is enabled.
 
 --s2s_insecure_domains = { "insecure.example" }
+-- s2s_insecure_domains = { "selfdev-prosody.dev.local", "localhost", "127.0.0.1" }
 
 -- Even if you disable s2s_secure_auth, you can still require valid
 -- certificates for some domains by specifying a list here.
@@ -246,6 +247,9 @@ Component "conference.selfdev-prosody.dev.local" "muc"
   name = "The selfdev-prosody chatrooms server"
   restrict_room_creation = false
 
+Component "conference.localhost" "muc"
+  name = "The local selfdev-prosody chatrooms server"
+
 ---Set up a file sharing component
 --Component "share.example.com" "http_file_share"
 Component "share.selfdev-prosody.dev.local" "http_file_share"
@@ -271,9 +275,12 @@ Component "share.selfdev-prosody.dev.local" "http_file_share"
 
 
 http_ports = { 5280 }
-http_interfaces = { "selfdev-prosody.dev.local" }
-http_host = "selfdev-prosody.dev.local"
-http_default_host = "selfdev-prosody.dev.local"
+http_interfaces = { "*", "::" }
+-- http_interfaces = { "selfdev-prosody.dev.local", "localhost", "127.0.0.1" }
+-- http_host = "selfdev-prosody.dev.local"
+-- http_default_host = "selfdev-prosody.dev.local"
+http_host = "localhost"
+http_default_host = "localhost"
 
 ---------- End of the Prosody Configuration file ----------
 -- You usually **DO NOT** want to add settings here at the end, as they would
