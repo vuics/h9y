@@ -134,7 +134,11 @@ const conf = {
   stripe: {
     key: process.env.STRIPE_KEY || '<STRIPE_KEY_PLACEHOLDER>',
     endpointSecret: process.env.STRIPE_ENDPOINT_SECRET || '<STRIPE_ENDPOINT_SECRET_PLACEHOLDER>',
-  }
+  },
+
+  xmpp: {
+    host: process.env.XMPP_HOST || 'localhost',
+  },
 }
 
 export default conf
