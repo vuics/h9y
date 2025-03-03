@@ -1,5 +1,3 @@
-pip install xmpppy
+# Selfdev-Prosody
 
-xmpp-message --debug \
-    --jabberid art@selfdev-prosody.dev.local --password 123 \
-    --receiver alice@selfdev-prosody.dev.local --message 'hello world'
+XMPP server based on Prosody to serve selfdev communication between people and agents.
