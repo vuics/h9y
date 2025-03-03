@@ -42,13 +42,17 @@ RUN mkdir -p /etc/prosody/certs/ && openssl req -x509 -newkey rsa:4096 -keyout /
 
 COPY prosody.cfg.lua /etc/prosody/
 
-RUN prosodyctl register alice localhost 123
-RUN prosodyctl register bob localhost 123
-RUN prosodyctl register art localhost 123
+# RUN prosodyctl register alice localhost 123
+# RUN prosodyctl register bob localhost 123
+# RUN prosodyctl register art localhost 123
+# RUN prosodyctl register alice selfdev-prosody.dev.local 123
+# RUN prosodyctl register bob selfdev-prosody.dev.local 123
+# RUN prosodyctl register art selfdev-prosody.dev.local 123
 
-RUN prosodyctl register alice selfdev-prosody.dev.local 123
-RUN prosodyctl register bob selfdev-prosody.dev.local 123
-RUN prosodyctl register art selfdev-prosody.dev.local 123
+RUN wget -O shell2http.tar.gz https://github.com/msoap/shell2http/releases/download/v1.17.0/shell2http_1.17.0_linux_amd64.tar.gz && \
+    tar -xf shell2http.tar.gz -C /usr/local/bin/ && \
+    rm shell2http.tar.gz
+COPY commander.sh .
 
 EXPOSE 80 443 5222 5269 5347 5280 5281
 ENV __FLUSH_LOG yes

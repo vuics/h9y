@@ -1,6 +1,8 @@
 #!/bin/bash -e
 set -e
 
+./commander.sh &
+
 data_dir_owner="$(stat -c %u "/var/lib/prosody/")"
 if [[ "$(id -u prosody)" != "$data_dir_owner" ]]; then
     # FIXME this fails if owned by root
