@@ -34,7 +34,7 @@ RUN chmod 755 /entrypoint.sh
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
 
 RUN prosodyctl install --server=https://modules.prosody.im/rocks/ mod_conversejs
-RUN prosodyctl install --server=https://modules.prosody.im/rocks/ mod_auth_any
+# RUN prosodyctl install --server=https://modules.prosody.im/rocks/ mod_auth_any
 # RUN prosodyctl install --server=https://modules.prosody.im/rocks/ mod_smacks
 
 RUN mkdir -p /etc/prosody/certs/ && openssl req -x509 -newkey rsa:4096 -keyout /etc/prosody/certs/selfdev-prosody.dev.local.key -out /etc/prosody/certs/selfdev-prosody.dev.local.crt -days 9999 -nodes -subj "/CN=selfdev-prosody.dev.local" && chown prosody:prosody /etc/prosody/certs/selfdev-prosody.dev.local.key /etc/prosody/certs/selfdev-prosody.dev.local.crt
@@ -42,11 +42,6 @@ RUN mkdir -p /etc/prosody/certs/ && openssl req -x509 -newkey rsa:4096 -keyout /
 
 COPY prosody.cfg.lua /etc/prosody/
 
-# RUN prosodyctl register alice localhost 123
-# RUN prosodyctl register bob localhost 123
-# RUN prosodyctl register art localhost 123
-# RUN prosodyctl register alice selfdev-prosody.dev.local 123
-# RUN prosodyctl register bob selfdev-prosody.dev.local 123
 # RUN prosodyctl register art selfdev-prosody.dev.local 123
 
 RUN wget -O shell2http.tar.gz https://github.com/msoap/shell2http/releases/download/v1.17.0/shell2http_1.17.0_linux_amd64.tar.gz && \

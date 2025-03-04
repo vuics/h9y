@@ -66,7 +66,7 @@ modules_enabled = {
 		"uptime"; -- Report how long server has been running
 		"version"; -- Replies to server version requests
 		--"mam"; -- Store recent messages to allow multi-device synchronization
-		--"turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
+		"turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
 
 	-- Admin interfaces
 		"admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
@@ -191,10 +191,12 @@ archive_expires_after = "1w" -- Remove archived messages after 1 week
 -- Find more information at https://prosody.im/doc/turn
 
 -- Specify the address of the TURN service (you may use the same domain as XMPP)
---turn_external_host = "turn.example.com"
+turn_external_host = "eturnal.dev.local"
+turn_external_port = 3478
 
 -- This secret must be set to the same value in both Prosody and the TURN server
---turn_external_secret = "your-secret-turn-access-token"
+turn_external_secret = "turn-external-secret-access-token"
+
 
 
 -- Logging configuration
