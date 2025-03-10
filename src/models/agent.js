@@ -4,7 +4,7 @@ import { Verbose } from '../services.js'
 
 const verbose = Verbose('sd:models/agent'); verbose('')
 
-const { ObjectId } = mongoose.Schema.Types
+const { ObjectId, Mixed } = mongoose.Schema.Types
 
 export default mongoose.model(
   'Agent',
@@ -55,6 +55,14 @@ export default mongoose.model(
         filesIds: [ String ],
         documentIds: [ String ],
       }, ],
+
+      notebook: {
+        filePath: String,
+        kernelName: String,
+        parameters: Mixed,
+        parseJson: Boolean,
+        promptKey: String,
+      },
 
       // other options will be defined here
     },
