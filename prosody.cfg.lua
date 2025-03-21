@@ -1,3 +1,7 @@
+-- TODO:
+-- {{ $INTERNAL_HOST := .Env.INTERNAL_HOST | default "selfdev-prosody.dev.local" -}}
+-- {{ $EXTERNAL_HOST := .Env.EXTERNAL_HOST | default "aaa-gl.local" -}}
+
 -- Prosody Example Configuration File
 --
 -- Information on configuring Prosody can be found on our
@@ -84,7 +88,7 @@ modules_enabled = {
 		--"mimicking"; -- Prevent address spoofing
 		--"motd"; -- Send a message to users when they log in
 		--"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
-		--"s2s_bidi"; -- Bi-directional server-to-server (XEP-0288)
+		"s2s_bidi"; -- Bi-directional server-to-server (XEP-0288)
 		--"server_contact_info"; -- Publish contact information for this service
 		--"tombstones"; -- Prevent registration of deleted accounts
 		--"watchregistrations"; -- Alert admins of registrations
@@ -93,6 +97,7 @@ modules_enabled = {
   "conversejs";
   "muc_mam";
   "http";
+  "s2s";
 }
 
 -- These modules are auto-loaded, but should you want
@@ -105,7 +110,6 @@ modules_disabled = {
 
   -- "mod_bosh";
   -- "mod_websocket";
-
 }
 
 
@@ -113,7 +117,8 @@ modules_disabled = {
 -- Require valid certificates for server-to-server connections?
 -- If false, other methods such as dialback (DNS) may be used instead.
 
-s2s_secure_auth = true
+-- s2s_secure_auth = true
+s2s_secure_auth = false
 
 -- Some servers have invalid or self-signed certificates. You can list
 -- remote domains here that will not be required to authenticate using
@@ -122,6 +127,7 @@ s2s_secure_auth = true
 
 --s2s_insecure_domains = { "insecure.example" }
 -- s2s_insecure_domains = { "selfdev-prosody.dev.local", "localhost", "127.0.0.1" }
+s2s_insecure_domains = { "aaa-ai.local" }
 
 -- Even if you disable s2s_secure_auth, you can still require valid
 -- certificates for some domains by specifying a list here.
@@ -228,13 +234,15 @@ certificates = "certs"
 -- You need to add a VirtualHost entry for each domain you wish Prosody to serve.
 -- Settings under each VirtualHost entry apply *only* to that host.
 
-VirtualHost "localhost"
+-- VirtualHost "localhost"
 -- Prosody requires at least one enabled VirtualHost to function. You can
 -- safely remove or disable 'localhost' once you have added another.
 
 
 --VirtualHost "example.com"
 VirtualHost "selfdev-prosody.dev.local"
+
+VirtualHost "aaa-gl.local"
 
 ------ Components ------
 -- You can specify components to add hosts that provide special services,
@@ -250,8 +258,12 @@ Component "conference.selfdev-prosody.dev.local" "muc"
   name = "The selfdev-prosody chatrooms server"
   restrict_room_creation = false
 
-Component "conference.localhost" "muc"
-  name = "The local selfdev-prosody chatrooms server"
+Component "conference.aaa-gl.local" "muc"
+  name = "The selfdev-prosody chatrooms server"
+  restrict_room_creation = false
+
+-- Component "conference.localhost" "muc"
+--   name = "The local selfdev-prosody chatrooms server"
 
 ---Set up a file sharing component
 --Component "share.example.com" "http_file_share"
@@ -277,13 +289,13 @@ Component "share.selfdev-prosody.dev.local" "http_file_share"
 --	component_secret = "password"
 
 
-http_ports = { 5280 }
-http_interfaces = { "*", "::" }
+-- http_ports = { 5280 }
+-- http_interfaces = { "*", "::" }
 -- http_interfaces = { "selfdev-prosody.dev.local", "localhost", "127.0.0.1" }
 -- http_host = "selfdev-prosody.dev.local"
 -- http_default_host = "selfdev-prosody.dev.local"
-http_host = "localhost"
-http_default_host = "localhost"
+-- http_host = "localhost"
+-- http_default_host = "localhost"
 
 ---------- End of the Prosody Configuration file ----------
 -- You usually **DO NOT** want to add settings here at the end, as they would

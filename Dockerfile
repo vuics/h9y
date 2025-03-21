@@ -37,8 +37,8 @@ RUN prosodyctl install --server=https://modules.prosody.im/rocks/ mod_conversejs
 # RUN prosodyctl install --server=https://modules.prosody.im/rocks/ mod_auth_any
 # RUN prosodyctl install --server=https://modules.prosody.im/rocks/ mod_smacks
 
-RUN mkdir -p /etc/prosody/certs/ && openssl req -x509 -newkey rsa:4096 -keyout /etc/prosody/certs/selfdev-prosody.dev.local.key -out /etc/prosody/certs/selfdev-prosody.dev.local.crt -days 9999 -nodes -subj "/CN=selfdev-prosody.dev.local" && chown prosody:prosody /etc/prosody/certs/selfdev-prosody.dev.local.key /etc/prosody/certs/selfdev-prosody.dev.local.crt
-RUN mkdir -p /etc/prosody/certs/ && openssl req -x509 -newkey rsa:4096 -keyout /etc/prosody/certs/conference.selfdev-prosody.dev.local.key -out /etc/prosody/certs/conference.selfdev-prosody.dev.local.crt -days 9999 -nodes -subj "/CN=conference.selfdev-prosody.dev.local" && chown prosody:prosody /etc/prosody/certs/conference.selfdev-prosody.dev.local.key /etc/prosody/certs/conference.selfdev-prosody.dev.local.crt
+# RUN mkdir -p /etc/prosody/certs/ && openssl req -x509 -newkey rsa:4096 -keyout /etc/prosody/certs/selfdev-prosody.dev.local.key -out /etc/prosody/certs/selfdev-prosody.dev.local.crt -days 9999 -nodes -subj "/CN=selfdev-prosody.dev.local" && chown prosody:prosody /etc/prosody/certs/selfdev-prosody.dev.local.key /etc/prosody/certs/selfdev-prosody.dev.local.crt
+# RUN mkdir -p /etc/prosody/certs/ && openssl req -x509 -newkey rsa:4096 -keyout /etc/prosody/certs/conference.selfdev-prosody.dev.local.key -out /etc/prosody/certs/conference.selfdev-prosody.dev.local.crt -days 9999 -nodes -subj "/CN=conference.selfdev-prosody.dev.local" && chown prosody:prosody /etc/prosody/certs/conference.selfdev-prosody.dev.local.key /etc/prosody/certs/conference.selfdev-prosody.dev.local.crt
 
 COPY prosody.cfg.lua /etc/prosody/
 
