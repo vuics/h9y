@@ -1,6 +1,14 @@
--- TODO:
--- {{ $INTERNAL_HOST := .Env.INTERNAL_HOST | default "selfdev-prosody.dev.local" -}}
--- {{ $EXTERNAL_HOST := .Env.EXTERNAL_HOST | default "aaa-gl.local" -}}
+-- Load environment variable function
+local getenv = os.getenv
+
+local function split(str, sep)
+    local t = {}
+    for s in string.gmatch(str, "([^"..sep.."]+)") do
+        s = s:match("^%s*(.-)%s*$")  -- trim spaces
+        table.insert(t, s)
+    end
+    return t
+end
 
 -- Prosody Example Configuration File
 --
@@ -29,8 +37,8 @@ pidfile = "/tmp/prosody.pid" -- this is the default on Debian
 -- (see https://prosody.im/doc/creating_accounts for info)
 -- Example: admins = { "user1@example.com", "user2@example.net" }
 
-admins = { }
--- admins = { "2@az1.ai" }
+-- admins = { }
+admins = split((getenv("ADMINS") or ""), ",")
 
 -- This option allows you to specify additional locations where Prosody
 -- will search first for modules. For additional modules you can install, see
@@ -125,15 +133,13 @@ s2s_secure_auth = false
 -- certificates. They will be authenticated using other methods instead,
 -- even when s2s_secure_auth is enabled.
 
---s2s_insecure_domains = { "insecure.example" }
--- s2s_insecure_domains = { "selfdev-prosody.dev.local", "localhost", "127.0.0.1" }
-s2s_insecure_domains = { "aaa-ai.local" }
+--s2s_insecure_domains = { "insecure.example", "localhost", "127.0.0.1" }
+s2s_insecure_domains = split((getenv("S2S_INSECURE_DOMAINS") or ""), ",")
 
 -- Even if you disable s2s_secure_auth, you can still require valid
 -- certificates for some domains by specifying a list here.
 
---s2s_secure_domains = { "jabber.org" }
-
+s2s_secure_domains = split((getenv("S2S_SECURE_DOMAINS") or ""), ",")
 
 -- Rate limits
 -- Enable rate limits for incoming client and server connections. These help
@@ -197,12 +203,12 @@ archive_expires_after = "1w" -- Remove archived messages after 1 week
 -- Find more information at https://prosody.im/doc/turn
 
 -- Specify the address of the TURN service (you may use the same domain as XMPP)
-turn_external_host = "eturnal.dev.local"
+-- turn_external_host = "eturnal.dev.local"
+turn_external_host = (getenv("XMPP_TURN_HOST") or "eturnal.localhost")
 turn_external_port = 3478
 
 -- This secret must be set to the same value in both Prosody and the TURN server
 turn_external_secret = "turn-external-secret-access-token"
-
 
 
 -- Logging configuration
@@ -238,11 +244,8 @@ certificates = "certs"
 -- Prosody requires at least one enabled VirtualHost to function. You can
 -- safely remove or disable 'localhost' once you have added another.
 
-
 --VirtualHost "example.com"
-VirtualHost "selfdev-prosody.dev.local"
-
-VirtualHost "aaa-gl.local"
+VirtualHost (getenv("XMPP_HOST") or "localhost")
 
 ------ Components ------
 -- You can specify components to add hosts that provide special services,
@@ -254,20 +257,16 @@ VirtualHost "aaa-gl.local"
 --- Store MUC messages in an archive and allow users to access it
 --modules_enabled = { "muc_mam" }
 
-Component "conference.selfdev-prosody.dev.local" "muc"
+-- Component "conference.selfdev-prosody.dev.local" "muc"
+Component (getenv("XMPP_MUC_HOST") or "conference.localhost") "muc"
   name = "The selfdev-prosody chatrooms server"
   restrict_room_creation = false
-
-Component "conference.aaa-gl.local" "muc"
-  name = "The selfdev-prosody chatrooms server"
-  restrict_room_creation = false
-
--- Component "conference.localhost" "muc"
---   name = "The local selfdev-prosody chatrooms server"
+  modules_enabled = { "muc_mam" } -- Store MUC messages in an archive and allow users to access it
 
 ---Set up a file sharing component
 --Component "share.example.com" "http_file_share"
-Component "share.selfdev-prosody.dev.local" "http_file_share"
+-- Component "share.selfdev-prosody.dev.local" "http_file_share"
+Component (getenv("XMPP_SHARE_HOST") or "share.localhost") "http_file_share"
     -- modules_disabled = { "s2s" }
     -- -- Change the Limit to 100MB:
     -- http_file_share_size_limit = 1024 * 1024 * 100
@@ -288,14 +287,6 @@ Component "share.selfdev-prosody.dev.local" "http_file_share"
 --Component "gateway.example.com"
 --	component_secret = "password"
 
-
--- http_ports = { 5280 }
--- http_interfaces = { "*", "::" }
--- http_interfaces = { "selfdev-prosody.dev.local", "localhost", "127.0.0.1" }
--- http_host = "selfdev-prosody.dev.local"
--- http_default_host = "selfdev-prosody.dev.local"
--- http_host = "localhost"
--- http_default_host = "localhost"
 
 ---------- End of the Prosody Configuration file ----------
 -- You usually **DO NOT** want to add settings here at the end, as they would
