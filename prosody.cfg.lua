@@ -38,7 +38,7 @@ pidfile = "/tmp/prosody.pid" -- this is the default on Debian
 -- Example: admins = { "user1@example.com", "user2@example.net" }
 
 -- admins = { }
-admins = split((getenv("ADMINS") or ""), ",")
+admins = split((getenv("XMPP_ADMINS") or ""), ",")
 
 -- This option allows you to specify additional locations where Prosody
 -- will search first for modules. For additional modules you can install, see
@@ -134,12 +134,12 @@ s2s_secure_auth = false
 -- even when s2s_secure_auth is enabled.
 
 --s2s_insecure_domains = { "insecure.example", "localhost", "127.0.0.1" }
-s2s_insecure_domains = split((getenv("S2S_INSECURE_DOMAINS") or ""), ",")
+s2s_insecure_domains = split((getenv("XMPP_S2S_INSECURE_DOMAINS") or ""), ",")
 
 -- Even if you disable s2s_secure_auth, you can still require valid
 -- certificates for some domains by specifying a list here.
 
-s2s_secure_domains = split((getenv("S2S_SECURE_DOMAINS") or ""), ",")
+s2s_secure_domains = split((getenv("XMPP_S2S_SECURE_DOMAINS") or ""), ",")
 
 -- Rate limits
 -- Enable rate limits for incoming client and server connections. These help
@@ -174,13 +174,20 @@ authentication = "internal_hashed"
 -- through modules. An "sql" backend is included by default, but requires
 -- additional dependencies. See https://prosody.im/doc/storage for more info.
 
-storage = "sql" -- Default is "internal"
+-- storage = "sql" -- Default is "internal"
+storage = (getenv("XMPP_STORAGE") or "internal")
 
 -- For the "sql" backend, you can uncomment *one* of the below to configure:
 --sql = { driver = "SQLite3", database = "prosody.sqlite" } -- Default. 'database' is the filename.
 --sql = { driver = "MySQL", database = "prosody", username = "prosody", password = "secret", host = "localhost" }
 --sql = { driver = "PostgreSQL", database = "prosody", username = "prosody", password = "secret", host = "localhost" }
-sql = { driver = "PostgreSQL", database = "postgres_prosody", username = "postgres_user", password = "postgres_secret_123", host = "postgres.dev.local" }
+sql = {
+  driver = (getenv("XMPP_SQL_DRIVER") or "PostgreSQL"),
+  database = (getenv("XMPP_SQL_DATABASE") or "postgres_prosody"),
+  username = (getenv("XMPP_SQL_USER") or "postgres_user"),
+  password = (getenv("XMPP_SQL_PASSWORD") or "postgres_secret_123"),
+  host = (getenv("XMPP_SQL_HOST") or "localhost")
+}
 
 
 -- Archiving configuration
