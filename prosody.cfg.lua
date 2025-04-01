@@ -251,8 +251,6 @@ certificates = "certs"
 
 --VirtualHost "example.com"
 VirtualHost (os.getenv("XMPP_HOST") or "localhost")
-  enabled = true
-  allow_registration = true
 
 ------ Components ------
 -- You can specify components to add hosts that provide special services,
