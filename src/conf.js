@@ -139,6 +139,7 @@ const conf = {
 
   xmpp: {
     host: process.env.XMPP_HOST || 'localhost',
+    commanderUrl: process.env.XMPP_COMMANDER_URL || 'http://localhost:8387',
   },
 }
 

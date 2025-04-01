@@ -30,7 +30,7 @@ const credentials = async (req, res, next) => {
       try {
         const response = await axios({
           method: 'get',
-          url: `http://${conf.xmpp.host}:8387/register`,
+          url: `${conf.xmpp.commanderUrl}/register`,
           params: {
             user: user,
             password: password,
