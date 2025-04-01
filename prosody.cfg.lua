@@ -36,7 +36,7 @@ pidfile = "/tmp/prosody.pid" -- this is the default on Debian
 -- Example: admins = { "user1@example.com", "user2@example.net" }
 
 -- admins = { }
-admins = split((os.getenv("XMPP_ADMINS") or ""), ",")
+admins = split((os.getenv("ADMINS") or ""), ",")
 
 -- This option allows you to specify additional locations where Prosody
 -- will search first for modules. For additional modules you can install, see
@@ -132,12 +132,12 @@ s2s_secure_auth = false
 -- even when s2s_secure_auth is enabled.
 
 --s2s_insecure_domains = { "insecure.example", "localhost", "127.0.0.1" }
-s2s_insecure_domains = split((os.getenv("XMPP_S2S_INSECURE_DOMAINS") or ""), ",")
+s2s_insecure_domains = split((os.getenv("S2S_INSECURE_DOMAINS") or ""), ",")
 
 -- Even if you disable s2s_secure_auth, you can still require valid
 -- certificates for some domains by specifying a list here.
 
-s2s_secure_domains = split((os.getenv("XMPP_S2S_SECURE_DOMAINS") or ""), ",")
+s2s_secure_domains = split((os.getenv("S2S_SECURE_DOMAINS") or ""), ",")
 
 -- Rate limits
 -- Enable rate limits for incoming client and server connections. These help
@@ -173,18 +173,18 @@ authentication = "internal_hashed"
 -- additional dependencies. See https://prosody.im/doc/storage for more info.
 
 -- storage = "sql" -- Default is "internal"
-storage = (os.getenv("XMPP_STORAGE") or "internal")
+storage = (os.getenv("STORAGE") or "internal")
 
 -- For the "sql" backend, you can uncomment *one* of the below to configure:
 --sql = { driver = "SQLite3", database = "prosody.sqlite" } -- Default. 'database' is the filename.
 --sql = { driver = "MySQL", database = "prosody", username = "prosody", password = "secret", host = "localhost" }
 --sql = { driver = "PostgreSQL", database = "prosody", username = "prosody", password = "secret", host = "localhost" }
 sql = {
-  driver = (os.getenv("XMPP_SQL_DRIVER") or "PostgreSQL"),
-  database = (os.getenv("XMPP_SQL_DATABASE") or "postgres_prosody"),
-  username = (os.getenv("XMPP_SQL_USER") or "postgres_user"),
-  password = (os.getenv("XMPP_SQL_PASSWORD") or "postgres_secret_123"),
-  host = (os.getenv("XMPP_SQL_HOST") or "localhost")
+  driver = (os.getenv("SQL_DRIVER") or "PostgreSQL"),
+  database = (os.getenv("SQL_DATABASE") or "postgres_prosody"),
+  username = (os.getenv("SQL_USER") or "postgres_user"),
+  password = (os.getenv("SQL_PASSWORD") or "postgres_secret_123"),
+  host = (os.getenv("SQL_HOST") or "localhost")
 }
 
 
@@ -209,7 +209,7 @@ archive_expires_after = "1w" -- Remove archived messages after 1 week
 
 -- Specify the address of the TURN service (you may use the same domain as XMPP)
 -- turn_external_host = "eturnal.dev.local"
-turn_external_host = (os.getenv("XMPP_TURN_HOST") or "eturnal.localhost")
+turn_external_host = (os.getenv("TURN_HOST") or "eturnal.localhost")
 turn_external_port = 3478
 
 -- This secret must be set to the same value in both Prosody and the TURN server
@@ -241,6 +241,17 @@ log = {
 -- Location of directory to find certificates in (relative to main config file):
 certificates = "certs"
 
+-- Running behind a reverse proxy
+-- https://prosody.im/doc/http
+local HTTP_EXTERNAL_URL = os.getenv("HTTP_EXTERNAL_URL")
+if HTTP_EXTERNAL_URL and HTTP_EXTERNAL_URL ~= "" then
+  http_external_url = HTTP_EXTERNAL_URL
+end
+local TRUSTED_PROXIES = os.getenv("TRUSTED_PROXIES")
+if TRUSTED_PROXIES and TRUSTED_PROXIES ~= "" then
+  trusted_proxies = split(TRUSTED_PROXIES, ",")
+end
+
 ----------- Virtual hosts -----------
 -- You need to add a VirtualHost entry for each domain you wish Prosody to serve.
 -- Settings under each VirtualHost entry apply *only* to that host.
@@ -250,7 +261,7 @@ certificates = "certs"
 -- safely remove or disable 'localhost' once you have added another.
 
 --VirtualHost "example.com"
-VirtualHost (os.getenv("XMPP_HOST") or "localhost")
+VirtualHost (os.getenv("HOST") or "localhost")
 
 ------ Components ------
 -- You can specify components to add hosts that provide special services,
@@ -263,7 +274,7 @@ VirtualHost (os.getenv("XMPP_HOST") or "localhost")
 --modules_enabled = { "muc_mam" }
 
 -- Component "conference.selfdev-prosody.dev.local" "muc"
-Component (os.getenv("XMPP_MUC_HOST") or "conference.localhost") "muc"
+Component (os.getenv("MUC_HOST") or "conference.localhost") "muc"
   name = "The selfdev-prosody chatrooms server"
   restrict_room_creation = false
   modules_enabled = { "muc_mam" } -- Store MUC messages in an archive and allow users to access it
@@ -271,7 +282,7 @@ Component (os.getenv("XMPP_MUC_HOST") or "conference.localhost") "muc"
 ---Set up a file sharing component
 --Component "share.example.com" "http_file_share"
 -- Component "share.selfdev-prosody.dev.local" "http_file_share"
-Component (os.getenv("XMPP_SHARE_HOST") or "share.localhost") "http_file_share"
+Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
     -- modules_disabled = { "s2s" }
     -- -- Change the Limit to 100MB:
     -- http_file_share_size_limit = 1024 * 1024 * 100
