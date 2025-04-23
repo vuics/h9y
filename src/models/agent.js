@@ -71,8 +71,16 @@ export default mongoose.model(
       },
 
       flow: {
-        flowId: { type: 'string' },
-        sessionId: { type: 'string' },
+        flowId: String,
+        sessionId: String,
+      },
+
+      webhook: {
+        method: String,
+        route: String,
+        payload: Mixed,
+        parseJson: Boolean,
+        promptKey: String,
       },
 
       // other options will be defined here
