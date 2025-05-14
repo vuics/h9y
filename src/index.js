@@ -60,10 +60,10 @@ if (conf.ssl.enable) {
 // Express middleware configuration
 app.use(compression()) // gzip compression
 app.use(cookieParser()) // for parsing cookie
-app.use(express.json({ limit: '100kb' })) // for parsing application/json
-app.use(express.urlencoded({ extended: true, limit: '100kb' })) // for parsing application/x-www-form-urlencoded
-app.use(express.text({ limit: '100kb' }))
-app.use(express.raw({ limit: '100kb' }))
+app.use(express.json({ limit: '100mb' })) // for parsing application/json
+app.use(express.urlencoded({ extended: true, limit: '100mb' })) // for parsing application/x-www-form-urlencoded
+app.use(express.text({ limit: '100mb' }))
+app.use(express.raw({ limit: '100mb' }))
 process.env.NODE_ENV !== 'test' && app.use(morgan('tiny')) // for logging HTTP-requests
 app.use(flash()) // to support passport.js errors through flash
 
