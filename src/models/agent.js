@@ -83,6 +83,17 @@ export default mongoose.model(
         promptKey: String,
       },
 
+      qiskit: {
+        // provider: String,
+        backend: String,
+        language: String,
+        draw: {
+          enable: Boolean,
+          output: String,
+          style: String,
+        },
+      },
+
       // other options will be defined here
     },
   })
