@@ -30,6 +30,7 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
+    "generate-password": "^1.7.1",
     "helmet": "^7.0.0",
     "helmet-csp": "^3.4.0",
     "hpp": "^0.2.3",
