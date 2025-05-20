@@ -75,7 +75,7 @@ modules_enabled = {
 		"time"; -- Let others know the time here on this server
 		"uptime"; -- Report how long server has been running
 		"version"; -- Replies to server version requests
-		--"mam"; -- Store recent messages to allow multi-device synchronization
+		"mam"; -- Store recent messages to allow multi-device synchronization
 		"turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
 
 	-- Admin interfaces
@@ -194,7 +194,10 @@ sql = {
 -- they are offline. This setting controls how long Prosody will keep
 -- messages in the archive before removing them.
 
-archive_expires_after = "1w" -- Remove archived messages after 1 week
+-- archive_expires_after = "1w" -- Remove archived messages after 1 week
+archive_expires_after = "never" -- keep messages forever
+default_archive_policy = true
+max_archive_query_results = 50
 
 -- You can also configure messages to be stored in-memory only. For more
 -- archiving options, see https://prosody.im/doc/modules/mod_mam
@@ -283,6 +286,10 @@ Component (os.getenv("MUC_HOST") or "conference.localhost") "muc"
 --Component "share.example.com" "http_file_share"
 -- Component "share.selfdev-prosody.dev.local" "http_file_share"
 Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
+  modules_enabled = { "muc_mam" } -- Store MUC messages in an archive and allow users to access it
+  muc_log_by_default = true
+  muc_log_presences = true
+  muc_log_expires_after = "never"
     -- modules_disabled = { "s2s" }
     -- -- Change the Limit to 100MB:
     -- http_file_share_size_limit = 1024 * 1024 * 100
