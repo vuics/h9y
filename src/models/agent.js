@@ -108,6 +108,16 @@ export default mongoose.model(
         },
       },
 
+      code: {
+        kernel: String,
+        commands: {
+          start: String,
+          restart: String,
+          reconnect: String,
+          shutdown: String,
+        },
+      },
+
       // other options will be defined here
     },
   })
