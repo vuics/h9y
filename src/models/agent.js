@@ -96,6 +96,17 @@ export default mongoose.model(
         },
       },
 
+      storage: {
+        driver: String,
+        namespace: String,
+        commands: {
+          list: String,
+          get: String,
+          set: String,
+          delete: String,
+        },
+      },
+
       // other options will be defined here
     },
   })
