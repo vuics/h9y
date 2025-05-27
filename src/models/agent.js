@@ -99,6 +99,7 @@ export default mongoose.model(
       storage: {
         driver: String,
         namespace: String,
+        verbose: Number,
         commands: {
           list: String,
           get: String,
