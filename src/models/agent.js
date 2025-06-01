@@ -29,10 +29,12 @@ export default mongoose.model(
       model: {
         provider: String, // Name of the LLM model provider such as 'openai' or 'anthropic'
         name: String, // Name of the LLM such as 'gpt-4o-mini' or 'claude-3-5-sonnet-20240620'
+        apiKey: Mixed, // It can be set with a string or with an object { valueFromVault: 'vaultKey' }
       },
       embeddings: {
         provider: String,
         name: String,
+        apiKey: Mixed,
       },
 
       vectorStore: String,
