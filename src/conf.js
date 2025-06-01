@@ -115,6 +115,15 @@ const conf = {
     url: process.env.SNAKE_URL || 'http://127.0.0.1:6699/v1',
   },
 
+  vault: {
+    enable: bool(process.env.VAULT_ENABLE || false),
+    addr: process.env.VAULT_ADDR || 'http://127.0.0.1:8200',
+    token: process.env.VAULT_TOKEN || '(not-set)',
+    // unseal: bool(process.env.VAULT_UNSEAL || true),
+    // keyThreshold: num(process.env.VAULT_KEY_THRESHOLD || 3),
+    // unsealKeys: arr(process.env.VAULT_UNSEAL_KEYS || '(not-set),(not-set),(not-set),(not-set),(not-set)'),
+  },
+
   smtp: {
     // TODO: USE GCP MAILING
     host: process.env.SMPT_HOST || 'smtp.mail.us-west-2.awsapps.com',

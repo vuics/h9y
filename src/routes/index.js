@@ -15,6 +15,7 @@ import interest from './interest.js'
 import available from './available.js'
 import subscriptions from './subscriptions.js'
 import xmpp from './xmpp.js'
+import vault from './vault.js'
 
 const verbose = Verbose('sd:routes/index'); verbose('')
 
@@ -34,5 +35,6 @@ router.use('/v1/interest', interest)
 router.use('/v1/available', available)
 router.use('/v1/subscriptions', subscriptions)
 router.use('/v1/xmpp', xmpp)
+router.use('/v1/vault', vault)
 
 export default router

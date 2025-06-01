@@ -41,6 +41,7 @@
     "mongoose-bcrypt": "^1.10.1",
     "mongoose-timestamp": "^0.6.0",
     "morgan": "^1.10.0",
+    "node-vault": "^0.10.2",
     "nodemailer": "^6.9.7",
     "nodemon": "^3.0.1",
     "oauth2orize": "^1.11.1",
