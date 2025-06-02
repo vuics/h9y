@@ -72,8 +72,23 @@ const listSecrets = async (req, res, next) => {
       throw new Error('Vault is disabled on backend')
     }
     const userId = req.user._id.toString()
-    const result = await vault.read(`secret/data/user_${userId}`);
-    const data = result.data.data; // KV v2 nests data under data.data
+
+    let data = {}
+    let result;
+    try {
+      result = await vault.read(`secret/data/user_${userId}`);
+      data = result.data.data; // KV v2 nests data under data.data
+      console.log('Secret exists:', result.data);
+    } catch (err) {
+      if (err.response && err.response.statusCode === 404) {
+        console.log('Secret does not exist.');
+      } else {
+        // Unexpected error, rethrow or handle differently
+        console.error('Error reading secret:', err);
+        throw err;
+      }
+    }
+
     verbose('data:', data)
     const onlyKeys = nullifyValues(data)
     verbose('onlyKeys:', onlyKeys)
@@ -109,10 +124,21 @@ const addSecret = async (req, res, next) => {
       throw new Error('Vault is disabled on backend')
     }
     const userId = req.user._id.toString()
-    const readResult = await vault.read(`secret/data/user_${userId}`);
-    verbose('vault readResult:', readResult)
-    const data = readResult.data.data; // KV v2 nests data under data.data
     const { key, value } = req.body
+
+    let data = {};
+    try {
+      const readResult = await vault.read(`secret/data/user_${userId}`);
+      verbose('vault readResult:', readResult);
+      data = readResult.data.data; // KV v2: nested under data.data
+    } catch (err) {
+      if (err.response && err.response.statusCode === 404) {
+        verbose(`Secret not found for user_${userId}, will create new one.`);
+      } else {
+        throw err; // Unexpected error
+      }
+    }
+
     const newData = {
       ...data,
       [key]: value,
