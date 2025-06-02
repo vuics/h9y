@@ -59,7 +59,14 @@ if (conf.vault.enable) {
   }
 }
 
-const getSecrets = async (req, res, next) => {
+function nullifyValues(data) {
+  const onlyKeys = Object.fromEntries(
+    Object.keys(data).map(key => [key, null])
+  );
+  return onlyKeys
+}
+
+const listSecrets = async (req, res, next) => {
   try {
     if (!vault) {
       throw new Error('Vault is disabled on backend')
@@ -68,7 +75,29 @@ const getSecrets = async (req, res, next) => {
     const result = await vault.read(`secret/data/user_${userId}`);
     const data = result.data.data; // KV v2 nests data under data.data
     verbose('data:', data)
-    res.json(data)
+    const onlyKeys = nullifyValues(data)
+    verbose('onlyKeys:', onlyKeys)
+    res.json(onlyKeys)
+  } catch (err) {
+    res.status(500).json({ result: 'error', message: err.toString()})
+  }
+}
+
+const exposeSecret = async (req, res, next) => {
+  try {
+    if (!vault) {
+      throw new Error('Vault is disabled on backend')
+    }
+    const userId = req.user._id.toString()
+    const result = await vault.read(`secret/data/user_${userId}`);
+    const data = result.data.data; // KV v2 nests data under data.data
+    console.log('expose req.body:', req.body)
+    const { key } = req.body
+    const expose = {
+      [key]: data[key],
+    }
+    verbose('expose:', expose)
+    res.json(expose)
   } catch (err) {
     res.status(500).json({ result: 'error', message: err.toString()})
   }
@@ -92,7 +121,9 @@ const addSecret = async (req, res, next) => {
       data: newData,
     });
     verbose('vault writeResult:', writeResult)
-    res.json(newData)
+    const onlyKeys = nullifyValues(newData)
+    verbose('onlyKeys:', onlyKeys)
+    res.json(onlyKeys)
   } catch (err) {
     res.status(500).json({ result: 'error', message: err.toString()})
   }
@@ -116,13 +147,15 @@ const deleteSecret = async (req, res, next) => {
       data: newData,
     });
     verbose('vault writeResult:', writeResult)
-    res.json(newData)
+    const onlyKeys = nullifyValues(newData)
+    res.json(onlyKeys)
   } catch (err) {
     res.status(500).json({ result: 'error', message: err.toString()})
   }
 }
 
-router.get('/', checkAuth, getSecrets)
+router.get('/', checkAuth, listSecrets)
+router.post('/expose', checkAuth, exposeSecret)
 router.post('/', checkAuth, addSecret)
 router.delete('/', checkAuth, deleteSecret)
 // router.get('/api', checkAPIAuth, index)
