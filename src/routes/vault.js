@@ -1,32 +1,63 @@
 import { Router } from 'express'
-// import { randomBytes } from 'crypto';
-// import axios from 'axios'
-// import { v4 as uuidv4 } from 'uuid'
-// import generator from 'generate-password'
 import NodeVault from 'node-vault'
 import { checkAuth, checkAPIAuth } from '../middleware/check-auth.js'
-import { Verbose } from '../services.js'
+import { Verbose, log, warn, error } from '../services.js'
 import conf from '../conf.js'
 
 const verbose = Verbose('sd:routes/vault'); verbose('')
 const router = Router()
 
-
 let vault = null
-if (conf.vault.enable) {
-  const options = {
-    apiVersion: 'v1', // default
-    endpoint: conf.vault.addr,
-    token: conf.vault.token,
-  };
-  console.log("vault options:", options)
 
-  vault = NodeVault(options);
-  console.log("vault:", vault)
+async function unsealVault() {
+  try {
+    let status = await vault.status();
+    log(`Vault status (before)> sealed: ${status.sealed}`);
+    if (!status.sealed) {
+      return log('Vault was already unsealed!');
+    }
 
-  // TODO: Add unsealing
+    let key, result
+    for (let key of conf.vault.unsealKeys) {
+      if (!key || key === '(not-set)') {
+        warn(`Skipping empty or invalid key`);
+        continue;
+      }
+
+      result = await vault.unseal({ key });
+      log(`Key applied. Sealed: ${result.sealed}`);
+      if (!result.sealed) {
+        log('Vault is now unsealed!');
+        break
+      }
+    }
+
+    status = await vault.status();
+    log(`Vault status (after)> sealed: ${status.sealed}`);
+  } catch (err) {
+    error('Error during unseal process:', err.message || err);
+  }
 }
 
+if (conf.vault.enable) {
+  try {
+    const options = {
+      apiVersion: 'v1', // default
+      endpoint: conf.vault.addr,
+      token: conf.vault.token,
+    };
+    // verbose("vault options:", options)
+    vault = NodeVault(options);
+    log('Vault client is connected')
+    // verbose("vault:", vault)
+  } catch (error) {
+    error('Vault client connection error:', error.message || error);
+  }
+
+  if (conf.vault.unseal) {
+    unsealVault();
+  }
+}
 
 const index = async (req, res, next) => {
   try {

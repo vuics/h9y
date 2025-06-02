@@ -119,9 +119,8 @@ const conf = {
     enable: bool(process.env.VAULT_ENABLE || false),
     addr: process.env.VAULT_ADDR || 'http://127.0.0.1:8200',
     token: process.env.VAULT_TOKEN || '(not-set)',
-    // unseal: bool(process.env.VAULT_UNSEAL || true),
-    // keyThreshold: num(process.env.VAULT_KEY_THRESHOLD || 3),
-    // unsealKeys: arr(process.env.VAULT_UNSEAL_KEYS || '(not-set),(not-set),(not-set),(not-set),(not-set)'),
+    unseal: bool(process.env.VAULT_UNSEAL || true),
+    unsealKeys: arr(process.env.VAULT_UNSEAL_KEYS || '(not-set),(not-set),(not-set),(not-set),(not-set)'),
   },
 
   smtp: {
@@ -164,6 +163,9 @@ export const revealConf = () => {
   delete publicConf.db.url
   delete publicConf.smtp.pass
   delete publicConf.stripe
+
+  delete publicConf.vault.token
+  delete publicConf.vault.unsealKeys
 
   return publicConf
 }
