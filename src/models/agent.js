@@ -24,8 +24,6 @@ export default mongoose.model(
       systemMessage: String, // SystemMessage(SYSTEM_MESSAGE) to pass to LLM on LangChain
       joinRooms: [ String ], // XMPP rooms to join,
 
-      env: Mixed,
-
       model: {
         provider: String, // Name of the LLM model provider such as 'openai' or 'anthropic'
         name: String, // Name of the LLM such as 'gpt-4o-mini' or 'claude-3-5-sonnet-20240620'
@@ -124,6 +122,7 @@ export default mongoose.model(
 
       code: {
         kernel: String,
+        env: Mixed,
         commands: {
           start: String,
           restart: String,
