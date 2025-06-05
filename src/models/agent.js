@@ -39,29 +39,40 @@ export default mongoose.model(
         },
       },
 
-      vectorStore: String,
+      rag: {
+        vectorStore: String,
 
-      loaders: [ {
-        enable: Boolean,
-        kind: String,
+        loaders: [ {
+          enable: Boolean,
+          kind: String,
 
-        // text loader
-        files: [ String ],
+          // text loader
+          files: [ String ],
 
-        // directory loader
-        path: String,
-        glob: String,
+          // directory loader
+          path: String,
+          glob: String,
 
-        // web loader
-        urls: [ String ],
+          // web loader
+          urls: [ String ],
 
-        // google-drive loader
-        folderId: String,
-        recursive: Boolean,
-        unstructured: Boolean,
-        filesIds: [ String ],
-        documentIds: [ String ],
-      }, ],
+          // google-drive loader
+          folderId: String,
+          recursive: Boolean,
+          unstructured: Boolean,
+          filesIds: [ String ],
+          documentIds: [ String ],
+        }, ],
+
+        commands: {
+          get: String,
+          count: String,
+          loadText: String,
+          loadURL: String,
+          // loadGDrive: String,
+          delete: String,
+        },
+      },
 
       notebook: {
         filePath: String,
