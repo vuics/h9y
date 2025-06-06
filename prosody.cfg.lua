@@ -291,10 +291,24 @@ Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
   muc_log_presences = true
   muc_log_expires_after = "never"
 
-  -- modules_disabled = { "s2s" }
-  -- -- Change the Limit to 100MB:
-  -- http_file_share_size_limit = 1024 * 1024 * 100
+  -- Tell Prosody we don't need server-to-server
+  -- connections (s2s), because this service is
+  -- only for local users anyway.
+  modules_disabled = { "s2s" }
+
+  -- Larger files: Change the Limit to 100MB:
+  http_file_share_size_limit = 100 * 1024 * 1024
+  -- Daily quota: 100 MiB per day per user
+  http_file_share_daily_quota = 100 * 1024 * 1024
+  -- Global quota: 1 GiB total
+  http_file_share_global_quota = 1024 * 1024 * 1024
+
+  -- NOTE: this setting disables the file share (@alphara)
+  -- Retention
+  -- http_file_share_expires_after = "never"
   -- http_file_share_expires_after = "2 weeks"
+
+  -- NOTE: this setting disables the file share (@alphara)
   -- -- Set it to the same as the apache host above:
   -- http_external_url = (os.getenv("SHARE_HOST") or "share.localhost")
   -- -- here you see how we can manipulate the path:
@@ -302,9 +316,21 @@ Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
   --   file_share = "/"; --Serve from the base URL
   -- }
 
-  -- -- Generate links pointing to https://example.com
-  -- -- instead of https://upload.example.com
-  -- http_host = (os.getenv("HOST") or "localhost")
+  -- Generate links pointing to https://example.com
+  -- instead of https://upload.example.com
+  http_host = (os.getenv("HOST") or "localhost")
+
+  -- The http_file_share_access setting can be specified to limit access
+  -- to certain users or hosts, including hosts on other servers. Be careful!
+  -- In Prosody 13.0+ access can also be customized with the
+  -- http_file_share:upload permission.
+  -- http_file_share_access = {
+  --   "filesharingenthusiast@example.net", -- this specific user
+  --   "example.org", -- anyone with a @example.org address
+  -- }
+
+  -- Restricting file types to {"image/*","video/*","audio/*","text/plain"}
+  -- http_file_share_allowed_file_types = { "image/*" }
 
 ---Set up an external component (default component port is 5347)
 --
