@@ -1,11 +1,11 @@
 -- Load environment variable function
 local function split(str, sep)
-    local t = {}
-    for s in string.gmatch(str, "([^"..sep.."]+)") do
-        s = s:match("^%s*(.-)%s*$")  -- trim spaces
-        table.insert(t, s)
-    end
-    return t
+  local t = {}
+  for s in string.gmatch(str, "([^"..sep.."]+)") do
+    s = s:match("^%s*(.-)%s*$")  -- trim spaces
+    table.insert(t, s)
+  end
+  return t
 end
 
 -- Prosody Example Configuration File
@@ -47,58 +47,58 @@ admins = split((os.getenv("ADMINS") or ""), ",")
 -- Documentation for bundled modules can be found at: https://prosody.im/doc/modules
 modules_enabled = {
 
-	-- Generally required
-		"disco"; -- Service discovery
-		"roster"; -- Allow users to have a roster. Recommended ;)
-		"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
-		"tls"; -- Add support for secure TLS on c2s/s2s connections
+  -- Generally required
+  "disco"; -- Service discovery
+  "roster"; -- Allow users to have a roster. Recommended ;)
+  "saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
+  "tls"; -- Add support for secure TLS on c2s/s2s connections
 
-	-- Not essential, but recommended
-		"blocklist"; -- Allow users to block communications with other users
-		"bookmarks"; -- Synchronise the list of open rooms between clients
-		"carbons"; -- Keep multiple online clients in sync
-		"dialback"; -- Support for verifying remote servers using DNS
-		"limits"; -- Enable bandwidth limiting for XMPP connections
-		"pep"; -- Allow users to store public and private data in their account
-		"private"; -- Legacy account storage mechanism (XEP-0049)
-		"smacks"; -- Stream management and resumption (XEP-0198)
-		"vcard4"; -- User profiles (stored in PEP)
-		"vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
+  -- Not essential, but recommended
+  "blocklist"; -- Allow users to block communications with other users
+  "bookmarks"; -- Synchronise the list of open rooms between clients
+  "carbons"; -- Keep multiple online clients in sync
+  "dialback"; -- Support for verifying remote servers using DNS
+  "limits"; -- Enable bandwidth limiting for XMPP connections
+  "pep"; -- Allow users to store public and private data in their account
+  "private"; -- Legacy account storage mechanism (XEP-0049)
+  "smacks"; -- Stream management and resumption (XEP-0198)
+  "vcard4"; -- User profiles (stored in PEP)
+  "vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
 
-	-- Nice to have
-		"csi_simple"; -- Simple but effective traffic optimizations for mobile devices
-		"invites"; -- Create and manage invites
-		"invites_adhoc"; -- Allow admins/users to create invitations via their client
-		"invites_register"; -- Allows invited users to create accounts
-		"ping"; -- Replies to XMPP pings with pongs
-		"register"; -- Allow users to register on this server using a client and change passwords
-		"time"; -- Let others know the time here on this server
-		"uptime"; -- Report how long server has been running
-		"version"; -- Replies to server version requests
-		"mam"; -- Store recent messages to allow multi-device synchronization
-		"turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
+  -- Nice to have
+  "csi_simple"; -- Simple but effective traffic optimizations for mobile devices
+  "invites"; -- Create and manage invites
+  "invites_adhoc"; -- Allow admins/users to create invitations via their client
+  "invites_register"; -- Allows invited users to create accounts
+  "ping"; -- Replies to XMPP pings with pongs
+  "register"; -- Allow users to register on this server using a client and change passwords
+  "time"; -- Let others know the time here on this server
+  "uptime"; -- Report how long server has been running
+  "version"; -- Replies to server version requests
+  "mam"; -- Store recent messages to allow multi-device synchronization
+  "turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
 
-	-- Admin interfaces
-		"admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
-		"admin_shell"; -- Allow secure administration via 'prosodyctl shell'
+  -- Admin interfaces
+  "admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
+  "admin_shell"; -- Allow secure administration via 'prosodyctl shell'
 
-	-- HTTP modules
-		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
-		--"http_openmetrics"; -- for exposing metrics to stats collectors
-		--"websocket"; -- XMPP over WebSockets
+  -- HTTP modules
+  --"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
+  --"http_openmetrics"; -- for exposing metrics to stats collectors
+  --"websocket"; -- XMPP over WebSockets
 
-	-- Other specific functionality
-		--"announce"; -- Send announcement to all online users
-		--"groups"; -- Shared roster support
-		--"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
-		--"mimicking"; -- Prevent address spoofing
-		--"motd"; -- Send a message to users when they log in
-		--"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
-		"s2s_bidi"; -- Bi-directional server-to-server (XEP-0288)
-		--"server_contact_info"; -- Publish contact information for this service
-		--"tombstones"; -- Prevent registration of deleted accounts
-		--"watchregistrations"; -- Alert admins of registrations
-		--"welcome"; -- Welcome users who register accounts
+  -- Other specific functionality
+  --"announce"; -- Send announcement to all online users
+  --"groups"; -- Shared roster support
+  --"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
+  --"mimicking"; -- Prevent address spoofing
+  --"motd"; -- Send a message to users when they log in
+  --"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
+  "s2s_bidi"; -- Bi-directional server-to-server (XEP-0288)
+  --"server_contact_info"; -- Publish contact information for this service
+  --"tombstones"; -- Prevent registration of deleted accounts
+  --"watchregistrations"; -- Alert admins of registrations
+  --"welcome"; -- Welcome users who register accounts
 
   "conversejs";
   "muc_mam";
@@ -109,10 +109,10 @@ modules_enabled = {
 -- These modules are auto-loaded, but should you want
 -- to disable them then uncomment them here:
 modules_disabled = {
-	-- "offline"; -- Store offline messages
-	-- "c2s"; -- Handle client connections
-	-- "s2s"; -- Handle server-to-server connections
-	-- "posix"; -- POSIX functionality, sends server to background, etc.
+  -- "offline"; -- Store offline messages
+  -- "c2s"; -- Handle client connections
+  -- "s2s"; -- Handle server-to-server connections
+  -- "posix"; -- POSIX functionality, sends server to background, etc.
 
   -- "mod_bosh";
   -- "mod_websocket";
@@ -144,12 +144,12 @@ s2s_secure_domains = split((os.getenv("S2S_SECURE_DOMAINS") or ""), ",")
 -- protect from excessive resource consumption and denial-of-service attacks.
 
 limits = {
-	c2s = {
-		rate = "10kb/s";
-	};
-	s2sin = {
-		rate = "30kb/s";
-	};
+  c2s = {
+    rate = "10kb/s";
+  };
+  s2sin = {
+    rate = "30kb/s";
+  };
 }
 
 -- Authentication
@@ -222,10 +222,10 @@ turn_external_secret = "turn-external-secret-access-token"
 -- Logging configuration
 -- For advanced logging see https://prosody.im/doc/logging
 log = {
-	-- info = "/opt/homebrew/var/log/prosody/prosody.log"; -- Change 'info' to 'debug' for verbose logging
-	-- error = "/opt/homebrew/var/log/prosody/prosody.err";
-	-- "*syslog"; -- Uncomment this for logging to syslog
-	"*console"; -- Log to the console, useful for debugging when running in the foreground
+  -- info = "/opt/homebrew/var/log/prosody/prosody.log"; -- Change 'info' to 'debug' for verbose logging
+  -- error = "/opt/homebrew/var/log/prosody/prosody.err";
+  -- "*syslog"; -- Uncomment this for logging to syslog
+  "*console"; -- Log to the console, useful for debugging when running in the foreground
 }
 
 
@@ -290,16 +290,21 @@ Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
   muc_log_by_default = true
   muc_log_presences = true
   muc_log_expires_after = "never"
-    -- modules_disabled = { "s2s" }
-    -- -- Change the Limit to 100MB:
-    -- http_file_share_size_limit = 1024 * 1024 * 100
-    -- http_file_share_expires_after = "2 weeks"
-    -- -- Set it to the same as the apache host above:
-    -- http_external_url = "https://share.selfdev-prosody.dev.local/"
-    -- -- here you see how we can manipulate the path:
-    -- http_paths = {
-    --     file_share = "/"; --Serve from the base URL
-    -- }
+
+  -- modules_disabled = { "s2s" }
+  -- -- Change the Limit to 100MB:
+  -- http_file_share_size_limit = 1024 * 1024 * 100
+  -- http_file_share_expires_after = "2 weeks"
+  -- -- Set it to the same as the apache host above:
+  -- http_external_url = (os.getenv("SHARE_HOST") or "share.localhost")
+  -- -- here you see how we can manipulate the path:
+  -- http_paths = {
+  --   file_share = "/"; --Serve from the base URL
+  -- }
+
+  -- -- Generate links pointing to https://example.com
+  -- -- instead of https://upload.example.com
+  -- http_host = (os.getenv("HOST") or "localhost")
 
 ---Set up an external component (default component port is 5347)
 --
@@ -308,7 +313,7 @@ Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
 -- see: https://prosody.im/doc/components#adding_an_external_component
 --
 --Component "gateway.example.com"
---	component_secret = "password"
+--  component_secret = "password"
 
 
 ---------- End of the Prosody Configuration file ----------
@@ -322,9 +327,9 @@ Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
 -- For more information see https://prosody.im/doc/configure
 
 conversejs_options = {
-    debug = true;
-    view_mode = "fullscreen";
-    -- view_mode = "overlayed";
-    -- view_mode = "mobile";
-    -- view_mode = "embedded";
+  debug = true;
+  view_mode = "fullscreen";
+  -- view_mode = "overlayed";
+  -- view_mode = "mobile";
+  -- view_mode = "embedded";
 }
