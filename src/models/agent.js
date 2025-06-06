@@ -69,6 +69,7 @@ export default mongoose.model(
           count: String,
           loadText: String,
           loadURL: String,
+          loadAttachment: String,
           // loadGDrive: String,
           delete: String,
         },
