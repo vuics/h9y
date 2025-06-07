@@ -89,30 +89,29 @@ export default mongoose.model(
         },
       },
 
-      notebook: {
-        filePath: String,
-        kernelName: String,
-        parameters: Mixed,
-        parseJson: Boolean,
-        promptKey: String,
+      imagegen: {
+        model: {
+          provider: String,
+          name: String,
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
+        size: String,
+        quality: String,
+        style: String,
+        n: Number,
       },
 
-      command: {
-        execute: String,
-        shell: Boolean,
-      },
-
-      langflow: {
-        flowId: String,
-        sessionId: String,
-      },
-
-      nodered: {
-        method: String,
-        route: String,
-        payload: Mixed,
-        parseJson: Boolean,
-        promptKey: String,
+      code: {
+        kernel: String,
+        env: Mixed,
+        commands: {
+          start: String,
+          restart: String,
+          reconnect: String,
+          shutdown: String,
+        },
       },
 
       quantum: {
@@ -146,29 +145,30 @@ export default mongoose.model(
         },
       },
 
-      code: {
-        kernel: String,
-        env: Mixed,
-        commands: {
-          start: String,
-          restart: String,
-          reconnect: String,
-          shutdown: String,
-        },
+      command: {
+        execute: String,
+        shell: Boolean,
       },
 
-      imagegen: {
-        model: {
-          provider: String,
-          name: String,
-          apiKey: {
-            valueFromVault: String,
-          },
-        },
-        size: String,
-        quality: String,
-        style: String,
-        n: Number,
+      langflow: {
+        flowId: String,
+        sessionId: String,
+      },
+
+      nodered: {
+        method: String,
+        route: String,
+        payload: Mixed,
+        parseJson: Boolean,
+        promptKey: String,
+      },
+
+      notebook: {
+        filePath: String,
+        kernelName: String,
+        parameters: Mixed,
+        parseJson: Boolean,
+        promptKey: String,
       },
     },
   })
