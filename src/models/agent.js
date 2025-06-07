@@ -39,6 +39,10 @@ export default mongoose.model(
         },
       },
 
+      chat: {
+        session: String,
+      },
+
       rag: {
         vectorStore: String,
 
