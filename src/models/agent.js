@@ -21,29 +21,39 @@ export default mongoose.model(
     options: {
       name: String, // unique name
       description: String,
-      systemMessage: String, // SystemMessage(SYSTEM_MESSAGE) to pass to LLM on LangChain
       joinRooms: [ String ], // XMPP rooms to join,
 
-      model: {
-        provider: String, // Name of the LLM model provider such as 'openai' or 'anthropic'
-        name: String, // Name of the LLM such as 'gpt-4o-mini' or 'claude-3-5-sonnet-20240620'
-        apiKey: {
-          valueFromVault: String,
-        },
-      },
-      embeddings: {
-        provider: String,
-        name: String,
-        apiKey: {
-          valueFromVault: String,
-        },
-      },
-
       chat: {
+        systemMessage: String, // SystemMessage(SYSTEM_MESSAGE) to pass to LLM on LangChain
+
+        model: {
+          provider: String, // Name of the LLM model provider such as 'openai' or 'anthropic'
+          name: String, // Name of the LLM such as 'gpt-4o-mini' or 'claude-3-5-sonnet-20240620'
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
         session: String,
       },
 
       rag: {
+        systemMessage: String, // SystemMessage(SYSTEM_MESSAGE) to pass to LLM on LangChain
+
+        model: {
+          provider: String, // Name of the LLM model provider such as 'openai' or 'anthropic'
+          name: String, // Name of the LLM such as 'gpt-4o-mini' or 'claude-3-5-sonnet-20240620'
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
+        embeddings: {
+          provider: String,
+          name: String,
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
+
         vectorStore: String,
 
         loaders: [ {
