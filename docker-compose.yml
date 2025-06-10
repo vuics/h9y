@@ -7,12 +7,13 @@ services:
     image: selfdev-avatar:v0.0.1
     build:
       context: ./
-    command: nodemon --exec python src/avatar.py
-    # command: /bin/bash -c "sleep 3000"
     restart: unless-stopped
+    shm_size: '2gb'
     ports:
       - 8533:8533
-    # volumes:
+    volumes:
+      - ./src:/opt/app/src
+    #   - ./data:/opt/app/data
     #   - avatar-volume:/opt/app/data
 
 # volumes:
