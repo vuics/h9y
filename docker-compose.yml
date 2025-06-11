@@ -13,7 +13,7 @@ services:
       - 8533:8533
     volumes:
       - ./src:/opt/app/src
-    #   - ./data:/opt/app/data
+      - ./data:/opt/app/data
     #   - avatar-volume:/opt/app/data
 
 # volumes:
