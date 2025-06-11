@@ -195,3 +195,4 @@ cython_debug/
 
 .DS_Store
 data/
+lipgan/logs/
