@@ -16,8 +16,8 @@ logger = logging.getLogger("server")  # match this with logger in the handler
 load_dotenv()
 
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "/tmp/uploads")
-RESULT_FOLDER = os.getenv("UPLOAD_FOLDER", "/opt/app/data")
-SADTALKER_DIR = os.getenv("UPLOAD_FOLDER", "/opt/app/sadtalker")
+RESULT_FOLDER = os.getenv("RESULT_FOLDER", "/opt/app/data")
+SADTALKER_DIR = os.getenv("SADTALKER_DIR", "/opt/app/sadtalker")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
 
@@ -183,7 +183,11 @@ async def process_files(image: UploadFile = File(...), audio: UploadFile = File(
       raise HTTPException(status_code=500, detail="Output video missing after processing.")
 
     filename = os.path.basename(video_path)
-    return FileResponse(video_path, media_type="video/mp4", filename=filename)
+    media_type = "video/mp4"
+    logger.debug(f"video_path: {video_path}")
+    logger.debug(f"filename: {filename}")
+    logger.debug(f"media_type: {media_type}")
+    return FileResponse(video_path, media_type=media_type, filename=filename)
 
   except Exception as e:
     logger.error(f"Avatar error: {e}")
