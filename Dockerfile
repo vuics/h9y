@@ -10,6 +10,11 @@ RUN apt-get update --yes && \
             curl ca-certificates gcc g++ make gnupg \
             npm wget cmake \
             libgl1 libglib2.0-0 \
+            build-essential \
+            pkg-config \
+            libopenblas-dev \
+            liblapack-dev \
+            libx11-dev \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
     # && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -29,18 +34,17 @@ RUN conda create -n sadtalker python=3.8 -y
 # RUN conda create -n sadtalker python=3.11 -y
 
 # Activate environment and install dependencies
-RUN conda run -n sadtalker pip install torch==1.12.1 torchvision==0.13.1 torchaudio dlib
-RUN conda install -n sadtalker -c conda-forge ffmpeg -y
+# RUN conda run -n sadtalker pip install torch==1.12.1 torchvision==0.13.1 torchaudio dlib
+RUN conda run -n sadtalker pip install torch==1.12.1 torchvision==0.13.1 torchaudio
+RUN conda install -n sadtalker -c conda-forge ffmpeg dlib -y
 RUN conda run -n sadtalker pip install -r requirements.txt
 
 # Make the download_models.sh script executable and run it inside the environment
-RUN chmod +x ./scripts/download_models.sh
-RUN ./scripts/download_models.sh
+# RUN chmod +x ./scripts/download_models.sh
+# RUN ./scripts/download_models.sh
 
-#
-
-# Set environment variable to activate conda env on container start
-# SHELL ["conda", "run", "-n", "sadtalker", "/bin/bash", "-c"]
+COPY ./download.sh ./
+RUN ./download.sh
 
 WORKDIR /opt/app/
 
