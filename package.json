@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "NODE_ENV=development DEBUG=sd:* nodemon --exec node -- ./src/index.js",
+    "seed": "stripe fixtures seed.json",
+    "listen": "stripe listen --forward-to localhost:6369/v1/subscriptions/webhook",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
