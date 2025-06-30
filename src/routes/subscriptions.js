@@ -34,7 +34,7 @@ app.get('/config', async (req, res) => {
   });
 });
 
-app.post('/create-subscription', checkAuth, async (req, res) => {
+app.post('/create', checkAuth, async (req, res) => {
   verbose('create subscription body:', req.body)
 
   verbose('req.user:', req.user)
@@ -69,7 +69,7 @@ app.post('/create-subscription', checkAuth, async (req, res) => {
   }
 });
 
-app.post('/cancel-subscription', checkAuth, async (req, res) => {
+app.post('/cancel', checkAuth, async (req, res) => {
   try {
     verbose('cancel-subscription req.body:', req.body)
     const { subscriptionId } = req.body
@@ -85,7 +85,7 @@ app.post('/cancel-subscription', checkAuth, async (req, res) => {
   }
 });
 
-app.get('/subscriptions', checkAuth, async (req, res) => {
+app.get('/', checkAuth, async (req, res) => {
   // Simulate authenticated user. In practice this will be the
   // Stripe Customer ID related to the authenticated user.
   // FIXME: retrieve customerId from user doc
