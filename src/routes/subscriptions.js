@@ -9,12 +9,16 @@ import Subscription from '../models/subscription.js'
 const verbose = Verbose('sd:routes/subscriptions'); verbose('')
 const app = Router()
 
+// See Stripe API versions:
+//   https://github.com/stripe/stripe-node/wiki
+//
 const stripe = Stripe(conf.stripe.secretKey, {
-  apiVersion: '2024-09-30.acacia',
-  // apiVersion: '2022-08-01',
+  apiVersion: '2024-09-30.acacia',    // developed with
 
-  // TODO:
-  // apiVersion: '2025-05-28.basil',
+  // apiVersion: '2024-06-20',        // stable
+  // apiVersion: '2025-03-31.basil',  // listed
+  // apiVersion: '2025-05-28.basil',  // TODO: upgrade to the newest version (unlisted)
+
   appInfo: {
     name: "hyag",
     version: "0.0.1",
@@ -29,6 +33,28 @@ app.get('/config', async (req, res) => {
 });
 
 app.get('/prices', async (req, res) => {
+
+  // TODO:
+  //
+  // https://docs.stripe.com/get-started/development-environment?lang=node#test-install
+  //
+  // stripe.products.create({
+  //   name: 'Starter Subscription',
+  //   description: '$12/Month subscription',
+  // }).then(product => {
+  //   stripe.prices.create({
+  //     unit_amount: 1200,
+  //     currency: 'usd',
+  //     recurring: {
+  //       interval: 'month',
+  //     },
+  //     product: product.id,
+  //   }).then(price => {
+  //     console.log('Success! Here is your starter subscription product id: ' + product.id);
+  //     console.log('Success! Here is your starter subscription price id: ' + price.id);
+  //   });
+  // });
+
   const prices = await stripe.prices.list({
     lookup_keys: ['sample_basic', 'sample_premium'],
     expand: ['data.product']
@@ -38,24 +64,47 @@ app.get('/prices', async (req, res) => {
   });
 });
 
+app.get('/', checkAuth, async (req, res) => {
+  let subscriptions = []
+  if (req.user.stripe.customerId) {
+    subscriptions = await stripe.subscriptions.list({
+      customer: req.user.stripe.customerId,
+      status: 'all',
+      expand: ['data.default_payment_method'],
+    });
+  }
+  res.json({ subscriptions });
+});
+
 app.post('/create', checkAuth, async (req, res) => {
   verbose('create subscription body:', req.body)
 
-  verbose('req.user:', req.user)
-  verbose('req.user.email:', req.user.email)
-  const customer = await stripe.customers.create({
-    email: req.user.email,
-  });
-  verbose('customer:', customer)
-  const customerId = customer.id
-  // TODO: add customerId to user doc
-  verbose('customerId:', customerId)
-  const priceId = req.body.priceId;
-  verbose('priceId:', priceId)
-
   try {
+    const { priceId } = req.body;
+    verbose('priceId:', priceId)
+
+    verbose('req.user:', req.user)
+    verbose('req.user.email:', req.user.email)
+
+    if (!req.user.stripe) {
+      req.user.stripe = {
+        customerId: '',
+      };
+    }
+
+    if (!req.user.stripe.customerId) {
+      const customer = await stripe.customers.create({
+        email: req.user.email,
+      });
+      verbose('customer:', customer)
+      req.user.stripe.customerId = customer.id
+      verbose('customerId:', req.user.stripe.customerId)
+    }
+    await req.user.save();
+    verbose('Saved stripe customer to user document:', req.user);
+
     const subscription = await stripe.subscriptions.create({
-      customer: customerId,
+      customer: req.user.stripe.customerId,
       items: [{
         price: priceId,
       }],
@@ -65,12 +114,11 @@ app.post('/create', checkAuth, async (req, res) => {
     verbose('subscription:', subscription)
 
     res.send({
-      // subscriptionId: subscription.id,
       subscription,
       clientSecret: subscription.latest_invoice.payment_intent.client_secret,
     });
   } catch (error) {
-    return res.status(400).send({ error: { message: error.message } });
+    return res.status(400).send({ result: 'error', message: error.message });
   }
 });
 
@@ -86,21 +134,8 @@ app.post('/cancel', checkAuth, async (req, res) => {
 
     res.send({ canceledSubscription });
   } catch (error) {
-    return res.status(400).send({ error: { message: error.message } });
+    return res.status(400).send({ result: 'error', message: error.message });
   }
-});
-
-app.get('/', checkAuth, async (req, res) => {
-  // Simulate authenticated user. In practice this will be the
-  // Stripe Customer ID related to the authenticated user.
-  // FIXME: retrieve customerId from user doc
-  const customerId = req.cookies['customer'];
-  const subscriptions = await stripe.subscriptions.list({
-    customer: customerId,
-    status: 'all',
-    expand: ['data.default_payment_method'],
-  });
-  res.json({subscriptions});
 });
 
 app.post('/webhook', raw({ type: 'application/json' }), async (req, res) => {
@@ -141,15 +176,10 @@ app.post('/webhook', raw({ type: 'application/json' }), async (req, res) => {
 
           // Retrieve the payment intent used to pay the subscription
           const payment_intent = await stripe.paymentIntents.retrieve(payment_intent_id);
-
           try {
-            const subscription = await stripe.subscriptions.update(
-              subscription_id,
-              {
-                default_payment_method: payment_intent.payment_method,
-              },
-            );
-
+            const subscription = await stripe.subscriptions.update(subscription_id, {
+              default_payment_method: payment_intent.payment_method,
+            });
             console.log("Default payment method set for subscription:" + payment_intent.payment_method);
           } catch (err) {
             console.log(err);
@@ -187,25 +217,23 @@ app.post('/webhook', raw({ type: 'application/json' }), async (req, res) => {
   }
 );
 
-///////////////////////////////////////////////////////////////////////////////
+app.post('/invoice/preview', checkAuth, async (req, res) => {
+  verbose('req.body:', req.body)
+  verbose('req.user:', req.user)
+  verbose('req.user.stripe.customerId:', req.user.stripe.customerId)
+  const { subscriptionId } = req.body;
+  let invoice = {}
+  if (req.user.stripe.customerId) {
+    invoice = await stripe.invoices.createPreview({
+      customer: req.user.stripe.customerId,
+      subscription: subscriptionId,
+    });
+    verbose('invoice:', invoice)
+  }
+  res.send({ invoice });
+});
 
-// app.get('/invoice-preview', checkAuth, async (req, res) => {
-//   // FIXME
-//   const customerId = req.cookies['customer'];
-//   const priceId = process.env[req.query.newPriceLookupKey.toUpperCase()];
-//   const subscription = await stripe.subscriptions.retrieve(
-//     req.query.subscriptionId
-//   );
-//   const invoice = await stripe.invoices.retrieveUpcoming({
-//     customer: customerId,
-//     subscription: req.query.subscriptionId,
-//     subscription_items: [ {
-//       id: subscription.items.data[0].id,
-//       price: priceId,
-//     }],
-//   });
-//   res.send({ invoice });
-// });
+///////////////////////////////////////////////////////////////////////////////
 
 // app.post('/update-subscription', checkAuth, async (req, res) => {
 //   try {
@@ -416,27 +444,5 @@ app.post('/webhook', raw({ type: 'application/json' }), async (req, res) => {
 //    response.send()
 //  }
 //)
-
-///////////////////////////////////////////////////////////////////////////////
-
-// https://docs.stripe.com/get-started/development-environment?lang=node#test-install
-//
-// stripe.products.create({
-//   name: 'Starter Subscription',
-//   description: '$12/Month subscription',
-// }).then(product => {
-//   stripe.prices.create({
-//     unit_amount: 1200,
-//     currency: 'usd',
-//     recurring: {
-//       interval: 'month',
-//     },
-//     product: product.id,
-//   }).then(price => {
-//     console.log('Success! Here is your starter subscription product id: ' + product.id);
-//     console.log('Success! Here is your starter subscription price id: ' + price.id);
-//   });
-// });
-
 
 export default app

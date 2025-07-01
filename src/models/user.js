@@ -20,6 +20,9 @@ const schema = mongoose.Schema({
     user: String,
     password: String,
   },
+  stripe: {
+    customerId: String,
+  },
 
   rememberMe: {
     token: String,
