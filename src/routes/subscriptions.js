@@ -26,57 +26,88 @@ const stripe = Stripe(conf.stripe.secretKey, {
 })
 
 app.get('/config', async (req, res) => {
-  res.send({
-    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
-  });
+  try {
+    res.send({
+      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+    });
+  } catch (err) {
+    return res.status(500).send({ result: 'error', message: err.toString() });
+  }
 });
 
 app.get('/prices', async (req, res) => {
+  try {
+    const lookup_keys = ['basic', 'premium']
 
-  // TODO: marketing features
-  //   https://docs.stripe.com/payments/checkout/pricing-table#product-marketing-features
-  //
-  // const product = await stripe.products.create({
-  //   name: 'Professional',
-  //   description: 'Professional Plan Description',
-  //   marketing_features: [
-  //     {
-  //       name: 'Unlimited boards',
-  //     },
-  //     {
-  //       name: 'Up to 20 seats',
-  //     },
-  //   ],
-  // });
+    let prices = null
+    let product = null
+    let price = null
+    let update_prices = false
 
-  // TODO: create products and prices
-  //
-  // https://docs.stripe.com/get-started/development-environment?lang=node#test-install
-  //
-  // stripe.products.create({
-  //   name: 'Starter Subscription',
-  //   description: '$12/Month subscription',
-  // }).then(product => {
-  //   stripe.prices.create({
-  //     unit_amount: 1200,
-  //     currency: 'usd',
-  //     recurring: {
-  //       interval: 'month',
-  //     },
-  //     product: product.id,
-  //   }).then(price => {
-  //     console.log('Success! Here is your starter subscription product id: ' + product.id);
-  //     console.log('Success! Here is your starter subscription price id: ' + price.id);
-  //   });
-  // });
+    prices = await stripe.prices.list({
+      lookup_keys,
+      expand: ['data.product'],
+      limit: 100,
+    });
+    verbose('original prices:', prices)
+    const found_keys = prices?.data?.map(p => p.lookup_key) || []
+    verbose('found_keys:', found_keys)
 
-  const prices = await stripe.prices.list({
-    lookup_keys: ['sample_basic', 'sample_premium'],
-    expand: ['data.product']
-  });
-  res.send({
-    prices: prices.data,
-  });
+    // Create products and prices
+    //
+    //   https://docs.stripe.com/api/products/create
+    //   https://docs.stripe.com/api/prices/create
+    //
+    if (!found_keys.includes("basic")) {
+      update_prices = true
+      product = await stripe.products.create({
+        name: 'Basic',
+      });
+      verbose('Starter subscription product:', product);
+      verbose('Starter subscription product.id:', product.id);
+      price = await stripe.prices.create({
+        lookup_key: "basic",
+        unit_amount: 699,
+        currency: 'usd',
+        recurring: { interval: 'month', },
+        product: product.id,
+      })
+      verbose('Starter subscription price:', price);
+      verbose('Starter subscription price.id:', price.id);
+    }
+
+    if (!found_keys.includes("premium")) {
+      update_prices = true
+      product = await stripe.products.create({
+        name: 'Premium',
+      });
+      verbose('Starter subscription product:', product);
+      verbose('Starter subscription product.id:', product.id);
+      price = await stripe.prices.create({
+        lookup_key: "premium",
+        unit_amount: 1999,
+        currency: 'usd',
+        recurring: { interval: 'month', },
+        product: product.id,
+      })
+      verbose('Starter subscription price:', price);
+      verbose('Starter subscription price.id:', price.id);
+    }
+
+    if (update_prices) {
+      prices = await stripe.prices.list({
+        lookup_keys,
+        expand: ['data.product'],
+        limit: 100,
+      });
+      verbose('updated prices:', prices)
+    }
+    res.send({
+      prices: prices.data,
+    });
+  } catch (err) {
+    return res.status(500).send({ result: 'error', message: err.message });
+  }
 });
 
 app.get('/', checkAuth, async (req, res) => {
@@ -155,7 +186,7 @@ app.post('/create', checkAuth, async (req, res) => {
       clientSecret: subscription.latest_invoice.payment_intent.client_secret,
     });
   } catch (error) {
-    return res.status(400).send({ result: 'error', message: error.message });
+    return res.status(400).send({ result: 'error', message: err.toString() });
   }
 });
 
@@ -171,7 +202,7 @@ app.post('/cancel', checkAuth, async (req, res) => {
 
     res.send({ canceledSubscription });
   } catch (error) {
-    return res.status(400).send({ result: 'error', message: error.message });
+    return res.status(400).send({ result: 'error', message: err.toString() });
   }
 });
 
@@ -208,7 +239,7 @@ app.post('/invoice/preview', checkAuth, async (req, res) => {
 //     );
 //     res.send({ subscription: updatedSubscription });
 //   } catch (error) {
-//     return res.status(400).send({ error: { message: error.message } });
+//     return res.status(400).send({ error: { message: err.toString() } });
 //   }
 // });
 
