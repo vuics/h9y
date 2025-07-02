@@ -267,6 +267,9 @@ export async function subscriptionsWebhook (req, res) {
     return res.sendStatus(400);
   }
 
+  // Print out the event to the console
+  console.log(`Received webhook event ${event.type} ${event.id}`);
+
   // Extract the object from the event.
   const dataObject = event.data.object;
 
@@ -324,5 +327,90 @@ export async function subscriptionsWebhook (req, res) {
   }
   res.sendStatus(200);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Metered Usage
+
+app.post('/create-customer', async (req, res) => {
+  try {
+    const customer = await stripe.customers.create({
+      name: req.body.name,
+      email: req.body.email,
+    });
+    res.send({ customer });
+  } catch (error) {
+    res.status(400).send({ error: { message: error.message } });
+  }
+});
+
+app.post('/create-meter', async (req, res) => {
+  try {
+    const meter = await stripe.billing.meters.create({
+      display_name: req.body.displayName,
+      event_name: req.body.eventName,
+      default_aggregation: {
+        formula: req.body.aggregationFormula,
+      },
+    });
+    res.send({ meter });
+  } catch (error) {
+    res.status(400).send({ error: { message: error.message } });
+  }
+});
+
+const createMeterEvent = async (req, res) => {
+  try {
+    const meterEvent = await stripe.v2.billing.meterEvents.create({
+      event_name: req.body.eventName,
+      payload: {
+        value: req.body.value + '',
+        stripe_customer_id: req.body.customerId,
+      },
+    });
+    res.send({ meterEvent });
+  } catch (error) {
+    res.status(400).send({ error: { message: error.message } });
+  }
+}
+app.post('/create-meter-event', createMeterEvent);
+// app.post('/api/create-meter-event', createMeterEvent);
+
+app.post('/create-price', async (req, res) => {
+  try {
+    const price = await stripe.prices.create({
+      currency: req.body.currency,
+      unit_amount: req.body.amount,
+      recurring: {
+        interval: 'month',
+        meter: req.body.meterId,
+        usage_type: 'metered',
+      },
+      product_data: {
+        name: req.body.productName,
+      },
+    });
+    res.send({ price });
+  } catch (error) {
+    res.status(400).send({ error: { message: error.message } });
+  }
+});
+
+const createSubscription = async (req, res) => {
+  try {
+    const subscription = await stripe.subscriptions.create({
+      customer: req.body.customerId,
+      items: [{ price: req.body.priceId }],
+      expand: ['pending_setup_intent'],
+    });
+    res.send({ subscription });
+  } catch (error) {
+    res.status(400).send({ error: { message: error.message } });
+  }
+}
+app.post('/create-subscription', createSubscription);
+// app.post('/api/create-subscription', createSubscription);
+
+//
+///////////////////////////////////////////////////////////////////////////////
 
 export default app
