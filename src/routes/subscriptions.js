@@ -47,6 +47,7 @@ app.get('/prices', async (req, res) => {
     prices = await stripe.prices.list({
       lookup_keys,
       expand: ['data.product'],
+      // status: 'active',
       limit: 100,
     });
     verbose('original prices:', prices)
@@ -98,6 +99,7 @@ app.get('/prices', async (req, res) => {
       prices = await stripe.prices.list({
         lookup_keys,
         expand: ['data.product'],
+        // status: 'active',
         limit: 100,
       });
       verbose('updated prices:', prices)
@@ -343,91 +345,9 @@ export async function subscriptionsWebhook (req, res) {
 ///////////////////////////////////////////////////////////////////////////////
 // Metered Usage
 
-// app.post('/create-customer', checkAuth, async (req, res) => {
-//   try {
-//     verbose('/create-customer req.body:', req.body)
-//     const customer = await stripe.customers.create({
-//       name: req.body.name,
-//       email: req.body.email,
-//     });
-//     res.send({ customer });
-//   } catch (err) {
-//     return res.status(400).send({ result: 'error', message: err.toString() });
-//   }
-// });
-
-app.post('/create-meter', checkAuth, async (req, res) => {
-  try {
-    verbose('/create-meter req.body:', req.body)
-    const meters = await stripe.billing.meters.list({
-      status: 'active',
-      limit: 100,
-    });
-    verbose('active meters:', meters)
-
-    let meter = null
-    const displayNames = meters.data.map(m => m.display_name) || []
-    verbose('displayNames:', displayNames)
-
-    if (!displayNames.includes('meter1')) {
-      verbose('Meter does not exist. Creating:', 'meter1')
-      meter = await stripe.billing.meters.create({
-        display_name: 'meter1',
-        event_name: 'event1',
-        default_aggregation: {
-          formula: 'sum',
-          // formula: 'count',
-        },
-      });
-      vebose('created meter:', meter)
-    }
-    res.send({ meter });
-  } catch (err) {
-    return res.status(400).send({ result: 'error', message: err.toString() });
-  }
-});
-
-app.post('/create-price', checkAuth, async (req, res) => {
-  try {
-    verbose('/create-price req.body:', req.body)
-    const lookup_keys = ['payasyougo1']
-
-    let prices = null
-    let price = null
-    // let update_prices = false
-
-    prices = await stripe.prices.list({
-      lookup_keys,
-      expand: ['data.product'],
-      limit: 100,
-    });
-    verbose('original prices:', prices)
-    const found_keys = prices?.data?.map(p => p.lookup_key) || []
-    verbose('found_keys:', found_keys)
-
-    if (!found_keys.includes("payasyougo1")) {
-      // update_prices = true
-      price = await stripe.prices.create({
-        lookup_key: "payasyougo1",
-        unit_amount: 12,
-        currency: 'usd',
-        recurring: {
-          interval: 'month',
-          meter: req.body.meterId,    // FIXME
-          usage_type: 'metered',
-        },
-        product_data: {
-          name: 'PayAsYouGo1',
-        },
-      });
-    } else {
-      price = prices?.data.find(p => p.lookup_key === 'payasyougo1')
-    }
-    res.send({ price });
-  } catch (err) {
-    return res.status(400).send({ result: 'error', message: err.toString() });
-  }
-});
+const meterEventName = 'meter3'
+const priceKey = 'payasyougo3'
+const productName = 'PayAsYouGo3'
 
 app.post('/create-subscription', checkAuth, async (req, res) => {
   try {
@@ -435,78 +355,69 @@ app.post('/create-subscription', checkAuth, async (req, res) => {
 
     await ensureCustomerExists({ req })
 
-    // create-meter
-
+    verbose('create-meter')
     const meters = await stripe.billing.meters.list({
       status: 'active',
       limit: 100,
     });
     verbose('active meters:', meters)
-
     let meter = null
-    const displayNames = meters.data.map(m => m.display_name) || []
-    verbose('displayNames:', displayNames)
-
-    if (!displayNames.includes('meter1')) {
-      verbose('Meter does not exist. Creating:', 'meter1')
+    const eventNames = meters.data.map(m => m.event_name) || []
+    verbose('eventNames:', eventNames)
+    if (eventNames.includes(meterEventName)) {
+      meter = meters?.data.find(m => m.event_name === meterEventName)
+    } else {
+      verbose('Meter does not exist. Creating:', meterEventName)
       meter = await stripe.billing.meters.create({
-        display_name: 'meter1',
-        event_name: 'event1',
+        display_name: meterEventName,
+        event_name: meterEventName,
         default_aggregation: {
           formula: 'sum',
           // formula: 'count',
         },
       });
-      vebose('created meter:', meter)
-    } else {
-      meter = meters?.data.find(m => m.display_name === 'meter1')
     }
+    verbose('meter:', meter)
 
-
-    // create-price
-
-    const lookup_keys = ['payasyougo1']
-
-    let prices = null
+    verbose('create-price')
+    const lookup_keys = [priceKey]
     let price = null
-    // let update_prices = false
-
-    prices = await stripe.prices.list({
+    const prices = await stripe.prices.list({
       lookup_keys,
       expand: ['data.product'],
+      // status: 'active',
       limit: 100,
     });
     verbose('original prices:', prices)
     const found_keys = prices?.data?.map(p => p.lookup_key) || []
     verbose('found_keys:', found_keys)
-
-    if (!found_keys.includes("payasyougo1")) {
-      // update_prices = true
+    if (found_keys.includes(priceKey)) {
+      price = prices?.data.find(p => p.lookup_key === priceKey)
+    } else {
+      verbose('Price does not exist. Creating:', priceKey)
       price = await stripe.prices.create({
-        lookup_key: "payasyougo1",
+        lookup_key: priceKey,
         unit_amount: 12,
         currency: 'usd',
         recurring: {
           interval: 'month',
-          meter: req.body.meterId,    // FIXME
+          meter: meter.id,
           usage_type: 'metered',
         },
         product_data: {
-          name: 'PayAsYouGo1',
+          name: productName,
         },
       });
-    } else {
-      price = prices?.data.find(p => p.lookup_key === 'payasyougo1')
     }
+    verbose('price:', price)
 
-
-    // create-subscription
-
+    verbose('create-subscription')
     const subscription = await stripe.subscriptions.create({
       customer: req.user.stripe.customerId,
       items: [{ price: price.id }],
       expand: ['pending_setup_intent'],
     });
+    verbose('subscription:', subscription)
 
     res.send({ meter, price, subscription });
   } catch (err) {
@@ -517,13 +428,12 @@ app.post('/create-subscription', checkAuth, async (req, res) => {
 app.post('/create-meter-event', checkAuth, async (req, res) => {
   try {
     verbose('/create-meter-event req.body:', req.body)
-
     await ensureCustomerExists({ req })
 
     const meterEvent = await stripe.v2.billing.meterEvents.create({
-      event_name: req.body.eventName, // FIXME
+      event_name: meterEventName,
       payload: {
-        value: req.body.value + '',   // FIXME
+        value: '1',
         stripe_customer_id: req.user.stripe.customerId,
       },
     });
@@ -532,8 +442,5 @@ app.post('/create-meter-event', checkAuth, async (req, res) => {
     return res.status(400).send({ result: 'error', message: err.toString() });
   }
 })
-
-//
-///////////////////////////////////////////////////////////////////////////////
 
 export default app
