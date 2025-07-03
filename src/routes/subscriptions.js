@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 
 import conf from '../conf.js'
 import { checkAuth, checkAPIAuth } from '../middleware/check-auth.js'
-import { Verbose } from '../services.js'
+import { Verbose, error } from '../services.js'
 import Subscription from '../models/subscription.js'
 
 const verbose = Verbose('sd:routes/subscriptions'); verbose('')
@@ -216,6 +216,43 @@ app.post('/cancel', checkAuth, async (req, res) => {
 
     res.send({ canceledSubscription });
   } catch (err) {
+    return res.status(400).send({ result: 'error', message: err.toString() });
+  }
+});
+
+app.post('/promotion', checkAuth, async (req, res) => {
+  try {
+    verbose('promotion req.body:', req.body)
+    const { subscriptionId, promotionCode } = req.body
+    const promos = await stripe.promotionCodes.list({
+      code: promotionCode,
+      active: true,
+      limit: 1,
+    });
+    verbose('promos:', promos)
+    const promotionCodeId = promos.data[0]?.id;
+    if (!promotionCodeId) {
+      throw new Error('Promotion code is not found')
+    }
+    verbose('promotionCodeId:', promotionCodeId)
+
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+      discounts: [ {
+        promotion_code: promotionCodeId
+      }, ],
+    });
+    verbose('promotion updatedSubscription:', updatedSubscription)
+    const invoice = await stripe.invoices.createPreview({
+      customer: req.user.stripe.customerId,
+      subscription: subscriptionId,
+      discounts: [ {
+        promotion_code: promotionCodeId
+      }, ],
+    });
+    verbose('promotion invoice:', invoice)
+    res.send({ updatedSubscription, invoice, });
+  } catch (err) {
+    error('Promotion error:', err)
     return res.status(400).send({ result: 'error', message: err.toString() });
   }
 });
