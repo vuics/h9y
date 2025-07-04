@@ -357,95 +357,21 @@ export async function subscriptionsWebhook (req, res) {
             error('User was not found for the customer:', payment_intent.customer);
           } else {
 
+            // Set user account limits
             const priceKey = subscription?.items?.data[0]?.price?.lookup_key
-            if (priceKey === 'free') {
-              user.limits = {
-                apiAccess: false,
-                maps: 3,
-                deployedAgents: 0,
-                archetypes: [ ],
-                chatProviders: [ ],
-                ragProviders: [ ],
-                ragEmbeddingsProviders: [ ],
-                sttProviders: [],
-                ttsProviders: [],
-                imagegenProviders: [],
-                avatarProviders: [],
-                audioRecordings: false,
-                fileAttachments: false,
-                synthetic: false,
-              }
-            } else if (priceKey === 'basic') {
-              user.limits = {
-                apiAccess: false,
-                maps: 30,
-                deployedAgents: 3,
-                archetypes: [ 'chat-v1.0', 'rag-v1.0', 'storage-v1.0', ],
-                chatProviders: [ 'openai' ],
-                ragProviders: [ 'openai' ],
-                ragEmbeddingsProviders: [ 'openai' ],
-                sttProviders: [],
-                ttsProviders: [],
-                imagegenProviders: [],
-                avatarProviders: [],
-                audioRecordings: false,
-                fileAttachments: false,
-                synthetic: false,
-              }
-            } else if (priceKey === 'premium') {
-              user.limits = {
-                apiAccess: true,
-                maps: 30,
-                deployedAgents: 3,
-                archetypes: [
-                  'chat-v1.0', 'rag-v1.0', 'storage-v1.0',
-                  'stt-v1.0', 'tts-v1.0', 'imagegen-v1.0',
-                ],
-                chatProviders: [ 'openai', 'google_genai' ],
-                ragProviders: [ 'openai', 'google_genai' ],
-                ragEmbeddingsProviders: [ 'openai', 'google_genai' ],
-                sttProviders: [ 'speaches' ],
-                ttsProviders: [ 'speaches' ],
-                imagegenProviders: [ 'openai' ],
-                avatarProviders: [ ],
-                audioRecordings: false,
-                fileAttachments: false,
-                synthetic: false,
-              }
-            } else if (priceKey === 'enterprise') {
-              user.limits = {
-                apiAccess: true,
-                maps: null,
-                deployedAgents: null,
-                archetypes: null,
-                chatProviders: null,
-                ragProviders: null,
-                ragEmbeddingsProviders: null,
-                sttProviders: null,
-                ttsProviders: null,
-                imagegenProviders: null,
-                avatarProviders: null,
-                audioRecordings: true,
-                fileAttachments: true,
-                synthetic: true,
-              }
+            if (priceKey && conf.plans[priceKey]) {
+              user.limits = conf.plans[priceKey].limits;
             } else {
-              error('Unknown price lookup_key:', priceKey)
+              console.error('Unknown price lookup_key:', priceKey);
+              user.limits = conf.plans.free.limits;
             }
-
             await user.save();
 
             // const price = await stripe.prices.retrieve(subscription.plan.id)
             // console.log('price:', price)
-
             // const product = await stripe.products.retrieve(subscription.plan.product)
             // console.log('product:', product)
-
           }
-
-          // payment_intent.customer: 'cus_SbHdPzot08iHdY',
-          // subscription.customer: 'cus_SbHdPzot08iHdY',
-
         } catch (err) {
           error('Webhook invoice.payment_succeeded error:', err);
           error(`⚠️  Failed to update the default payment method for subscription: ${subscription_id}`);

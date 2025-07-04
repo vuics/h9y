@@ -150,6 +150,119 @@ const conf = {
     // endpointSecret: process.env.STRIPE_ENDPOINT_SECRET || '<STRIPE_ENDPOINT_SECRET_PLACEHOLDER>',
   },
 
+  plans: {
+    free: {
+      // createPrice: false,
+
+      limits: {
+        apiAccess: false,
+        maps: 3,
+        deployedAgents: 0,
+        archetypes: [ ],
+        chatProviders: [ ],
+        ragProviders: [ ],
+        ragEmbeddingsProviders: [ ],
+        sttProviders: [],
+        ttsProviders: [],
+        imagegenProviders: [],
+        avatarProviders: [],
+        audioRecordings: false,
+        fileAttachments: false,
+        synthetic: false,
+      },
+    },
+    basic: {
+      // createPrice: true,
+
+      // TODO: create product/price/meters
+      //
+      // product: {
+      //   name: 'Basic',
+      // },
+      // prices: [{
+      //   lookup_key: "basic",
+      //   unit_amount: 699,
+      //   currency: 'usd',
+      //   recurring: { interval: 'month', },
+      // }, {
+      //   lookup_key: 'payasyougo3',
+      //   unit_amount: 12,
+      //   currency: 'usd',
+      //   recurring: {
+      //     interval: 'month',
+      //     usage_type: 'metered',
+      //
+      //     // meter: meter.id,
+      //     meter: {
+      //       display_name: 'Meter3',
+      //       event_name: 'meter3',
+      //       default_aggregation: { formula: 'sum', },
+      //     },
+      //   },
+      // }],
+
+      limits: {
+        apiAccess: false,
+        maps: 30,
+        deployedAgents: 3,
+        archetypes: [ 'chat-v1.0', 'rag-v1.0', 'storage-v1.0', ],
+        chatProviders: [ 'openai' ],
+        ragProviders: [ 'openai' ],
+        ragEmbeddingsProviders: [ 'openai' ],
+        sttProviders: [],
+        ttsProviders: [],
+        imagegenProviders: [],
+        avatarProviders: [],
+        audioRecordings: false,
+        fileAttachments: false,
+        synthetic: false,
+      },
+    },
+    premium: {
+      // createPrice: true,
+
+      limits: {
+        apiAccess: true,
+        maps: 100,
+        deployedAgents: 10,
+        archetypes: [
+          'chat-v1.0', 'rag-v1.0', 'storage-v1.0',
+          'stt-v1.0', 'tts-v1.0', 'imagegen-v1.0',
+        ],
+        chatProviders: [ 'openai', 'google_genai' ],
+        ragProviders: [ 'openai', 'google_genai' ],
+        ragEmbeddingsProviders: [ 'openai', 'google_genai' ],
+        sttProviders: [ 'speaches' ],
+        ttsProviders: [ 'speaches' ],
+        imagegenProviders: [ 'openai' ],
+        avatarProviders: [ ],
+        audioRecordings: true,
+        fileAttachments: true,
+        synthetic: false,
+      },
+    },
+    enterprise: {
+      // createPrice: false,
+
+      limits: {
+        apiAccess: true,
+        maps: null,
+        deployedAgents: null,
+        archetypes: null,
+        chatProviders: null,
+        ragProviders: null,
+        ragEmbeddingsProviders: null,
+        sttProviders: null,
+        ttsProviders: null,
+        imagegenProviders: null,
+        avatarProviders: null,
+        audioRecordings: true,
+        fileAttachments: true,
+        synthetic: true,
+      },
+    },
+  },
+
   xmpp: {
     host: process.env.XMPP_HOST || 'localhost',
     commanderUrl: process.env.XMPP_COMMANDER_URL || 'http://localhost:8387',
