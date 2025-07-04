@@ -25,6 +25,7 @@ const schema = mongoose.Schema({
   },
 
   limits: {
+    maps: Number,
     deployedAgents: Number,
     archetypes: [String],
 
@@ -40,7 +41,6 @@ const schema = mongoose.Schema({
 
     // TODO: add limits for:
     //
-    // maps: Number,
     //
     // audioRecordings: Boolean,
     // fileAttachments: Boolean,

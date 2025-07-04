@@ -103,20 +103,6 @@ const getResources = (app) => {
   }
 
   if (conf.resource.agent) {
-    // resources.agent = resourceJS(app, '/v1', 'agent', Agent).rest({
-    //   before: (req, res, next) => {
-    //     checkLoginOrBearer(req, res, (err) => {
-    //       if (err) {
-    //         return next(err)
-    //       }
-
-    //       req.body.userId = req.user._id
-    //       req.modelQuery = Agent.where('userId', req.user._id)
-    //       next()
-    //     })
-    //   }
-    // })
-
     resources.agent = resourceJS(app, '/v1', 'agent', Agent).rest({
       before: (req, res, next) => {
         checkLoginOrBearer(req, res, async (err) => {
@@ -232,17 +218,34 @@ const getResources = (app) => {
   if (conf.resource.map) {
     resources.map = resourceJS(app, '/v1', 'map', Map).rest({
       before: (req, res, next) => {
-        checkLoginOrBearer(req, res, (err) => {
-          if (err) {
-            return next(err)
-          }
+        checkLoginOrBearer(req, res, async (err) => {
+          if (err) return next(err);
 
-          req.body.userId = req.user._id
-          req.modelQuery = Map.where('userId', req.user._id)
-          next()
-        })
+          req.body.userId = req.user._id;
+          req.modelQuery = Map.where('userId', req.user._id);
+
+          verbose('req.user.limits:', req.user.limits)
+          verbose('req.user.limits.maps:', req.user.limits.maps)
+          try {
+            if (req.method === 'POST') {
+              if (req.user?.limits?.maps != null) {
+                const currentCount = await Map.countDocuments({ userId: req.user._id });
+                verbose(`Maps limit: ${currentCount} / ${req.user.limits.maps}`)
+                if (currentCount >= req.user.limits.maps) {
+                  return res.status(403).json({
+                    result: 'error',
+                    message: `You cannot create more maps. Map limit reached: ${currentCount} / ${req.user.limits.maps}`,
+                  });
+                }
+              }
+            }
+            next();
+          } catch (error) {
+            next(error);
+          }
+        });
       }
-    })
+    });
   }
 
   return resources
