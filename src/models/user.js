@@ -24,6 +24,20 @@ const schema = mongoose.Schema({
     customerId: String,
   },
 
+  limits: {
+    deployedAgents: Number,
+
+    // TODO:
+    // agentArchetypes: [String],
+    // modelProviders: [String],
+    // models: [String],
+    // maps: Number,
+    // audioRecordings: Boolean,
+    // fileAttachments: Boolean,
+    // apiAccess: Boolean,
+    // syntheticUi: Boolean,
+  },
+
   rememberMe: {
     token: String,
   },

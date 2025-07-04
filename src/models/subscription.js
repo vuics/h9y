@@ -5,6 +5,8 @@ const verbose = Verbose('sd:models/subscription'); verbose('')
 
 const { ObjectId, Mixed } = mongoose.Schema.Types
 
+// TODO: deprecate?
+//
 export default mongoose.model(
   'Subscription',
   mongoose.Schema({

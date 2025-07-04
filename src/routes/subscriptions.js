@@ -4,7 +4,9 @@ import Stripe from 'stripe'
 import conf from '../conf.js'
 import { checkAuth, checkAPIAuth } from '../middleware/check-auth.js'
 import { Verbose, error } from '../services.js'
-import Subscription from '../models/subscription.js'
+
+// TODO: deprecate?
+// import Subscription from '../models/subscription.js'
 
 const verbose = Verbose('sd:routes/subscriptions'); verbose('')
 const app = Router()

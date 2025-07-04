@@ -103,15 +103,56 @@ const getResources = (app) => {
   }
 
   if (conf.resource.agent) {
+    // resources.agent = resourceJS(app, '/v1', 'agent', Agent).rest({
+    //   before: (req, res, next) => {
+    //     checkLoginOrBearer(req, res, (err) => {
+    //       if (err) {
+    //         return next(err)
+    //       }
+
+    //       req.body.userId = req.user._id
+    //       req.modelQuery = Agent.where('userId', req.user._id)
+    //       next()
+    //     })
+    //   }
+    // })
+
     resources.agent = resourceJS(app, '/v1', 'agent', Agent).rest({
       before: (req, res, next) => {
-        checkLoginOrBearer(req, res, (err) => {
+        checkLoginOrBearer(req, res, async (err) => {
           if (err) {
             return next(err)
           }
-
           req.body.userId = req.user._id
           req.modelQuery = Agent.where('userId', req.user._id)
+
+          try {
+            if (req.user?.limits?.deployedAgents != null) {
+              // Check if user is creating or updating with deployed:true
+              const wantsToDeploy = req.body.deployed === true;
+              if (wantsToDeploy) {
+                // Count already deployed agents of this user
+                const deployedCount = await Agent.countDocuments({ userId: req.user._id, deployed: true });
+                // If this is an update, exclude this agent from the count
+                if (req.method === 'PUT' || req.method === 'PATCH') {
+                  const agentId = req.params.id;
+                  const currentAgent = await Agent.findById(agentId);
+                  if (currentAgent && currentAgent.deployed === true) {
+                    // The agent is already deployed, so no need to increase count
+                    // So deployedCount includes this one, no need to check limit
+                    return next();
+                  }
+                }
+
+                if (deployedCount >= req.user.limits.deployedAgents) {
+                  return res.status(403).json({ result: 'error', message: 'Deployed agents limit reached' });
+                }
+              }
+            }
+          } catch (err) {
+            next(err);
+          }
+
           next()
         })
       }
