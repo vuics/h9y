@@ -1,8 +1,11 @@
 import { Router } from 'express'
 import passport from 'passport'
 import lodash from 'lodash'
-const { has } = lodash
-import { Verbose } from '../services.js'
+const { has, isEmpty } = lodash
+
+import { Verbose, error } from '../services.js'
+import conf from '../conf.js'
+import { updateUserLimits } from './subscriptions.js'
 
 const verbose = Verbose('sd:routes/login'); verbose('')
 const router = Router()
@@ -34,26 +37,31 @@ router.post('/', rememberMe, (req, res, next) => {
       })
     }
 
-    req.login(user, err => {
+    req.login(user, async (err) => {
       if (err) {
         return next(err)
       }
+      try {
+        await updateUserLimits({ user })
 
-      res.json({
-        result: 'ok',
-        message: 'Logged in',
-        user: {
-          _id: user._id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phone: user.phone,
-          roles: user.roles,
-          limits: user.limits,
-        }
-      })
-
-      verbose(`User ${req.user.email} logged in at ${Date.now()}. UserId: ${req.user._id}`)
+        res.json({
+          result: 'ok',
+          message: 'Logged in',
+          user: {
+            _id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            phone: user.phone,
+            roles: user.roles,
+            limits: user.limits,
+          }
+        })
+        verbose(`User ${req.user.email} logged in at ${Date.now()}. UserId: ${req.user._id}`)
+      } catch (err) {
+        error('Error logging in:', err)
+        return next(err)
+      }
     })
   })(req, res, next)
 })

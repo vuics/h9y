@@ -276,27 +276,6 @@ app.post('/invoice/preview', checkAuth, async (req, res) => {
   res.send({ invoice });
 });
 
-// TODO: do we need this code?
-//
-// app.post('/update-subscription', checkAuth, async (req, res) => {
-//   try {
-//     const subscription = await stripe.subscriptions.retrieve(
-//       req.body.subscriptionId
-//     );
-//     const updatedSubscription = await stripe.subscriptions.update(
-//       req.body.subscriptionId, {
-//         items: [{
-//           id: subscription.items.data[0].id,
-//           price: process.env[req.body.newPriceLookupKey.toUpperCase()],
-//         }],
-//       }
-//     );
-//     res.send({ subscription: updatedSubscription });
-//   } catch (err) {
-//     return res.status(400).send({ result: 'error', message: err.toString() });
-//   }
-// });
-
 // Use webhook:
 //   https://hyag.org/v1/subscriptions/webhook
 //
@@ -366,6 +345,9 @@ export async function subscriptionsWebhook (req, res) {
               user.limits = conf.plans.free.limits;
             }
             await user.save();
+
+            // TODO:
+            // await updateUserLimits({ user })
 
             // const price = await stripe.prices.retrieve(subscription.plan.id)
             // console.log('price:', price)
@@ -507,5 +489,22 @@ app.post('/metered/meter', checkAuth, async (req, res) => {
     return res.status(400).send({ result: 'error', message: err.toString() });
   }
 })
+
+export async function updateUserLimits ({ user }) {
+  try {
+    // TODO: check if the user subscribed to any plans
+
+    // verbose('updateUserLimits user.limits (before):', user.limits)
+    if (!user.stripe?.customerId) {
+      // verbose('updateUserLimits plans.free.limits:', conf.plans.free.limits)
+      user.limits = conf.plans.free.limits;
+      await user.save()
+    }
+    // verbose('updateUserLimits user.limits (after):', user.limits)
+  } catch (err) {
+    error('Error updating user limits:', err)
+    throw err
+  }
+}
 
 export default app

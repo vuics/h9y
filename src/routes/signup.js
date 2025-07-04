@@ -6,6 +6,7 @@ import User from '../models/user.js'
 import { validateEmail, validatePhone, validatePassword } from '../utils/validation.js'
 import { transporter } from '../mailer.js'
 import conf from '../conf.js'
+import { updateUserLimits } from './subscriptions.js'
 
 const verbose = Verbose('sd:routes/signup'); verbose('')
 const router = Router()
@@ -64,7 +65,8 @@ app.post('/', async (req, res, next) => {
       phone,
       roles: ['user']
     })
-    // console.log('User created:', user.toObject())
+    console.log('User created:', user.email)
+    await updateUserLimits({ user })
   } catch (err) {
     return res.status(500).json({
       result: 'error',
