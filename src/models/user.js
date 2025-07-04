@@ -26,10 +26,16 @@ const schema = mongoose.Schema({
 
   limits: {
     deployedAgents: Number,
+    archetypes: [String],
 
-    // TODO:
-    // agentArchetypes: [String],
-    // modelProviders: [String],
+    chatProviders: [String],
+    ragProviders: [String],
+    ragEmbeddingsProviders: [String],
+    sttProviders: [String],
+    ttsProviders: [String],
+    imagegenProviders: [String],
+    avatarProviders: [String],
+
     // models: [String],
     // maps: Number,
     // audioRecordings: Boolean,

@@ -127,28 +127,98 @@ const getResources = (app) => {
           req.modelQuery = Agent.where('userId', req.user._id)
 
           try {
-            if (req.user?.limits?.deployedAgents != null) {
-              // Check if user is creating or updating with deployed:true
-              const wantsToDeploy = req.body.deployed === true;
-              if (wantsToDeploy) {
-                // Count already deployed agents of this user
-                const deployedCount = await Agent.countDocuments({ userId: req.user._id, deployed: true });
-                // If this is an update, exclude this agent from the count
-                if (req.method === 'PUT' || req.method === 'PATCH') {
-                  const agentId = req.params.id;
-                  const currentAgent = await Agent.findById(agentId);
-                  if (currentAgent && currentAgent.deployed === true) {
-                    // The agent is already deployed, so no need to increase count
-                    // So deployedCount includes this one, no need to check limit
-                    return next();
-                  }
-                }
-
-                if (deployedCount >= req.user.limits.deployedAgents) {
-                  return res.status(403).json({ result: 'error', message: 'Deployed agents limit reached' });
+            // Check if user is creating or updating with deployed:true
+            const wantsToDeploy = req.body.deployed === true;
+            if (wantsToDeploy) {
+              // Count already deployed agents of this user
+              const deployedCount = await Agent.countDocuments({ userId: req.user._id, deployed: true });
+              // If this is an update, exclude this agent from the count
+              if (req.method === 'PUT' || req.method === 'PATCH') {
+                const agentId = req.params.id;
+                const currentAgent = await Agent.findById(agentId);
+                if (currentAgent && currentAgent.deployed === true) {
+                  // The agent is already deployed, so no need to increase count
+                  // So deployedCount includes this one, no need to check limit
+                  return next();
                 }
               }
+
+              if (req.user?.limits?.deployedAgents != null &&
+                  deployedCount >= req.user.limits.deployedAgents) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: 'Deployed agents limit reached'
+                });
+              }
+
+              if (req.user?.limits?.archetypes != null &&
+                  !req.user?.limits?.archetypes.includes(req.body.archetype)) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: `You are not allowed to deploy agents of the archetype: ${req.body.archetype}`,
+                });
+              }
+
+              verbose('req.user.limits:', req.user.limits)
+              verbose('req.body.options:', req.body.options)
+              if (req.user?.limits?.chatProviders != null &&
+                req.body.options?.chat?.model?.provider != null &&
+                !req.user?.limits?.chatProviders.includes(req.body.options.chat.model.provider)) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: `You are not allowed to deploy chat agents with model provider: ${req.body.options.chat.model.provider}`,
+                });
+              }
+              if (req.user?.limits?.ragProviders != null &&
+                  req.body.options?.rag?.model?.provider != null &&
+                  !req.user?.limits?.ragProviders.includes(req.body.options.rag.model.provider)) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: `You are not allowed to deploy rag agents with model provider: ${req.body.options.rag.model.provider}`,
+                });
+              }
+              if (req.user?.limits?.ragEmbeddingsProviders != null &&
+                  req.body.options?.rag?.embeddings?.provider != null &&
+                  !req.user?.limits?.ragEmbeddingsProviders.includes(req.body.options.rag.embeddings.provider)) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: `You are not allowed to deploy rag agents with embeddings provider: ${req.body.options.rag.embeddings.provider}`,
+                });
+              }
+              if (req.user?.limits?.sttProviders != null &&
+                  req.body.options?.stt?.model?.provider != null &&
+                  !req.user?.limits?.sttProviders.includes(req.body.options.stt.model.provider)) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: `You are not allowed to deploy stt agents with model provider: ${req.body.options.stt.model.provider}`,
+                });
+              }
+              if (req.user?.limits?.ttsProviders != null &&
+                  req.body.options?.tts?.model?.provider != null &&
+                  !req.user?.limits?.ttsProviders.includes(req.body.options.tts.model.provider)) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: `You are not allowed to deploy tts agents with model provider: ${req.body.options.tts.model.provider}`,
+                });
+              }
+              if (req.user?.limits?.imagegenProviders != null &&
+                  req.body.options?.imagegen?.model?.provider != null &&
+                  !req.user?.limits?.imagegenProviders.includes(req.body.options.imagegen.model.provider)) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: `You are not allowed to deploy imagegen agents with model provider: ${req.body.options.imagegen.model.provider}`,
+                });
+              }
+              if (req.user?.limits?.avatarProviders != null &&
+                  req.body.options?.avatar?.model?.provider != null &&
+                  !req.user?.limits?.avatarProviders.includes(req.body.options.avatar.model.provider)) {
+                return res.status(403).json({
+                  result: 'error',
+                  message: `You are not allowed to deploy avatar agents with model provider: ${req.body.options.avatar.model.provider}`,
+                });
+              }
             }
+
           } catch (err) {
             next(err);
           }
