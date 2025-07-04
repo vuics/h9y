@@ -118,8 +118,10 @@ app.get('/', checkAuth, async (req, res) => {
   if (req.user.stripe.customerId) {
     subscriptions = await stripe.subscriptions.list({
       customer: req.user.stripe.customerId,
-      status: 'all',
+      // status: 'all',
+      status: 'active',
       expand: ['data.default_payment_method'],
+      limit: 100,
     });
   }
   res.json({ subscriptions });
@@ -309,6 +311,7 @@ export async function subscriptionsWebhook (req, res) {
   // https://stripe.com/docs/billing/webhooks
   // Remove comment to see the various objects sent for this sample
   switch (event.type) {
+
     case 'invoice.payment_succeeded':
       verbose('invoice.payment_succeeded dataObject:', dataObject)
       if(dataObject['billing_reason'] == 'subscription_create') {
@@ -342,19 +345,22 @@ export async function subscriptionsWebhook (req, res) {
           error(`⚠️  Failed to update the default payment method for subscription: ${subscription_id}`);
         }
       };
-
       break;
+
     case 'invoice.payment_failed':
       // If the payment fails or the customer does not have a valid payment method,
       //  an invoice.payment_failed event is sent, the subscription becomes past_due.
       // Use this webhook to notify your user that their payment has
       // failed and to retrieve new card details.
       break;
+
     case 'invoice.finalized':
       // If you want to manually send out invoices to your customers
       // or store them locally to reference to avoid hitting Stripe rate limits.
       break;
+
     case 'customer.subscription.deleted':
+      verbose('customer.subscription.deleted dataObject:', dataObject)
       if (event.request != null) {
         // handle a subscription cancelled by your request
         // from above.
@@ -362,10 +368,19 @@ export async function subscriptionsWebhook (req, res) {
         // handle subscription cancelled automatically based
         // upon your subscription settings.
       }
+
+      const user = await User.findOne({ 'stripe.customerId': dataObject.customer });
+      if (!user) {
+        error('User was not found for the customer:', dataObject.customer);
+      } else {
+        await updateUserLimits({ user })
+      }
       break;
+
     case 'customer.subscription.trial_will_end':
       // Send notification to your user that the trial will end
       break;
+
     default:
       console.log(`Unhandled event type ${event.type}.`)
   }
