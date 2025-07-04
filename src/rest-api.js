@@ -21,6 +21,7 @@ const verbose = Verbose('sd:api/index'); verbose('')
 const getResources = (app) => {
   const resources = {}
 
+  // NOTE: Normally it should be disabled in conf for security reasons
   if (conf.resource.user) {
     resources.user = resourceJS(app, '/v1', 'user', User).rest({
       before: (req, res, next) => {
@@ -39,6 +40,8 @@ const getResources = (app) => {
             // delete user.config
             delete user.password
             delete user.rememberMe
+            delete user.xmpp
+            delete user.stripe
           }
 
           if (isArray(res.resource.item)) {

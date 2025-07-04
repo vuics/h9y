@@ -49,6 +49,7 @@ router.post('/', rememberMe, (req, res, next) => {
           lastName: user.lastName,
           phone: user.phone,
           roles: user.roles,
+          limits: user.limits,
         }
       })
 

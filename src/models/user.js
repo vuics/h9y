@@ -39,14 +39,13 @@ const schema = mongoose.Schema({
 
     apiAccess: Boolean,
 
+    audioRecordings: Boolean,
+    fileAttachments: Boolean,
+
     // TODO: add limits for:
     //
-    //
-    // audioRecordings: Boolean,
-    // fileAttachments: Boolean,
-    // syntheticUi: Boolean,
-    //
     // models: [String],
+    // syntheticUi: Boolean,
   },
 
   rememberMe: {
