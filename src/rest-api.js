@@ -119,7 +119,7 @@ const getResources = (app) => {
               // Count already deployed agents of this user
               const deployedCount = await Agent.countDocuments({ userId: req.user._id, deployed: true });
               // If this is an update, exclude this agent from the count
-              if (req.method === 'PUT' || req.method === 'PATCH') {
+              if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
                 const agentId = req.params.id;
                 const currentAgent = await Agent.findById(agentId);
                 if (currentAgent && currentAgent.deployed === true) {
