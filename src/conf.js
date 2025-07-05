@@ -152,8 +152,6 @@ const conf = {
 
   plans: {
     free: {
-      // createPrice: false,
-
       limits: {
         apiAccess: false,
         maps: 3,
@@ -172,34 +170,30 @@ const conf = {
       },
     },
     basic: {
-      // createPrice: true,
+       product: {
+         name: 'Basic',
+       },
+       prices: [{
+         lookup_key: "basic",
+         unit_amount: 699,
+         currency: 'usd',
+         recurring: { interval: 'month', },
+       }, {
+         lookup_key: 'payasyougo3',
+         unit_amount: 12,
+         currency: 'usd',
+         recurring: {
+           interval: 'month',
+           usage_type: 'metered',
 
-      // TODO: create product/price/meters
-      //
-      // product: {
-      //   name: 'Basic',
-      // },
-      // prices: [{
-      //   lookup_key: "basic",
-      //   unit_amount: 699,
-      //   currency: 'usd',
-      //   recurring: { interval: 'month', },
-      // }, {
-      //   lookup_key: 'payasyougo3',
-      //   unit_amount: 12,
-      //   currency: 'usd',
-      //   recurring: {
-      //     interval: 'month',
-      //     usage_type: 'metered',
-      //
-      //     // meter: meter.id,
-      //     meter: {
-      //       display_name: 'Meter3',
-      //       event_name: 'meter3',
-      //       default_aggregation: { formula: 'sum', },
-      //     },
-      //   },
-      // }],
+           // meter: meter.id,
+           meter: {
+             display_name: 'Meter3',
+             event_name: 'meter3',
+             default_aggregation: { formula: 'sum', },
+           },
+         },
+       }],
 
       limits: {
         apiAccess: false,
@@ -219,8 +213,6 @@ const conf = {
       },
     },
     premium: {
-      // createPrice: true,
-
       limits: {
         apiAccess: true,
         maps: 100,
@@ -242,8 +234,6 @@ const conf = {
       },
     },
     enterprise: {
-      // createPrice: false,
-
       limits: {
         apiAccess: true,
         maps: null,
@@ -261,6 +251,50 @@ const conf = {
         synthetic: true,
       },
     },
+
+    //test1: {
+    //  // NOTE: it tests creating product/price/meters
+    //  //
+    //   product: {
+    //     name: 'Test1',
+    //   },
+    //   prices: [{
+    //     lookup_key: "test1",
+    //     unit_amount: 3999,
+    //     currency: 'usd',
+    //     recurring: { interval: 'month', },
+    //   }, {
+    //     lookup_key: 'test1-payasyougo',
+    //     unit_amount: 12,
+    //     currency: 'usd',
+    //     recurring: {
+    //       interval: 'month',
+    //       usage_type: 'metered',
+    //       // meter: meter.id,
+    //       meter: {
+    //         display_name: 'Test1-meter',
+    //         event_name: 'test1-meter',
+    //         default_aggregation: { formula: 'sum', },
+    //       },
+    //     },
+    //   }],
+    //  limits: {
+    //    apiAccess: false,
+    //    maps: 30,
+    //    deployedAgents: 3,
+    //    archetypes: [ 'chat-v1.0', 'rag-v1.0', 'storage-v1.0', ],
+    //    chatProviders: [ 'openai' ],
+    //    ragProviders: [ 'openai' ],
+    //    ragEmbeddingsProviders: [ 'openai' ],
+    //    sttProviders: [],
+    //    ttsProviders: [],
+    //    imagegenProviders: [],
+    //    avatarProviders: [],
+    //    audioRecordings: false,
+    //    fileAttachments: false,
+    //    synthetic: false,
+    //  },
+    //},
   },
 
   xmpp: {

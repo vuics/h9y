@@ -1,6 +1,8 @@
 import { Router, raw } from 'express'
 import Stripe from 'stripe'
 import { inspect } from 'util'
+import lodash from 'lodash'
+const { isEmpty } = lodash
 
 import conf from '../conf.js'
 import { checkAuth, checkAPIAuth } from '../middleware/check-auth.js'
@@ -38,12 +40,14 @@ app.get('/config', async (req, res) => {
 
 app.get('/prices', async (req, res) => {
   try {
-    const lookup_keys = ['basic', 'premium']
+    // const lookup_keys = ['basic', 'premium']
+    const lookup_keys = Object.keys(conf.plans)
+    verbose('prices lookup_keys:', lookup_keys)
 
     let prices = null
-    let product = null
-    let price = null
     let update_prices = false
+    // let product = null
+    // let price = null
 
     prices = await stripe.prices.list({
       lookup_keys,
@@ -60,41 +64,73 @@ app.get('/prices', async (req, res) => {
     //   https://docs.stripe.com/api/products/create
     //   https://docs.stripe.com/api/prices/create
     //
-    if (!found_keys.includes("basic")) {
-      update_prices = true
-      product = await stripe.products.create({
-        name: 'Basic',
-      });
-      verbose('Starter subscription product:', product);
-      verbose('Starter subscription product.id:', product.id);
-      price = await stripe.prices.create({
-        lookup_key: "basic",
-        unit_amount: 699,
-        currency: 'usd',
-        recurring: { interval: 'month', },
-        product: product.id,
-      })
-      verbose('Starter subscription price:', price);
-      verbose('Starter subscription price.id:', price.id);
+    for (const lookupKey of lookup_keys) {
+      verbose('process lookupKey:', lookupKey)
+      if (!found_keys.includes(lookupKey) && !isEmpty(conf.plans[lookupKey]?.product)) {
+        verbose(`Lookup key ${lookupKey} is not found. Creating.`);
+        update_prices = true
+        const product = await stripe.products.create(
+          conf.plans[lookupKey].product
+        );
+        verbose('Create subscription product:', product);
+        // verbose('Create subscription product.id:', product.id);
+        for (const priceObj of conf.plans[lookupKey].prices) {
+          const { meter: extractedMeter, ...recurringWithoutMeter } = priceObj.recurring || {};
+          let meter = null
+          if (!isEmpty(extractedMeter)) {
+            meter = await stripe.billing.meters.create(extractedMeter);
+            verbose('Create subscription meter:', meter);
+          }
+          const { recurring, ...priceRest } = priceObj;
+          const price = await stripe.prices.create({
+            ...priceRest,
+            recurring: {
+              meter: meter?.id || undefined,
+              ...recurringWithoutMeter
+            },
+            product: product.id,
+          })
+          verbose('Create subscription price:', price);
+          // verbose('Create subscription price.id:', price.id);
+        }
+      }
     }
 
-    if (!found_keys.includes("premium")) {
-      update_prices = true
-      product = await stripe.products.create({
-        name: 'Premium',
-      });
-      verbose('Starter subscription product:', product);
-      verbose('Starter subscription product.id:', product.id);
-      price = await stripe.prices.create({
-        lookup_key: "premium",
-        unit_amount: 1999,
-        currency: 'usd',
-        recurring: { interval: 'month', },
-        product: product.id,
-      })
-      verbose('Starter subscription price:', price);
-      verbose('Starter subscription price.id:', price.id);
-    }
+    // if (!found_keys.includes("basic")) {
+    //   update_prices = true
+    //   product = await stripe.products.create({
+    //     name: 'Basic',
+    //   });
+    //   verbose('Starter subscription product:', product);
+    //   verbose('Starter subscription product.id:', product.id);
+    //   price = await stripe.prices.create({
+    //     lookup_key: "basic",
+    //     unit_amount: 699,
+    //     currency: 'usd',
+    //     recurring: { interval: 'month', },
+    //     product: product.id,
+    //   })
+    //   verbose('Starter subscription price:', price);
+    //   verbose('Starter subscription price.id:', price.id);
+    // }
+
+    // if (!found_keys.includes("premium")) {
+    //   update_prices = true
+    //   product = await stripe.products.create({
+    //     name: 'Premium',
+    //   });
+    //   verbose('Starter subscription product:', product);
+    //   verbose('Starter subscription product.id:', product.id);
+    //   price = await stripe.prices.create({
+    //     lookup_key: "premium",
+    //     unit_amount: 1999,
+    //     currency: 'usd',
+    //     recurring: { interval: 'month', },
+    //     product: product.id,
+    //   })
+    //   verbose('Starter subscription price:', price);
+    //   verbose('Starter subscription price.id:', price.id);
+    // }
 
     if (update_prices) {
       prices = await stripe.prices.list({
