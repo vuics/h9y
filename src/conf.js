@@ -252,49 +252,103 @@ const conf = {
       },
     },
 
-    //test1: {
-    //  // NOTE: it tests creating product/price/meters
-    //  //
-    //  product: {
-    //    name: 'Test1',
-    //  },
-    //  prices: [{
-    //    lookup_key: "test1",
-    //    unit_amount: 3999,
-    //    currency: 'usd',
-    //    recurring: { interval: 'month', },
-    //  }, {
-    //    lookup_key: 'test1-payasyougo',
-    //    unit_amount: 12,
-    //    currency: 'usd',
-    //    recurring: {
-    //      interval: 'month',
-    //      usage_type: 'metered',
-    //      // meter: meter.id,
-    //      meter: {
-    //        display_name: 'Test1-meter',
-    //        event_name: 'test1-meter',
-    //        default_aggregation: { formula: 'sum', },
-    //      },
-    //    },
-    //  }],
-    //  limits: {
-    //    apiAccess: false,
-    //    maps: 2,
-    //    deployedAgents: 1,
-    //    archetypes: [ 'chat-v1.0' ],
-    //    chatProviders: [ 'openai' ],
-    //    ragProviders: [ 'openai' ],
-    //    ragEmbeddingsProviders: [ 'openai' ],
-    //    sttProviders: [],
-    //    ttsProviders: [],
-    //    imagegenProviders: [],
-    //    avatarProviders: [],
-    //    audioRecordings: false,
-    //    fileAttachments: false,
-    //    synthetic: false,
-    //  },
-    //},
+    // NOTE: this is for the test of creating product/price/meters
+    //
+    /*
+    test1: {
+      product: {
+        name: 'Test1',
+      },
+      prices: [{
+        lookup_key: "test1",
+        unit_amount: 3999,
+        currency: 'usd',
+        recurring: { interval: 'month', },
+      }, {
+        lookup_key: 'test1-payasyougo',
+        unit_amount: 12,
+        currency: 'usd',
+        recurring: {
+          interval: 'month',
+          usage_type: 'metered',
+          meter: {   // NOTE: the subobject will be replaced with meter: meter.id,
+            display_name: 'Test1-meter',
+            event_name: 'test1-meter',
+            default_aggregation: { formula: 'sum', },
+          },
+        },
+      }],
+      limits: {
+        apiAccess: false,
+        maps: 2,
+        deployedAgents: 1,
+        archetypes: [ 'chat-v1.0' ],
+        chatProviders: [ 'openai' ],
+        ragProviders: [ 'openai' ],
+        ragEmbeddingsProviders: [ 'openai' ],
+        sttProviders: [],
+        ttsProviders: [],
+        imagegenProviders: [],
+        avatarProviders: [],
+        audioRecordings: false,
+        fileAttachments: false,
+        synthetic: false,
+      },
+    },
+    test2: {
+      product: {
+        name: 'Test2',
+      },
+      prices: [{
+        lookup_key: "test2",
+        unit_amount: 6999,
+        currency: 'usd',
+        recurring: { interval: 'month', },
+      }, {
+        lookup_key: 'test2-payasyougo',
+        unit_amount: 12,
+        currency: 'usd',
+        recurring: {
+          interval: 'month',
+          usage_type: 'metered',
+          meter: {   // NOTE: the subobject will be replaced with meter: meter.id,
+            display_name: 'Test1-meter',
+            event_name: 'test1-meter',
+            default_aggregation: { formula: 'sum', },
+          },
+        },
+      }, {
+        lookup_key: 'test2-payasyougo1',
+        unit_amount: 23,
+        currency: 'usd',
+        recurring: {
+          interval: 'month',
+          usage_type: 'metered',
+          meter: {   // NOTE: the subobject will be replaced with meter: meter.id,
+            display_name: 'Test2-meter1',
+            event_name: 'test2-meter1',
+            default_aggregation: { formula: 'sum', },
+          },
+        },
+      }],
+      limits: {
+        apiAccess: false,
+        maps: 69,
+        deployedAgents: 99,
+        archetypes: [ 'chat-v1.0', 'rag-v1.0' ],
+        chatProviders: [ 'google_genai' ],
+        ragProviders: [ 'google_genai' ],
+        ragEmbeddingsProviders: [ 'google_genai' ],
+        sttProviders: [],
+        ttsProviders: [],
+        imagegenProviders: [],
+        avatarProviders: [],
+        audioRecordings: true,
+        fileAttachments: true,
+        synthetic: true,
+      },
+    },
+    */
   },
 
   xmpp: {

@@ -40,29 +40,26 @@ app.get('/config', async (req, res) => {
 
 app.get('/prices', async (req, res) => {
   try {
-    // const lookup_keys = ['basic', 'premium']
     const lookup_keys = Object.keys(conf.plans)
     verbose('prices lookup_keys:', lookup_keys)
 
     let prices = null
     let update_prices = false
-    // let product = null
-    // let price = null
 
     prices = await stripe.prices.list({
       lookup_keys,
       expand: ['data.product'],
-      // status: 'active',
+      active: true,
       limit: 100,
     });
     verbose('original prices:', prices)
     const found_keys = prices?.data?.map(p => p.lookup_key) || []
     verbose('found_keys:', found_keys)
 
-    // Create products and prices
-    //
+    // Create products, prices, meters:
     //   https://docs.stripe.com/api/products/create
     //   https://docs.stripe.com/api/prices/create
+    //   https://docs.stripe.com/api/billing/meter
     //
     for (const lookupKey of lookup_keys) {
       verbose('process lookupKey:', lookupKey)
@@ -73,13 +70,27 @@ app.get('/prices', async (req, res) => {
           conf.plans[lookupKey].product
         );
         verbose('Create subscription product:', product);
-        // verbose('Create subscription product.id:', product.id);
         for (const priceObj of conf.plans[lookupKey].prices) {
           const { meter: extractedMeter, ...recurringWithoutMeter } = priceObj.recurring || {};
           let meter = null
           if (!isEmpty(extractedMeter)) {
-            meter = await stripe.billing.meters.create(extractedMeter);
-            verbose('Create subscription meter:', meter);
+            verbose('create-meter')
+            const meters = await stripe.billing.meters.list({
+              status: 'active',
+              limit: 100,
+            });
+            verbose('active meters:', meters)
+
+            const eventNames = meters.data.map(m => m.event_name) || []
+            verbose('eventNames:', eventNames)
+            if (eventNames.includes(extractedMeter.event_name)) {
+              meter = meters?.data.find(m => m.event_name === extractedMeter.event_name)
+            } else {
+              verbose(`Meter ${extractedMeter.event_name} does not exist, creating.`)
+              meter = await stripe.billing.meters.create(extractedMeter);
+              verbose('Created a meter:', meter);
+            }
+            verbose('meter:', meter)
           }
           const { recurring, ...priceRest } = priceObj;
           const price = await stripe.prices.create({
@@ -91,52 +102,15 @@ app.get('/prices', async (req, res) => {
             product: product.id,
           })
           verbose('Create subscription price:', price);
-          // verbose('Create subscription price.id:', price.id);
         }
       }
     }
-
-    // if (!found_keys.includes("basic")) {
-    //   update_prices = true
-    //   product = await stripe.products.create({
-    //     name: 'Basic',
-    //   });
-    //   verbose('Starter subscription product:', product);
-    //   verbose('Starter subscription product.id:', product.id);
-    //   price = await stripe.prices.create({
-    //     lookup_key: "basic",
-    //     unit_amount: 699,
-    //     currency: 'usd',
-    //     recurring: { interval: 'month', },
-    //     product: product.id,
-    //   })
-    //   verbose('Starter subscription price:', price);
-    //   verbose('Starter subscription price.id:', price.id);
-    // }
-
-    // if (!found_keys.includes("premium")) {
-    //   update_prices = true
-    //   product = await stripe.products.create({
-    //     name: 'Premium',
-    //   });
-    //   verbose('Starter subscription product:', product);
-    //   verbose('Starter subscription product.id:', product.id);
-    //   price = await stripe.prices.create({
-    //     lookup_key: "premium",
-    //     unit_amount: 1999,
-    //     currency: 'usd',
-    //     recurring: { interval: 'month', },
-    //     product: product.id,
-    //   })
-    //   verbose('Starter subscription price:', price);
-    //   verbose('Starter subscription price.id:', price.id);
-    // }
 
     if (update_prices) {
       prices = await stripe.prices.list({
         lookup_keys,
         expand: ['data.product'],
-        // status: 'active',
+        active: true,
         limit: 100,
       });
       verbose('updated prices:', prices)
@@ -314,7 +288,7 @@ app.post('/invoice/preview', checkAuth, async (req, res) => {
   res.send({ invoice });
 });
 
-// Use webhook:
+// Set webhook to :
 //   https://hyag.org/v1/subscriptions/webhook
 //
 export async function subscriptionsWebhook (req, res) {
