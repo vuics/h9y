@@ -255,34 +255,34 @@ const conf = {
     //test1: {
     //  // NOTE: it tests creating product/price/meters
     //  //
-    //   product: {
-    //     name: 'Test1',
-    //   },
-    //   prices: [{
-    //     lookup_key: "test1",
-    //     unit_amount: 3999,
-    //     currency: 'usd',
-    //     recurring: { interval: 'month', },
-    //   }, {
-    //     lookup_key: 'test1-payasyougo',
-    //     unit_amount: 12,
-    //     currency: 'usd',
-    //     recurring: {
-    //       interval: 'month',
-    //       usage_type: 'metered',
-    //       // meter: meter.id,
-    //       meter: {
-    //         display_name: 'Test1-meter',
-    //         event_name: 'test1-meter',
-    //         default_aggregation: { formula: 'sum', },
-    //       },
-    //     },
-    //   }],
+    //  product: {
+    //    name: 'Test1',
+    //  },
+    //  prices: [{
+    //    lookup_key: "test1",
+    //    unit_amount: 3999,
+    //    currency: 'usd',
+    //    recurring: { interval: 'month', },
+    //  }, {
+    //    lookup_key: 'test1-payasyougo',
+    //    unit_amount: 12,
+    //    currency: 'usd',
+    //    recurring: {
+    //      interval: 'month',
+    //      usage_type: 'metered',
+    //      // meter: meter.id,
+    //      meter: {
+    //        display_name: 'Test1-meter',
+    //        event_name: 'test1-meter',
+    //        default_aggregation: { formula: 'sum', },
+    //      },
+    //    },
+    //  }],
     //  limits: {
     //    apiAccess: false,
-    //    maps: 30,
-    //    deployedAgents: 3,
-    //    archetypes: [ 'chat-v1.0', 'rag-v1.0', 'storage-v1.0', ],
+    //    maps: 2,
+    //    deployedAgents: 1,
+    //    archetypes: [ 'chat-v1.0' ],
     //    chatProviders: [ 'openai' ],
     //    ragProviders: [ 'openai' ],
     //    ragEmbeddingsProviders: [ 'openai' ],
