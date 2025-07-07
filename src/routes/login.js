@@ -55,6 +55,7 @@ router.post('/', rememberMe, (req, res, next) => {
             phone: user.phone,
             roles: user.roles,
             limits: user.limits,
+            settings: user.settings,
           }
         })
         verbose(`User ${req.user.email} logged in at ${Date.now()}. UserId: ${req.user._id}`)
@@ -78,6 +79,7 @@ router.get('/status', (req, res) => {
       phone: req.user.phone,
       roles: req.user.roles,
       // limits: req.user.limits,
+      // settings: req.user.settings,
     }
   })
 })

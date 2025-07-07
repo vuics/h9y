@@ -16,6 +16,10 @@ const schema = mongoose.Schema({
   phone: { type: String, required: false },
   roles: [String], // 'user'
 
+  settings: {
+    language: String,
+  },
+
   xmpp: {
     user: String,
     password: String,
