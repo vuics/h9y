@@ -74,4 +74,32 @@ router.post('/', checkAuth, async (req, res) => {
   }
 })
 
+router.get('/avatar', checkAuth, async (req, res) => {
+  try {
+    res.json({ avatar: req.user.avatar });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch avatar' });
+  }
+});
+
+router.post('/avatar', checkAuth, async (req, res) => {
+  try {
+    const { avatar } = req.body;
+    verbose('avatar:', avatar.slice(0, 80), '...')
+
+    // Validate the base64 image
+    if (!avatar || !avatar.startsWith('data:image')) {
+      return res.status(400).json({ error: 'Invalid image data' });
+    }
+
+    req.user.avatar = avatar
+    await req.user.save()
+
+    verbose('req.user.avatar:', req.user.avatar?.slice(0, 80), '...')
+    res.json({ avatar: req.user.avatar });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save avatar' });
+  }
+});
+
 export default router
