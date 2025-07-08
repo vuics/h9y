@@ -216,34 +216,39 @@ app.post('/create', checkAuth, async (req, res) => {
   verbose('create subscription body:', req.body)
 
   try {
-    const { priceId } = req.body;
-    verbose('priceId:', priceId)
+    const { plan } = req.body;
+    verbose('plan:', plan)
 
     await updateCustomer({ req })
 
+    verbose('plan prices:', conf.plans[plan]?.prices)
+    const lookup_keys = conf.plans[plan]?.prices?.map(p => p.lookup_key)
+    verbose('lookup_keys:', lookup_keys)
+    const prices = await stripe.prices.list({
+      lookup_keys,
+      active: true,
+      limit: 100,
+    });
+    verbose('got prices:', prices)
+    const items = prices.data.map(pd => ({ price: pd.id }))
+    verbose('items:', items)
+
     const subscription = await stripe.subscriptions.create({
       customer: req.user.stripe.customerId,
-      items: [{
-        // TODO: make it with multiple prices
-        price: priceId,
-      }],
+      items,
       payment_behavior: 'default_incomplete',
       expand: ['latest_invoice.payment_intent'],
+      automatic_tax: { enabled: true },
+
+      metadata: {
+        plan,
+      },
 
       // TODO: trial period:
       //   https://docs.stripe.com/billing/subscriptions/trials
       //   https://docs.stripe.com/api/subscriptions/create#create_subscription-trial_period_days
       //
       // trial_period_days: 7,
-      // // trial_end: timestamp,
-
-      // TODO: do we need to automate the tax collection?
-      //
-      // Enabling gives an error:
-      // >  The customer's location isn't recognized.
-      // >  Set a valid customer address in order to automatically calculate tax.
-      //
-      automatic_tax: { enabled: true },
     });
     verbose('subscription:', subscription)
 
