@@ -28,7 +28,7 @@ const stripe = Stripe(conf.stripe.secretKey, {
   }
 })
 
-app.post('/admin-init', checkAuth, checkAdmin, async (req, res) => {
+app.get('/admin-init', checkAuth, checkAdmin, async (req, res) => {
   try {
     const products = await stripe.products.list({
       active: true,
