@@ -115,7 +115,9 @@ const conf = {
     "description": "HyperAgency API provides a RESTful interface for managing and automating resources in the HyperAgency platform, including agents, execution maps, and other operational components. This API allows developers, integrators, and DevOps engineers to programmatically create, retrieve, update, and delete resources over HTTPS using standard tools such as curl or through client libraries in languages like Node.js, Python, and others. The API follows common REST conventions and supports JSON-encoded request and response bodies. All endpoints are versioned under v1 prefix and secured via HTTPS. Resources are organized by type (e.g., agent, map), and standard HTTP methods (GET, POST, PUT, DELETE) are used to perform operations.",
     "version": "1.0.0",
     "contact": {
-      "name": "admin@vuics.com"
+      "name": "API Support",
+      "url": "https://hyag.org/",
+      "email": "admin@vuics.com"
     }
   },
   "license": {
