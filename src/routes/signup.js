@@ -14,7 +14,7 @@ const router = Router()
 const app = router
 app.post('/', async (req, res, next) => {
   // verbose('signup req.body:', req.body)
-  const { email, password, firstName, lastName, phone } = req.body
+  const { email, password, firstName, lastName, phone, country, language } = req.body
 
   let validationError = ''
   if (isEmpty(firstName)) {
@@ -31,6 +31,12 @@ app.post('/', async (req, res, next) => {
   }
   if (!(validatePassword(password)).valid) {
     validationError += 'Invalid password. '
+  }
+  if (isEmpty(country)) {
+    validationError += 'Invalid country code. '
+  }
+  if (isEmpty(language)) {
+    validationError += 'Invalid language code. '
   }
   if (validationError) {
     return res.status(400).json({
@@ -63,7 +69,13 @@ app.post('/', async (req, res, next) => {
       firstName,
       lastName,
       phone,
-      roles: ['user']
+      roles: ['user'],
+      address: {
+        country,
+      },
+      settings: {
+        language,
+      },
     })
     console.log('User created:', user.email)
     await updateUserLimits({ user })
@@ -83,27 +95,30 @@ app.post('/', async (req, res, next) => {
   const mail = await transporter.sendMail({
     from: conf.smtp.from,
     to: user.email,
-    subject: 'Welcome to SelfDev!',
-    text: `
-Hi ${user.firstName},
+    subject: 'Welcome to HyperAgency — Your Agentic AI Platform',
 
-Welcome to Self-developing AI platform!
+    // TODO: translate to different languages
+    text: `Hi ${user.firstName},
 
-We are excited to have you on board. The Self-developing AI is designed for automating everything.
+Welcome to HyperAgency — the self-developing, agentic AI platform designed to help you automate everything, evolve faster, and focus on what truly matters.
 
-With Self-developing AI, you can:
-- Get answers on any questions about self-developing AI.
-- Program self-developing AI in plain language.
-- Run virtual agents.
-- And much more.
+With HyperAgency, you can:
+- Build and run **agentic AI systems** that evolve your product, business, or infrastructure.
+- Program agents using **plain language prompts**, no coding required.
+- Deploy agents that improve themselves or automate your daily workflows.
+- Connect to any APIs, UI, databases, etc.
+- Take control of your stack with **autonomous orchestration**.
+- Export, control, and document agent behavior human-in-the-loop supervision.
 
-To get started, please check out the web app:
+Start now:
 ${conf.webApp.origin}
 
-Feel free to contact us if you have any questions. Please, tell us how to develop our app to satisfy your needs. We hope you enjoy the Self-developing AI.
+Need help? Have ideas? Reply to this email — we’d love to hear how HyperAgency can better serve your vision.
 
-All the best,
-The SelfDev Team
+Thank you for joining the future of self-developing systems.
+
+Let’s build something extraordinary,
+The HyperAgency Team
 `
   })
   log('Mail sent:', mail)

@@ -14,6 +14,7 @@ const schema = mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   phone: { type: String, required: false },
+
   roles: [String], // 'user'
   avatar: String,
 
