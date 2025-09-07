@@ -5,6 +5,7 @@ MAINTAINER Artem Arakcheev <artarakcheev@gmail.com>
 ARG PROSODY_PACKAGE=prosody-0.12
 ARG LUA_PACKAGE=lua5.4
 ARG BUILD_ID=
+ARG ARCH=amd64
 
 # Install dependencies
 RUN apt-get update \
@@ -44,7 +45,8 @@ COPY prosody.cfg.lua /etc/prosody/
 
 # RUN prosodyctl register art selfdev-prosody.dev.local 123
 
-RUN wget -O shell2http.tar.gz https://github.com/msoap/shell2http/releases/download/v1.17.0/shell2http_1.17.0_linux_amd64.tar.gz && \
+# RUN echo ARCH=${ARCH}
+RUN wget -O shell2http.tar.gz https://github.com/msoap/shell2http/releases/download/v1.17.0/shell2http_1.17.0_linux_${ARCH}.tar.gz && \
     tar -xf shell2http.tar.gz -C /usr/local/bin/ && \
     rm shell2http.tar.gz
 COPY commander.sh .
