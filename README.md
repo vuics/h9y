@@ -17,7 +17,7 @@ You can open the web ui at: [http://localhost:8372](http://localhost:8372).
 
 ## Download Models
 
-The script [./run.sh](./run.sh) can download models upon container start.
+The script [./download.sh](./download.sh) can download models upon container start.
 
 You can also download models manually:
 
