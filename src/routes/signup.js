@@ -17,7 +17,8 @@ const app = router
 app.post('/', async (req, res, next) => {
   // verbose('signup req.body:', req.body)
   const {
-    email, password, firstName, lastName, phone, country, language, marketing,
+    email, password, firstName, lastName, phone, country, language,
+    termsConsent, privacyConsent, marketingConsent,
   } = req.body
 
   let validationError = ''
@@ -65,6 +66,11 @@ app.post('/', async (req, res, next) => {
     })
   }
 
+  const ip  = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  console.log('User IP:', ip);
+  const timestamp = new Date().toISOString();
+  console.log('Timestamp:', timestamp);
+
   let user = null
   try {
     user = await User.create({
@@ -79,7 +85,13 @@ app.post('/', async (req, res, next) => {
       },
       settings: {
         language,
-        marketing,
+        marketingConsent,
+      },
+      consent: {
+        termsConsent,
+        privacyConsent,
+        ip,
+        timestamp,
       },
     })
     console.log('User created:', user.email)

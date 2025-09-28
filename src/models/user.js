@@ -29,7 +29,14 @@ const schema = mongoose.Schema({
 
   settings: {
     language: String,
-    marketing: Boolean,
+    marketingConsent: Boolean,
+  },
+
+  consent: {
+    termsConsent: Boolean,
+    privacyConsent: Boolean,
+    ip: String,
+    timestamp: String,
   },
 
   xmpp: {
