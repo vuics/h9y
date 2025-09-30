@@ -184,6 +184,11 @@ const conf = {
     // endpointSecret: process.env.STRIPE_ENDPOINT_SECRET || '<STRIPE_ENDPOINT_SECRET_PLACEHOLDER>',
   },
 
+  yookassa: {
+    shopId: process.env.YOOKASSA_SHOP_ID || '1176045',
+    apiKey: process.env.YOOKASSA_API_KEY || 'test_gZS1fVS1mN7WM4VSUoEX3azBA4SlJbBoKjgpPtgcXCw',
+  },
+
   limits: {
     enable: bool(process.env.LIMITS_ENABLE || true),
   },

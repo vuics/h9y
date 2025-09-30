@@ -14,6 +14,7 @@ import land from './land.js'
 import interest from './interest.js'
 import available from './available.js'
 import subscriptions from './subscriptions.js'
+import autopayments from './autopayments.js'
 import xmpp from './xmpp.js'
 import vault from './vault.js'
 import profile from './profile.js'
@@ -36,6 +37,7 @@ router.use('/v1/land', land)
 router.use('/v1/interest', interest)
 router.use('/v1/available', available)
 router.use('/v1/subscriptions', subscriptions)
+router.use('/v1/autopayments', autopayments)
 router.use('/v1/xmpp', xmpp)
 router.use('/v1/vault', vault)
 router.use('/v1/profile', profile)
