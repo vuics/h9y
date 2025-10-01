@@ -58,7 +58,10 @@ const schema = mongoose.Schema({
     createdAt: Date,
     periodStart: Date,
     periodEnd: Date,
+    // status: String,
     active: Boolean,
+    canceled: Boolean,
+    canceledAt: Date,
   },
 
   limits: {

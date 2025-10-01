@@ -7,7 +7,7 @@ const { isEmpty, has } = lodash
 
 import conf from '../conf.js'
 import { checkAuth, checkAPIAuth, checkAdmin } from '../middleware/check-auth.js'
-import { Verbose, error } from '../services.js'
+import { Verbose, warn, error } from '../services.js'
 import User from '../models/user.js'
 import { addInterval } from '../utils/datetime.js'
 
@@ -59,9 +59,15 @@ async function usePaymentMethod(paymentMethodId) {
 
 app.get('/', checkAuth, async (req, res) => {
   try {
-    res.json({ });
+    const {
+      plan, createdAt, periodStart, periodEnd, active, canceled, canceledAt
+    } = req.user.yookassa
+    verbose('yookassa includes:', plan, createdAt, periodStart, periodEnd, active, canceled, canceledAt)
+    res.json({
+      plan, createdAt, periodStart, periodEnd, active, canceled, canceledAt
+    });
   } catch (err) {
-    error('Error ensuring customer exists:', err)
+    error('Error getting subscription:', err)
     throw err
   }
 });
@@ -113,7 +119,7 @@ app.post('/subscribe', checkAuth, async (req, res) => {
       confirmationToken: response.data.confirmation.confirmation_token,
     });
   } catch (err) {
-    error('Error ensuring customer exists:', err.response?.data || err.message || err)
+    error('Error subscribing:', err.response?.data || err.message || err)
     throw err
   }
 });
@@ -138,15 +144,11 @@ app.post('/check', checkAuth, async (req, res) => {
     }
 
     const planObj = conf.plans[req.user.yookassa.pending.plan]
-    const status = response.data.status
-    if (status === 'succeeded') {
+    if (response.data.status === 'succeeded') {
       verbose('payment succeeded')
       req.user.yookassa.plan = req.user.yookassa.pending.plan
       req.user.yookassa.paymentIds.push(paymentId)
-      req.user.yookassa.pending = undefined
-      req.user.yookassa.paymentMethodIds = [...new Set( // deduplicates
-        [...req.user.yookassa.paymentMethodIds, response.data.payment_method.id]
-      )];
+      req.user.yookassa.paymentMethodIds.push(response.data.payment_method.id)
       req.user.yookassa.createdAt = response.data.captured_at
       req.user.yookassa.periodStart = response.data.captured_at
       req.user.yookassa.periodEnd = addInterval(
@@ -155,23 +157,49 @@ app.post('/check', checkAuth, async (req, res) => {
         1
       )
       req.user.yookassa.active = true
+      req.user.yookassa.canceled = false
+      req.user.yookassa.canceledAt = undefined
     } else {
-      // TODO: what if payment is still pending, or canceled, etc.?
+      warn('payment id:', paymentId, 'has status:', response.data.status)
     }
+    req.user.yookassa.pending = undefined
     await req.user.save();
     verbose('Updated yookassa data in user document:', req.user);
 
+    const {
+      plan, createdAt, periodStart, periodEnd, active, canceled, canceledAt
+    } = req.user.yookassa
+    verbose('yookassa includes:', plan, createdAt, periodStart, periodEnd, active, canceled)
     res.json({
-      status,
-      // paymentId: response.data.id,
-      // confirmationToken: response.data.confirmation.confirmation_token,
+      plan, createdAt, periodStart, periodEnd, active, canceled, canceledAt
     });
   } catch (err) {
-    error('Error ensuring customer exists:', err.response?.data || err.message || err)
-    throw err
+    error('Error checking payment:', err.response?.data || err.message || err)
+    res.json({
+      err,
+    });
   }
 });
 
+app.delete('/cancel', checkAuth, async (req, res) => {
+  try {
+    req.user.yookassa.canceled = true
+    req.user.yookassa.canceledAt = new Date()
+    await req.user.save();
+    verbose('Updated yookassa data in user document:', req.user);
+
+    const {
+      plan, createdAt, periodStart, periodEnd, active, canceled, canceledAt
+    } = req.user.yookassa
+    verbose('yookassa includes:', plan, createdAt, periodStart, periodEnd, active, canceled)
+    res.json({
+      plan, createdAt, periodStart, periodEnd, active, canceled, canceledAt
+    });
+  } catch (err) {
+    error('Error canceling subscription:', err)
+    throw err
+  }
+});
 
 // Set webhook to :
 //   https://api.hyag.org/v1/subscriptions/webhook
