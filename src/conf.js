@@ -185,8 +185,8 @@ const conf = {
   },
 
   yookassa: {
-    shopId: process.env.YOOKASSA_SHOP_ID || '1176045',
-    apiKey: process.env.YOOKASSA_API_KEY || 'test_gZS1fVS1mN7WM4VSUoEX3azBA4SlJbBoKjgpPtgcXCw',
+    shopId: process.env.YOOKASSA_SHOP_ID || '(TBS)',
+    apiKey: process.env.YOOKASSA_API_KEY || '(TBS)',
   },
 
   limits: {

@@ -17,7 +17,8 @@ const app = Router()
 const authString = `${conf.yookassa.shopId}:${conf.yookassa.apiKey}`
 const auth = Buffer.from(authString).toString("base64")
 
-// FIXME: DRY
+// FIXME: DRY, it came from subscriptions.js
+//
 // function getCustomerIpAddress ({ req }) {
 //   const forwarded = req.headers['x-forwarded-for'];
 //   const ip = forwarded ? forwarded.split(',')[0] : req.connection.remoteAddress;
