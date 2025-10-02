@@ -90,6 +90,7 @@ async function renewSubscription({ plan, paymentMethodId }) {
       status: response.data.status,
       paid: response.data.paid,
       paymentId: response.data.id,
+      confirmationUrl: response.data.confirmation?.confirmation_url,
     }
   } catch (err) {
     error('Error renewing subscription:', err.response?.data || err.message);
@@ -99,13 +100,14 @@ async function renewSubscription({ plan, paymentMethodId }) {
 async function handleExpiredSubscription({ user }) {
   try {
     const paymentMethodId = user.yookassa.paymentMethodIds.at(-1)
-    const { status, paid, paymentId } = await renewSubscription({
+    const { status, paid, paymentId, confirmationUrl } = await renewSubscription({
       plan: user.yookassa.plan,
       paymentMethodId,
     })
     user.yookassa.pending = {
       plan: user.yookassa.plan,
       paymentId,
+      confirmationUrl,
     }
     // if (status === 'succeeded') {
     //   verbose('payment succeeded')
@@ -151,7 +153,7 @@ async function handleExpiredSubscription({ user }) {
 async function handlePendingSubscription({ user }) {
   try {
     const { paymentId } = user.yookassa.pending
-    verbose('handlePendingSubscription paymentId:', paymentId)
+    verbose('handlePendingSubscription for user:', user._id, user.email, ', paymentId:', paymentId)
     const response = await axios.get(`https://api.yookassa.ru/v3/payments/${paymentId}`, {
       headers: {
         "Authorization": `Basic ${auth}`,
@@ -166,8 +168,6 @@ async function handlePendingSubscription({ user }) {
       verbose('payment succeeded')
       user.yookassa.plan = user.yookassa.pending.plan
       user.yookassa.paymentIds.push(paymentId)
-      // user.yookassa.paymentMethodIds.push(response.data.payment_method.id)
-      // user.yookassa.createdAt = response.data.captured_at
       user.yookassa.periodStart = user.yookassa.periodEnd
       user.yookassa.periodEnd = addInterval(
         new Date(user.yookassa.periodStart),
@@ -182,13 +182,12 @@ async function handlePendingSubscription({ user }) {
       verbose('Updated yookassa data in user document:', user);
     } else if (response.data.status === 'pending') {
       verbose('payment is still pending')
-    } else {
+    } else {                         // e.g., response.data.stat === 'canceled'
       warn('payment id:', paymentId, 'has status:', response.data.status)
       user.yookassa.active = false
       user.yookassa.canceled = true
       user.yookassa.canceledAt = now
-      // user.yookassa.cancelationReason = 'payment failed after pending'
-      user.yookassa.cancelationReason = 'payment failed'
+      user.yookassa.cancelationReason = response.data.cancelation_details?.reason || 'payment failed'
       user.yookassa.pending = undefined
       await user.save();
       verbose('Updated yookassa data in user document:', user);

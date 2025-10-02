@@ -25,39 +25,6 @@ const auth = Buffer.from(authString).toString("base64")
 //   return ip
 // }
 
-// async function usePaymentMethod(paymentMethodId) {
-//   try {
-//     const response = await axios.post(
-//       "https://api.yookassa.ru/v3/payments",
-//       {
-//         amount: {
-//           value: "2.00",
-//           currency: "RUB",
-//         },
-//         capture: true,
-//         payment_method_id: paymentMethodId,
-//         description: "Заказ №37",
-//       },
-//       {
-//         headers: {
-//           "Authorization": `Basic ${auth}`,
-//           "Idempotence-Key": uuidv4(),
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-//     verbose(response.data);
-//   } catch (err) {
-//     error(err.response?.data || err.message);
-//   }
-// }
-
-// // Example usage:
-// usePaymentMethod("306dfbd7-000f-5001-8000-1454d25433c1");
-
-// // Example usage:
-// getPayment("306dfbd7-000f-5001-8000-1454d25433c1");
-
 app.get('/', checkAuth, async (req, res) => {
   try {
     const {
@@ -95,7 +62,8 @@ app.post('/subscribe', checkAuth, async (req, res) => {
         currency: planObj.pricesRu.currency,
       },
       confirmation: {
-        "type": "embedded"
+        type: conf.yookassa.confirmationRedirect ? "redirect" : "embedded",
+        return_url: conf.yookassa.confirmationRedirect ? `${conf.webApp.origin}/subscribe?paymentId=0` : undefined, // where the user comes back after 3DS
       },
       capture: true,
       save_payment_method: true,
@@ -111,13 +79,17 @@ app.post('/subscribe', checkAuth, async (req, res) => {
     req.user.yookassa.pending = {
       plan,
       paymentId: response.data.id,
+      confirmationUrl: response.data.confirmation.confirmation_url,
     }
     await req.user.save();
     verbose('Saved yookassa data to user document:', req.user);
 
     res.json({
       paymentId: response.data.id,
+
+      // FIXME: which one to choose?
       confirmationToken: response.data.confirmation.confirmation_token,
+      confirmationUrl: response.data.confirmation.confirmation_url,
     });
   } catch (err) {
     error('Error subscribing:', err.response?.data || err.message || err)
@@ -130,7 +102,17 @@ app.post('/check', checkAuth, async (req, res) => {
     verbose('check')
     // verbose('authString:', authString)
     // verbose('auth:', auth)
-    const { paymentId } = req.body
+
+    // const { paymentId } = req.body
+    // if (req.body.paymentId === '0') {
+    // } else if (paymentId !== req.user.yookassa.pending?.paymentId) {
+    //   throw new Error(`Current paymentId: ${paymentId} !== pending paymentId: ${req.user.yookassa.pending?.paymentId}`)
+    // }
+
+    const { paymentId } = req.user.yookassa.pending
+    if (!paymentId) {
+      throw new Error(`User does not have pending paymentId, pending: ${req.user.yookassa.pending}`)
+    }
     const response = await axios.get(`https://api.yookassa.ru/v3/payments/${paymentId}`, {
       headers: {
         "Authorization": `Basic ${auth}`,
@@ -139,10 +121,6 @@ app.post('/check', checkAuth, async (req, res) => {
       },
     });
     verbose('confirm response.data:', response.data);
-
-    if (paymentId !== req.user.yookassa.pending?.paymentId) {
-      throw new Error(`Current paymentId: ${paymentId} !== pending paymentId: ${req.user.yookassa.pending?.paymentId}`)
-    }
 
     const planObj = conf.plans[req.user.yookassa.pending.plan]
     if (response.data.status === 'succeeded') {

@@ -187,6 +187,11 @@ const conf = {
   yookassa: {
     shopId: process.env.YOOKASSA_SHOP_ID || '(TBS)',
     apiKey: process.env.YOOKASSA_API_KEY || '(TBS)',
+
+    // false -> type: "embedded"
+    // true -> type: "redirect"
+    // confirmationRedirect: bool(process.env.YOOKASSA_CONFIRMATION_REDIRECT || false),
+    confirmationRedirect: bool(process.env.YOOKASSA_CONFIRMATION_REDIRECT || true),
   },
 
   limits: {

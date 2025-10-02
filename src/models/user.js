@@ -50,6 +50,7 @@ const schema = mongoose.Schema({
     pending: {
       plan: String,
       paymentId: String,
+      confirmationUrl: String,
     },
 
     plan: String,
