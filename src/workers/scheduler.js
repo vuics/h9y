@@ -31,9 +31,9 @@ import autopayment from './autopayment.js'
 //   autopayment()
 // });
 // Every 1 minutes (0, 5, 10, 15, ... 55)
-cron.schedule("*/1 * * * *", () => {
+cron.schedule("*/1 * * * *", async () => {
   log(`[${new Date().toISOString()}] Every 1 minute log message`);
-  autopayment()
+  await autopayment()
 });
 
 // // Every hour

@@ -29,6 +29,17 @@ Let’s build something extraordinary,
 The HyperAgency Team
 `
         },
+        autopaymentConfirmation: {
+          subject: 'Please confirm autopayment',
+          text: `Hi {{userName}},
+
+Please, confirm autopayment for subscription with the link:
+{{link}}
+
+Thanks,
+The HyperAgency Team
+`
+        },
       },
     },
   },
@@ -60,6 +71,17 @@ The HyperAgency Team
 Команда HyperAgency
 `
         },
+        autopaymentConfirmation: {
+          subject: "Пожалуйста, подтвердите автоплатеж",
+          text: `Здравствуйте, {{userName}},
+
+Пожалуйста, подтвердите автоплатеж для продления подписки по ссылке:
+{{link}}
+
+Благодарим,
+Команда HyperAgency
+        `
+        }
       },
     },
   },

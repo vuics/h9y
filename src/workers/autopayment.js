@@ -1,12 +1,14 @@
 import { inspect } from 'util'
 import axios from 'axios'
 import { v4 as uuidv4 } from 'uuid'
+import { transporter } from '../mailer.js'
 import lodash from 'lodash'
 const { isEmpty, has } = lodash
 
 import { log, warn, error, Verbose } from '../services.js'
 import conf, { revealConf } from '../conf.js'
 import { addInterval } from '../utils/datetime.js'
+import { userI18n } from '../i18n.js'
 
 // Connect to MongoDB through Mongoose driver
 import '../mongo.js'
@@ -109,6 +111,26 @@ async function handleExpiredSubscription({ user }) {
       paymentId,
       confirmationUrl,
     }
+
+    if (confirmationUrl) {
+      verbose('Sending autopayment confirmation mail to:', user.email)
+      const { t } = userI18n({ user })
+      const subject = t('email.autopaymentConfirmation.subject', { userName: user.firstName });
+      const text = t('email.autopaymentConfirmation.text', {
+        userName: user.firstName,
+        link: confirmationUrl,
+      });
+      verbose('subject:', subject)
+      verbose('text:', text)
+      const mail = await transporter.sendMail({
+        from: conf.smtp.from,
+        to: user.email,
+        subject,
+        text,
+      })
+      log('Autopayment confirmation mail sent:', mail)
+    }
+
     // if (status === 'succeeded') {
     //   verbose('payment succeeded')
     //   // user.yookassa.plan = user.yookassa.pending.plan
@@ -138,10 +160,6 @@ async function handleExpiredSubscription({ user }) {
     //   user.yookassa.canceledAt = now
     //   user.yookassa.cancelationReason = 'payment failed'
     //   user.yookassa.pending = undefined
-
-    //   // TODO: Send an email to the user
-    //   // "We tried to charge your payment method and the payment did not go through"
-    //   // Please, login and update your payment method.
     // }
     await user.save();
     verbose('Updated yookassa data in user document:', user);
@@ -208,6 +226,7 @@ export default async function autopayment() {
     for (const user of users) {
       log('Checking subscription for user _id:', user._id, ', email:', user.email)
       const now = new Date();
+      verbose('now:', now.toISOString(), 'periodEnd:', user.yookassa.periodEnd.toISOString());
       if (user.yookassa.periodEnd <= now) {
         log(`The user ${user._id} period ended at ${user.yookassa.periodEnd}, time to renew expired subscription with autopayment`);
         await handleExpiredSubscription({ user })
@@ -232,4 +251,13 @@ export default async function autopayment() {
     error('Error checking pending autopayments:', err)
   }
   log('Stop checking pending autopayments')
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  (async () => {
+    console.log('The module was executed as main file');
+    await autopayment();
+    console.log("Job done. Exiting.");
+    process.exit(0);
+  })();
 }
