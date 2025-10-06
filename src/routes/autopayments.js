@@ -19,7 +19,7 @@ const authString = `${conf.yookassa.shopId}:${conf.yookassa.apiKey}`
 const auth = Buffer.from(authString).toString("base64")
 
 export const checkYookassa = (req, res, next) => {
-  if (conf.stripe.enable) {
+  if (conf.yookassa.enable) {
     next()
   } else {
     res.status(403).json({

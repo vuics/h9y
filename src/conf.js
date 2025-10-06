@@ -153,9 +153,9 @@ const conf = {
   vault: {
     enable: bool(process.env.VAULT_ENABLE || false),
     addr: process.env.VAULT_ADDR || 'http://127.0.0.1:8200',
-    token: process.env.VAULT_TOKEN || '(not-set)',
+    token: process.env.VAULT_TOKEN || '(TBS)',
     unseal: bool(process.env.VAULT_UNSEAL || false),
-    unsealKeys: arr(process.env.VAULT_UNSEAL_KEYS || '(not-set),(not-set),(not-set),(not-set),(not-set)'),
+    unsealKeys: arr(process.env.VAULT_UNSEAL_KEYS || '(TBS),(TBS),(TBS),(TBS),(TBS)'),
   },
 
   smtp: {
@@ -181,8 +181,6 @@ const conf = {
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '(TBS)',
     secretKey: process.env.STRIPE_SECRET_KEY || '(TBS)',
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '(TBS)',
-    // key: process.env.STRIPE_KEY || '<STRIPE_KEY_PLACEHOLDER>',
-    // endpointSecret: process.env.STRIPE_ENDPOINT_SECRET || '<STRIPE_ENDPOINT_SECRET_PLACEHOLDER>',
   },
 
   yookassa: {
