@@ -199,9 +199,16 @@ export function initXmppClient({
       console.warn('xmpp was already set')
       return xmppRef.current
     }
-
     if (!credentials || !credentials.user || !credentials.password || !credentials.jid) {
       return console.error("No credentials error")
+    }
+
+    // FIXME: fix the certificate
+    const isNode = typeof process !== 'undefined' &&
+                   process.release &&
+                   process.release.name === 'node';
+    if (isNode) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     }
 
     // Initialize XMPP client
@@ -214,7 +221,8 @@ export function initXmppClient({
         rejectUnauthorized: false
       }
     });
-    // xmppRef.current = xmpp;
+    xmppRef.current = xmpp;
+    // console.log('initXmppClient assign xmppRef.current=', xmppRef.current)
 
     // Handle online event
     xmpp.on('online', async (jid) => {
@@ -345,6 +353,7 @@ export async function sendPersonalMessage ({ credentials, recipient, prompt }) {
     xml('active', { xmlns: 'http://jabber.org/protocol/chatstates' }),
     xml('body', {}, prompt)
   );
+  // console.log('sendPersonalMessage xmppRef.current:', xmppRef.current)
   await xmppRef.current.send(message);
   console.log('Personal message sent, prompt:', prompt, ', to:', recipient);
 }

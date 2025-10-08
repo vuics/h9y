@@ -15,16 +15,14 @@ import {
 const verbose = Verbose('sd:routes/executor'); verbose('')
 const app = Router()
 
+
 function useState(initialValue) {
   let state = initialValue;
-  function getState() {
-    return state;
-  }
   function setState(newValue) {
     state = newValue;
     return state;
   }
-  return [getState, setState];
+  return [state, setState];
 }
 
 function useRef(initialValue) {
@@ -34,12 +32,12 @@ function useRef(initialValue) {
 async function executeMap({ map, user }) {
   try {
     log('Executing map:', map.title, ', mapId:', map._id)
-    await sleep(10)
+    // await sleep(10)
 
-    const getNodes = () => map.nodes;
-    const getEdges = () => map.edges;
-    const setNodes = (updater) => map.nodes = updater(map.nodes);
-    const setEdges = (updater) => map.edges = updater(map.edges);
+    const getNodes = () => map.flow.nodes;
+    const getEdges = () => map.flow.edges;
+    const setNodes = (updater) => map.flow.nodes = updater(map.flow.nodes);
+    const setEdges = (updater) => map.flow.edges = updater(map.flow.edges);
 
     const [ loading, setLoading ] = useState(true)
     const [ responseError, setResponseError ] = useState('')
@@ -52,6 +50,7 @@ async function executeMap({ map, user }) {
     const [ presence, setPresence ] = useState({});
     const xmppRef = useRef(null);
 
+    const [ reordering, setReordering ] = useState(false)
     const [ playing, setPlaying ] = useState(false)
     const [ stepping, setStepping ] = useState(false)
     const [ pausing, setPausing ] = useState(false)
@@ -62,6 +61,8 @@ async function executeMap({ map, user }) {
     steppingRef.current = stepping
     pausingRef.current = pausing
 
+    // verbose('credentials:', credentials)
+    log('Init xmpp client')
     xmppRef.current = initXmppClient({
       credentials,
       service: conf.xmpp.websocketUrl,
@@ -71,6 +72,7 @@ async function executeMap({ map, user }) {
       getNodes, setNodes,
     })
 
+    log('Play map core')
     await playMapCore({
       step: false, credentials,
       setPlaying, setPausing, setStepping, setReordering,
@@ -78,6 +80,7 @@ async function executeMap({ map, user }) {
       getNodes, getEdges, setNodes, setEdges,
     })
 
+    log('Done playing map core. Saving results.')
     map.executing = false
     map.completed = true
     await map.save();
