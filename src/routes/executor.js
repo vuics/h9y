@@ -8,6 +8,7 @@ import { sleep } from '../utils/helper.js'
 import conf from '../conf.js'
 
 import {
+  createOnChatMessage,
   initXmppClient,
   playMapCore,
 } from '../mapper.js'
@@ -61,15 +62,18 @@ async function executeMap({ map, user }) {
     steppingRef.current = stepping
     pausingRef.current = pausing
 
+
+    const onChatMessage = createOnChatMessage({
+      getNodes, setNodes, shareUrlPrefix: conf.xmpp.shareUrlPrefix,
+    })
     // verbose('credentials:', credentials)
     log('Init xmpp client')
     xmppRef.current = await initXmppClient({
       credentials,
       service: conf.xmpp.websocketUrl,
       domain: conf.xmpp.host,
-      shareUrlPrefix: conf.xmpp.shareUrlPrefix,
       setLoading, setResponseError, setRoster, setPresence,
-      getNodes, setNodes,
+      onChatMessage,
     })
 
     log('Play map core')

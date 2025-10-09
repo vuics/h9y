@@ -166,14 +166,56 @@ export function unlinkEdge({ edge, getNodes, setNodes }) {
   )
 }
 
+export function createOnChatMessage({ getNodes, setNodes, shareUrlPrefix }) {
+  return function onChatMessage({ from, body }) {
+    const [updateNode] = getNodes().filter(nd =>
+      nd.type === 'NoteNode' && nd.data.waitRecipient === from.split('/')[0]
+    );
+    if (updateNode) {
+      const shareUrlRegex = new RegExp(
+        "^" + shareUrlPrefix.replace(/[-\\^$*+?.()|[\]{}]/g, "\\$&")
+      );
+      if (shareUrlRegex.test(body)) {
+        setNodes(nodes =>
+          nodes.map(node =>
+            node.id === updateNode.id
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    attachments: [...(node.data.attachments || []), body],
+                  },
+                }
+              : node
+          )
+        );
+      } else {
+        setNodes(nodes =>
+          nodes.map(node =>
+            node.id === updateNode.id
+              ? {
+                  ...node,
+                  data: { ...node.data, text: body, waitRecipient: undefined },
+                  width: 600,
+                  height: undefined,
+                }
+              : node
+          )
+        );
+      }
+    }
+  }
+}
+
 const xmppRef = {
   current: null
 }
 
 export async function initXmppClient({
-  credentials, service, domain, shareUrlPrefix,
+  credentials, service, domain,
   setLoading, setResponseError, setRoster, setPresence,
-  getNodes, setNodes,
+  onChatMessage,
+  // getNodes, setNodes, shareUrlPrefix,
 }) {
   if (xmppRef.current) {
     console.warn('XMPP was already initialized');
@@ -247,6 +289,7 @@ export async function initXmppClient({
         // Handle roster
         const query = stanza.getChild('query', 'jabber:iq:roster');
         if (query) {
+          // console.log('recieved roster query:', query)
           const items = query.getChildren('item');
           if (items && items.length) {
             const updatedRoster = items.map(({ attrs }) => ({
@@ -274,49 +317,23 @@ export async function initXmppClient({
       const from = stanza.attrs.from;
       const type = stanza.attrs.type;
 
+
       if (type === 'chat' || type === 'normal' || !type) {
+        // FIXME: the code {below} is only for map, not for hive
         console.log(`Personal message response from ${from}: ${body}`);
-        const [updateNode] = getNodes().filter(nd =>
-          nd.type === 'NoteNode' && nd.data.waitRecipient === from.split('/')[0]
-        );
-        if (updateNode) {
-          const shareUrlRegex = new RegExp(
-            "^" + shareUrlPrefix.replace(/[-\\^$*+?.()|[\]{}]/g, "\\$&")
-          );
-          if (shareUrlRegex.test(body)) {
-            setNodes(nodes =>
-              nodes.map(node =>
-                node.id === updateNode.id
-                  ? {
-                      ...node,
-                      data: {
-                        ...node.data,
-                        attachments: [...(node.data.attachments || []), body],
-                      },
-                    }
-                  : node
-              )
-            );
-          } else {
-            setNodes(nodes =>
-              nodes.map(node =>
-                node.id === updateNode.id
-                  ? {
-                      ...node,
-                      data: { ...node.data, text: body, waitRecipient: undefined },
-                      width: 600,
-                      height: undefined,
-                    }
-                  : node
-              )
-            );
-          }
+        if (onChatMessage) {
+          onChatMessage({ from, type, body})
         }
       } else if (type === 'groupchat') {
+        // Skip our own messages
         if (from.includes(`/${credentials.user}`)) return; // Skip self
+        // Skip historical messages
         const delay = stanza.getChild('delay');
-        if (delay) return; // Skip history
+        if (delay) { return; }
         console.log(`Group chat message from ${from}: ${body}`);
+        if (onGroupMessage) {
+          onGroupMessage({ from, type, body})
+        }
       }
     });
   });
