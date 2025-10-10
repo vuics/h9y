@@ -9,9 +9,10 @@ import conf from '../conf.js'
 
 import {
   createOnChatMessage,
-  initXmppClient,
   playMapCore,
+  XmppClient,
 } from '../mapper.js'
+
 
 const verbose = Verbose('sd:routes/executor'); verbose('')
 const app = Router()
@@ -33,24 +34,32 @@ function useRef(initialValue) {
 async function executeMap({ map, user }) {
   try {
     log('Executing map:', map.title, ', mapId:', map._id)
-    // await sleep(10)
+
+    const xmppClient = new XmppClient()
+    await xmppClient.connect({
+      credentials: {
+        user: user.xmpp.user,
+        password: user.xmpp.password,
+        jid: `${user.xmpp.user}@${conf.xmpp.host}`,
+      },
+      service: conf.xmpp.websocketUrl,
+      domain: conf.xmpp.host,
+    })
+    console.log('XMPP initialized');
+
+    const onChatMessage = createOnChatMessage({
+      getNodes, setNodes, shareUrlPrefix: conf.xmpp.shareUrlPrefix,
+    });
+    xmppClient.emitter.on('chatMessage', onChatMessage);
+    xmppClient.emitter.on('error', (err) => {
+      error(`XMPP error: ${err}`);
+    })
+
 
     const getNodes = () => map.flow.nodes;
     const getEdges = () => map.flow.edges;
     const setNodes = (updater) => map.flow.nodes = updater(map.flow.nodes);
     const setEdges = (updater) => map.flow.edges = updater(map.flow.edges);
-
-    const [ loading, setLoading ] = useState(true)
-    const [ responseError, setResponseError ] = useState('')
-    const [ credentials, setCredentials ] = useState({
-      user: user.xmpp.user,
-      password: user.xmpp.password,
-      jid: `${user.xmpp.user}@${conf.xmpp.host}`,
-    })
-    const [ roster, setRoster ] = useState([])
-    const [ presence, setPresence ] = useState({});
-    const xmppRef = useRef(null);
-
     const [ reordering, setReordering ] = useState(false)
     const [ playing, setPlaying ] = useState(true)  // NOTE: play it immediatelly
     const [ stepping, setStepping ] = useState(false)
@@ -62,23 +71,9 @@ async function executeMap({ map, user }) {
     steppingRef.current = stepping
     pausingRef.current = pausing
 
-
-    const onChatMessage = createOnChatMessage({
-      getNodes, setNodes, shareUrlPrefix: conf.xmpp.shareUrlPrefix,
-    })
-    // verbose('credentials:', credentials)
-    log('Init xmpp client')
-    xmppRef.current = await initXmppClient({
-      credentials,
-      service: conf.xmpp.websocketUrl,
-      domain: conf.xmpp.host,
-      setLoading, setResponseError, setRoster, setPresence,
-      onChatMessage,
-    })
-
     log('Play map core')
     await playMapCore({
-      step: false, credentials,
+      step: false, xmppClient,
       setPlaying, setPausing, setStepping, setReordering,
       playingRef, pausingRef, steppingRef,
       getNodes, getEdges, setNodes, setEdges,
@@ -90,6 +85,8 @@ async function executeMap({ map, user }) {
     map.markModified('flow')
     await map.save();
     log('Done executing map:', map.title, ', mapId:', map._id)
+
+    xmppClient.emitter.removeListener('chatMessage', onChatMessage);
   } catch (err) {
     error('Error running mapper:', err)
     throw err
