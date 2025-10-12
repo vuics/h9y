@@ -433,5 +433,7 @@ export const revealConf = () => {
   delete publicConf.vault.token
   delete publicConf.vault.unsealKeys
 
+  delete publicConf.xmpp.password
+
   return publicConf
 }

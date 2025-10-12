@@ -17,7 +17,7 @@ const verbose = Verbose('sd:swarm/index'); verbose('')
 export default class MaptrixV1 extends XmppAgent {
   constructor (args) {
     super(args)
-    // const { param } = args
+    // const { agent } = args
     verbose('MaptrixV1 constructed')
   }
 
@@ -42,29 +42,28 @@ export default class MaptrixV1 extends XmppAgent {
 
 
       verbose(`prompt: ${prompt}`);
-      verbose(`self.agent.options: ${JSON.stringify(this.agent.options)}`);
+      // verbose(`this.agent.options: ${JSON.stringify(this.agent.options)}`);
       const { maptrix } = this.agent.options;
-      verbose('maptrix:', maptrix)
+      // verbose('maptrix:', maptrix)
       let input = {};
       if (maptrix.input) {
         input = cloneDeep(maptrix.input);
       }
-      verbose('input:', input)
+      // verbose('input:', input)
       if (maptrix.parseJson) {
-        verbose('parseJson')
         try {
           const parsedJson = extractAndParseJson(prompt);
-          verbose(`parsed_json: ${JSON.stringify(parsedJson)}`);
+          // verbose(`parsed_json: ${JSON.stringify(parsedJson)}`);
           Object.assign(input, parsedJson);
         } catch (e) {
           // ignore parsing errors
         }
       }
-      verbose('promptKey:', maptrix.promptKey)
+      // verbose('promptKey:', maptrix.promptKey)
       if (maptrix.promptKey) {
         input[maptrix.promptKey] = prompt;
       }
-      verbose(`input: ${JSON.stringify(input)}`);
+      verbose('input:', input);
 
 
       const { mapId } = this.agent.options.maptrix
@@ -101,24 +100,23 @@ export default class MaptrixV1 extends XmppAgent {
   }
 }
 
-// FIXME: this is only test function
-(async function main () {
-  try {
-    process.on('uncaughtException', (err) => {
-      error('uncaughtException:', err)
-    })
-    log('start main')
-    // FIXME: replace agent id
-    const agent = await Agent.findById('68e8efec324c85c56c00f4d1').populate('userId').lean()
-    verbose('agent:', agent)
-    if (!agent) {
-      error('Agent is not found')
-    }
-    const xmppAgent = new MaptrixV1({ agent })
-    await xmppAgent.start()
-    log('xmppAgent started')
-    log('done main')
-  } catch (err) {
-    error('Error on main:', err)
-  }
-})()
+// NOTE: this is a test function
+// (async function main () {
+//   try {
+//     process.on('uncaughtException', (err) => {
+//       error('uncaughtException:', err)
+//     })
+//     log('start main')
+//     const agent = await Agent.findById('68e8efec324c85c56c00f4d1').populate('userId').lean()
+//     verbose('agent:', agent)
+//     if (!agent) {
+//       error('Agent is not found')
+//     }
+//     const xmppAgent = new MaptrixV1({ agent })
+//     await xmppAgent.start()
+//     log('xmppAgent started')
+//     log('done main')
+//   } catch (err) {
+//     error('Error on main:', err)
+//   }
+// })()

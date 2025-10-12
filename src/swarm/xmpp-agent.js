@@ -91,6 +91,7 @@ export default class XmppAgent {
   }
 
   async stop () {
+    this.xmppClient?.disconnect()
   }
 
   async registerAgent () {

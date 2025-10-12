@@ -26,6 +26,12 @@ const verbose = Verbose('sd:swarm/index'); verbose('')
 
 log('public conf:', inspect(revealConf(), { colors: true, depth: null }))
 
+
+const archetypeClasses = {
+  "maptrix-v1.0": MaptrixV1,
+}
+
+
 // FIXME: Replace dotenv with conf completelly
 dotenv.config();
 
@@ -121,6 +127,7 @@ const runningXmppAgents = {};
 function isValid({ agent }) {
   return Boolean(
     agent.deployed &&
+    agent.archetype in archetypeClasses &&
     (FILTER_ARCHETYPES.length === 0 || FILTER_ARCHETYPES.includes(agent.archetype))
   );
 }
@@ -254,19 +261,9 @@ async function startAgent({ agent }) {
     return null;
   }
 
-  const xmppAgent = new MaptrixV1({
+  const agentClass = archetypeClasses[agent.archetype]
+  const xmppAgent = new agentClass({
     agent,
-
-    // FIXME: implement
-    //   host: XMPP_HOST,
-    //   user: config.name,
-    //   password: XMPP_PASSWORD,
-    //   mucHost: XMPP_MUC_HOST,
-    //   joinRooms: config.joinRooms,
-    //   nick: config.name,
-    //   config: config,
-    //   ownername: (config.user?.xmpp?.user || '').toLowerCase(),
-    //   customerId: config.user?.stripe?.customerId
   });
   runningXmppAgents[agent._id] = xmppAgent;
   xmppAgent.start(); // Assuming MaptrixV1 has async start()
@@ -334,14 +331,17 @@ async function syncAgents() {
 }
 
 function monitorAgents() {
-  setInterval(async () => {
+  async function cycleMonitorAgents() {
     try {
-      log('Iterate monitorAgents')
+      log('Iterate monitorAgents');
       await syncAgents();
     } catch (e) {
       error(`Error in monitorAgents: ${e}`);
     }
-  }, MONITOR_SECONDS * 1000);
+  }
+
+  cycleMonitorAgents()
+  setInterval(cycleMonitorAgents, MONITOR_SECONDS * 1000)
 }
 
 // ----------------- Shutdown -----------------

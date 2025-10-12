@@ -445,8 +445,13 @@ export class XmppClient {
           ));
           console.log('Requested roster');
 
-          // Send initial presence
-          await this.xmpp.send(xml('presence'));
+          await sleep(200)
+          const presence = xml('presence',
+            {},
+            xml('show', {}, 'chat'),
+            xml('status', {}, 'available')
+          );
+          await this.xmpp.send(presence);
           console.log('Sent initial presence');
 
           this.emitter.emit('online', { jid })
@@ -494,6 +499,9 @@ export class XmppClient {
             ...this.presence,
             [jid]: type !== 'unavailable'
           }
+          if (stanza.attrs.type === 'subscribe') {
+            this.xmpp.send(xml('presence', { to: stanza.attrs.from, type: 'subscribed' }));
+          }
           this.emitter.emit('presence', this.presence)
         }
 
@@ -527,6 +535,15 @@ export class XmppClient {
     });
 
     return ready; // resolves when "online" event fires
+  }
+
+  async disconnect () {
+    console.log('Disconnecting XmppClient...');
+    const unavailable = xml('presence', { type: 'unavailable' },
+      xml('status', {}, 'Disconnecting')
+    );
+    await this.xmpp.send(unavailable);
+    await this.xmpp.stop();
   }
 
   async addToRoster ({ jid, name, groups = [] } = {}) {
