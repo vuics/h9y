@@ -91,7 +91,7 @@ export async function deriveMap({ basicMap }) {
 
     const resultMap = new Map(mapData);
     resultMap.title= `${basicMap.title} (result_${nanoid(9)})`;
-    resultMap.templateMapId = mapId;
+    resultMap.templateMapId = basicMap._id;
     resultMap.executing = true
     resultMap.completed = false
     await resultMap.save();
@@ -130,7 +130,6 @@ app.post('/map/:mapId', checkAuth, async (req, res) => {
       service: conf.xmpp.websocketUrl,
       domain: conf.xmpp.host,
     })
-
     console.log('XMPP initialized');
 
     await executeMap({ map: resultMap, xmppClient })
