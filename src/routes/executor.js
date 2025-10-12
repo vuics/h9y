@@ -31,7 +31,7 @@ function useRef(initialValue) {
   return { current: initialValue };
 }
 
-export async function executeMap({ map, xmppClient }) {
+export async function executeMap({ map, xmppClient, input={}, output=[] } = {}) {
   try {
     log('Executing map:', map.title, ', mapId:', map._id)
 
@@ -39,6 +39,20 @@ export async function executeMap({ map, xmppClient }) {
     const getEdges = () => map.flow.edges;
     const setNodes = (updater) => map.flow.nodes = updater(map.flow.nodes);
     const setEdges = (updater) => map.flow.edges = updater(map.flow.edges);
+
+    setNodes(nodes =>
+      nodes.map(node =>
+        Object.keys(input).includes(node.data.uname)
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                text: input[node.data.uname],
+              },
+            }
+          : node
+      )
+    );
 
     const onChatMessage = createOnChatMessage({
       getNodes, setNodes, shareUrlPrefix: conf.xmpp.shareUrlPrefix,
@@ -76,6 +90,19 @@ export async function executeMap({ map, xmppClient }) {
     log('Done executing map:', map.title, ', mapId:', map._id)
 
     xmppClient.emitter.removeListener('chatMessage', onChatMessage);
+
+    let output_text = ''
+    // verbose('output:', output)
+    for (const outputUname of output) {
+      // verbose('outputUname:', outputUname)
+      const found = getNodes().find(n => n.data.uname === outputUname)
+      // verbose('found:', found)
+      if (found) {
+        output_text += found.data.text
+      }
+    }
+    // verbose('output_text:', output_text)
+    return output_text
   } catch (err) {
     error('Error running mapper:', err)
     throw err
