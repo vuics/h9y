@@ -394,19 +394,13 @@ export async function playMapCore ({
 export class XmppClient {
   constructor () {
     this.client = null
-    // this.emitter = null
     this.emitter = new EventEmitter();
     this.credentials = null
     this.roster = []
     this.presence = {}
   }
 
-  async connect({ credentials, service, domain }) {
-    // if (this.xmpp) {
-    //   console.warn('XMPP was already initialized');
-    //   return this.xmpp;
-    // }
-
+  async connect({ credentials, service, domain, mucHost, joinRooms  }) {
     if (!credentials || !credentials.user || !credentials.password || !credentials.jid) {
       console.error("No credentials error");
       return null;
@@ -430,8 +424,6 @@ export class XmppClient {
       tls: { rejectUnauthorized: false },
     });
     // console.log('initXmppClient assign this.xmpp=', this.xmpp)
-    // this.emitter = new EventEmitter();
-
 
     // ✅ Wrap connection in a Promise to await readiness
     const ready = new Promise((resolve, reject) => {
@@ -445,6 +437,7 @@ export class XmppClient {
           ));
           console.log('Requested roster');
 
+          // Send presence
           await sleep(200)
           const presence = xml('presence',
             {},
@@ -453,6 +446,21 @@ export class XmppClient {
           );
           await this.xmpp.send(presence);
           console.log('Sent initial presence');
+
+          // Join MUC rooms ---
+          if (mucHost && joinRooms) {
+            for (const joinRoom of joinRooms) {
+              const roomJid = `${joinRoom}@${mucHost}`
+              await this.joinRoom({ roomJid })
+              // const mucPresence = xml(
+              //   'presence',
+              //   { to: `${roomJid}/${this.credentials.user}` },
+              //   xml('x', { xmlns: 'http://jabber.org/protocol/muc' })
+              // );
+              // await this.xmpp.send(mucPresence);
+              // console.log(`Joined room ${roomJid} as ${this.credentials.user}`);
+            }
+          }
 
           this.emitter.emit('online', { jid })
           resolve(this); // ✅ resolve once connected and ready
@@ -688,7 +696,7 @@ export class XmppClient {
   }
 
   async sendRoomMessage ({ room, recipient, prompt, mucHost }) {
-    const roomJid = room.includes("@") ? room: `${room}@${mucHost}`
+    const roomJid = room.includes("@") ? room : `${room}@${mucHost}`
     await this.joinRoom({ roomJid })
     const nickname = recipient.split('@')[0];
     const body = `@${nickname} ${prompt}`;

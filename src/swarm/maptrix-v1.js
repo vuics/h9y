@@ -85,6 +85,7 @@ export default class MaptrixV1 extends XmppAgent {
       const serviceXmppAgent = new XmppAgent({
         agent: serviceAgent,
         handleChat: false,
+        handleRooms: false,
       })
       await serviceXmppAgent.start()
 

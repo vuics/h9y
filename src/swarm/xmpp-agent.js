@@ -9,10 +9,11 @@ import { sleep } from '../utils/helper.js'
 const verbose = Verbose('sd:swarm/xmpp-agent'); verbose('')
 
 export default class XmppAgent {
-  constructor ({ agent, handleChat=true } = {}) {
+  constructor ({ agent, handleChat=true, handleRooms=true } = {}) {
     this.agent = agent
     this.xmppClient = null
     this.handleChat = handleChat
+    this.handleRooms = handleRooms
 
     this.credentials = {
       user: agent.options.name,
@@ -51,6 +52,25 @@ export default class XmppAgent {
         await replyFunc({ content })
       });
     }
+    if (this.handleRooms) {
+      this.xmppClient.emitter.on('groupMessage', async ({ from, body }) => {
+        verbose('Received a group message from:', from, ', body:', body)
+        const replyFunc = async ({ content }) => {
+          verbose('room replyFunc content:', content)
+          const roomJid = from.split('/')[0]
+          const mucHost = roomJid.split('@')[1]
+          return this.xmppClient.sendRoomMessage({
+            recipient: from,
+            prompt: content,
+            room: roomJid,
+            mucHost,
+          })
+        }
+        const content = await this.chat({ prompt: body, replyFunc })
+        verbose('chat returned content for room:', content)
+        await replyFunc({ content })
+      });
+    }
     await this.connect()
   }
 
@@ -77,6 +97,9 @@ export default class XmppAgent {
         credentials: this.credentials,
         service: conf.xmpp.websocketUrl,
         domain: this.credentials.host,
+        mucHost: this.handleRooms ? conf.xmpp.mucHost : undefined,
+        joinRooms: this.handleRooms ? this.agent.options.joinRooms : undefined,
+        nick: this.handleRooms ? this.agent.options.name : undefined,
       })
     } catch (err) {
       error('Error connecting:', err)
