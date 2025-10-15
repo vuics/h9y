@@ -37,6 +37,8 @@ export default mongoose.model(
       },
 
       system: {
+        operation: String,
+        model: String,
       },
 
       transform: {
