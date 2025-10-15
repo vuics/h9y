@@ -425,7 +425,7 @@ const conf = {
   },
 
   swarm: {
-    filterArchetypes: arr(process.env.SWARM_FILTER_ARCHETYPES || 'maptrix-v1.0'),
+    filterArchetypes: arr(process.env.SWARM_FILTER_ARCHETYPES || ''), // 'maptrix-v1.0,transform-v1.0'
 
     monitorSeconds: num(process.env.SWARM_MONITOR_SECONDS || 60),
     lockTimeoutSeconds: num(process.env.SWARM_LOCK_TIMEOUT_SECONDS || 120),

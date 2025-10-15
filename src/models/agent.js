@@ -36,6 +36,47 @@ export default mongoose.model(
         session: String,
       },
 
+      system: {
+      },
+
+      transform: {
+        type: {
+          type: String,
+          enum: [
+            'echo',      // Returns the original input string unchanged.
+            'const',     // Always returns the string provided in `const`.
+            'repeat',    // Repeats the input string `repeat` times.
+            'regexp',    // Applies a sed/vim-style regex transformation (s/pattern/replacement/flags).
+            'uuid',      // Generates a UUID v4 string; no parameters.
+            'nanoid',    // Generates a NanoID string of length specified in `nanoid`.
+            'case',      // Changes letter casing of input; options: 'upper','lower','camel','snake','kebab'.
+            'hash',      // Returns a hash of input using algorithm specified in `hash` ('md5','sha256','sha512').
+            'trim',      // Removes leading and trailing whitespace from input string.
+            'truncate',  // Truncates input to a maximum length specified in `truncate`.
+            'prefix',    // Adds the string specified in `prefix` to the beginning of input.
+            'suffix',    // Adds the string specified in `suffix` to the end of input.
+            'template',  // Uses Mustache templating to render input with variables from JSON-parsed input string.
+            'slugify'    // Converts input into a URL-friendly slug; lowercase if `slugify` is true.
+          ]
+        },
+
+        // Parameters for specific transform types
+        const: { type: String },                           // for 'const'
+        repeat: { type: Number },                          // for 'repeat'
+        regexp: { type: String },                          // for 'regexp'
+        nanoid: { type: Number },                          // for 'nanoid'
+        case: { type: String, enum: ['upper','lower','camel','snake','kebab'] }, // for 'case'
+        hash: { type: String, enum: ['md5','sha256','sha512'] },                 // for 'hash'
+        truncate: { type: Number },                        // for 'truncate'
+        prefix: { type: String },                          // for 'prefix'
+        suffix: { type: String },                          // for 'suffix'
+        template: { type: String },                        // for 'template'
+        slugify: { type: Boolean },                        // for 'slugify'
+      },
+
+      // architect: {
+      // },
+
       rag: {
         systemMessage: String, // SystemMessage(SYSTEM_MESSAGE) to pass to LLM on LangChain
 

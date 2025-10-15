@@ -1,18 +1,17 @@
 import lodash from 'lodash'
 const { cloneDeep } = lodash
 
-import { log, warn, error, Verbose } from '../services.js'
 import Map from '../models/map.js'
 import User from '../models/user.js'
 import Agent from '../models/agent.js'
 import XmppAgent from './xmpp-agent.js'
 import { XmppClient } from '../maptor.js'
-import '../mongo.js'
 import { deriveMap, executeMap } from '../routes/executor.js'
 import conf from '../conf.js'
 import { extractAndParseJson } from '../utils/helper.js'
+import { log, warn, error, Verbose } from '../services.js'
 
-const verbose = Verbose('sd:swarm/index'); verbose('')
+const verbose = Verbose('sd:swarm/maptrix-v1'); verbose('')
 
 export default class MaptrixV1 extends XmppAgent {
   constructor (args) {
@@ -100,28 +99,8 @@ export default class MaptrixV1 extends XmppAgent {
       }
       return output_text
     } catch (err) {
-      error('Error chatting maptrix:', err)
+      error('Error chatting MaptrixV1:', err)
     }
   }
 }
 
-// NOTE: this is a test function
-// (async function main () {
-//   try {
-//     process.on('uncaughtException', (err) => {
-//       error('uncaughtException:', err)
-//     })
-//     log('start main')
-//     const agent = await Agent.findById('68e8efec324c85c56c00f4d1').populate('userId').lean()
-//     verbose('agent:', agent)
-//     if (!agent) {
-//       error('Agent is not found')
-//     }
-//     const xmppAgent = new MaptrixV1({ agent })
-//     await xmppAgent.start()
-//     log('xmppAgent started')
-//     log('done main')
-//   } catch (err) {
-//     error('Error on main:', err)
-//   }
-// })()

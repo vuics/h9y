@@ -4,6 +4,8 @@ import { inspect } from 'util'
 import { log, warn, error, Verbose } from '../services.js'
 import conf, { revealConf } from '../conf.js'
 import MaptrixV1 from './maptrix-v1.js'
+import SystemV1 from './system-v1.js'
+import TransformV1 from './transform-v1.js'
 import { sleep } from '../utils/helper.js'
 
 import '../mongo.js'
@@ -19,6 +21,8 @@ log('public conf:', inspect(revealConf(), { colors: true, depth: null }))
 
 const archetypeClasses = {
   "maptrix-v1.0": MaptrixV1,
+  "system-v1.0": SystemV1,
+  "transform-v1.0": TransformV1,
 }
 
 const runningXmppAgents = {};
@@ -167,7 +171,11 @@ async function stopAgent({ agentId }) {
 async function syncAgents() {
   try {
     const agents = await Agent.find({
-      archetype: { $in: conf.swarm.filterArchetypes }
+      archetype: {
+        $in: conf.swarm.filterArchetypes.length > 0
+          ? conf.swarm.filterArchetypes
+          : Object.keys(archetypeClasses)
+      }
     }).populate('userId').lean();
     log(`Retrieved ${agents.length} agent configurations`);
 
