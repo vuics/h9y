@@ -19,7 +19,7 @@ export default mongoose.model(
     deployed: Boolean, // only run the agents with deployed===true
 
     options: {
-      name: String, // unique name
+      name: { type: String, required: true }, // unique name
       description: String,
       joinRooms: [ String ], // XMPP rooms to join,
 
