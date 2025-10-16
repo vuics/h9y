@@ -43,6 +43,7 @@ export function buildSmartText({ text, getNodes }) {
       break;
     }
     parts = text.split(variableOrCommentRegex)
+    // console.log('parts:', parts)
     smartText = parts.map((part) => {
       if (variableRegex.test(part)) {
         let uname = part
@@ -59,13 +60,16 @@ export function buildSmartText({ text, getNodes }) {
           console.warn('buildSmartText> foundNodes for part:', part, 'do not consist of exactly one node, foundNodes:', foundNodes)
           nodeText = ''
         }
+        // console.log('nodeText:', nodeText)
         return nodeText
       } if (commentRegex.test(part)) {
         return ''
       } else {
+        // console.log('part:', part)
         return part
       }
-    } ).join('\n');
+    } ).join('');
+    // console.log('smartText:', smartText)
     text = smartText
   } while (parts.length > 1)
   return smartText
