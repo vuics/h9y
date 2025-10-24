@@ -415,6 +415,10 @@ const conf = {
     reconnectMaxDelay: num(process.env.XMPP_RECONNECT_MAX_DELAY || 300),
   },
 
+  firefly: {
+    commanderUrl: process.env.FIREFLY_COMMANDER_URL || 'http://aaa-wn.local:8387',
+  },
+
   // only for selfdev-apiworkers
   scheduler: {
     enable: (process.env.SCHEDULER_ENABLE || false),

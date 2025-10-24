@@ -20,6 +20,7 @@ import vault from './vault.js'
 import profile from './profile.js'
 import settings from './settings.js'
 import executor from './executor.js'
+import firefly from './firefly.js'
 
 const verbose = Verbose('sd:routes/index'); verbose('')
 
@@ -44,5 +45,6 @@ router.use('/v1/vault', vault)
 router.use('/v1/profile', profile)
 router.use('/v1/settings', settings)
 router.use('/v1/executor', executor)
+router.use('/v1/firefly', firefly)
 
 export default router

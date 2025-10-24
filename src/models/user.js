@@ -43,6 +43,9 @@ const schema = mongoose.Schema({
     user: String,
     password: String,
   },
+  firefly: {
+    address: String,
+  },
   stripe: {
     customerId: String,
   },
