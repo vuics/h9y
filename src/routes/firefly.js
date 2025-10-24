@@ -141,11 +141,20 @@ const account = async (req, res, next) => {
       throw new Error('Failed to get account balances: ' + err.message);
     }
 
+    let pools = []
+    try {
+      pools = await firefly.getTokenPools()
+      console.log('pools:', pools)
+    } catch (err) {
+      throw new Error('Failed to get account balances: ' + err.message);
+    }
+
     const out = {
       result: 'ok',
       address: req.user.firefly.address,
       identityId: req.user.firefly.identityId,
       balances,
+      pools,
     }
     verbose('out:', out)
     res.json(out)
