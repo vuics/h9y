@@ -72,7 +72,7 @@ function parseCommanderResponse(raw) {
   return result;
 }
 
-const account = async (req, res, next) => {
+router.get('/account', checkAuth, async (req, res, next) => {
   try {
     if (req.user?.firefly?.address) {
       verbose('Using existing Firefly account address:', req.user.firefly.address);
@@ -159,10 +159,48 @@ const account = async (req, res, next) => {
     verbose('out:', out)
     res.json(out)
   } catch (err) {
+    error('firefly account error:', err)
     res.status(500).json({ result: 'error', message: err.toString()})
   }
-}
+})
 
-router.get('/account', checkAuth, account)
+router.post('/transfer', checkAuth, async (req, res, next) => {
+  try {
+    if (!req.user?.firefly?.address || !req.user?.firefly?.identityId) {
+      throw new Error('Used does not have registered firefly identity')
+    }
+    verbose('transfer body:', req.body)
+    const { pool, to, tokenIndex, amount } = req.body
+
+    const approved = await firefly.approveTokens({
+      pool,
+      key: req.user.firefly.address,
+      operator: to,
+      config: {
+        allowance: amount, // If 0 or not set, the approval is valid for any number.
+      },
+      approved: true,  // Setting to false can revoke an existing approval.
+    })
+    verbose('approved:', approved)
+
+    const transferred = await firefly.transferTokens({
+      pool,
+      to,
+      tokenIndex,
+      amount,
+      key: req.user.firefly.address,
+    });
+    verbose('transferred:', transferred)
+    const out = {
+      result: 'ok',
+      transferred,
+    }
+    verbose('out:', out)
+    res.json(out)
+  } catch (err) {
+    error('firefly transfer error:', err)
+    res.status(500).json({ result: 'error', message: err.toString()})
+  }
+})
 
 export default router
