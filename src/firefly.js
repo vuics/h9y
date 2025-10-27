@@ -1,5 +1,3 @@
-import { inspect } from 'util'
-import { randomUUID } from 'crypto'
 import pkg from '@hyperledger/firefly-sdk';
 const FireFly = pkg.default;
 
