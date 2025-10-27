@@ -158,6 +158,7 @@ NodesArray.discriminator('group', new mongoose.Schema({
 
 const MapSchema = new mongoose.Schema({
   userId: { type: ObjectId, required: true, ref: 'User' },
+  appId: { type: ObjectId, ref: 'App' },
   title: String,
   flow: { type: FlowSchema, default: {} },
 

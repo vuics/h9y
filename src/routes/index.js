@@ -21,6 +21,7 @@ import profile from './profile.js'
 import settings from './settings.js'
 import executor from './executor.js'
 import firefly from './firefly.js'
+import apps from './apps.js'
 
 const verbose = Verbose('sd:routes/index'); verbose('')
 
@@ -46,5 +47,6 @@ router.use('/v1/profile', profile)
 router.use('/v1/settings', settings)
 router.use('/v1/executor', executor)
 router.use('/v1/firefly', firefly)
+router.use('/v1/apps', apps)
 
 export default router

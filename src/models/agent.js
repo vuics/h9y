@@ -14,6 +14,7 @@ export default mongoose.model(
       required: true,
       ref: 'User'
     },
+    appId: { type: ObjectId, ref: 'App' },
 
     archetype: String, // chat, rag, notebook
     deployed: Boolean, // only run the agents with deployed===true

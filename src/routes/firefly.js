@@ -171,18 +171,6 @@ router.post('/transfer', checkAuth, async (req, res, next) => {
     }
     verbose('transfer body:', req.body)
     const { pool, to, tokenIndex, amount } = req.body
-
-    // const approved = await firefly.approveTokens({
-    //   pool,
-    //   key: req.user.firefly.address,
-    //   operator: to,
-    //   config: {
-    //     allowance: amount, // If 0 or not set, the approval is valid for any number.
-    //   },
-    //   approved: true,  // Setting to false can revoke an existing approval.
-    // })
-    // verbose('approved:', approved)
-
     const transferred = await firefly.transferTokens({
       pool,
       to,

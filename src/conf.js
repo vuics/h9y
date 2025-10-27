@@ -114,6 +114,7 @@ const conf = {
     interest: bool(process.env.RESOURCE_INTEREST || false),
     agent: bool(process.env.RESOURCE_AGENT || true),
     map: bool(process.env.RESOURCE_MAP || true),
+    app: bool(process.env.RESOURCE_APP || true),
 
     // Swagger Specification
     spec: {
@@ -130,11 +131,6 @@ const conf = {
       "url": "https://hyag.org/",
       "email": "admin@vuics.com"
     }
-  },
-  "license": {
-    "name": "Business Source License 1.1",
-    "identifier": "BUSL-1.1",
-    "url": "https://github.com/vuics/hyag?tab=License-1-ov-file"
   },
   "host": "api.hyag.org",
   "basePath": "",
@@ -436,6 +432,10 @@ const conf = {
     monitorSeconds: num(process.env.SWARM_MONITOR_SECONDS || 60),
     lockTimeoutSeconds: num(process.env.SWARM_LOCK_TIMEOUT_SECONDS || 120),
     lockRefreshSeconds: num(process.env.SWARM_LOCK_REFRESH_SECONDS || 30),
+  },
+
+  apps: {
+    registryUrl: process.env.APPS_REGISTRY_URL || 'https://verdaccio.hyag.ru',
   },
 }
 

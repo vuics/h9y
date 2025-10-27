@@ -11,6 +11,7 @@ import Landing from './models/landing.js'
 import Interest from './models/interest.js'
 import Agent from './models/agent.js'
 import Map from './models/map.js'
+import App from './models/app.js'
 
 import { checkLoginOrBearer } from './middleware/check-auth.js'
 import { Verbose } from './services.js'
@@ -256,6 +257,23 @@ const getResources = (app) => {
           } catch (error) {
             next(error);
           }
+        });
+      }
+    });
+  }
+
+  if (conf.resource.app) {
+    // NOTE: caution, the app has double meaning:
+    //       app - express app, the first argument to resourceJS below
+    //       app - instance of the App model
+    resources.app = resourceJS(app, '/v1', 'app', App).rest({
+      before: (req, res, next) => {
+        checkLoginOrBearer(req, res, async (err) => {
+          if (err) return next(err);
+
+          req.body.userId = req.user._id;
+          req.modelQuery = App.where('userId', req.user._id);
+          next()
         });
       }
     });
