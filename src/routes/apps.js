@@ -38,12 +38,8 @@ async function uninstallApp ({ app }) {
   }
 }
 
-router.post('/install', checkAuth, async (req, res, next) => {
-  let app = null
+async function retrievePackage({ appName }) {
   try {
-    verbose('app install body:', req.body);
-    const { appName } = req.body;
-
     // Split appName into package and version
     let [pkg, version] = appName.split('@');
     version = version || 'latest'; // default to 'latest' if no version provided
@@ -90,6 +86,55 @@ router.post('/install', checkAuth, async (req, res, next) => {
 
     // Log all files
     verbose('Extracted files:', files.map(f => f.path));
+    return files
+
+  } catch (err) {
+    warn('Retrieving package error:', err)
+    throw err
+  }
+}
+
+router.post('/search', checkAuth, async (req, res, next) => {
+  let app = null
+  try {
+    verbose('app search body:', req.body);
+    const { appName } = req.body;
+    if (!appName) {
+      return res.json([]);
+    }
+
+    // TODO: make search by the partial name
+    const files = await retrievePackage({ appName })
+
+    const candidates = []
+    // Loop through extracted files and verbose content
+    for (const file of files) {
+      if (file.path === 'package/package.json') {
+        let data = null
+        try {
+          data = JSON.parse(file.content)
+        } catch (err) {
+          throw new Error(`Cannot parse json at ${file.path}: ${err.toString()}`)
+        }
+        verbose(`package.json file: ${file.path}\nContent:\n${file.content}\n---`);
+        candidates.push(data)
+      }
+    }
+    res.json(candidates);
+  } catch (err) {
+    error('App search error:', err)
+    res.status(500).json({ result: 'error', message: err.toString() });
+  }
+});
+
+
+router.post('/install', checkAuth, async (req, res, next) => {
+  let app = null
+  try {
+    verbose('app install body:', req.body);
+    const { appName } = req.body;
+
+    const files = await retrievePackage({ appName })
 
     app = new App({
       userId: req.user._id
