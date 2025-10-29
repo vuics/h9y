@@ -9,9 +9,11 @@ import path from 'path';
 
 import { checkAuth } from '../middleware/check-auth.js';
 import { Verbose, log, warn, error } from '../services.js';
+import User from '../models/user.js'
 import Map from '../models/map.js'
 import Agent from '../models/agent.js'
 import App from '../models/app.js'
+import { vaultClient } from '../vault.js'
 import conf from '../conf.js'
 
 const verbose = Verbose('sd:routes/apps'); verbose('');
@@ -98,6 +100,22 @@ async function retrievePackage({ appName }) {
   }
 }
 
+function parsePackageJson ({ files }) {
+  let packageJson = null
+  // Loop through extracted files and verbose content
+  for (const file of files) {
+    if (file.path === 'package/package.json') {
+      try {
+        packageJson = JSON.parse(file.content)
+      } catch (err) {
+        throw new Error(`Cannot parse json at ${file.path}: ${err.toString()}`)
+      }
+      verbose(`package.json file: ${file.path}\nContent:\n${file.content}\n---`);
+    }
+  }
+  return packageJson
+}
+
 router.post('/search', checkAuth, async (req, res, next) => {
   let app = null
   try {
@@ -111,18 +129,9 @@ router.post('/search', checkAuth, async (req, res, next) => {
     const files = await retrievePackage({ appName })
 
     const candidates = []
-    // Loop through extracted files and verbose content
-    for (const file of files) {
-      if (file.path === 'package/package.json') {
-        let data = null
-        try {
-          data = JSON.parse(file.content)
-        } catch (err) {
-          throw new Error(`Cannot parse json at ${file.path}: ${err.toString()}`)
-        }
-        verbose(`package.json file: ${file.path}\nContent:\n${file.content}\n---`);
-        candidates.push(data)
-      }
+    const packageJson = parsePackageJson({ files })
+    if (packageJson) {
+      candidates.push(packageJson)
     }
     res.json(candidates);
   } catch (err) {
@@ -133,7 +142,7 @@ router.post('/search', checkAuth, async (req, res, next) => {
 
 
 // Helper function: decrypt AES-256-CBC with PBKDF2 (OpenSSL compatible)
-async function decryptFile(buffer, vaultKey) {
+async function decryptFile(buffer, vaultKeyValue) {
   // OpenSSL "Salted__" header format
   const saltHeader = buffer.slice(0, 8).toString();
   if (saltHeader !== 'Salted__') {
@@ -144,7 +153,7 @@ async function decryptFile(buffer, vaultKey) {
   const ciphertext = buffer.slice(16);
 
   // Derive key and IV with PBKDF2 (100000 iterations)
-  const keyiv = crypto.pbkdf2Sync(vaultKey, salt, 100000, 48, 'sha256');
+  const keyiv = crypto.pbkdf2Sync(vaultKeyValue, salt, 100000, 48, 'sha256');
   const key = keyiv.slice(0, 32);
   const iv = keyiv.slice(32, 48);
 
@@ -178,7 +187,7 @@ async function extractTarGz(buffer, pathPrefix = '') {
   });
 }
 
-async function decryptAndExtract({ files, vaultKey }) {
+async function decryptAndExtract({ files, vaultKeyValue }) {
   for (const file of files) {
     if (file.path.endsWith('.enc')) {
       try {
@@ -187,7 +196,7 @@ async function decryptAndExtract({ files, vaultKey }) {
           ? file.content
           : Buffer.from(file.content, 'binary');
 
-        const decrypted = await decryptFile(encBuffer, vaultKey);
+        const decrypted = await decryptFile(encBuffer, vaultKeyValue);
 
         if (file.path.endsWith('.tar.gz.enc')) {
           verbose(`Decrypting and extracting ${file.path}...`);
@@ -209,6 +218,18 @@ async function decryptAndExtract({ files, vaultKey }) {
   verbose('Decrypted files:', files.map(f => f.path));
 }
 
+async function getValueFromVault({ userId, vaultKey }) {
+  if (!vaultClient) {
+    throw new Error('Vault is disabled on backend')
+  }
+  const result = await vaultClient.read(`secret/data/user_${userId}`);
+  const data = result.data.data; // KV v2 nests data under data.data
+  if (!vaultKey in data) {
+    return undefined
+  }
+  return data[vaultKey]
+}
+
 router.post('/install', checkAuth, async (req, res, next) => {
   let app = null
   try {
@@ -217,10 +238,30 @@ router.post('/install', checkAuth, async (req, res, next) => {
 
     const files = await retrievePackage({ appName })
 
-    // TODO: get from vault
-    const vaultKey = 'TBS';
+    const packageJson = parsePackageJson({ files })
+    if (!packageJson) {
+      throw new Error('Error getting values from package.json')
+    }
 
-    await decryptAndExtract({ files, vaultKey })
+    const seller = packageJson['x-hyag']?.seller
+    if (seller && seller.address && seller.vaultKey) {
+      const { vaultKey, address } = seller
+      const sellerUser = await User.findOne({ 'firefly.address': seller.address })
+      if (!sellerUser) {
+        throw new Error(`Cannot find the seller with specified address`)
+      }
+      verbose('sellerUser:', sellerUser)
+      const vaultKeyValue = await getValueFromVault({
+        userId: sellerUser._id.toString(),
+        vaultKey: seller.vaultKey,
+      })
+      // verbose('vaultKey:', vaultKey, '=', vaultKeyValue)
+      if (!vaultKeyValue) {
+        throw new Error(`Error getting the key ${seller.vaultKey} from the seller\'s vault. The key might be revoked or rotated. Please, contact the seller.`)
+      }
+      await decryptAndExtract({ files, vaultKeyValue })
+    }
+
 
     app = new App({
       userId: req.user._id
@@ -263,7 +304,6 @@ router.post('/install', checkAuth, async (req, res, next) => {
           await agent.save()
           app.agentIds.push(agent._id)
         } else {
-          // verbose(`Unknown JSON file: ${file.path}\nContent:\n${file.content}\n---`);
           verbose(`Unknown JSON file: ${file.path}\n---`);
         }
       } else {
