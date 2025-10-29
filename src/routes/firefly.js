@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import axios from 'axios'
 import { inspect } from 'util'
-// import { randomUUID } from 'crypto'
 
 import { checkAuth, checkAPIAuth, checkAdmin } from '../middleware/check-auth.js'
 import { Verbose, log, warn, error } from '../services.js'

@@ -6,6 +6,9 @@ import crypto from 'crypto';
 import zlib from 'zlib';
 import fs from 'fs';
 import path from 'path';
+import yaml from 'js-yaml'
+import nunjucks from 'nunjucks'
+import _ from 'lodash'
 
 import { checkAuth } from '../middleware/check-auth.js';
 import { Verbose, log, warn, error } from '../services.js';
@@ -20,57 +23,209 @@ import conf from '../conf.js'
 const verbose = Verbose('sd:routes/apps'); verbose('');
 const router = Router();
 
-async function installApp ({ userId, files }) {
-  const app = new App({
-    userId,
-  });
+// async function installApp ({ userId, files, values = '' } = {}) {
+//   const app = new App({
+//     userId,
+//   });
 
-  // Loop through extracted files and verbose content
-  for (const file of files) {
-    if (file.path.endsWith('.json')) {
-      if (file.path.startsWith('package/hyag/maps/._') ||
-          file.path.startsWith('package/hyag/agents/._')) {
-        verbose(`Skip hidden json file: ${file.path}`);
-        continue
-      }
-      let data = null
+//   // Loop through extracted files and verbose content
+//   for (const file of files) {
+//     if (file.path.endsWith('.json')) {
+//       if (file.path.startsWith('package/hyag/maps/._') ||
+//           file.path.startsWith('package/hyag/agents/._')) {
+//         verbose(`Skip hidden json file: ${file.path}`);
+//         continue
+//       }
+//       let data = null
+//       try {
+//         data = JSON.parse(file.content)
+//       } catch (err) {
+//         throw new Error(`Cannot parse json at ${file.path}: ${err.toString()}`)
+//       }
+
+//       if (file.path === 'package/package.json') {
+//         verbose(`package.json file: ${file.path}\nContent:\n${file.content}\n---`);
+//         app.package = data
+//       } else if (file.path.startsWith('package/hyag/maps/')) {
+//         verbose(`Map file: ${file.path}\nContent:\n${file.content}\n---`);
+//         const map = new Map({
+//           ...data,
+//           userId,
+//           appId: app._id,
+//         })
+//         await map.save()
+//         app.mapIds.push(map._id)
+//       } else if (file.path.startsWith('package/hyag/agents/')) {
+//         verbose(`Agent file: ${file.path}\nContent:\n${file.content}\n---`);
+//         const agent = new Agent({
+//           ...data,
+//           userId,
+//           appId: app._id,
+//         })
+//         await agent.save()
+//         app.agentIds.push(agent._id)
+//       } else {
+//         verbose(`Unknown JSON file: ${file.path}\n---`);
+//       }
+//     } else if (file.path.endsWith('.yaml')) {
+//       data = yaml.load(file.content)
+//       // TODO: load yamls in a similar way as I loaded jsons above
+//       //       Do not repeat yourself.
+//       // load package/hyag/maps/*.yaml
+//       // load package/hyag/agents/*.yaml
+//     } else if (file.path.endsWith('.yaml.template')) {
+//       // TODO: apply nunjucks to the template, then load as yamls
+//       //       use lodash deep merge() to load values file from /package/values.yaml, /package/values.json and values that come as an argument to the function (can be in yaml or json format - you should detect), the argument values has the biggest weight
+//       // load package/hyag/maps/*.yaml.template
+//       // load package/hyag/agents/*.yaml.template
+//     } else if (file.path.endsWith('.json.template')) {
+//       // TODO: apply nunjucks to the template, then load as jsons
+//       //       use lodash deep merge() to load values file from /package/values.yaml, /package/values.json and values that come as an argument to the function (can be in yaml or json format - you should detect)
+//       // load package/hyag/maps/*.json.template
+//       // load package/hyag/agents/*.json.template
+//     } else {
+//       verbose(`File: ${file.path}`);
+//     }
+//   }
+//   await app.save();
+//   return app
+// }
+
+
+nunjucks.configure({ autoescape: false })
+
+async function installApp({ userId, files, packageJson, values = '' } = {}) {
+  const app = new App({ userId })
+  app.package = packageJson
+
+  // ---- Helpers ----
+  const verboseLog = (label, file, content) => verbose(`${label}: ${file}\nContent:\n${content}\n---`)
+
+  const parseYamlOrJson = (text) => {
+    try {
+      return yaml.load(text)
+    } catch {
       try {
-        data = JSON.parse(file.content)
-      } catch (err) {
-        throw new Error(`Cannot parse json at ${file.path}: ${err.toString()}`)
+        return JSON.parse(text)
+      } catch {
+        throw new Error('Invalid YAML/JSON values format')
       }
-
-      if (file.path === 'package/package.json') {
-        verbose(`package.json file: ${file.path}\nContent:\n${file.content}\n---`);
-        app.package = data
-      } else if (file.path.startsWith('package/hyag/maps/')) {
-        verbose(`Map file: ${file.path}\nContent:\n${file.content}\n---`);
-        const map = new Map({
-          ...data,
-          userId,
-          appId: app._id,
-        })
-        await map.save()
-        app.mapIds.push(map._id)
-      } else if (file.path.startsWith('package/hyag/agents/')) {
-        verbose(`Agent file: ${file.path}\nContent:\n${file.content}\n---`);
-        const agent = new Agent({
-          ...data,
-          userId,
-          appId: app._id,
-        })
-        await agent.save()
-        app.agentIds.push(agent._id)
-      } else {
-        verbose(`Unknown JSON file: ${file.path}\n---`);
-      }
-    } else {
-      verbose(`File: ${file.path}`);
     }
   }
-  await app.save();
+
+  const mergeValues = (base, overrides = {}) => _.merge({}, base, overrides)
+
+  // Extract values from package
+  const valuesFiles = files.filter(f => f.path === 'package/values.yaml' || f.path === 'package/values.json')
+  let baseValues = {}
+  for (const vf of valuesFiles) {
+    try {
+      const parsed = parseYamlOrJson(vf.content)
+      baseValues = mergeValues(baseValues, parsed)
+    } catch (err) {
+      throw new Error(`Failed to parse ${vf.path}: ${err.toString()}`)
+    }
+  }
+
+  // Parse provided values argument (highest priority)
+  let inputValues = {}
+  if (values && typeof values === 'string') {
+    inputValues = parseYamlOrJson(values)
+  } else if (typeof values === 'object') {
+    inputValues = values
+  }
+
+  const mergedValues = mergeValues(baseValues, inputValues)
+
+  // ---- Reusable loader for YAML/JSON and templates ----
+  const loadData = ({ file, isTemplate = false, isYaml = true }) => {
+    try {
+      const content = isTemplate
+        ? nunjucks.renderString(String(file.content), mergedValues)
+        : file.content
+      return isYaml ? yaml.load(content) : JSON.parse(content)
+    } catch (err) {
+      throw new Error(`Error parsing ${file.path}: ${err.toString()}`)
+    }
+  }
+
+  // ---- Save entity helper ----
+  const saveEntity = async (Model, data, label) => {
+    const entity = new Model({
+      ...data,
+      userId,
+      appId: app._id
+    })
+    await entity.save()
+    app[`${label}Ids`].push(entity._id)
+  }
+
+  // ---- Process files ----
+  for (const file of files) {
+    const { path } = file
+
+    // Skip hidden macOS files
+    if (path.startsWith('package/hyag/maps/._') || path.startsWith('package/hyag/agents/._')) {
+      verbose(`Skip hidden file: ${path}`)
+      continue
+    }
+
+    // --- JSON templates ---
+    if (path.endsWith('.template.json')) {
+      const data = loadData({ file, isTemplate: true, isYaml: false })
+      if (path.startsWith('package/hyag/maps/')) {
+        verboseLog('Map JSON template', path, file.content)
+        await saveEntity(Map, data, 'map')
+      } else if (path.startsWith('package/hyag/agents/')) {
+        verboseLog('Agent JSON template', path, file.content)
+        await saveEntity(Agent, data, 'agent')
+      }
+
+    // --- YAML templates ---
+    } else if (path.endsWith('.template.yaml')) {
+      const data = loadData({ file, isTemplate: true, isYaml: true })
+      if (path.startsWith('package/hyag/maps/')) {
+        verboseLog('Map YAML template', path, file.content)
+        await saveEntity(Map, data, 'map')
+      } else if (path.startsWith('package/hyag/agents/')) {
+        verboseLog('Agent YAML template', path, file.content)
+        await saveEntity(Agent, data, 'agent')
+      }
+
+    // --- Plain JSON files ---
+    } else if (path.endsWith('.json')) {
+      const data = loadData({ file, isTemplate: false, isYaml: false })
+      if (path.startsWith('package/hyag/maps/')) {
+        verboseLog('Map file', path, file.content)
+        await saveEntity(Map, data, 'map')
+      } else if (path.startsWith('package/hyag/agents/')) {
+        verboseLog('Agent file', path, file.content)
+        await saveEntity(Agent, data, 'agent')
+      } else {
+        verbose(`Unknown JSON file: ${path}`)
+      }
+
+    // --- Plain YAML files ---
+    } else if (path.endsWith('.yaml')) {
+      const data = loadData({ file, isTemplate: false, isYaml: true })
+      if (path.startsWith('package/hyag/maps/')) {
+        verboseLog('Map YAML file', path, file.content)
+        await saveEntity(Map, data, 'map')
+      } else if (path.startsWith('package/hyag/agents/')) {
+        verboseLog('Agent YAML file', path, file.content)
+        await saveEntity(Agent, data, 'agent')
+      }
+
+    // --- Other files ---
+    } else {
+      verbose(`File: ${path}`)
+    }
+  }
+
+  await app.save()
   return app
 }
+
 
 async function uninstallApp ({ app }) {
   if (app) {
@@ -115,7 +270,8 @@ async function retrievePackage({ appName }) {
         version = metadata['dist-tags'].latest;
         verbose(`Resolved latest version of ${pkg} to ${version}`);
       } catch (err) {
-        throw new Error(`Failed to fetch package metadata: ${err.message}`);
+        error(`Failed to fetch package metadata: ${err.message}`);
+        throw new Error(`Package not found`);
       }
     }
 
@@ -395,7 +551,7 @@ router.post('/install', checkAuth, async (req, res, next) => {
       await decryptAndExtract({ files, vaultKeyValue })
     }
 
-    app = await installApp({ userId: req.user._id, files })
+    app = await installApp({ userId: req.user._id, files, packageJson })
 
     let transferred = null, minted = null
     if (seller) {
