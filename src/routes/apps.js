@@ -184,7 +184,11 @@ router.post('/search', checkAuth, async (req, res, next) => {
     const candidates = []
     const packageJson = parsePackageJson({ files })
     if (packageJson) {
-      candidates.push(packageJson)
+      const { purchased } = await checkOwnership({ user: req.user, packageName: packageJson.name })
+      candidates.push({
+        package: packageJson,
+        purchased,
+      })
     }
     res.json(candidates);
   } catch (err) {
@@ -301,34 +305,37 @@ async function getVaultKeyValue({ seller }) {
   return vaultKeyValue
 }
 
-async function purchaseUnlessOwned({ user, packageJson, seller }) {
-  let transferred = null
-  let minted = null
-
+async function checkOwnership({ user, packageName }) {
   const purchasePool = await getPoolByIdOrSymbol({ symbol: conf.firefly.purchaseSymbol })
   if (!purchasePool) {
     throw new Error(`Cannot find the token pool by the purchaseSymbol: ${conf.firefly.purchaseSymbol}`)
   }
-  const uri = `${conf.firefly.purchaseProto}://${packageJson.name}`
+  const uri = `${conf.firefly.purchaseProto}://${packageName}`
   const balances = await firefly.getTokenBalances({
     key: user.firefly.address,
   })
   verbose('balances:', balances)
   // Check the token
-  const foundPurchased = balances.find(b => b.uri === uri && b.pool === purchasePool.id)
-  verbose('foundPurchased:', foundPurchased)
+  const purchased = balances.find(b => (
+    b.uri === uri && b.pool === purchasePool.id && b.balance === '1'
+  ))
+  verbose('purchased:', purchased)
+  return { purchased, purchasePool, balances, uri }
+}
 
-  if (foundPurchased) {
+async function purchaseUnlessOwned({ user, packageJson, seller }) {
+  let transferred = null
+  let minted = null
+
+  const { purchased, purchasePool, uri } = await checkOwnership({
+    user,
+    packageName: packageJson.name
+  })
+
+  if (purchased) {
     log('User has already purchased the app:', uri, 'Skipping transfer')
   } else {
     log('User is purchasing the app:', uri)
-    // "pricing": {
-    //   "symbol": "HYAG",
-    //   "tokenIndex": "",
-    //   "price": "1",
-    //   "model": "one-time",
-    //   "interval": ""
-    // }
     const pricing = packageJson['x-hyag']?.pricing
     if (seller && seller.address &&
         pricing && pricing.symbol && pricing.price) {
