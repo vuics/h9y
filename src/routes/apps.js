@@ -2,6 +2,10 @@ import { Router } from 'express';
 import axios from 'axios';
 import * as tar from 'tar';
 import { inspect } from 'util';
+import crypto from 'crypto';
+import zlib from 'zlib';
+import fs from 'fs';
+import path from 'path';
 
 import { checkAuth } from '../middleware/check-auth.js';
 import { Verbose, log, warn, error } from '../services.js';
@@ -70,14 +74,14 @@ async function retrievePackage({ appName }) {
 
     // Extract the .tgz archive in memory
     await tar.list({
-      file: null,       // no file, we'll pass buffer via "sync" approach
+      file: null,
       onentry: entry => {
-        let content = '';
-        entry.on('data', chunk => content += chunk.toString());
+        const chunks = [];
+        entry.on('data', chunk => chunks.push(chunk));
         entry.on('end', () => {
           files.push({
             path: entry.path,
-            content
+            content: Buffer.concat(chunks) // store as Buffer
           });
         });
       },
@@ -128,6 +132,83 @@ router.post('/search', checkAuth, async (req, res, next) => {
 });
 
 
+// Helper function: decrypt AES-256-CBC with PBKDF2 (OpenSSL compatible)
+async function decryptFile(buffer, vaultKey) {
+  // OpenSSL "Salted__" header format
+  const saltHeader = buffer.slice(0, 8).toString();
+  if (saltHeader !== 'Salted__') {
+    throw new Error('Missing OpenSSL Salted__ header');
+  }
+
+  const salt = buffer.slice(8, 16);
+  const ciphertext = buffer.slice(16);
+
+  // Derive key and IV with PBKDF2 (100000 iterations)
+  const keyiv = crypto.pbkdf2Sync(vaultKey, salt, 100000, 48, 'sha256');
+  const key = keyiv.slice(0, 32);
+  const iv = keyiv.slice(32, 48);
+
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  return decrypted;
+}
+
+// Helper: extract .tar.gz from buffer
+async function extractTarGz(buffer, pathPrefix = '') {
+  return new Promise((resolve, reject) => {
+    const files = [];
+    const extract = tar.t();
+
+    extract.on('entry', (entry) => {
+      let content = '';
+      entry.on('data', (chunk) => (content += chunk.toString()));
+      entry.on('end', () => {
+        files.push({ path: `${pathPrefix}${entry.path}`, content });
+      });
+    });
+
+    extract.on('finish', () => resolve(files));
+    extract.on('error', reject);
+
+    const gunzip = zlib.createGunzip();
+    gunzip.on('error', reject);
+    gunzip.end(buffer);
+
+    gunzip.pipe(extract);
+  });
+}
+
+async function decryptAndExtract({ files, vaultKey }) {
+  for (const file of files) {
+    if (file.path.endsWith('.enc')) {
+      try {
+        verbose(`Found encrypted file: ${file.path}, decrypting...`);
+        const encBuffer = Buffer.isBuffer(file.content)
+          ? file.content
+          : Buffer.from(file.content, 'binary');
+
+        const decrypted = await decryptFile(encBuffer, vaultKey);
+
+        if (file.path.endsWith('.tar.gz.enc')) {
+          verbose(`Decrypting and extracting ${file.path}...`);
+          const extracted = await extractTarGz(decrypted, 'package/');
+          verbose(`Extracted ${extracted.length} files from decrypted archive`);
+          files.push(...extracted);
+        } else {
+          verbose(`Decrypted non-archive file: ${file.path}`);
+          files.push({
+            path: file.path.replace('.enc', ''),
+            content: decrypted.toString()
+          });
+        }
+      } catch (err) {
+        warn(`Failed to decrypt ${file.path}:`, err);
+      }
+    }
+  }
+  verbose('Decrypted files:', files.map(f => f.path));
+}
+
 router.post('/install', checkAuth, async (req, res, next) => {
   let app = null
   try {
@@ -136,6 +217,11 @@ router.post('/install', checkAuth, async (req, res, next) => {
 
     const files = await retrievePackage({ appName })
 
+    // TODO: get from vault
+    const vaultKey = 'TBS';
+
+    await decryptAndExtract({ files, vaultKey })
+
     app = new App({
       userId: req.user._id
     });
@@ -143,6 +229,11 @@ router.post('/install', checkAuth, async (req, res, next) => {
     // Loop through extracted files and verbose content
     for (const file of files) {
       if (file.path.endsWith('.json')) {
+        if (file.path.startsWith('package/hyag/maps/._') ||
+            file.path.startsWith('package/hyag/agents/._')) {
+          verbose(`Skip hidden json file: ${file.path}`);
+          continue
+        }
         let data = null
         try {
           data = JSON.parse(file.content)
@@ -153,7 +244,7 @@ router.post('/install', checkAuth, async (req, res, next) => {
         if (file.path === 'package/package.json') {
           verbose(`package.json file: ${file.path}\nContent:\n${file.content}\n---`);
           app.package = data
-        } else if (file.path.startsWith('package/maps/')) {
+        } else if (file.path.startsWith('package/hyag/maps/')) {
           verbose(`Map file: ${file.path}\nContent:\n${file.content}\n---`);
           const map = new Map({
             ...data,
@@ -162,7 +253,7 @@ router.post('/install', checkAuth, async (req, res, next) => {
           })
           await map.save()
           app.mapIds.push(map._id)
-        } else if (file.path.startsWith('package/agents/')) {
+        } else if (file.path.startsWith('package/hyag/agents/')) {
           verbose(`Agent file: ${file.path}\nContent:\n${file.content}\n---`);
           const agent = new Agent({
             ...data,
@@ -172,7 +263,8 @@ router.post('/install', checkAuth, async (req, res, next) => {
           await agent.save()
           app.agentIds.push(agent._id)
         } else {
-          verbose(`Unknown JSON file: ${file.path}\nContent:\n${file.content}\n---`);
+          // verbose(`Unknown JSON file: ${file.path}\nContent:\n${file.content}\n---`);
+          verbose(`Unknown JSON file: ${file.path}\n---`);
         }
       } else {
         verbose(`File: ${file.path}`);
