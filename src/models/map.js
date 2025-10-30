@@ -140,6 +140,7 @@ NodesArray.discriminator('NoteNode', new mongoose.Schema({
   data: NoteNodeDataSchema,  // Custom data specific to the NoteNode, including text content, attachments, or metadata
   measured: MeasuredSchema,  // Automatically added by ReactFlow to store the node’s dimensions and position after layout calculation
   parentId: String,          // The ID of the parent GroupNode if this node is nested inside a group
+  deactivatedParentId: String, // When user deactives group, the parentId key becomes renamed to deactivatedParentId. Then it can be renamed back on activation.
   width: Number,             // The rendered width of the node on the canvas
   height: Number,            // The rendered height of the node on the canvas
   dragging: Boolean,         // Indicates whether the node is currently being dragged by the user
@@ -152,6 +153,11 @@ NodesArray.discriminator('NoteNode', new mongoose.Schema({
 
 NodesArray.discriminator('group', new mongoose.Schema({
   data: GroupNodeDataSchema,
+  width: Number,             // The rendered width of the group node on the canvas
+  height: Number,            // The rendered height of the group node on the canvas
+  deactivatedWidth: Number,  // When user deactivates group width key becomes renamed to deactivatedWidth. Then it can be renamed back on activation.
+  deactivatedHeight: Number, // When user deactivates group height key becomes renamed to deactivatedHeight. Then it can be renamed back on activation.
+
 }, { _id: false, strict: false }))
 
 // ---------- Main Map Schema ----------
