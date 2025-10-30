@@ -543,4 +543,48 @@ router.post('/uninstall', checkAuth, async (req, res, next) => {
   }
 })
 
+async function deployApp({ app, deployed }) {
+  if (app) {
+    verbose(
+      'Deploying installed app: mapIds:',
+      app.mapIds,
+      ', agentIds:',
+      app.agentIds,
+      'app._id:',
+      app._id
+    );
+
+    // Update agents instead of deleting
+    if (app.agentIds && app.agentIds.length) {
+      const result = await Agent.updateMany(
+        { _id: { $in: app.agentIds } },
+        { $set: { deployed } }
+      );
+      log(`Updated ${result.modifiedCount} agents with deployed=${deployed}`);
+    }
+  }
+}
+
+router.post('/deploy', checkAuth, async (req, res, next) => {
+  let app = null
+  try {
+    verbose('app uninstall body:', req.body);
+    const { appId, deployed } = req.body;
+    const app = await App.findOne({ _id: appId, userId: req.user._id })
+    if (!app) {
+      throw new Error('App is not found')
+    }
+    await deployApp({ app, deployed })
+    const out = {
+      result: 'ok',
+      appId: app._id,
+      deployed,
+    };
+    res.json(out);
+  } catch (err) {
+    error('App deployment error:', err)
+    res.status(500).json({ result: 'error', message: err.toString() });
+  }
+})
+
 export default router;
