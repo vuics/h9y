@@ -24,6 +24,7 @@ router.get('/', checkAuth, async (req, res, next) => {
     out.maps = await Map.countDocuments({ userId: req.user._id });
     out.apps = await App.countDocuments({ userId: req.user._id });
     out.bridges = await Bridge.countDocuments({ userId: req.user._id });
+    out.deployedBridges = await Bridge.countDocuments({ userId: req.user._id, deployed: true });
 
     res.json(out);
   } catch (err) {
