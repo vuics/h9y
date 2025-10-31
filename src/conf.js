@@ -115,6 +115,7 @@ const conf = {
     agent: bool(process.env.RESOURCE_AGENT || true),
     map: bool(process.env.RESOURCE_MAP || true),
     app: bool(process.env.RESOURCE_APP || true),
+    bridge: bool(process.env.RESOURCE_BRIDGE || true),
 
     // Swagger Specification
     spec: {
