@@ -14,7 +14,7 @@ SkipTLSVerify=true
 Server="selfdev-prosody.dev.local"
 Muc="conference.selfdev-prosody.dev.local"
 Jid="matter@selfdev-prosody.dev.local"
-Password="123"
+Password="mAtter_BRiDGE-123"
 Nick="matter"
 SkipTLSVerify=true
 # NoTLS=true
@@ -37,7 +37,7 @@ IgnoreMessages="^/" # Don't bridge bot commands (as the responses will not be br
 
 [discord.selfdev_bot]
 Token="MTM1MDk1MzA3NTkyNTU4NTk2MA.GGyAf_.z49SNbYC8M28vxbUelf-nvJIOxogG-RkwLQS8g"
-Server="az1"
+Server="HyperAgency"
 
 [[gateway]]
 name="xmpp-telegram"

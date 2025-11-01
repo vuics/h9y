@@ -18,18 +18,27 @@ RemoteNickFormat = "{{ general.RemoteNickFormat | default('[{PROTOCOL}] <{NICK}>
 
 {% for proto in protocols %}
 # =====================================================
-# Protocol: {{ proto.type | upper }}
+# Protocol: {{ proto.type | upper }} ({{ proto.name }})
 # =====================================================
-{% for acc in proto.accounts %}
-[{{ proto.type }}.{{ acc.name }}]
-{% if acc.server %}Server = "{{ acc.server }}"{% endif %}
-{% if acc.token %}Token = "{{ acc.token }}"{% endif %}
-{% if acc.username %}Nick = "{{ acc.username }}"{% endif %}
-{% if acc.password %}Password = "{{ acc.password }}"{% endif %}
-{% if acc.channel %}Channel = "{{ acc.channel }}"{% endif %}
-PrefixMessagesWithNick = {{ acc.prefixMessagesWithNick | default(true) | string }}
-UseTLS = {{ acc.useTLS | default(true) | string }}
-{% endfor %}
+[{{ proto.type }}.{{ proto.name }}]
+{% if proto.Server %}Server="{{ proto.Server }}"{% endif %}
+{% if proto.Login %}Login="{{ proto.Login }}"{% endif %}
+{% if proto.Jid %}Jid="{{ proto.Jid }}"{% endif %}
+{% if proto.Password %}Password="{{ proto.Password }}"{% endif %}
+{% if proto.Token %}Token="{{ proto.Token }}"{% endif %}
+{% if proto.Nick %}Nick="{{ proto.Nick }}"{% endif %}
+{% if proto.Team %}Team="{{ proto.Team }}"{% endif %}
+{% if proto.TenantID %}TenantID="{{ proto.TenantID }}"{% endif %}
+{% if proto.ClientID %}ClientID="{{ proto.ClientID }}"{% endif %}
+{% if proto.TeamID %}TeamID="{{ proto.TeamID }}"{% endif %}
+{% if proto.Muc %}Muc="{{ proto.Muc }}"{% endif %}
+{% if proto.SessionFile %}SessionFile="{{ proto.SessionFile }}"{% endif %}
+{% if proto.Number %}Number="{{ proto.Number }}"{% endif %}
+PrefixMessagesWithNick = {{ proto.PrefixMessagesWithNick | default(true) | string }}
+UseTLS = {{ proto.UseTLS | default(true) | string }}
+SkipTLSVerify = {{ proto.SkipTLSVerify | default(false) | string }}
+NoTLS = {{ proto.NoTLS | default(false) | string }}
+RemoteNickFormat = "{{ proto.RemoteNickFormat | default('[{PROTOCOL}] <{NICK}> ') }}"
 {% endfor %}
 
 {% for gw in gateways %}
