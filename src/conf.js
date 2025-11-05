@@ -497,6 +497,13 @@ const conf = {
     password: process.env.FREESWITCH_PASSWORD || 'ClueCon',
   },
 
+  speech: {
+    url: process.env.SPEACHES_BASE_URL || 'http://selfdev-speech.dev.local:8372',
+    sttModel: process.env.TRANSCRIPTION_MODEL_ID || 'Systran/faster-distil-whisper-small.en',
+    ttsModel: process.env.SPEECH_MODEL_ID || 'speaches-ai/Kokoro-82M-v1.0-ONNX',
+    ttsVoice: process.env.VOICE_ID || 'af_heart',
+  },
+
   phone: {
     recordingsDir: process.env.RECORDINGS_DIR || '/tmp/recordings',
     recordingsExternalDir: process.env.RECORDINGS_EXTERNAL_DIR || '/Users/artemarakcheev/workspace/vuics/self-developing/tmp/recordings',

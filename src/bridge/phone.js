@@ -50,12 +50,6 @@ const config = {
 };
 console.log('config:', config)
 
-const SPEACHES_BASE_URL = process.env.SPEACHES_BASE_URL || 'http://selfdev-speech.dev.local:8372';
-const TRANSCRIPTION_MODEL_ID = process.env.TRANSCRIPTION_MODEL_ID || 'Systran/faster-distil-whisper-small.en';
-const SPEECH_MODEL_ID = process.env.SPEECH_MODEL_ID || 'speaches-ai/Kokoro-82M-v1.0-ONNX'
-const VOICE_ID = process.env.VOICE_ID || 'af_heart'
-
-
 
 // Make sure the directory exists
 try {
@@ -271,11 +265,11 @@ export default class Phone extends Connector {
 
           // Generate TTS with Speaches.ai
           const response = await axios.post(
-            `${SPEACHES_BASE_URL}/v1/audio/speech`,
+            `${conf.speech.url}/v1/audio/speech`,
             {
               input: text,
-              model: SPEECH_MODEL_ID,
-              voice: VOICE_ID,
+              model: conf.speech.ttsModel,
+              voice: conf.speech.ttsVoice,
               response_format: 'wav',
             },
             {
@@ -427,11 +421,11 @@ export default class Phone extends Connector {
 
         const formData = new FormData();
         formData.append('file', fsExtra.createReadStream(filePath));
-        formData.append('model', TRANSCRIPTION_MODEL_ID);
+        formData.append('model', conf.speech.sttModel);
 
         try {
           const response = await axios.post(
-            `${SPEACHES_BASE_URL}/v1/audio/transcriptions`,
+            `${conf.speech.url}/v1/audio/transcriptions`,
             formData,
             {
               headers: formData.getHeaders(),
