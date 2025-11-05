@@ -1,6 +1,6 @@
 FROM 42wim/matterbridge:1.26
 
-RUN apk add --no-cache bash curl wget git make gcc g++ python3 nodejs npm expect ffmpeg
+RUN apk add --no-cache bash curl wget git make gcc g++ python3 nodejs npm expect
 
 WORKDIR /opt/app/
 COPY package*.json ./

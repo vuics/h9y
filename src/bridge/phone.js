@@ -222,29 +222,6 @@ export default class Phone extends Connector {
         }
       });
 
-      const sayTS = async (text, voice = 'Alex', outputPath = '/tmp/temp.wav') => {
-        const tempAiffPath = '/tmp/temp.aiff';
-
-        // Escape single quotes in text for shell command
-        const escapedText = text.replace(/'/g, "'\\''");
-
-        const command = `say -v ${voice} '${escapedText}' -o ${tempAiffPath} && ` +
-                        `sox ${tempAiffPath} -r 8000 -c 1 ${outputPath} && ` +
-                        `rm ${tempAiffPath}`;
-
-        return new Promise((resolve, reject) => {
-          exec(command, (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Error: ${stderr}`);
-              reject(error);
-              return;
-            }
-            // console.log(`TTS file generated at: ${outputPath}`);
-            resolve();
-          });
-        });
-      }
-
       const removeFile = async (filePath) => {
         try {
           await fs.promises.unlink(filePath);
@@ -414,13 +391,13 @@ export default class Phone extends Connector {
           // Check if the file exists and has content
           if (await fsExtra.pathExists(recordingFile)) {
             // Show audio details using FFmpeg
-            exec(`ffprobe -v error -show_format -show_streams "${recordingFile}"`, (error, stdout) => {
-              if (error) {
-                console.error(`Error analyzing audio: ${error.message}`);
-              } else {
-                console.log(`Audio file details:\n${stdout}`);
-              }
-            });
+            // exec(`ffprobe -v error -show_format -show_streams "${recordingFile}"`, (error, stdout) => {
+            //   if (error) {
+            //     console.error(`Error analyzing audio: ${error.message}`);
+            //   } else {
+            //     console.log(`Audio file details:\n${stdout}`);
+            //   }
+            // });
 
             const stats = await fsExtra.stat(recordingFile);
             if (stats.size === 0) {
@@ -501,17 +478,13 @@ export default class Phone extends Connector {
         }
       }
 
-      // Transcribe an audio file (uses ffmpeg normalization + Speaches.ai)
       const transcribeAudio = async (audioFilePath) => {
         console.log(`Starting transcription of ${audioFilePath}`);
 
         try {
-          // Check if the file exists
           if (!await fsExtra.pathExists(audioFilePath)) {
             throw new Error(`Audio file not found: ${audioFilePath}`);
           }
-
-          // Check file stats
           const stats = await fsExtra.stat(audioFilePath);
           console.log(`Audio file size: ${stats.size} bytes`);
 
@@ -519,61 +492,19 @@ export default class Phone extends Connector {
             return 'Empty audio file, no transcription possible.';
           }
 
-          // Normalize audio to 16kHz mono
-          const normalizedPath = audioFilePath.replace('.wav', '_normalized.wav');
-
-          await new Promise((resolve, reject) => {
-            exec(`ffmpeg -y -i "${audioFilePath}" -ar 16000 -ac 1 "${normalizedPath}"`, (error) => {
-              if (error) {
-                reject(new Error(`Failed to normalize audio: ${error.message}`));
-              } else {
-                resolve();
-              }
-            });
-          });
-
-          console.log(`Audio normalized to ${normalizedPath}`);
-
-          // Perform transcription via Speaches.ai
-          const transcript = await sendToSpeaches(normalizedPath);
-
-          if (!SAVE_NORMALIZATION) {
-            await removeFile(normalizedPath);
-          }
-
-          // return JSON.stringify(transcript);
+          const transcript = await sendToSpeaches(audioFilePath);
           return transcript
-
         } catch (error) {
           console.error(`Error during transcription process: ${error.message}`);
           console.log(`Attempting transcription with original file as fallback...`);
 
           try {
             const transcript = await sendToSpeaches(audioFilePath);
-            // return JSON.stringify(transcript);
             return transcript
           } catch (fallbackError) {
             console.error(`Fallback transcription failed: ${fallbackError.message}`);
             return `Transcription error: ${fallbackError.message}`;
           }
-        }
-      }
-
-
-      const checkAudioFile = async (filePath) => {
-        try {
-          console.log(`Examining audio file: ${filePath}`);
-          // Try to spawn a process to get file info using ffprobe if available
-          // const { exec } = require('child_process');
-          exec(`ffprobe -v error -show_format -show_streams "${filePath}"`, (error, stdout, stderr) => {
-            if (error) {
-              console.log(`Error getting audio details: ${error.message}`);
-              return;
-            }
-            console.log(`Audio file details:\n${stdout}`);
-          });
-        } catch (error) {
-          console.error(`Error checking audio file: ${error.message}`);
         }
       }
 
