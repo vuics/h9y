@@ -30,11 +30,6 @@ const SMS_ME = arr(process.env.SMS_ME || '9639@192.168.50.223,450905@paris1.voip
 
 // Configuration
 const config = {
-  enable: bool(process.env.XMPP_ENABLE || true),
-  service: process.env.XMPP_SERVICE || `xmpp://selfdev-prosody.dev.local:5222`,
-  domain: process.env.XMPP_DOMAIN || 'selfdev-prosody.dev.local',
-  mucDomain: process.env.XMPP_MUC_DOMAIN || 'conference.selfdev-prosody.dev.local',
-
   // jid: process.env.XMPP_JID || 'art@selfdev-prosody.dev.local',
   // password: process.env.XMPP_PASSWORD || '123',
   // botJid: process.env.XMPP_BOT_JID || 'assist@selfdev-prosody.dev.local',
@@ -45,7 +40,8 @@ const config = {
 
   botNickname: process.env.XMPP_BOT_NICKNAME || 'assist',
   groupChatRoom: process.env.XMPP_GROUP_CHAT_ROOM || 'voip',
-  enablePersonalMessage: bool(process.env.XMPP_ENABLE_PERSONAL_MESSAGE || false),
+  // enablePersonalMessage: bool(process.env.XMPP_ENABLE_PERSONAL_MESSAGE || false),
+  enablePersonalMessage: bool(process.env.XMPP_ENABLE_PERSONAL_MESSAGE || true),
   enableGroupChat: bool(process.env.XMPP_ENABLE_GROUP_CHAT || true),
 };
 console.log('config:', config)
@@ -537,15 +533,15 @@ export default class Phone extends Connector {
       });
 
 
-      verbose('service:', config.service)
-      verbose('domain:', config.domain)
+      verbose('service:', conf.xmpp.websocketUrl)
+      verbose('domain:', conf.xmpp.host)
       verbose('username:', config.jid.split('@')[0])
       verbose('password:', config.password,)
 
       // Initialize XMPP client
       this.xmpp = client({
-        service: config.service,
-        domain: config.domain,
+        service: conf.xmpp.websocketUrl,
+        domain: conf.xmpp.host,
         username: config.jid.split('@')[0],
         password: config.password,
       });
@@ -670,7 +666,7 @@ export default class Phone extends Connector {
 
       // Join group chat and send a message with mention
       const joinGroupChat = async () => {
-        const roomJid = `${config.groupChatRoom}@${config.mucDomain}`;
+        const roomJid = `${config.groupChatRoom}@${conf.xmpp.mucHost}`;
 
         console.log(`Joining group chat ${roomJid} as ${this?.nickname || '(?)'}...`);
 
@@ -690,7 +686,7 @@ export default class Phone extends Connector {
       // Send a message with a mention to the group chat
       const sendGroupChatMessage = async ({ message }) => {
         console.log(`Sending message with proper mention format...`);
-        const roomJid = `${config.groupChatRoom}@${config.mucDomain}`;
+        const roomJid = `${config.groupChatRoom}@${conf.xmpp.mucHost}`;
 
         const messageBody = `@${config.botNickname} ${message}`;
 
@@ -708,7 +704,7 @@ export default class Phone extends Connector {
             type: 'mention',
             begin: '0',
             end: config.botNickname.length + 1,
-            uri: `xmpp:${config.botNickname}@${config.mucDomain}/${config.botNickname}`
+            uri: `xmpp:${config.botNickname}@${conf.xmpp.mucHost}/${config.botNickname}`
           })
         );
 
@@ -716,14 +712,8 @@ export default class Phone extends Connector {
         console.log('Message with mention sent:', messageBody);
       }
 
-      // FIXME: use conf
-      if (config.enable) {
-        // Start the client
-        console.log(`Connecting to XMPP on ${config.service}, domain: ${config.domain}.`);
-        this.xmpp.start().catch(console.error);
-      } else {
-        console.warn('XMPP connection is disabled: config.enable:', config.enable)
-      }
+      console.log(`Connecting to XMPP on ${conf.xmpp.websocketUrl}, domain: ${conf.xmpp.host}.`);
+      this.xmpp.start().catch(console.error);
     } catch (err) {
       error('Error starting Phone:', err)
     }

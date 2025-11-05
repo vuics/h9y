@@ -400,12 +400,12 @@ const conf = {
   },
 
   xmpp: {
-    host: process.env.XMPP_HOST || 'localhost',
-    websocketUrl: process.env.XMPP_WEBSOCKET_URL || 'wss://localhost:5281/xmpp-websocket',
-    commanderUrl: process.env.XMPP_COMMANDER_URL || 'http://localhost:8387',
+    host: process.env.XMPP_HOST || 'selfdev-prosody.dev.local',
+    websocketUrl: process.env.XMPP_WEBSOCKET_URL || 'wss://selfdev-prosody.dev.local:5281/xmpp-websocket',
+    commanderUrl: process.env.XMPP_COMMANDER_URL || 'http://selfdev-prosody.dev.local:8387',
 
-    mucHost: process.env.XMPP_MUC_HOST || 'conference.localhost',
-    shareHost: process.env.XMPP_SHARE_HOST || 'share.localhost',
+    mucHost: process.env.XMPP_MUC_HOST || 'conference.selfdev-prosody.dev.local',
+    shareHost: process.env.XMPP_SHARE_HOST || 'share.selfdev-prosody.dev.local',
     shareUrlPrefix: process.env.SHARE_URL_PREFIX || 'https://selfdev-prosody.dev.local:5281/file_share/',
 
     password: process.env.XMPP_PASSWORD || "a-geNt-$sec-ret-10m_pp",
