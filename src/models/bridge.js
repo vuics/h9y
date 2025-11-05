@@ -94,6 +94,27 @@ const MessengersSchema = new mongoose.Schema({
   gateways: { type: [GatewaySchema], required: true, default: [] }
 }, { _id: false })
 
+// === Subschema: Phone ===
+const PhoneSchema = new mongoose.Schema({
+  host: String,
+  username: String,
+  password: String,
+
+  altHost: String,
+  altUsername: String,
+
+  xmppJid: String,
+  xmppPassword: String,
+
+  recipient: String,
+  recipientNickname: String,
+  joinRoom: String,
+  enablePersonal: Boolean,
+  enableRoom: Boolean,
+
+  welcomeMessage: String,
+}, { _id: false })
+
 // === Root Bridge Schema ===
 const BridgeSchema = new mongoose.Schema({
   userId: {
@@ -110,7 +131,8 @@ const BridgeSchema = new mongoose.Schema({
     name: { type: String, required: true }, // unique name within user scope
     description: String,
 
-    messengers: { type: MessengersSchema, required: false }
+    messengers: { type: MessengersSchema, required: false },
+    phone: { type: PhoneSchema, required: false },
   },
 
   logs: String

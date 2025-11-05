@@ -13,46 +13,20 @@ import { randomUUID } from 'crypto'
 import { log, warn, error, Verbose } from '../services.js'
 import Connector from './connector.js'
 import Bridge from '../models/bridge.js'
-
-// FIXME: exclude bool, json, num, arr
-import conf, { bool, json, num, arr } from '../conf.js'
+import conf from '../conf.js'
 
 const verbose = Verbose('sd:bridge/phone'); verbose('')
 
-
 // Allow insecure certificates (without showing warning)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-// TODO: add bridge settings:
-const SMS_ME = arr(process.env.SMS_ME || '9639@192.168.50.223,450905@paris1.voip.ms')
-// const SMS_ME = ['selfdev-voip@192.168.50.223', '450905@paris1.voip.ms']
-// const SMS_ME = ['1000@192.168.50.223', '450905@paris1.voip.ms']
-
-// Configuration
-const config = {
-  // jid: process.env.XMPP_JID || 'art@selfdev-prosody.dev.local',
-  // password: process.env.XMPP_PASSWORD || '123',
-  // botJid: process.env.XMPP_BOT_JID || 'assist@selfdev-prosody.dev.local',
-  jid: process.env.XMPP_JID || 'voip@selfdev-prosody.dev.local',
-  // password: process.env.XMPP_PASSWORD || 'V01p-Sec_ReT-jfk',
-  password: 'V01p-Sec_ReT-jfk',
-  botJid: process.env.XMPP_BOT_JID || 'artemarakcheev@selfdev-prosody.dev.local',
-
-  botNickname: process.env.XMPP_BOT_NICKNAME || 'assist',
-  groupChatRoom: process.env.XMPP_GROUP_CHAT_ROOM || 'voip',
-  // enablePersonalMessage: bool(process.env.XMPP_ENABLE_PERSONAL_MESSAGE || false),
-  enablePersonalMessage: bool(process.env.XMPP_ENABLE_PERSONAL_MESSAGE || true),
-  enableGroupChat: bool(process.env.XMPP_ENABLE_GROUP_CHAT || true),
-};
-console.log('config:', config)
 
 
 // Make sure the directory exists
 try {
   fsExtra.ensureDirSync(conf.phone.recordingsDir);
-  console.log(`Recordings directory ensured at: ${conf.phone.recordingsDir}`);
+  log(`Recordings directory ensured at: ${conf.phone.recordingsDir}`);
 } catch (error) {
-  console.error(`Failed to create recordings directory: ${error.message}`);
+  error(`Failed to create recordings directory: ${error.message}`);
   process.exit(1);
 }
 
@@ -94,20 +68,20 @@ export default class Phone extends Connector {
       this.xmppOnline = false;
 
       // Create a FreeSWITCH connection
-      console.log(`Connecting to FreeSwitch on ${conf.freeswitch.host}:${conf.freeswitch.port}`);
+      log(`Connecting to FreeSwitch on ${conf.freeswitch.host}:${conf.freeswitch.port}`);
       // verbose('conf.freeswitch.password:', conf.freeswitch.password)
       this.conn = new modesl.Connection(conf.freeswitch.host, conf.freeswitch.port, conf.freeswitch.password, () => {
-        console.log('Connected to FreeSWITCH');
+        log('Connected to FreeSWITCH');
         this.freeswitchOnline = true;
 
         // Subscribe to all events
         this.conn.subscribe(['ALL'], () => {
-          console.log('Subscribed to FreeSWITCH events');
+          log('Subscribed to FreeSWITCH events');
         });
 
         // Set up event handler for inbound calls
         this.conn.on('esl::event::CHANNEL_ANSWER::*', async (event) => {
-          console.log('even handler for inbound calls, event:', event)
+          log('even handler for inbound calls, event:', event)
           await handleCall(event);
         });
 
@@ -115,31 +89,31 @@ export default class Phone extends Connector {
 
       // Handle connection errors
       this.conn.on('error', (error) => {
-        console.error('FreeSWITCH connection error:', error);
+        error('FreeSWITCH connection error:', error);
       });
 
       this.conn.on('esl::connect', () => {
-        console.log('ESL connected');
+        log('ESL connected');
       });
 
       this.conn.on('esl::event::*::*', (event) => {
         // verbose('event:', event)
         const eventName = event.getHeader('Event-Name');
-        console.log(`Event name received: ${eventName}`);
-        // console.log('event:', JSON.stringify(event))
+        log(`Event name received: ${eventName}`);
+        // log('event:', JSON.stringify(event))
 
         // For CUSTOM events, show the subclass
         if (eventName === 'CUSTOM') {
-          console.log(`  Subclass: ${event.getHeader('Event-Subclass')}`);
+          log(`  Subclass: ${event.getHeader('Event-Subclass')}`);
         }
 
         // For call-related events, show more details
         if (['CHANNEL_CREATE', 'CHANNEL_ANSWER', 'CHANNEL_EXECUTE', 'CHANNEL_HANGUP',
              'CHANNEL_DESTROY', 'DTMF'].includes(eventName)) {
-          console.log(`  UUID: ${event.getHeader('Unique-ID')}`);
-          console.log(`  From: ${event.getHeader('Caller-Caller-ID-Number') || 'unknown'}`);
-          console.log(`  To: ${event.getHeader('Caller-Destination-Number') || 'unknown'}`);
-          console.log(`  Direction: ${event.getHeader('Call-Direction') || 'unknown'}`);
+          log(`  UUID: ${event.getHeader('Unique-ID')}`);
+          log(`  From: ${event.getHeader('Caller-Caller-ID-Number') || 'unknown'}`);
+          log(`  To: ${event.getHeader('Caller-Destination-Number') || 'unknown'}`);
+          log(`  Direction: ${event.getHeader('Call-Direction') || 'unknown'}`);
         }
       });
 
@@ -147,52 +121,54 @@ export default class Phone extends Connector {
         const uuid = event.getHeader('Unique-ID');
         const caller = event.getHeader('Caller-Caller-ID-Number');
         const callee = event.getHeader('Caller-Destination-Number');
-        console.log(`New call detected: ${caller} → ${callee} (UUID: ${uuid})`);
+        log(`New call detected: ${caller} → ${callee} (UUID: ${uuid})`);
 
         if (callee && callee === 'voicemail') {
-          console.log('Voicemail call detected');
+          log('Voicemail call detected');
 
           // FIXME: the callee is hardcodded, make a setting
         } else if (callee && callee === '450905') {
-          console.log('Inbound 450905@VoIP.ms call detected');
+          log('Inbound 450905@VoIP.ms call detected');
         }
       });
 
       this.conn.on('esl::event::CHANNEL_PARK::*', async (event) => {
-        console.log('--------------PARK--------------')
+        log('--------------PARK--------------')
         const uuid = event.getHeader('Unique-ID');
         this.parkUuid = uuid
         const callerNumber = event.getHeader('Caller-ANI');
-        console.log(`Parking call from ${callerNumber} with UUID: ${uuid}`);
+        log(`Parking call from ${callerNumber} with UUID: ${uuid}`);
 
+        log('phone:', this.bridge.options.phone)
+        log('welcomeMessage:', this.bridge.options.phone.welcomeMessage)
         await ttsToFreeswitch({
-          text: `Welcome to the ${config.botNickname} agent. Voice your prompt and press hashtag.`,
+          text: this.bridge.options.phone.welcomeMessage,
           parkUuid: this.parkUuid,
         })
       });
 
       // Add this to your connection event handlers
       this.conn.on('esl::event::CHANNEL_DESTROY::*', (event) => {
-        console.log('Call ended:', event.getHeader('Unique-ID'));
+        log('Call ended:', event.getHeader('Unique-ID'));
         this.parkUuid = null
       });
 
       this.conn.on('esl::event::CUSTOM::*', (event) => {
         const eventSubclass = event.getHeader('Event-Subclass');
         if (eventSubclass) {
-          console.log('Custom event:', eventSubclass);
+          log('Custom event:', eventSubclass);
         }
       });
 
       const removeFile = async (filePath) => {
         try {
           await fs.promises.unlink(filePath);
-          console.log(`Successfully removed file: ${filePath}`);
+          log(`Successfully removed file: ${filePath}`);
         } catch (err) {
           if (err.code === 'ENOENT') {
-            console.log(`File not found: ${filePath}`);
+            log(`File not found: ${filePath}`);
           } else {
-            console.error(`Error removing file: ${err.message}`);
+            error(`Error removing file: ${err.message}`);
           }
         }
       }
@@ -200,23 +176,23 @@ export default class Phone extends Connector {
       const handleCall = async (event) => {
         const uuid = event.getHeader('Unique-ID');
         const callerNumber = event.getHeader('Caller-ANI');
-        console.log(`Incoming call from ${callerNumber} with UUID: ${uuid}`);
+        log(`Incoming call from ${callerNumber} with UUID: ${uuid}`);
 
         // Create a new recording session with proper format settings
         const recordingFile = path.join(conf.phone.recordingsDir, `${uuid}.wav`);
         const recordingExternalFile = path.join(conf.phone.recordingsExternalDir, `${uuid}.wav`);
 
         // Start the recording - provide full path
-        console.log(`Starting recording for call ${uuid} to file ${recordingFile}`);
+        log(`Starting recording for call ${uuid} to file ${recordingFile}`);
         await executeCommand(uuid, 'record', `${recordingExternalFile} ${conf.phone.recordMaxSec}`);
 
         // Set up a listener for when the call ends
         this.conn.once('esl::event::CHANNEL_HANGUP::' + uuid, () => {
-          console.log(`Call ${uuid} ended, stopping recording`);
+          log(`Call ${uuid} ended, stopping recording`);
 
           // Explicitly stop the recording
           this.conn.api('uuid_record', `${uuid} stop all`, (res) => {
-            console.log(`Recording stopped for ${uuid}: ${res.getBody()}`);
+            log(`Recording stopped for ${uuid}: ${res.getBody()}`);
           });
         });
       }
@@ -224,7 +200,7 @@ export default class Phone extends Connector {
       this.conn.on('esl::event::RECORD_STOP::*', (event) => {
         const recordExternalPath = event.getHeader('Record-File-Path');
         const uuid = event.getHeader('Unique-ID');
-        console.log(`Recording stopped for call ${uuid}, file: ${recordExternalPath}`);
+        log(`Recording stopped for call ${uuid}, file: ${recordExternalPath}`);
 
         if (recordExternalPath) {
           // Process the recording file that FreeSWITCH created
@@ -237,16 +213,16 @@ export default class Phone extends Connector {
       this.conn.on('esl::event::DTMF::*', (event) => {
         const digit = event.getHeader('DTMF-Digit');
         const uuid = event.getHeader('Unique-ID');
-        console.log(`----> DTMF: ${digit}, uuid: ${uuid}`);
+        log(`----> DTMF: ${digit}, uuid: ${uuid}`);
         if (digit === '#') {
-          console.log('User pressed #');
+          log('User pressed #');
 
           const recordPath = event.getHeader('Record-File-Path');
-          console.log(`Keep recording for call ${uuid}, file: ${recordPath}`);
+          log(`Keep recording for call ${uuid}, file: ${recordPath}`);
 
           // Explicitly stop the recording
           this.conn.api('uuid_record', `${uuid} stop all`, (res) => {
-            console.log(`Recording stopped for ${uuid}: ${res.getBody()}`);
+            log(`Recording stopped for ${uuid}: ${res.getBody()}`);
           });
         }
       })
@@ -257,8 +233,13 @@ export default class Phone extends Connector {
           const ttsFile = path.join(conf.phone.recordingsDir, ttsFilename);
           const ttsExternalFile = path.join(conf.phone.recordingsExternalDir, ttsFilename);
 
-          console.log('🔊 Generating TTS:', { ttsFile, ttsExternalFile });
+          log('🔊 Generating TTS:', { ttsFile, ttsExternalFile });
 
+          // log('conf.speech:', conf.speech)
+          log('url:', conf.speech.url)
+          log('model:', conf.speech.ttsModel)
+          log('voice:', conf.speech.ttsVoice)
+          log('text:', text)
           // Generate TTS with Speaches.ai
           const response = await axios.post(
             `${conf.speech.url}/v1/audio/speech`,
@@ -276,7 +257,7 @@ export default class Phone extends Connector {
 
           // Save audio to file
           await fs.promises.writeFile(ttsFile, Buffer.from(response.data));
-          console.log('TTS generation complete:', ttsFile);
+          log('TTS generation complete:', ttsFile);
 
           // Play it via FreeSWITCH
           await executeCommand(parkUuid, 'playback', ttsExternalFile);
@@ -285,10 +266,10 @@ export default class Phone extends Connector {
           if (!conf.phone.saveTts) {
             await sleep(1000);
             await removeFile(ttsFile);
-            console.log('Temporary TTS file removed');
+            log('Temporary TTS file removed');
           }
         } catch (err) {
-          console.error('TTS generation failed:', err);
+          error('TTS generation failed:', err);
         }
       };
 
@@ -297,14 +278,14 @@ export default class Phone extends Connector {
           switch (command) {
             case 'playback':
               this.conn.api('uuid_broadcast', `${uuid} ${args} aleg`, (res) => {
-                console.log(`Playback executed for ${uuid}: ${res.getBody()}`);
+                log(`Playback executed for ${uuid}: ${res.getBody()}`);
                 resolve()
               });
               break;
 
             case 'record':
               this.conn.api('uuid_record', `${uuid} start ${args}`, (res) => {
-                console.log(`Recording started for ${uuid}: ${res.getBody()}`);
+                log(`Recording started for ${uuid}: ${res.getBody()}`);
                 verbose(`Recording started for ${uuid}:`, res);
                 resolve()
               });
@@ -312,21 +293,21 @@ export default class Phone extends Connector {
 
             case 'set':
               this.conn.api('uuid_setvar', `${uuid} ${args}`, (res) => {
-                console.log(`Variable set for ${uuid}: ${res.getBody()}`);
+                log(`Variable set for ${uuid}: ${res.getBody()}`);
                 resolve()
               });
               break;
 
             case 'answer':
               this.conn.api('uuid_answer', uuid, (res) => {
-                console.log(`Call answered for ${uuid}: ${res.getBody()}`);
+                log(`Call answered for ${uuid}: ${res.getBody()}`);
                 resolve()
               });
               break;
 
             default:
               this.conn.api(`uuid_${command}`, `${uuid} ${args}`, (res) => {
-                console.log(`Command ${command} executed for ${uuid}: ${res.getBody()}`);
+                log(`Command ${command} executed for ${uuid}: ${res.getBody()}`);
                 resolve()
               });
           }
@@ -345,9 +326,9 @@ export default class Phone extends Connector {
       }
 
       const processRecording = async (recordingExternalFile, uuid, callerNumber) => {
-        console.log(`Processing external recording ${recordingExternalFile}`);
+        log(`Processing external recording ${recordingExternalFile}`);
         const recordingFile = recordingExternalFile.replace(conf.phone.recordingsExternalDir, conf.phone.recordingsDir)
-        console.log(`Processing recording ${recordingFile}`);
+        log(`Processing recording ${recordingFile}`);
 
         try {
           // Check if the file exists and has content
@@ -355,24 +336,24 @@ export default class Phone extends Connector {
             // Show audio details using FFmpeg
             // exec(`ffprobe -v error -show_format -show_streams "${recordingFile}"`, (error, stdout) => {
             //   if (error) {
-            //     console.error(`Error analyzing audio: ${error.message}`);
+            //     error(`Error analyzing audio: ${error.message}`);
             //   } else {
-            //     console.log(`Audio file details:\n${stdout}`);
+            //     log(`Audio file details:\n${stdout}`);
             //   }
             // });
 
             const stats = await fsExtra.stat(recordingFile);
             if (stats.size === 0) {
-              console.log(`Recording file ${recordingFile} is empty. No transcription needed.`);
+              log(`Recording file ${recordingFile} is empty. No transcription needed.`);
               return;
             }
-            console.log(`Recording file exists: ${recordingFile}`);
-            console.log(`File size: ${stats.size} bytes`);
+            log(`Recording file exists: ${recordingFile}`);
+            log(`File size: ${stats.size} bytes`);
 
             // Transcribe the audio file
             try {
               const transcript = await transcribeAudio(recordingFile);
-              console.log('Transcript from:', callerNumber, ':', transcript);
+              log('Transcript from:', callerNumber, ':', transcript);
 
               // const text = transcriptToText(JSON.parse(transcript))
               const { text } = transcript
@@ -383,7 +364,7 @@ export default class Phone extends Connector {
                 verbose('saving transcript')
                 const transcriptFile = recordingFile.replace(/\.wav$/, '.txt');
                 await fsExtra.writeFile(transcriptFile, JSON.stringify(transcript));
-                console.log(`Transcription saved to ${transcriptFile}`);
+                log(`Transcription saved to ${transcriptFile}`);
               }
               verbose('attempt to remove recording')
               if (!conf.phone.saveAudio) {
@@ -391,29 +372,29 @@ export default class Phone extends Connector {
                 await removeFile(recordingFile);
               }
 
-              console.log('xmppOnline:', this.xmppOnline)
-              if (this.xmppOnline && config.enablePersonalMessage) {
+              log('xmppOnline:', this.xmppOnline)
+              if (this.xmppOnline && this.bridge.options.phone.enablePersonal) {
                 verbose('sending personal message:', text)
                 await sendPersonalMessage({ message: text });
               }
-              if (this.xmppOnline && config.enableGroupChat) {
+              if (this.xmppOnline && this.bridge.options.phone.enableRoom) {
                 verbose('sending group message:', text)
                 await sendGroupChatMessage({ message: text });
               }
-            } catch (error) {
-              console.error(`Error transcribing audio and sending it: ${error.message}`);
+            } catch (err) {
+              error('Error transcribing audio and sending it:', err);
             }
           } else {
-            console.error(`Recording file ${recordingFile} does not exist.`);
+            error(`Recording file ${recordingFile} does not exist.`);
           }
         } catch (error) {
-          console.error(`Error processing recording: ${error.message}`);
+          error(`Error processing recording: ${error.message}`);
         }
       }
 
       // Send audio file to Speaches.ai container for transcription
       const sendToSpeaches = async (filePath) => {
-        console.log(`Sending ${filePath} to Speaches.ai for transcription...`);
+        log(`Sending ${filePath} to Speaches.ai for transcription...`);
 
         const formData = new FormData();
         formData.append('file', fsExtra.createReadStream(filePath));
@@ -430,7 +411,7 @@ export default class Phone extends Connector {
             }
           );
 
-          console.log('Speaches.ai transcription response received.');
+          log('Speaches.ai transcription response received.');
           return response.data;
         } catch (error) {
           const msg = error.response
@@ -441,14 +422,14 @@ export default class Phone extends Connector {
       }
 
       const transcribeAudio = async (audioFilePath) => {
-        console.log(`Starting transcription of ${audioFilePath}`);
+        log(`Starting transcription of ${audioFilePath}`);
 
         try {
           if (!await fsExtra.pathExists(audioFilePath)) {
             throw new Error(`Audio file not found: ${audioFilePath}`);
           }
           const stats = await fsExtra.stat(audioFilePath);
-          console.log(`Audio file size: ${stats.size} bytes`);
+          log(`Audio file size: ${stats.size} bytes`);
 
           if (stats.size === 0) {
             return 'Empty audio file, no transcription possible.';
@@ -457,14 +438,14 @@ export default class Phone extends Connector {
           const transcript = await sendToSpeaches(audioFilePath);
           return transcript
         } catch (error) {
-          console.error(`Error during transcription process: ${error.message}`);
-          console.log(`Attempting transcription with original file as fallback...`);
+          error(`Error during transcription process: ${error.message}`);
+          log(`Attempting transcription with original file as fallback...`);
 
           try {
             const transcript = await sendToSpeaches(audioFilePath);
             return transcript
           } catch (fallbackError) {
-            console.error(`Fallback transcription failed: ${fallbackError.message}`);
+            error(`Fallback transcription failed: ${fallbackError.message}`);
             return `Transcription error: ${fallbackError.message}`;
           }
         }
@@ -486,24 +467,29 @@ export default class Phone extends Connector {
           const from = event.getHeader('from');
           const to = event.getHeader('to');
 
-          if (SMS_ME.includes(from)) {
-            console.log('Skipping SMS from myself, from:', from, `(SMS_ME=${SMS_ME})`)
+          const me = [
+            `${this.bridge.options.phone.username}@{this.bridge.options.phone.host}`
+            `${this.bridge.options.phone.altUsername}@{this.bridge.options.phone.altHost}`
+          ]
+
+          if (me.includes(from)) {
+            log('Skipping SMS from myself, from:', from, `(me=${me})`)
             return
           }
 
-          console.log(`Received SMS from ${from} to ${to}, body: ${body}`);
-          if (SMS_ME.includes(to)) {
-            console.log('The SMS is for me, to:', to, `(SMS_ME=${SMS_ME})`)
-            // console.log("MESSAGE event:", event)
+          log(`Received SMS from ${from} to ${to}, body: ${body}`);
+          if (me.includes(to)) {
+            log('The SMS is for me, to:', to, `(me=${me})`)
+            // log("MESSAGE event:", event)
           }
 
           const sipContentType = extractSIPContentType(body)
-          console.log("sipContentType:", sipContentType)
+          log("sipContentType:", sipContentType)
           if (sipContentType === 'application/im-iscomposing+xml') {
-            console.log("Skipping composing sipContentType:", sipContentType)
+            log("Skipping composing sipContentType:", sipContentType)
             return
           } else if (sipContentType !== 'text/plain') {
-            console.log("Skipping non-textual sipContentType:", sipContentType)
+            log("Skipping non-textual sipContentType:", sipContentType)
             return
           }
 
@@ -513,37 +499,37 @@ export default class Phone extends Connector {
           this.sendSmsCmdPrefix = `chat sip|${chatFrom}|${chatTo}|`
 
           // const cmd = `${this.sendSmsCmdPrefix}Echo: ${body}`;
-          // console.log(`Sending echo: ${cmd}`);
+          // log(`Sending echo: ${cmd}`);
           // this.conn.api(cmd, (res) => {
-          //   console.log('Echo message sent:', res.getBody());
+          //   log('Echo message sent:', res.getBody());
           // });
 
           const sipBody = extractSIPBody(body)
-          console.log('sipBody:', sipBody)
+          log('sipBody:', sipBody)
 
-          if (this.xmppOnline && config.enablePersonalMessage) {
+          if (this.xmppOnline && this.bridge.options.phone.enablePersonal) {
             await sendPersonalMessage({ message: sipBody });
           }
-          if (this.xmppOnline && config.enableGroupChat) {
+          if (this.xmppOnline && this.bridge.options.phone.enableRoom) {
             await sendGroupChatMessage({ message: sipBody });
           }
         } catch (err) {
-          console.error('Error processing sms:', err)
+          error('Error processing sms:', err)
         }
       });
 
 
-      verbose('service:', conf.xmpp.websocketUrl)
-      verbose('domain:', conf.xmpp.host)
-      verbose('username:', config.jid.split('@')[0])
-      verbose('password:', config.password,)
+      verbose('xmpp service:', conf.xmpp.websocketUrl)
+      verbose('xmpp domain:', conf.xmpp.host)
+      verbose('xmpp username:', this.bridge.options.phone.xmppJid.split('@')[0])
+      verbose('xmpp password:', this.bridge.options.phone.xmppPassword)
 
       // Initialize XMPP client
       this.xmpp = client({
         service: conf.xmpp.websocketUrl,
         domain: conf.xmpp.host,
-        username: config.jid.split('@')[0],
-        password: config.password,
+        username: this.bridge.options.phone.xmppJid.split('@')[0],
+        password: this.bridge.options.phone.xmppPassword,
       });
 
       // Track state
@@ -552,23 +538,23 @@ export default class Phone extends Connector {
 
       // Handle online event
       this.xmpp.on('online', async (jid) => {
-        console.log(`Connected as ${jid.toString()}`);
+        log(`Connected as ${jid.toString()}`);
         this.xmppOnline = true
-        this.nickname = config.jid.split('@')[0];
+        this.nickname = this.bridge.options.phone.xmppJid.split('@')[0];
         this.clientFullJid = jid.toString(); // Store the full JID
 
         // Get roster (contact list)
         await this.xmpp.send(xml('iq', { type: 'get', id: 'roster_1' },
           xml('query', { xmlns: 'jabber:iq:roster' })
         ));
-        console.log('Requested roster');
+        log('Requested roster');
 
         // Send initial presence to let the server know we're online
         this.xmpp.send(xml('presence'));
-        console.log('Sent initial presence');
+        log('Sent initial presence');
 
         // Join group chat and continue if enabled
-        if (config.enableGroupChat) {
+        if (this.bridge.options.phone.enableRoom) {
           await joinGroupChat();
         }
       });
@@ -576,7 +562,7 @@ export default class Phone extends Connector {
       // Handle incoming stanzas
       this.xmpp.on('stanza', async (stanza) => {
         // For debugging specific stanzas
-        // console.log('Got stanza:', stanza.toString());
+        // log('Got stanza:', stanza.toString());
 
         // Handle roster responses
         if (stanza.is('iq') && stanza.attrs.type === 'result') {
@@ -584,7 +570,7 @@ export default class Phone extends Connector {
           if (query) {
             const items = query.getChildren('item');
             if (items && items.length) {
-              console.log('Roster received, contacts:', items.length);
+              log('Roster received, contacts:', items.length);
             }
           }
         }
@@ -600,17 +586,17 @@ export default class Phone extends Connector {
 
         if (type === 'chat' || type === 'normal' || !type) {
           // Handle personal messages
-          console.log(`Personal message response from ${from}: ${body}`);
+          log(`Personal message response from ${from}: ${body}`);
         } else if (type === 'groupchat') {
           // Handle group chat messages
           // Skip our own messages
-          if (from.includes(`/${this.nickname}`)) return;
+          if (from.includes(`/${this.nickname}`)) { return; }
 
           // Skip historical messages
           const delay = stanza.getChild('delay');
           if (delay) return;
 
-          console.log(`Group chat message from ${from}: ${body}`);
+          log(`Group chat message from ${from}: ${body}`);
         }
 
         if (this.freeswitchOnline && this.parkUuid) {
@@ -623,9 +609,9 @@ export default class Phone extends Connector {
         if (this.freeswitchOnline && this.sendSmsCmdPrefix) {
           const text = body.replace(/[\r\n]+/g, ' ')
           const cmd = `${this.sendSmsCmdPrefix}${text}`;
-          console.log(`Sending agentic reply sms: ${cmd}`);
+          log(`Sending agentic reply sms: ${cmd}`);
           this.conn.api(cmd, (res) => {
-            console.log('Agentic reply message sent:', res.getBody());
+            log('Agentic reply message sent:', res.getBody());
             this.sendSmsCmdPrefix = null
           });
         }
@@ -633,18 +619,17 @@ export default class Phone extends Connector {
 
       // Handle errors
       this.xmpp.on('error', (err) => {
-        console.error('XMPP error:', err);
+        error('XMPP error:', err);
       });
 
       // Handle disconnection
       this.xmpp.on('close', () => {
-        console.log('Connection closed');
+        log('Connection closed');
       });
 
       // Send a personal message
       const sendPersonalMessage = async ({ message }) => {
-        console.log(`Sending personal message to ${config.botJid}...`);
-        // messageBody = message || config.message
+        log(`Sending personal message to ${this.bridge.options.phone.recipient}...`);
         const messageBody = message
 
         // Send with more complete attributes
@@ -652,7 +637,7 @@ export default class Phone extends Connector {
           'message',
           {
             type: 'chat',
-            to: config.botJid,
+            to: this.bridge.options.phone.recipient,
             from: this.clientFullJid,
             id: randomUUID()
           },
@@ -661,14 +646,14 @@ export default class Phone extends Connector {
         );
 
         await this.xmpp.send(messageXml);
-        console.log('Personal message sent:', messageBody);
+        log('Personal message sent:', messageBody);
       }
 
       // Join group chat and send a message with mention
       const joinGroupChat = async () => {
-        const roomJid = `${config.groupChatRoom}@${conf.xmpp.mucHost}`;
+        const roomJid = `${this.bridge.options.phone.joinRoom}@${conf.xmpp.mucHost}`;
 
-        console.log(`Joining group chat ${roomJid} as ${this?.nickname || '(?)'}...`);
+        log(`Joining group chat ${roomJid} as ${this?.nickname || '(?)'}...`);
 
         // Join room with no history
         const presence = xml(
@@ -680,15 +665,14 @@ export default class Phone extends Connector {
         );
 
         await this.xmpp.send(presence);
-        console.log('Joined group chat');
+        log('Joined group chat');
       }
 
       // Send a message with a mention to the group chat
       const sendGroupChatMessage = async ({ message }) => {
-        console.log(`Sending message with proper mention format...`);
-        const roomJid = `${config.groupChatRoom}@${conf.xmpp.mucHost}`;
-
-        const messageBody = `@${config.botNickname} ${message}`;
+        log(`Sending message with proper mention format...`);
+        const roomJid = `${this.bridge.options.phone.joinRoom}@${conf.xmpp.mucHost}`;
+        const messageBody = `@${this.bridge.options.phone.recipientNickname} ${message}`;
 
         const messageXml = xml(
           'message',
@@ -703,17 +687,17 @@ export default class Phone extends Connector {
             xmlns: 'urn:xmpp:reference:0',
             type: 'mention',
             begin: '0',
-            end: config.botNickname.length + 1,
-            uri: `xmpp:${config.botNickname}@${conf.xmpp.mucHost}/${config.botNickname}`
+            end: this.bridge.options.phone.recipientNickname.length + 1,
+            uri: `xmpp:${this.bridge.options.phone.recipientNickname}@${conf.xmpp.mucHost}/${this.bridge.options.phone.recipientNickname}`
           })
         );
 
         await this.xmpp.send(messageXml);
-        console.log('Message with mention sent:', messageBody);
+        log('Message with mention sent:', messageBody);
       }
 
-      console.log(`Connecting to XMPP on ${conf.xmpp.websocketUrl}, domain: ${conf.xmpp.host}.`);
-      this.xmpp.start().catch(console.error);
+      log(`Connecting to XMPP on ${conf.xmpp.websocketUrl}, domain: ${conf.xmpp.host}.`);
+      this.xmpp.start().catch(error);
     } catch (err) {
       error('Error starting Phone:', err)
     }
@@ -722,11 +706,11 @@ export default class Phone extends Connector {
   async stop () {
     super.stop()
 
-    console.log('Disconnecting from FreeSWITCH');
+    log('Disconnecting from FreeSWITCH');
     this.conn.disconnect();
     this.freeswitchOnline = false;
-    console.log('Disconnecting from XMPP');
-    this.xmpp.stop().catch(console.error);
+    log('Disconnecting from XMPP');
+    this.xmpp.stop().catch(error);
     this.xmppOnline = false;
 
     verbose('Phone stopped')
