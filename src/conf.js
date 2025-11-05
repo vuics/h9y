@@ -490,6 +490,22 @@ const conf = {
   apps: {
     registryUrl: process.env.APPS_REGISTRY_URL || 'https://verdaccio.hyag.ru',
   },
+
+  freeswitch: {
+    host: process.env.FREESWITCH_HOST || '192.168.50.68', // '127.0.0.1'
+    port: num(process.env.FREESWITCH_PORT || 8022),  // 8021
+    password: process.env.FREESWITCH_PASSWORD || 'ClueCon',
+  },
+
+  phone: {
+    recordingsDir: process.env.RECORDINGS_DIR || '/tmp/recordings',
+    recordingsExternalDir: process.env.RECORDINGS_EXTERNAL_DIR || '/Users/artemarakcheev/workspace/vuics/self-developing/tmp/recordings',
+    recordMaxSec: num(process.env.RECORD_MAX_SEC || 3600),
+
+    saveTranscript: bool(process.env.SAVE_TRANSCRIPT || true),  // false
+    saveAudio: bool(process.env.SAVE_RECORDING || true),  // false
+    saveTts: bool(process.env.SAVE_TTS_FILE || true),  // false
+  },
 }
 
 export default conf
@@ -512,6 +528,8 @@ export const revealConf = () => {
   delete publicConf.vault.unsealKeys
 
   delete publicConf.xmpp.password
+
+  delete publicConf.freeswitch.password
 
   return publicConf
 }

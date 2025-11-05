@@ -23,35 +23,7 @@ const verbose = Verbose('sd:bridge/phone'); verbose('')
 // Allow insecure certificates (without showing warning)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-// FIXME: move to conf
-//
-// Configuration variables
-const FREESWITCH_HOST = process.env.FREESWITCH_HOST || '192.168.50.68';
-// const FREESWITCH_HOST = process.env.FREESWITCH_HOST || '127.0.0.1';
-// const FREESWITCH_PORT = num(process.env.FREESWITCH_PORT || 8021);
-const FREESWITCH_PORT = num(process.env.FREESWITCH_PORT || 8022);
-const FREESWITCH_PASSWORD = process.env.FREESWITCH_PASSWORD || 'ClueCon';
-
-// const RECORDINGS_DIR = process.env.RECORDINGS_DIR || path.join(__dirname, 'recordings');
-// /opt/app/src/bridge/recordings/
-const RECORDINGS_DIR = process.env.RECORDINGS_DIR || path.join(new URL('.', import.meta.url).pathname, 'recordings');
-const RECORDINGS_EXTERNAL_DIR = process.env.RECORDINGS_EXTERNAL_DIR || '/Users/artemarakcheev/workspace/vuics/self-developing/tmp/recordings'
-
-
-const RECORD_MAX_SEC = num(process.env.RECORD_MAX_SEC || 3600)
-
-// const SAVE_TRANSCRIPT = bool(process.env.SAVE_TRANSCRIPT || false)
-// const SAVE_NORMALIZATION = bool(process.env.SAVE_NORMALIZATION || false)
-// const SAVE_RECORDING = bool(process.env.SAVE_RECORDING || false)
-// const SAVE_TTS_FILE = bool(process.env.SAVE_TTS_FILE || false)
-const SAVE_TRANSCRIPT = bool(process.env.SAVE_TRANSCRIPT || true)
-const SAVE_NORMALIZATION = bool(process.env.SAVE_NORMALIZATION || true)
-const SAVE_RECORDING = bool(process.env.SAVE_RECORDING || true)
-const SAVE_TTS_FILE = bool(process.env.SAVE_TTS_FILE || true)
-
-const WHISPER_MODEL = process.env.WHISPER_MODEL || 'tiny' // Use tiny model for speed (options: tiny, base, small, medium, large)
-const WHISPER_LANGUAGE = process.env.WHISPER_LANGUAGE || 'auto' // Auto-detect language
-// const TTS_ENGINE = process.env.TTS_ENGINE || "gtts"    // options "say" or "gtts"
+// TODO: add bridge settings:
 const SMS_ME = arr(process.env.SMS_ME || '9639@192.168.50.223,450905@paris1.voip.ms')
 // const SMS_ME = ['selfdev-voip@192.168.50.223', '450905@paris1.voip.ms']
 // const SMS_ME = ['1000@192.168.50.223', '450905@paris1.voip.ms']
@@ -87,8 +59,8 @@ const VOICE_ID = process.env.VOICE_ID || 'af_heart'
 
 // Make sure the directory exists
 try {
-  fsExtra.ensureDirSync(RECORDINGS_DIR);
-  console.log(`Recordings directory ensured at: ${RECORDINGS_DIR}`);
+  fsExtra.ensureDirSync(conf.phone.recordingsDir);
+  console.log(`Recordings directory ensured at: ${conf.phone.recordingsDir}`);
 } catch (error) {
   console.error(`Failed to create recordings directory: ${error.message}`);
   process.exit(1);
@@ -132,9 +104,9 @@ export default class Phone extends Connector {
       this.xmppOnline = false;
 
       // Create a FreeSWITCH connection
-      console.log(`Connecting to FreeSwitch on ${FREESWITCH_HOST}:${FREESWITCH_PORT}`);
-      // verbose('FREESWITCH_PASSWORD:', FREESWITCH_PASSWORD)
-      this.conn = new modesl.Connection(FREESWITCH_HOST, FREESWITCH_PORT, FREESWITCH_PASSWORD, () => {
+      console.log(`Connecting to FreeSwitch on ${conf.freeswitch.host}:${conf.freeswitch.port}`);
+      // verbose('conf.freeswitch.password:', conf.freeswitch.password)
+      this.conn = new modesl.Connection(conf.freeswitch.host, conf.freeswitch.port, conf.freeswitch.password, () => {
         console.log('Connected to FreeSWITCH');
         this.freeswitchOnline = true;
 
@@ -241,12 +213,12 @@ export default class Phone extends Connector {
         console.log(`Incoming call from ${callerNumber} with UUID: ${uuid}`);
 
         // Create a new recording session with proper format settings
-        const recordingFile = path.join(RECORDINGS_DIR, `${uuid}.wav`);
-        const recordingExternalFile = path.join(RECORDINGS_EXTERNAL_DIR, `${uuid}.wav`);
+        const recordingFile = path.join(conf.phone.recordingsDir, `${uuid}.wav`);
+        const recordingExternalFile = path.join(conf.phone.recordingsExternalDir, `${uuid}.wav`);
 
         // Start the recording - provide full path
         console.log(`Starting recording for call ${uuid} to file ${recordingFile}`);
-        await executeCommand(uuid, 'record', `${recordingExternalFile} ${RECORD_MAX_SEC}`);
+        await executeCommand(uuid, 'record', `${recordingExternalFile} ${conf.phone.recordMaxSec}`);
 
         // Set up a listener for when the call ends
         this.conn.once('esl::event::CHANNEL_HANGUP::' + uuid, () => {
@@ -292,8 +264,8 @@ export default class Phone extends Connector {
       const ttsToFreeswitch = async ({ text, parkUuid }) => {
         try {
           const ttsFilename = `tts_${randomUUID()}.wav`;
-          const ttsFile = path.join(RECORDINGS_DIR, ttsFilename);
-          const ttsExternalFile = path.join(RECORDINGS_EXTERNAL_DIR, ttsFilename);
+          const ttsFile = path.join(conf.phone.recordingsDir, ttsFilename);
+          const ttsExternalFile = path.join(conf.phone.recordingsExternalDir, ttsFilename);
 
           console.log('🔊 Generating TTS:', { ttsFile, ttsExternalFile });
 
@@ -320,7 +292,7 @@ export default class Phone extends Connector {
           await executeCommand(parkUuid, 'playback', ttsExternalFile);
 
           // Optionally delete file after playback
-          if (!SAVE_TTS_FILE) {
+          if (!conf.phone.saveTts) {
             await sleep(1000);
             await removeFile(ttsFile);
             console.log('Temporary TTS file removed');
@@ -384,7 +356,7 @@ export default class Phone extends Connector {
 
       const processRecording = async (recordingExternalFile, uuid, callerNumber) => {
         console.log(`Processing external recording ${recordingExternalFile}`);
-        const recordingFile = recordingExternalFile.replace(RECORDINGS_EXTERNAL_DIR, RECORDINGS_DIR)
+        const recordingFile = recordingExternalFile.replace(conf.phone.recordingsExternalDir, conf.phone.recordingsDir)
         console.log(`Processing recording ${recordingFile}`);
 
         try {
@@ -417,14 +389,14 @@ export default class Phone extends Connector {
               verbose('text:', text)
 
               verbose('attempt to save transcript')
-              if (SAVE_TRANSCRIPT) {
+              if (conf.phone.saveTranscript) {
                 verbose('saving transcript')
                 const transcriptFile = recordingFile.replace(/\.wav$/, '.txt');
                 await fsExtra.writeFile(transcriptFile, JSON.stringify(transcript));
                 console.log(`Transcription saved to ${transcriptFile}`);
               }
               verbose('attempt to remove recording')
-              if (!SAVE_RECORDING) {
+              if (!conf.phone.saveAudio) {
                 verbose('removing recording')
                 await removeFile(recordingFile);
               }
