@@ -1,0 +1,7 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+spawn npx whisper-node download
+expect "to exit"
+send "base.en\r"
+expect eof

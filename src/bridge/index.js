@@ -4,8 +4,8 @@ import { inspect } from 'util'
 import { log, warn, error, Verbose } from '../services.js'
 import conf, { revealConf } from '../conf.js'
 import Messengers from './messengers.js'
+import Phone from './phone.js'
 import { sleep } from '../utils/helper.js'
-
 import '../mongo.js'
 import User from '../models/user.js'
 import Bridge from '../models/bridge.js'
@@ -19,6 +19,7 @@ log('public conf:', inspect(revealConf(), { colors: true, depth: null }))
 
 const connectorClasses = {
   "messengers": Messengers,
+  "phone": Phone,
 }
 
 const runningConnectorBridges = {};

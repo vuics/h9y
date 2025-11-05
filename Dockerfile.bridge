@@ -1,11 +1,14 @@
 FROM 42wim/matterbridge:1.26
 
-RUN apk add --no-cache bash curl git make gcc g++ python3 nodejs npm
+RUN apk add --no-cache bash curl wget git make gcc g++ python3 nodejs npm expect ffmpeg
 
 WORKDIR /opt/app/
 COPY package*.json ./
 RUN npm install
 COPY . .
+
+# FIXME: replace whisper with speaches
+# RUN chmod +x whisper-download.exp && ./whisper-download.exp
 
 # EXPOSE 6369
 

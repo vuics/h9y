@@ -13,10 +13,10 @@ if (result.error) {
 }
 // console.log('process.env:', process.env)
 
-const bool = (val) => ['true', '1', true, 1].includes(val)
-const json = (val) => val && JSON.parse(val)
-const num = (val) => val ? Number(val) : (val === 0 ? 0 : undefined)
-const arr = (str) => str ? str.split(',') : []
+export const bool = (val) => ['true', '1', true, 1].includes(val)
+export const json = (val) => val && JSON.parse(val)
+export const num = (val) => val ? Number(val) : (val === 0 ? 0 : undefined)
+export const arr = (str) => str ? str.split(',') : []
 
 const conf = {
 
