@@ -503,8 +503,10 @@ const conf = {
     sshUsername: process.env.FREESWITCH_SSH_USERNAME || '(TBS)',
     sshPassword: process.env.FREESWITCH_SSH_PASSWORD || '(TBS)',
 
+    ensureRunning: bool(process.env.FREESWITCH_ENSURE_RUNNING || true),
     reloadxml: bool(process.env.FREESWITCH_RELOAD_XML || false),
     restartSofia: bool(process.env.FREESWITCH_RELOAD_XML || false),
+    shutdown: bool(process.env.FREESWITCH_SHUTDOWN || true),
   },
 
   speech: {

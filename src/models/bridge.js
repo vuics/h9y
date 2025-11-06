@@ -99,9 +99,11 @@ const PhoneSchema = new mongoose.Schema({
   host: String,
   username: String,
   password: String,
+  realm: String,
 
-  altHost: String,
-  altUsername: String,
+  directoryHost: String,
+  directoryNumber: String,
+  directoryPassword: String,
 
   recipient: String,
   recipientNickname: String,

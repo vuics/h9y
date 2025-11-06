@@ -26,11 +26,6 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 nunjucks.configure({ autoescape: false })
 
 
-
-// TODO:
-// rm autoload_configs/event_socket.conf.xml dialplan/default/99_selfdev-voip.xml dialplan/public/99_450905_voipms.xml directory/default/9639.xml sip_profiles/external/voipms.xml
-
-
 // NOTE: You should turn off VPN to make it work
 const eventSocketTemplate = `
 <configuration name="event_socket.conf" description="Socket Client">
@@ -84,8 +79,6 @@ const dialplanPublicTemplate =`
 </include>
 `
 
-// TODO: try with:
-//   <user id="{{ name }}_user">
 const directoryUserTemplate = `
 <include>
   <user id="{{ number }}">
@@ -185,22 +178,22 @@ export default class Phone extends Connector {
     // TODO: make it starting in loop
     const check = await ssh.execCommand('pgrep freeswitch');
     if (check.stdout.trim()) {
-      console.log('FreeSWITCH is already running, PID(s):', check.stdout.trim());
+      log('FreeSWITCH is already running, PID(s):', check.stdout.trim());
     } else {
-      console.log('FreeSWITCH is not running — starting it now...');
+      log('FreeSWITCH is not running — starting it now...');
 
       // You can adapt depending on your setup:
       // Option 1: systemd
       // const start = await ssh.execCommand('sudo systemctl start freeswitch');
 
       // Option 2 (if running manually)
-      const result = await ssh.execCommand(`PATH=\$PATH:${conf.freeswitch.path} nohup freeswitch -nc -nonat &`);
+      const result = await ssh.execCommand(`PATH=\$PATH:${conf.freeswitch.path} nohup freeswitch -nc &`);
       if (result.code === 0 || result.stderr.includes('Backgrounding')) {
         log('Waiting 30 seconds for the freeswitch to start')
         await sleep(30_000)
         log('Finished to wait. Continuing...')
       } else {
-        console.error('Failed to start FreeSWITCH:', result.stderr);
+        error('Failed to start FreeSWITCH:', result.stderr);
       }
     }
   }
@@ -253,10 +246,7 @@ export default class Phone extends Connector {
       });
       verbose('dialplanDefaultRendered:', dialplanDefaultRendered)
       const dialplanDefaultFilename = path.join(conf.freeswitch.configDir,
-        // FIXME:
         `dialplan/default/99_${this.bridge.options.name}.xml`
-
-        // 'dialplan/default/99_selfdev-voip.xml'
       );
       await this.putToRemote({
         sftp,
@@ -273,10 +263,7 @@ export default class Phone extends Connector {
       });
       verbose('dialplanPublicRendered:', dialplanPublicRendered)
       const dialplanPublicFilename = path.join(conf.freeswitch.configDir,
-        // FIXME:
         `dialplan/public/99_${this.bridge.options.name}_call.xml`
-
-        // 'dialplan/public/99_450905_voipms.xml'
       );
       await this.putToRemote({
         sftp,
@@ -286,10 +273,6 @@ export default class Phone extends Connector {
       verbose('File saved as:', dialplanPublicFilename)
 
 
-      // FIXME: add to bridge config
-      this.bridge.options.phone.directoryNumber = '9639'
-      this.bridge.options.phone.directoryPassword = '1234'
-
       verbose('directoryUserTemplate:', directoryUserTemplate)
       const directoryUserRendered = nunjucks.renderString(directoryUserTemplate, {
         name: this.bridge.options.name,
@@ -298,10 +281,7 @@ export default class Phone extends Connector {
       });
       verbose('directoryUserRendered:', directoryUserRendered)
       const directoryUserFilename = path.join(conf.freeswitch.configDir,
-        // FIXME:
         `directory/default/${this.bridge.options.name}.xml`
-
-        // 'directory/default/9639.xml'
       );
       await this.putToRemote({
         sftp,
@@ -317,16 +297,11 @@ export default class Phone extends Connector {
         username: this.bridge.options.phone.username,
         password: this.bridge.options.phone.password,
         host: this.bridge.options.phone.host,
-
-        // FIXME: add to config
-        realm: 'voip.ms',
+        realm: this.bridge.options.phone.realm,
       });
       verbose('sipProfileRendered:', sipProfileRendered)
       const sipProfileFilename = path.join(conf.freeswitch.configDir,
-        // FIXME:
         `/sip_profiles/external/${this.bridge.options.name}.xml`
-
-        // 'sip_profiles/external/voipms.xml',
       );
       await this.putToRemote({
         sftp,
@@ -335,14 +310,9 @@ export default class Phone extends Connector {
       })
       verbose('File saved as:', sipProfileFilename)
 
-      // FIXME: uncomment and make it work
-      //        running freeswitch from ssh actually makes the call hung up in ~30 seconds
-      // await this.ensureFreeswitchRunning({ ssh })
-
-
-
-
-
+      if (conf.freeswitch.ensureRunning) {
+        await this.ensureFreeswitchRunning({ ssh })
+      }
 
       sftp.end();
       ssh.dispose();
@@ -359,9 +329,9 @@ export default class Phone extends Connector {
         await new Promise((resolve, reject) => {
           sftp.unlink(filePath, (err) => (err ? reject(err) : resolve()));
         });
-        console.log(`Removed: ${filePath}`);
+        log(`Removed: ${filePath}`);
       } catch (err) {
-        console.error(`Failed to remove ${filePath}:`, err.message);
+        error(`Failed to remove ${filePath}:`, err.message);
       }
     }
 
@@ -380,27 +350,27 @@ export default class Phone extends Connector {
       const sftp = await ssh.requestSFTP();
       // verbose('sftp:', sftp)
 
-      // FIXME: uncomment
-      //
       const filePaths = [
         // `autoload_configs/event_socket.conf.xml`, // NOTE: this config is one for all
         `dialplan/default/99_${this.bridge.options.name}.xml`,
         `dialplan/public/99_${this.bridge.options.name}_call.xml`,
         `directory/default/${this.bridge.options.name}.xml`,
-        `/sip_profiles/external/${this.bridge.options.name}.xml`,
+        `sip_profiles/external/${this.bridge.options.name}.xml`,
       ].map(p => path.join(conf.freeswitch.configDir, p));
       // log('Removing path:', filePaths)
       await this.removeFiles({ sftp, filePaths, })
 
-      // // TODO: make it scalable
-      // //       what if there is another bridge that uses freeswitch?
-      // log('Shutting down freeswitch')
-      // const result = await ssh.execCommand('killall freeswitch');
-      // if (result.stderr) {
-      //   console.error('Error:', result.stderr.trim());
-      // } else {
-      //   console.log('Output:', result.stdout.trim());
-      // }
+      if (conf.freeswitch.shutdown) {
+        // TODO: make it scalable
+        //       what if there is another bridge that uses freeswitch?
+        log('Shutting down freeswitch')
+        const result = await ssh.execCommand('killall freeswitch');
+        if (result.stderr) {
+          error('Error:', result.stderr.trim());
+        } else {
+          log('Output:', result.stdout.trim());
+        }
+      }
 
       sftp.end();
       ssh.dispose();
@@ -420,10 +390,6 @@ export default class Phone extends Connector {
       this.sendSmsCmdPrefix = null
 
       await this.configure()
-
-      // FIXME: remove
-      // return;
-
 
       // Create a FreeSWITCH connection
       log(`Connecting to FreeSwitch on ${conf.freeswitch.host}:${conf.freeswitch.port}`);
@@ -446,7 +412,7 @@ export default class Phone extends Connector {
 
         if (conf.freeswitch.reloadxml) {
           this.conn.api('reloadxml', (res) => {
-            console.log(`> reloadxml: ${res.getBody()}`);
+            log(`> reloadxml: ${res.getBody()}`);
           });
           await sleep(3000)
         }
@@ -454,11 +420,11 @@ export default class Phone extends Connector {
         if (conf.freeswitch.restartSofia) {
           this.conn.api('sofia profile internal restart', (res) => {
             const body = res.getBody()
-            console.log(`> sofia profile internal restart: ${body}`);
+            log(`> sofia profile internal restart: ${body}`);
             if (body.includes('Invalid Profile')) {
-              console.log('Fixing invalid profile...')
+              log('Fixing invalid profile...')
               this.conn.api('sofia profile internal start', (res) => {
-                console.log(`> sofia profile internal start: ${res.getBody()}`);
+                log(`> sofia profile internal start: ${res.getBody()}`);
               });
             }
           });
@@ -466,18 +432,18 @@ export default class Phone extends Connector {
 
           this.conn.api('sofia profile external restart', (res) => {
             const body = res.getBody()
-            console.log(`> sofia profile external restart: ${body}`);
+            log(`> sofia profile external restart: ${body}`);
             if (body.includes('Invalid Profile')) {
-              console.log('Fixing invalid profile...')
+              log('Fixing invalid profile...')
               this.conn.api('sofia profile external start', (res) => {
-                console.log(`> sofia profile external start: ${res.getBody()}`);
+                log(`> sofia profile external start: ${res.getBody()}`);
               });
             }
           });
           await sleep(3000)
 
           this.conn.api('sofia status', (res) => {
-            console.log(`> sofia status: ${res.getBody()}`);
+            log(`> sofia status: ${res.getBody()}`);
           });
         }
       });
@@ -490,53 +456,6 @@ export default class Phone extends Connector {
       this.conn.on('esl::connect', async () => {
         log('ESL connected');
         try {
-          // FIXME: Should we use these commands at all?
-          //        They break the communication to freeswitch
-          //
-          // await new Promise((resolve, reject) => {
-          //   verbose('Send command: reloadxml')
-          //   this.conn.api('reloadxml', ``, (res) => {
-          //     log(`Set var: ${res.getBody()}`);
-          //     resolve()
-          //   });
-          // })
-          // await new Promise((resolve, reject) => {
-          //   verbose('Send command: reload mod_event_socket')
-          //   this.conn.api('reload', `mod_event_socket`, (res) => {
-          //     log(`Set var: ${res.getBody()}`);
-          //     resolve()
-          //   });
-          // })
-
-          // await new Promise((resolve, reject) => {
-          //   verbose(`Send command: global_setvar local_ip_v4=${conf.freeswitch.host}`)
-          //   this.conn.api('global_setvar', `local_ip_v4=${conf.freeswitch.host}`, (res) => {
-          //     log(`Set var: ${res.getBody()}`);
-          //     resolve()
-          //   });
-          // })
-
-          // await new Promise((resolve, reject) => {
-          //   verbose(`Send command: sofia profile internal restart`)
-          //   this.conn.api('sofia', 'profile internal restart', (res) => {
-          //     log(`Set var: ${res.getBody()}`);
-          //     resolve()
-          //   });
-          // })
-          // await new Promise((resolve, reject) => {
-          //   verbose(`Send command: sofia profile external restart`)
-          //   this.conn.api('sofia', 'profile external restart', (res) => {
-          //     log(`Set var: ${res.getBody()}`);
-          //     resolve()
-          //   });
-          // })
-          // await new Promise((resolve, reject) => {
-          //   verbose(`Send command: sofia status`)
-          //   this.conn.api('sofia', 'status', (res) => {
-          //     log(`Set var: ${res.getBody()}`);
-          //     resolve()
-          //   });
-          // })
         } catch (err) {
           error('Error configuring freeswitch on connect:', err)
         }
@@ -922,8 +841,8 @@ export default class Phone extends Connector {
           const to = event.getHeader('to');
 
           const me = [
-            `${this.bridge.options.phone.username}@{this.bridge.options.phone.host}`
-            `${this.bridge.options.phone.altUsername}@{this.bridge.options.phone.altHost}`
+            `${this.bridge.options.phone.username}@${this.bridge.options.phone.host}`
+            `${this.bridge.options.phone.directoryNumber}@${this.bridge.options.phone.directoryHost}`
           ]
 
           if (me.includes(from)) {
