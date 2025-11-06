@@ -1,0 +1,16 @@
+<include>
+  <user id="9639">
+    <params>
+      <param name="password" value="1234"/>
+      <param name="vm-password" value="9639"/>
+    </params>
+    <variables>
+      <variable name="accountcode" value="9639"/>
+      <variable name="user_context" value="default"/>
+      <variable name="effective_caller_id_name" value="Extension 9639"/>
+      <variable name="effective_caller_id_number" value="9639"/>
+      <!-- <variable name="outbound_caller_id_name" value="$${outbound_caller_name}"/> -->
+      <!-- <variable name="outbound_caller_id_number" value="$${outbound_caller_id}"/> -->
+    </variables>
+  </user>
+</include>

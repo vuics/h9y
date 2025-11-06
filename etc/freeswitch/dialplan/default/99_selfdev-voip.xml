@@ -1,0 +1,100 @@
+<include>
+
+    <extension name="selfdev-voip">
+      <condition field="destination_number" expression="^(selfdev-voip)$">
+        <action application="set" data="absolute_codec_string=PCMU"/>
+        <action application="set" data="RECORD_STEREO=true"/>
+        <action application="set" data="record_sample_rate=16000"/>
+        <action application="set" data="record_channels=1"/>
+        <action application="set" data="record_read_only=false"/>
+        <action application="set" data="record_write_only=false"/>
+        <action application="answer"/>
+        <action application="park"/>
+      </condition>
+    </extension>
+
+    <extension name="echo_playback">
+      <condition field="destination_number" expression="^(echo)$">
+        <action application="answer"/>
+        <action application="sleep" data="1000"/>
+
+        <action application="set" data="RECORD_STEREO=false"/>
+        <action application="set" data="record_temp_path=/tmp/echo_${uuid}.wav"/>
+
+        <!-- Start full session recording -->
+        <action application="record_session" data="${record_temp_path}"/>
+
+        <!-- Record for 5 seconds -->
+        <action application="sleep" data="5000"/>
+
+        <!-- Stop recording manually -->
+        <action application="stop_record_session"/>
+
+        <!-- Playback the recorded voice -->
+        <action application="playback" data="${record_temp_path}"/>
+
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
+    <extension name="voicemail_test">
+      <condition field="destination_number" expression="^(voicemail)$">
+        <action application="set" data="absolute_codec_string=PCMU"/>
+        <action application="set" data="RECORD_STEREO=true"/>
+        <action application="set" data="record_sample_rate=16000"/>
+        <action application="set" data="record_channels=1"/>
+        <action application="set" data="playback_terminators=#"/>
+        <action application="set" data="record_read_only=false"/>
+        <action application="set" data="record_write_only=false"/>
+        <action application="answer"/>
+        <action application="sleep" data="1000"/>
+        <action application="playback" data="ivr/ivr-welcome_to_freeswitch.wav"/>
+        <action application="say" data="en current_time pronounced ${strftime(%H:%M)}"/>
+        <action application="say" data="en current_date pronounced ${strftime(%Y-%m-%d)}"/>
+        <action application="park"/>
+        <!-- <action application="record" data="/tmp/voicemail_${uuid}.wav 60 2 5"/> -->
+        <!-- <action application="log" data="NOTICE ***** VOICEMAIL RECORDING COMPLETE: /tmp/voicemail_${uuid}.wav *****"/> -->
+        <!-- <action application="hangup"/> -->
+      </condition>
+    </extension>
+
+    <extension name="my_number_call">
+      <condition field="destination_number" expression="^(450905)$">
+        <action application="answer"/>
+        <action application="playback" data="{loops=1}tone_stream://path=${conf_dir}/tetris.ttml"/>
+        <action application="sleep" data="1000"/>
+        <action application="playback" data="ivr/ivr-welcome_to_freeswitch.wav"/>
+        <action application="playback" data="ivr/ivr-record_message.wav"/>
+        <action application="park"/>
+      </condition>
+    </extension>
+
+    <extension name="audio_test">
+      <condition field="destination_number" expression="^(test)$">
+        <action application="answer"/>
+        <action application="sleep" data="1000"/>
+        <action application="playback" data="tone_stream://%(10000,0,350,440)"/>
+        <action application="echo"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
+    <extension name="simple_test">
+      <condition field="destination_number" expression="^(test123)$">
+        <action application="answer"/>
+        <action application="sleep" data="1000"/>
+        <action application="playback" data="tone_stream://%(2000,0,350,440)"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
+    <extension name="audio_file_test">
+      <condition field="destination_number" expression="^(test456)$">
+        <action application="answer"/>
+        <action application="sleep" data="1000"/>
+        <action application="playback" data="/opt/homebrew/Cellar/freeswitch/1.10.12/share/freeswitch/sounds/en/us/callie/conference/8000/conf-alone.wav"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
+</include>

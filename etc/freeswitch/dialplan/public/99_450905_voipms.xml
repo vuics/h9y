@@ -1,0 +1,10 @@
+<include>
+  <extension name="my_number_call">
+    <condition field="destination_number" expression="^(450905)$">
+      <action application="answer"/>
+      <action application="playback" data="{loops=1}tone_stream://path=${conf_dir}/tetris.ttml"/>
+      <action application="sleep" data="1000"/>
+      <action application="park"/>
+    </condition>
+  </extension>
+</include>

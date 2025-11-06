@@ -1,0 +1,25 @@
+<!-- https://wiki.voip.ms/article/FreeSwitch -->
+<!-- sip_profiles/external/voipms.xml -->
+<!-- /opt/homebrew/Cellar/freeswitch/1.10.12/etc/freeswitch/sip_profiles/external/voipms.xml -->
+
+<include>
+  <gateway name="voipms">
+    <!-- Replace the values below with your Voip.ms username and password. -->
+    <param name="username" value="450905" />
+    <param name="password" value="__REPLACE_WITH_YOUR_PASSWORD__" />
+    <!-- This gateway could be different depending on which switch you are on -->
+    <param name="proxy" value="paris1.voip.ms" />
+    <param name="realm" value="voip.ms" />
+    <!-- This should be set to "true" for registration based -->
+    <param name="register" value="true" />
+    <!-- Voip.ms requires the Remote-Party-Identity Header to be set in the Sip invite for Caller-ID to work right
+        DON'T FORGET TO REMOVE ANY CALLER ID INFO IN http://voip.ms->Main Menu->Account Settings->General->CallerID Number
+    -->
+    <param name="sip_cid_type" value="rpid" /> 
+    <!--Setting in one place is much easier than everywhere you may bridge. You can do this since 2010 Sept 27 
+       http://jira.freeswitch.org/browse/FS-2722
+    -->
+
+    <!-- <param name="from-domain" value="voip.ms"/> -->
+  </gateway>
+</include>
