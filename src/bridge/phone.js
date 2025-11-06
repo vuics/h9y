@@ -361,14 +361,18 @@ export default class Phone extends Connector {
       await this.removeFiles({ sftp, filePaths, })
 
       if (conf.freeswitch.shutdown) {
-        // TODO: make it scalable
-        //       what if there is another bridge that uses freeswitch?
-        log('Shutting down freeswitch')
-        const result = await ssh.execCommand('killall freeswitch');
-        if (result.stderr) {
-          error('Error:', result.stderr.trim());
+        const deployedPhones = await Bridge.countDocuments({ deployed: true, connector: 'phone' });
+        verbose('deployedPhones:', deployedPhones)
+        if (deployedPhones === 0) {
+          log('No more deployed phones left. Shutting down freeswitch...')
+          const result = await ssh.execCommand('killall freeswitch');
+          if (result.stderr) {
+            error('Error:', result.stderr.trim());
+          } else {
+            log('Freeswitch is down. Output:', result.stdout.trim());
+          }
         } else {
-          log('Output:', result.stdout.trim());
+          log('There are other deployed phones left. Keeping freeswitch running...')
         }
       }
 
