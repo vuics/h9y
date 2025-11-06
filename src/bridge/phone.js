@@ -580,7 +580,7 @@ export default class Phone extends Connector {
         }
       });
 
-      this.conn.on('esl::event::DTMF::*', (event) => {
+      this.conn.on('esl::event::DTMF::*', async (event) => {
         const digit = event.getHeader('DTMF-Digit');
         const uuid = event.getHeader('Unique-ID');
         log(`----> DTMF: ${digit}, uuid: ${uuid}`);
@@ -594,6 +594,18 @@ export default class Phone extends Connector {
           this.conn.api('uuid_record', `${uuid} stop all`, (res) => {
             log(`Recording stopped for ${uuid}: ${res.getBody()}`);
           });
+        } else if (digit === '*') {
+          log('User pressed *');
+
+
+          const uuid2 = randomUUID()
+          // Create a new recording session with proper format settings
+          const recordingFile = path.join(conf.phone.recordingsDir, `${uuid}_${uuid2}.wav`);
+          const recordingExternalFile = path.join(conf.phone.recordingsExternalDir, `${uuid}_${uuid2}.wav`);
+
+          // Start the recording - provide full path
+          log(`Starting another recording for call ${uuid} to file ${recordingFile}`);
+          await executeCommand(uuid, 'record', `${recordingExternalFile} ${conf.phone.recordMaxSec}`);
         }
       })
 
