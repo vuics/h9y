@@ -127,7 +127,7 @@ const SchedulerSchema = new mongoose.Schema({
 const WebhookSchema = new mongoose.Schema({
   method: String,
   endpoint: String,
-  responseTimeoutSec: Number,
+  timeoutSec: Number,
   setRequestId: Boolean,
   requestIdKey: String,
 
@@ -136,6 +136,19 @@ const WebhookSchema = new mongoose.Schema({
   joinRoom: String,
   enablePersonal: Boolean,
   enableRoom: Boolean,
+}, { _id: false })
+
+const CurlSchema = new mongoose.Schema({
+  method: String,
+  url: String,
+  headers: String,
+  timeoutSec: Number,
+
+  // recipient: String,
+  // recipientNickname: String,
+  // joinRoom: String,
+  // enablePersonal: Boolean,
+  // enableRoom: Boolean,
 }, { _id: false })
 
 const BridgeSchema = new mongoose.Schema({
@@ -157,6 +170,7 @@ const BridgeSchema = new mongoose.Schema({
     phone: PhoneSchema,
     scheduler: SchedulerSchema,
     webhook: WebhookSchema,
+    curl: CurlSchema,
   },
 
   logs: String

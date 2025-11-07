@@ -1,6 +1,7 @@
 import express from 'express';
 import morgan from 'morgan'
 import compression from 'compression'
+import cookieParser from 'cookie-parser'
 import http from 'http'
 import path from 'path'
 import { randomUUID } from 'crypto'
@@ -20,8 +21,11 @@ function runExpressApp() {
   if (!app) {
     app = express();
     app.use(compression());
-    app.use(express.json({ limit: '1mb' }));
-    app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+    app.use(cookieParser()) // for parsing cookie
+    app.use(express.json({ limit: '1mb' })) // for parsing application/json
+    app.use(express.urlencoded({ extended: true, limit: '1mb' })) // for parsing application/x-www-form-urlencoded
+    app.use(express.text({ limit: '1mb' }))
+    app.use(express.raw({ limit: '1mb' }))
     app.use(morgan('tiny'));
     app.get('/', (req, res) => res.send('Selfdev Webhook Server'));
 
@@ -53,7 +57,6 @@ export default class Webhook extends Connector {
     super(args);
     verbose('Webhook constructed');
 
-    this.app = null;
     this.xmppAgent = new XmppAgent({
       agent: {
         options: {
@@ -74,7 +77,7 @@ export default class Webhook extends Connector {
       const timeout = setTimeout(() => {
         this.pendingResponses.delete(requestId);
         reject(new Error('Timeout waiting for response'));
-      }, (this.bridge.options.webhook.responseTimeoutSec || 300) * 1000);
+      }, (this.bridge.options.webhook.timeoutSec || 300) * 1000);
 
       this.pendingResponses.set(requestId, { resolve, reject, timeout });
     });
@@ -116,12 +119,28 @@ export default class Webhook extends Connector {
             );
 
             const requestId = randomUUID();
-            let payload = {
-              ...(this.bridge.options.webhook.method === 'get' ? req.query : req.body),
-            };
-            if (this.bridge.options.webhook.setRequestId) {
-              payload[this.bridge.options.webhook.requestIdKey] = requestId
+
+            let text = null
+            let payload = null
+            const contentType = req.headers['content-type'];
+            verbose('contentType:', contentType)
+            verbose('req.body:', req.body)
+
+            if (contentType?.includes('text/plain')) {
+              text = req.body
+            } else {
+              if (!contentType?.includes('application/json')) {
+                warn('Unknown contentType:', contentType)
+              }
+              payload = {
+                ...(this.bridge.options.webhook.method === 'get' ? req.query : req.body),
+              };
+              if (this.bridge.options.webhook.setRequestId) {
+                payload[this.bridge.options.webhook.requestIdKey] = requestId
+              }
             }
+
+            verbose('text:', text)
             verbose('payload:', payload)
             verbose('to xmpp, requestId:', requestId)
             verbose('setRequestId:', this.bridge.options.webhook.setRequestId)
@@ -131,14 +150,14 @@ export default class Webhook extends Connector {
             if (this.bridge.options.webhook.enablePersonal) {
               await this.xmppAgent.xmppClient.sendPersonalMessage({
                 recipient: this.bridge.options.webhook.recipient,
-                prompt: JSON.stringify(payload),
+                prompt: text || JSON.stringify(payload),
               });
             }
             if (this.bridge.options.webhook.enableRoom) {
               await this.xmppAgent.xmppClient.sendRoomMessage({
                 room: this.bridge.options.webhook.joinRoom,
                 recipient: this.bridge.options.webhook.recipientNickname,
-                prompt: JSON.stringify(payload),
+                prompt: text || JSON.stringify(payload),
                 mucHost: conf.xmpp.mucHost,
               });
             }
@@ -189,7 +208,7 @@ export default class Webhook extends Connector {
             }
           }
         } catch (err) {
-          error('Failed to parse XMPP message:', prompt, err);
+          error('Failed to handle XMPP message:', prompt, err);
         }
         return '';
       };

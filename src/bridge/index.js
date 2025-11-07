@@ -14,6 +14,7 @@ import Messengers from './messengers.js'
 import Phone from './phone.js'
 import Scheduler from './scheduler.js'
 import Webhook from './webhook.js'
+import Curl from './curl.js'
 
 const verbose = Verbose('sd:bridge/index'); verbose('')
 
@@ -25,6 +26,7 @@ const connectorClasses = {
   "phone": Phone,
   "scheduler": Scheduler,
   "webhook": Webhook,
+  "curl": Curl,
 }
 
 const runningConnectorBridges = {};
