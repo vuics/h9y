@@ -127,6 +127,9 @@ const SchedulerSchema = new mongoose.Schema({
 const WebhookSchema = new mongoose.Schema({
   method: String,
   endpoint: String,
+  responseTimeoutSec: Number,
+  setRequestId: Boolean,
+  requestIdKey: String,
 
   recipient: String,
   recipientNickname: String,
