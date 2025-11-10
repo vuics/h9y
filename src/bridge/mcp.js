@@ -1,278 +1,302 @@
-// import express from 'express';
-// import morgan from 'morgan'
-// import compression from 'compression'
-// import cookieParser from 'cookie-parser'
-// import http from 'http'
-// import path from 'path'
-// import { randomUUID } from 'crypto'
+// mcp.js
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express from 'express';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 
-import { log, warn, error, Verbose } from '../services.js'
-import Connector from './connector.js'
-import XmppAgent from '../swarm/xmpp-agent.js'
-import conf from '../conf.js'
+import { log, warn, error, Verbose } from '../services.js';
+import Connector from './connector.js';
+import XmppAgent from '../swarm/xmpp-agent.js';
+import conf from '../conf.js';
 
-const verbose = Verbose('sd:bridge/mcp'); verbose('')
+const verbose = Verbose('sd:bridge/mcp'); verbose('');
 
-
-// Create an MCP server
+// -------------------------------
+// Global MCP server + Express app
+// -------------------------------
 const server = new McpServer({
-  name: 'demo-server',
-  version: '1.0.0'
+  name: 'selfdev-mcp-server',
+  version: '1.0.0',
 });
 
-// Add an addition tool
-server.registerTool(
-  'add',
-  {
-    title: 'Addition Tool',
-    description: 'Add two numbers',
-    inputSchema: { a: z.number(), b: z.number() },
-    outputSchema: { result: z.number() }
-  },
-  async ({ a, b }) => {
-    const output = { result: a + b };
-    return {
-      content: [{ type: 'text', text: JSON.stringify(output) }],
-      structuredContent: output
-    };
-  }
-);
-
-// Add a dynamic greeting resource
-server.registerResource(
-  'greeting',
-  new ResourceTemplate('greeting://{name}', { list: undefined }),
-  {
-    title: 'Greeting Resource', // Display name for UI
-    description: 'Dynamic greeting generator'
-  },
-  async (uri, { name }) => ({
-    contents: [
-      {
-        uri: uri.href,
-        text: `Hello, ${name}!`
-      }
-    ]
-  })
-);
-
-// Set up Express and HTTP transport
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
+// Create the HTTP /mcp endpoint (single entrypoint for MCP inspector/tools)
 app.post('/mcp', async (req, res) => {
-  // Create a new transport for each request to prevent request ID collisions
+  // Create a new transport for each incoming request (prevents collisions)
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
-    enableJsonResponse: true
+    enableJsonResponse: true,
   });
 
   res.on('close', () => {
-    transport.close();
+    try {
+      transport.close();
+    } catch (err) {
+      // ignore
+    }
   });
 
-  await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    error('MCP transport handling error:', err);
+    try {
+      res.status(500).json({ result: 'error', error: err.toString() });
+    } catch (e) {}
+  }
 });
 
 app.listen(conf.mcp.port, () => {
-  console.log(`Demo MCP Server running on http://localhost:${conf.mcp.port}/mcp`);
-}).on('error', error => {
-  console.error('MCP Server error:', error);
-  // process.exit(1);
+  log('MCP HTTP server listening on port', conf.mcp.port);
+  verbose(`  http://localhost:${conf.mcp.port}/mcp`);
+}).on('error', (err) => {
+  error('MCP Server error:', err);
+  // do not exit the process here
 });
 
-// function addRoute({ path, method = 'post', handler }) {
-//   app[method](path, handler);
-// }
-
-// function removeRoute({ path, method = 'post' }) {
-//   app._router.stack = app._router.stack.filter(layer => {
-//     if (!layer.route) return true;
-//     if (layer.route.path !== path) return true;
-//     if (!layer.route.methods[method]) return true;
-//     return false;
-//   });
-// }
-
-
+// -------------------------------
+// Exported Mcp Connector class
+// -------------------------------
 export default class Mcp extends Connector {
   constructor(args) {
     super(args);
     verbose('Mcp constructed');
 
-    // this.xmppAgent = new XmppAgent({
-    //   agent: {
-    //     options: {
-    //       name: this.bridge.options.name,
-    //       joinRooms: [this.bridge.options.mcp.joinRoom],
-    //     },
-    //     userId: this.bridge.userId,
-    //   },
-    //   handleChat: this.bridge.options.mcp.enablePersonal,
-    //   handleRooms: this.bridge.options.mcp.enableRoom,
-    // });
+    // Initialize XMPP agent for this bridge instance
+    this.xmppAgent = new XmppAgent({
+      agent: {
+        options: {
+          name: this.bridge.options.name,
+          joinRooms: this.bridge.options.mcp?.joinRooms || [],
+        },
+        userId: this.bridge.userId,
+      },
+      handleChat: this.bridge.options.mcp?.enablePersonal ?? true,
+      handleRooms: this.bridge.options.mcp?.enableRoom ?? false,
+    });
 
-    // this.pendingResponses = null
+    // Map<requestId, { resolve, reject, timeout }>
+    this.pendingResponses = null;
+
+    // Unique tool name registered on the MCP server for this bridge
+    this.toolName = `mcp_send_${this.bridge.userId._id.toString()}`;
+    this.registeredTool = false;
   }
 
-  // waitForXmppResponse(requestId) {
-  //   return new Promise((resolve, reject) => {
-  //     const timeout = setTimeout(() => {
-  //       this.pendingResponses.delete(requestId);
-  //       reject(new Error('Timeout waiting for response'));
-  //     }, (this.bridge.options.mcp.timeoutSec || 300) * 1000);
+  waitForXmppResponse(requestId) {
+    return new Promise((resolve, reject) => {
+      const timeoutMs = (this.bridge.options.mcp?.timeoutSec || 300) * 1000;
+      const timeout = setTimeout(() => {
+        this.pendingResponses.delete(requestId);
+        reject(new Error('Timeout waiting for XMPP response'));
+      }, timeoutMs);
 
-  //     this.pendingResponses.set(requestId, { resolve, reject, timeout });
-  //   });
-  // }
+      this.pendingResponses.set(requestId, { resolve, reject, timeout });
+    });
+  }
 
-  // resolveXmppResponse(requestId, response) {
-  //   const entry = this.pendingResponses.get(requestId);
-  //   if (!entry) return;
-  //   clearTimeout(entry.timeout);
-  //   entry.resolve(response);
-  //   this.pendingResponses.delete(requestId);
-  // }
+  resolveXmppResponse(requestId, response) {
+    const entry = this.pendingResponses.get(requestId);
+    if (!entry) return false;
+    clearTimeout(entry.timeout);
+    entry.resolve(response);
+    this.pendingResponses.delete(requestId);
+    return true;
+  }
 
   async start() {
     super.start();
-    verbose('Mcp started');
+    verbose('Mcp start');
 
     try {
-      // runExpressApp();
-      // this.pendingResponses = new Map();
+      this.pendingResponses = new Map();
 
-      // this.path = path.join(
-      //   '/' + this.bridge.userId._id.toString(),
-      //   this.bridge.options.mcp.endpoint
-      // );
-      // verbose('path:', this.path);
+      // start xmpp agent
+      await this.xmppAgent.start();
 
-      // /* -------------------- Mcp → XMPP (Outgoing) -------------------- */
-      // addRoute({
-      //   path: this.path,
-      //   method: this.bridge.options.mcp.method,
-      //   handler: async (req, res) => {
-      //     try {
-      //       verbose(
-      //         'handler path:', this.path,
-      //         ', method:', this.bridge.options.mcp.method,
-      //         ', query:', req.query,
-      //         ', body:', req.body
-      //       );
+      // Set up incoming XMPP handler to resolve pending MCP requests
+      this.xmppAgent.chat = async ({ prompt } = {}) => {
+        verbose('XMPP -> MCP received prompt:', prompt);
 
-      //       const requestId = randomUUID();
+        try {
+          let msg = null;
+          try {
+            msg = JSON.parse(prompt);
+          } catch (err) {
+            msg = null;
+          }
 
-      //       let text = null
-      //       let payload = null
-      //       const contentType = req.headers['content-type'];
-      //       verbose('contentType:', contentType)
-      //       verbose('req.body:', req.body)
+          // Determine requestId either from parsed JSON or null
+          let requestId = null;
+          if (msg && msg.requestId) {
+            requestId = msg.requestId;
+          }
 
-      //       if (contentType?.includes('text/plain')) {
-      //         text = req.body
-      //       } else {
-      //         if (!contentType?.includes('application/json')) {
-      //           warn('Unknown contentType:', contentType)
-      //         }
-      //         payload = {
-      //           ...(this.bridge.options.mcp.method === 'get' ? req.query : req.body),
-      //         };
-      //         if (this.bridge.options.mcp.setRequestId) {
-      //           payload[this.bridge.options.mcp.requestIdKey] = requestId
-      //         }
-      //       }
+          verbose('parsed msg:', msg, ', requestId:', requestId);
 
-      //       verbose('text:', text)
-      //       verbose('payload:', payload)
-      //       verbose('to xmpp, requestId:', requestId)
-      //       verbose('setRequestId:', this.bridge.options.mcp.setRequestId)
-      //       verbose('requestIdKey:', this.bridge.options.mcp.requestIdKey)
+          if (requestId && this.pendingResponses.has(requestId)) {
+            this.resolveXmppResponse(requestId, prompt);
+          } else {
+            // fallback: match last pending request
+            warn('Unmatched XMPP response; attempting fallback match');
+            const lastEntry = Array.from(this.pendingResponses.entries()).pop();
+            if (lastEntry) {
+              const [lastRequestId] = lastEntry;
+              this.resolveXmppResponse(lastRequestId, prompt);
+            } else {
+              warn('No pending MCP requests to match XMPP response.');
+            }
+          }
+        } catch (err) {
+          error('Error handling XMPP message in MCP bridge:', err);
+        }
+        return '';
+      };
 
-      //       // Send to XMPP
-      //       if (this.bridge.options.mcp.enablePersonal) {
-      //         await this.xmppAgent.xmppClient.sendPersonalMessage({
-      //           recipient: this.bridge.options.mcp.recipient,
-      //           prompt: text || JSON.stringify(payload),
-      //         });
-      //       }
-      //       if (this.bridge.options.mcp.enableRoom) {
-      //         await this.xmppAgent.xmppClient.sendRoomMessage({
-      //           room: this.bridge.options.mcp.joinRoom,
-      //           recipient: this.bridge.options.mcp.recipientNickname,
-      //           prompt: text || JSON.stringify(payload),
-      //           mucHost: conf.xmpp.mucHost,
-      //         });
-      //       }
+      // Register a tool on the MCP server which clients can call to send messages
+      // Tool name is unique per bridge instance
+      const inputSchema = {
+        text: z.string().optional(),
+        payload: z.any().optional(),
+        requestId: z.string().optional(),
+        recipient: z.string().optional(),
+        room: z.string().optional(),
+      };
+      const outputSchema = { result: z.any().optional() };
 
-      //       // Wait for correlated XMPP response
-      //       const response = await this.waitForXmppResponse(requestId);
-      //       res.json(response);
-      //     } catch (err) {
-      //       error('Error handling mcp:', this.bridge.options.name, ', error:', err);
-      //       res.status(500).send({ result: 'error', error: err.toString() });
-      //     }
-      //   },
-      // });
+      // Register the tool; handler will forward the message to XMPP and await reply
+      // Avoid double-registering
+      if (!this.registeredTool) {
+        server.registerTool(
+          this.toolName,
+          {
+            title: `MCP Send Tool (${this.bridge.options.name || this.toolName})`,
+            description: 'Send a message to the XMPP agent and wait for a reply',
+            inputSchema,
+            outputSchema,
+          },
+          async (input) => {
+            // input contains fields from the client
+            try {
+              verbose('MCP tool invoked, input:', input);
+              const providedRequestId = input.requestId;
+              const requestId = providedRequestId || randomUUID();
 
-      // await this.xmppAgent.start();
+              // Build a message to send; include requestId for correlation
+              const messagePayload = (typeof input.payload !== 'undefined')
+                ? input.payload
+                : (input.text !== undefined ? { text: input.text } : {});
 
-      // /* -------------------- XMPP → Mcp (Incoming) -------------------- */
-      // this.xmppAgent.chat = async ({ prompt } = {}) => {
-      //   verbose('XMPP chat received:', prompt);
+              // attach requestId so reply can be correlated
+              if (typeof messagePayload === 'object' && messagePayload !== null) {
+                messagePayload.requestId = requestId;
+              }
 
-      //   try {
-      //     let msg
-      //     try {
-      //       msg = JSON.parse(prompt);
-      //     } catch (err) {
-      //       msg = null
-      //     }
+              const serialized = (typeof messagePayload === 'string')
+                ? messagePayload
+                : JSON.stringify(messagePayload);
 
-      //     let requestId = null
-      //     if (msg && this.bridge.options.mcp.setRequestId) {
-      //       requestId = msg[this.bridge.options.mcp.requestIdKey]
-      //     }
-      //     verbose('msg:', msg)
-      //     verbose('from xmpp, requestId:', requestId)
-      //     verbose('setRequestId:', this.bridge.options.mcp.setRequestId)
-      //     verbose('requestIdKey:', this.bridge.options.mcp.requestIdKey)
+              verbose('Sending to XMPP; requestId:', requestId, ', payload:', serialized);
 
-      //     if (msg && requestId && this.pendingResponses.has(requestId)) {
-      //       this.resolveXmppResponse(msg.requestId, prompt);
-      //     } else {
-      //       // Fallback: if XMPP reply doesn’t contain requestId
-      //       warn('Unmatched XMPP response:', msg, 'Attempting fallback by sender/room');
-      //       // Example fallback: match last pending request by sender
-      //       const lastEntry = Array.from(this.pendingResponses.entries()).pop();
-      //       if (lastEntry) {
-      //         const [lastRequestId] = lastEntry;
-      //         this.resolveXmppResponse(lastRequestId, prompt);
-      //       }
-      //     }
-      //   } catch (err) {
-      //     error('Failed to handle XMPP message:', prompt, err);
-      //   }
-      //   return '';
-      // };
+              // Send via personal or room depending on bridge config or input
+              const usePersonal = this.bridge.options.mcp?.enablePersonal ?? true;
+              const useRoom = this.bridge.options.mcp?.enableRoom ?? false;
+
+              if (input.recipient && usePersonal) {
+                await this.xmppAgent.xmppClient.sendPersonalMessage({
+                  recipient: input.recipient,
+                  prompt: serialized,
+                });
+              } else if (input.room && useRoom) {
+                await this.xmppAgent.xmppClient.sendRoomMessage({
+                  room: input.room,
+                  recipient: this.bridge.options.mcp?.recipientNickname,
+                  prompt: serialized,
+                  mucHost: conf.xmpp.mucHost,
+                });
+              } else {
+                // fallback to default configured behavior
+                if (usePersonal && this.bridge.options.mcp?.recipient) {
+                  await this.xmppAgent.xmppClient.sendPersonalMessage({
+                    recipient: this.bridge.options.mcp.recipient,
+                    prompt: serialized,
+                  });
+                } else if (useRoom && (this.bridge.options.mcp?.joinRooms || []).length) {
+                  const room = (this.bridge.options.mcp.joinRooms || [])[0];
+                  await this.xmppAgent.xmppClient.sendRoomMessage({
+                    room,
+                    recipient: this.bridge.options.mcp?.recipientNickname,
+                    prompt: serialized,
+                    mucHost: conf.xmpp.mucHost,
+                  });
+                } else {
+                  // If no destination configured, throw
+                  throw new Error('No XMPP destination configured (recipient/room).');
+                }
+              }
+
+              // Wait for response from XMPP correlated by requestId
+              const xmppResponse = await this.waitForXmppResponse(requestId);
+
+              // Return structured output expected by MCP clients
+              return {
+                content: [{ type: 'text', text: xmppResponse }],
+                structuredContent: { result: xmppResponse },
+              };
+            } catch (err) {
+              error('Error inside MCP tool handler:', err);
+              // Return error in structured content
+              return {
+                content: [{ type: 'text', text: JSON.stringify({ error: err.toString() }) }],
+                structuredContent: { error: err.toString() },
+              };
+            }
+          }
+        );
+        this.registeredTool = true;
+        verbose('Registered MCP tool:', this.toolName);
+      }
+
     } catch (err) {
-      error('Error starting Mcp:', err);
+      error('Error starting Mcp bridge:', err);
+      // ensure xmppAgent stop if started partially
+      try {
+        await this.xmppAgent.stop();
+      } catch (e) {}
     }
   }
 
   async stop() {
     super.stop();
-    // removeRoute({
-    //   path: this.path,
-    //   method: this.bridge.options.mcp.method,
-    // });
-    // this.xmppAgent.stop();
-    // this.pendingResponses = null
+    verbose('Stopping Mcp bridge');
+
+    // Attempt to stop XMPP agent
+    try {
+      await this.xmppAgent.stop();
+    } catch (err) {
+      warn('Failed to stop xmppAgent gracefully:', err);
+    }
+
+    // Clear pending responses
+    if (this.pendingResponses) {
+      for (const [, entry] of this.pendingResponses.entries()) {
+        try {
+          clearTimeout(entry.timeout);
+          entry.reject && entry.reject(new Error('Bridge stopped'));
+        } catch (e) {}
+      }
+      this.pendingResponses = null;
+    }
+
+    // Note: unregisterTool may or may not exist on McpServer; avoid calling unknown API.
+    // If McpServer supports unregistering, you can add it here:
+    // try { server.unregisterTool(this.toolName); } catch (e) { /* ignore */ }
+
+    this.registeredTool = false;
     verbose('Mcp stopped');
   }
 }
