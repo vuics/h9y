@@ -151,6 +151,32 @@ const CurlSchema = new mongoose.Schema({
   // enableRoom: Boolean,
 }, { _id: false })
 
+const EmailSchema = new mongoose.Schema({
+  imap: {
+    host: String,
+    port: Number,
+    user: String,
+    pass: String,
+    secure: Boolean,
+  },
+  smtp: {
+    host: String,
+    port: Number,
+    user: String,
+    pass: String,
+    secure: Boolean,
+  },
+  pollSec: Number,
+  defaultRecipient: String,
+  defaultSubject: String,
+
+  recipient: String,
+  recipientNickname: String,
+  joinRoom: String,
+  enablePersonal: Boolean,
+  enableRoom: Boolean,
+}, { _id: false })
+
 const BridgeSchema = new mongoose.Schema({
   userId: {
     type: ObjectId,
@@ -171,6 +197,7 @@ const BridgeSchema = new mongoose.Schema({
     scheduler: SchedulerSchema,
     webhook: WebhookSchema,
     curl: CurlSchema,
+    email: EmailSchema,
   },
 
   logs: String
