@@ -11,6 +11,158 @@ import conf from '../conf.js'
 const verbose = Verbose('sd:bridge/email')
 verbose('')
 
+
+
+// TODO: Implement email file attachments
+//       The following file_manager.js code was translated from file_manager.py
+
+// // file_manager.js
+// import path from 'path';
+// import axios from 'axios';
+// import FileType from 'file-type';
+// import { URL } from 'url';
+// import https from 'https';
+
+// const SSL_VERIFY = process.env.SSL_VERIFY !== 'false';
+// const SHARE_URL_PREFIX = process.env.SHARE_URL_PREFIX || "https://selfdev-prosody.dev.local:5281/file_share/";
+
+// export class FileManager {
+//   constructor() {
+//     this.fileUrls = [];
+//   }
+
+//   isSharedFileUrl(prompt) {
+//     try {
+//       return prompt.startsWith(SHARE_URL_PREFIX);
+//     } catch (err) {
+//       console.error(`Error checking prompt ${prompt}:`, err);
+//       return false;
+//     }
+//   }
+
+//   addFileUrl(url) {
+//     try {
+//       this.fileUrls.push(url);
+//       return "";
+//     } catch (err) {
+//       console.error(`Error adding file URL ${url}:`, err);
+//       return "";
+//     }
+//   }
+
+//   getFileUrls() {
+//     return this.fileUrls;
+//   }
+
+//   async fetchBytesFromUrl(url) {
+//     try {
+//       console.debug(`Downloading file from ${url}`);
+//       const response = await axios.get(url, {
+//         responseType: 'arraybuffer',
+//         httpsAgent: SSL_VERIFY ? undefined : new https.Agent({ rejectUnauthorized: false })
+//       });
+//       return Buffer.from(response.data);
+//     } catch (err) {
+//       console.error(`Error downloading file from ${url}:`, err);
+//     }
+//   }
+
+//   async getFilesBytes() {
+//     return await Promise.all(this.fileUrls.map(url => this.fetchBytesFromUrl(url)));
+//   }
+
+//   getFilenameFromUrl(url) {
+//     const parsedUrl = new URL(url);
+//     return path.basename(parsedUrl.pathname);
+//   }
+
+//   async getTypeFromBuffer(fileBuffer) {
+//     try {
+//       const typeInfo = await FileType.fromBuffer(fileBuffer);
+//       if (!typeInfo) return ['application/octet-stream', 'file'];
+//       const [typePart] = typeInfo.mime.split('/');
+//       return [typeInfo.mime, typePart];
+//     } catch (err) {
+//       console.error("Error getting file type from buffer:", err);
+//       return ['application/octet-stream', 'file'];
+//     }
+//   }
+
+//   async getFileInfoFromBuffer(fileBuffer) {
+//     const [mimeType, typePart] = await this.getTypeFromBuffer(fileBuffer);
+//     const type = ['image', 'audio', 'text'].includes(typePart) ? typePart : 'file';
+
+//     if (type === 'text') {
+//       return {
+//         type,
+//         mimeType,
+//         text: fileBuffer.toString('utf-8')
+//       };
+//     } else {
+//       const dataBase64 = fileBuffer.toString('base64');
+//       return {
+//         type,
+//         sourceType: 'base64',
+//         data: dataBase64,
+//         mimeType
+//       };
+//     }
+//   }
+
+//   async getFilesInfo() {
+//     const filesBytes = await this.getFilesBytes();
+//     return await Promise.all(filesBytes.map(buf => this.getFileInfoFromBuffer(buf)));
+//   }
+
+//   clear() {
+//     this.fileUrls = [];
+//   }
+
+//   /**
+//    * Uploads all stored files using the agent's uploadFile() method.
+//    * @param {XmppAgent} agent - The XMPP agent instance that implements uploadFile()
+//    * @param {string} shareHost - The XMPP upload share host JID
+//    * @returns {Promise<string[]>} - Array of uploaded file URLs
+//    */
+//   async uploadFiles(agent, shareHost) {
+//     try {
+//       const results = [];
+
+//       const fileUrls = this.getFileUrls();
+//       const files = await this.getFilesBytes();
+
+//       for (let i = 0; i < files.length; i++) {
+//         const buffer = files[i];
+//         const filename = this.getFilenameFromUrl(fileUrls[i]);
+//         const [mimeType] = await this.getTypeFromBuffer(buffer);
+//         const size = buffer.length;
+
+//         console.log(`⬆️ Uploading ${filename} (${mimeType}, ${size} bytes)...`);
+//         const getUrl = await agent.uploadFile({
+//           buffer,
+//           filename,
+//           size,
+//           contentType: mimeType,
+//           shareHost,
+//         });
+
+//         results.push(getUrl);
+//       }
+
+//       // Clear after upload
+//       this.clear();
+//       return results;
+//     } catch (err) {
+//       console.error('Error uploading files via FileManager:', err);
+//       throw err;
+//     }
+//   }
+// }
+
+
+
+
+
 export default class Email extends Connector {
   constructor(args) {
     super(args)
