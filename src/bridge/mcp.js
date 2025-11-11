@@ -1,6 +1,7 @@
 import path from 'path'
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import express from 'express';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
@@ -18,6 +19,8 @@ const verbose = Verbose('sd:bridge/mcp'); verbose('');
 // or:
 //   DANGEROUSLY_OMIT_AUTH=true  npx @modelcontextprotocol/inspector --server-url http://localhost:6370/mcp/679b3c9a6e26f022ca69515b/mcp-server
 
+// Map to store transports by session ID
+const transports = {};
 
 export default class Mcp extends Connector {
   constructor(args) {
@@ -38,11 +41,6 @@ export default class Mcp extends Connector {
     });
 
     this.path = null
-
-    // Unique tool name registered on the MCP server for this bridge
-    this.mcpServer = null
-    this.toolName = `send`;
-    this.registeredTool = false;
   }
 
   async start() {
@@ -51,11 +49,6 @@ export default class Mcp extends Connector {
 
     try {
       await webServer.start();
-
-      this.mcpServer = new McpServer({
-        name: this.bridge.options.name,
-        version: '1.0.0',
-      });
 
       this.path = path.join(
         '/mcp/' + this.bridge.userId._id.toString(),
@@ -76,34 +69,160 @@ export default class Mcp extends Connector {
               ', body:', req.body
             );
 
-            const transport = new StreamableHTTPServerTransport({
-              sessionIdGenerator: undefined,
-              enableJsonResponse: true,
-            });
+            const sessionId = req.headers['mcp-session-id']
+            let transport = null
 
-            res.on('close', () => {
-              try {
-                transport.close();
-              } catch (err) {
-                // ignore
-              }
-            });
+            if (sessionId && transports[sessionId]) {
+              // Reuse existing transport
+              transport = transports[sessionId];
+            } else if (!sessionId && isInitializeRequest(req.body)) {
+              // New initialization request
+              transport = new StreamableHTTPServerTransport({
+                sessionIdGenerator: () => randomUUID(),
+                onsessioninitialized: sessionId => {
+                  // Store the transport by session ID
+                  transports[sessionId] = transport;
+                },
+                // DNS rebinding protection is disabled by default for backwards compatibility. If you are running this server
+                // locally, make sure to set:
+                // enableDnsRebindingProtection: true,
+                // allowedHosts: ['127.0.0.1'],
+              });
 
-            try {
-              await this.mcpServer.connect(transport);
-              await transport.handleRequest(req, res, req.body);
-            } catch (err) {
-              error('MCP transport handling error:', err);
-              try {
-                res.status(500).json({ result: 'error', error: err.toString() });
-              } catch (e) {}
+              // Clean up transport when closed
+              transport.onclose = () => {
+                if (transport.sessionId) {
+                  delete transports[transport.sessionId];
+                }
+              };
+              const mcpServer = new McpServer({
+                name: this.bridge.options.name,
+                version: '1.0.0',
+              });
+
+              // ... set up server resources, tools, and prompts ...
+              // Register a tool on the MCP server which clients can call to send messages
+              // Tool name is unique per bridge instance
+              const inputSchema = {
+                payload: z.any(),
+                requestId: z.string().optional(),
+              };
+              const outputSchema = { result: z.any().optional() };
+              // Register the tool; handler will forward the message to XMPP and await reply
+              mcpServer.registerTool(
+                'send',
+                {
+                  title: `MCP Send Tool`,
+                  description: 'Send a message to the XMPP agent and wait for a reply',
+                  inputSchema,
+                  outputSchema,
+                },
+                async (input) => {
+                  // input contains fields from the client
+                  try {
+                    verbose('MCP tool invoked, input:', input);
+                    const requestId = input.requestId || randomUUID();
+
+                    // attach requestId so reply can be correlated
+                    if (typeof input.payload === 'object' && input.payload !== null) {
+                      input.payload.requestId = requestId;
+                    }
+
+                    const prompt = (typeof input.payload === 'string')
+                      ? input.payload
+                      : JSON.stringify(input.payload);
+
+                    verbose('Sending to XMPP; requestId:', requestId, ', prompt:', prompt);
+
+                    if (this.bridge.options.enablePersonal) {
+                      await this.xmppAgent.xmppClient.sendPersonalMessage({
+                        recipient: this.bridge.options.recipient,
+                        prompt,
+                      });
+                    }
+                    if (this.bridge.options.enableRoom) {
+                      await this.xmppAgent.xmppClient.sendRoomMessage({
+                        room: this.bridge.options.joinRoom,
+                        recipient: this.bridge.options.recipientNickname,
+                        prompt,
+                        mucHost: conf.xmpp.mucHost,
+                      });
+                    }
+
+                    // Wait for response from XMPP correlated by requestId
+                    const xmppResponse = await this.waitForXmppResponse({
+                      requestId,
+                      timeoutSec: this.bridge.options.mcp?.timeoutSec,
+                    });
+
+                    // Return structured output expected by MCP clients
+                    return {
+                      content: [{ type: 'text', text: xmppResponse }],
+                      structuredContent: { result: xmppResponse },
+                    };
+                  } catch (err) {
+                    error('Error inside MCP tool handler:', err);
+                    // Return error in structured content
+                    return {
+                      content: [{ type: 'text', text: JSON.stringify({ error: err.toString() }) }],
+                      structuredContent: { error: err.toString() },
+                    };
+                  }
+                }
+              );
+              verbose('Registered MCP tool: send');
+
+              // Connect to the MCP server
+              await mcpServer.connect(transport);
+            } else {
+              // Invalid request
+              res.status(400).json({
+                jsonrpc: '2.0',
+                error: {
+                  code: -32000,
+                  message: 'Bad Request: No valid session ID provided'
+                },
+                id: null
+              });
+              return;
             }
+
+            // Handle the request
+            await transport.handleRequest(req, res, req.body);
           } catch (err) {
             error('Error handling mcp:', this.bridge.options.name, ', error:', err);
             res.status(500).send({ result: 'error', error: err.toString() });
           }
-        },
+        }
       });
+
+
+      // Reusable handler for GET and DELETE requests
+      const handleSessionRequest = async (req, res) => {
+        const sessionId = req.headers['mcp-session-id']
+        if (!sessionId || !transports[sessionId]) {
+          res.status(400).send('Invalid or missing session ID');
+          return;
+        }
+
+        const transport = transports[sessionId];
+        await transport.handleRequest(req, res);
+      };
+
+      // Handle GET requests for server-to-client notifications via SSE
+      webServer.addRoute({
+        path: this.path,
+        method: 'get',
+        handler: handleSessionRequest,
+      })
+
+      // Handle DELETE requests for session termination
+      webServer.addRoute({
+        path: this.path,
+        method: 'delete',
+        handler: handleSessionRequest,
+      })
+
 
       // start xmpp agent
       await this.xmppAgent.start();
@@ -135,82 +254,6 @@ export default class Mcp extends Connector {
         return '';
       };
 
-      // Register a tool on the MCP server which clients can call to send messages
-      // Tool name is unique per bridge instance
-      const inputSchema = {
-        payload: z.any(),
-        requestId: z.string().optional(),
-      };
-      const outputSchema = { result: z.any().optional() };
-
-      // Register the tool; handler will forward the message to XMPP and await reply
-      // Avoid double-registering
-      if (!this.registeredTool) {
-        this.mcpServer.registerTool(
-          this.toolName,
-          {
-            title: `MCP Send Tool (${this.bridge.options.name || this.toolName})`,
-            description: 'Send a message to the XMPP agent and wait for a reply',
-            inputSchema,
-            outputSchema,
-          },
-          async (input) => {
-            // input contains fields from the client
-            try {
-              verbose('MCP tool invoked, input:', input);
-              const requestId = input.requestId || randomUUID();
-
-              // attach requestId so reply can be correlated
-              if (typeof input.payload === 'object' && input.payload !== null) {
-                input.payload.requestId = requestId;
-              }
-
-              const prompt = (typeof input.payload === 'string')
-                ? input.payload
-                : JSON.stringify(input.payload);
-
-              verbose('Sending to XMPP; requestId:', requestId, ', prompt:', prompt);
-
-              if (this.bridge.options.enablePersonal) {
-                await this.xmppAgent.xmppClient.sendPersonalMessage({
-                  recipient: this.bridge.options.recipient,
-                  prompt,
-                });
-              }
-              if (this.bridge.options.enableRoom) {
-                await this.xmppAgent.xmppClient.sendRoomMessage({
-                  room: this.bridge.options.joinRoom,
-                  recipient: this.bridge.options.recipientNickname,
-                  prompt,
-                  mucHost: conf.xmpp.mucHost,
-                });
-              }
-
-              // Wait for response from XMPP correlated by requestId
-              const xmppResponse = await this.waitForXmppResponse({
-                requestId,
-                timeoutSec: this.bridge.options.mcp?.timeoutSec,
-              });
-
-              // Return structured output expected by MCP clients
-              return {
-                content: [{ type: 'text', text: xmppResponse }],
-                structuredContent: { result: xmppResponse },
-              };
-            } catch (err) {
-              error('Error inside MCP tool handler:', err);
-              // Return error in structured content
-              return {
-                content: [{ type: 'text', text: JSON.stringify({ error: err.toString() }) }],
-                structuredContent: { error: err.toString() },
-              };
-            }
-          }
-        );
-        this.registeredTool = true;
-        verbose('Registered MCP tool:', this.toolName);
-      }
-
     } catch (err) {
       error('Error starting Mcp bridge:', err);
       // ensure xmppAgent stop if started partially
@@ -227,6 +270,14 @@ export default class Mcp extends Connector {
       path: this.path,
       method: 'post',
     });
+    webServer.removeRoute({
+      path: this.path,
+      method: 'get',
+    });
+    webServer.removeRoute({
+      path: this.path,
+      method: 'delete',
+    });
     webServer.stop();
 
     // Attempt to stop XMPP agent
@@ -236,7 +287,6 @@ export default class Mcp extends Connector {
       warn('Failed to stop xmppAgent gracefully:', err);
     }
 
-    this.registeredTool = false;
     verbose('Mcp stopped');
   }
 }

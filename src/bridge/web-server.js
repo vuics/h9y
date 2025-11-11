@@ -3,8 +3,7 @@ import morgan from 'morgan'
 import compression from 'compression'
 import cookieParser from 'cookie-parser'
 import http from 'http'
-// import path from 'path'
-// import { randomUUID } from 'crypto'
+import cors from 'cors';
 
 import { log, warn, error, Verbose } from '../services.js'
 import conf from '../conf.js'
@@ -28,6 +27,15 @@ class WebServer {
       this.app.use(express.text({ limit: '1mb' }))
       this.app.use(express.raw({ limit: '1mb' }))
       this.app.use(morgan('tiny'));
+      this.app.use(
+        cors({
+          origin: '*', // Configure appropriately for production, for example:
+          // origin: ['https://your-remote-domain.com', 'https://your-other-remote-domain.com'],
+          exposedHeaders: ['Mcp-Session-Id'],
+          allowedHeaders: ['Content-Type', 'mcp-session-id']
+        })
+      );
+
       this.app.get('/', (req, res) => res.send('Selfdev Webhook Server'));
 
       this.server = http.createServer(this.app);
