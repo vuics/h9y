@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import stringify from 'json-stringify-pretty-compact';
 
 import { log, warn, error, Verbose } from '../services.js'
 import XmppAgent from './xmpp-agent.js'
@@ -52,7 +53,8 @@ export default class McpV1 extends XmppAgent {
 
 
           log('Connecting to MCP server...')
-          const connected = await this.mcpClient.connect(this.transport);
+          await this.mcpClient.connect(this.transport);
+          log('Connected')
           break
         } catch (err) {
           error('Error connecting to MCP server:', err)
@@ -62,7 +64,6 @@ export default class McpV1 extends XmppAgent {
           continue
         }
       }
-      log('Connected:', connected)
     } catch (err) {
       error('Error starting MCP client:', err)
     }
@@ -83,7 +84,7 @@ export default class McpV1 extends XmppAgent {
         // List prompts
         const prompts = await this.mcpClient.listPrompts();
         verbose('prompts:', prompts)
-        return prompts
+        return stringify(prompts)
       }
 
 
@@ -99,7 +100,7 @@ export default class McpV1 extends XmppAgent {
         // List resources
         const resources = await this.mcpClient.listResources();
         verbose('resources:', resources)
-        return resources
+        return stringify(resources)
       }
 
       // Read a resource
@@ -111,7 +112,7 @@ export default class McpV1 extends XmppAgent {
         // List resources
         const tools = await this.mcpClient.listTools();
         verbose('tools:', tools)
-        return tools
+        return stringify(tools)
       }
 
       // Call a tool
