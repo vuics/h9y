@@ -9,7 +9,7 @@ import XmppAgent from './xmpp-agent.js'
 import conf from '../conf.js'
 import { sleep } from '../utils/helper.js'
 
-const verbose = Verbose('sd:swarm/proxy-v1'); verbose('')
+const verbose = Verbose('sd:swarm/mcp-v1'); verbose('')
 
 export default class McpV1 extends XmppAgent {
   constructor (args) {
@@ -80,49 +80,48 @@ export default class McpV1 extends XmppAgent {
       const { mcp } = this.agent.options;
       verbose('mcp:', mcp)
 
-      if (prompt === 'LIST_PROMPTS') {
-        // List prompts
+      let cmd = {}
+      try {
+        cmd = JSON.parse(prompt.trim());
+      } catch (err) {
+        throw new Error(`Error parsing mcp command: ${err}`)
+      }
+      verbose('cmd:', cmd)
+
+      if (cmd.action === 'listPrompts') {
         const prompts = await this.mcpClient.listPrompts();
         verbose('prompts:', prompts)
         return stringify(prompts)
       }
 
+      if (cmd.action === 'getPrompt') {
+        const prompt1 = await this.mcpClient.getPrompt(cmd.data);
+        verbose('prompt1:', prompt1)
+        return stringify(prompt1)
+      }
 
-      // Get a prompt
-      // const prompt = await this.mcpClient.getPrompt({
-      //     name: 'example-prompt',
-      //     arguments: {
-      //         arg1: 'value'
-      //     }
-      // });
-
-      if (prompt === 'LIST_RESOURCES') {
-        // List resources
+      if (cmd.action === 'listResources') {
         const resources = await this.mcpClient.listResources();
         verbose('resources:', resources)
         return stringify(resources)
       }
 
-      // Read a resource
-      // const resource = await this.mcpClient.readResource({
-      //     uri: 'file:///example.txt'
-      // });
+      if (cmd.action === 'readResource') {
+        const resource = await this.mcpClient.readResource(cmd.data);
+        verbose('resource:', resource)
+        return stringify(resource)
+      }
 
-      if (prompt === 'LIST_TOOLS') {
-        // List resources
+      if (cmd.action === 'listTools') {
         const tools = await this.mcpClient.listTools();
         verbose('tools:', tools)
         return stringify(tools)
       }
 
-      if (prompt === 'CALL_TOOL') {
-        // Call a tool
-        const result = await this.mcpClient.callTool({
-          name: 'send',
-          arguments: {
-            payload: { 'key': 'value' },
-          }
-        });
+      if (cmd.action === 'callTool') {
+        verbose('callTool with data:', cmd.data)
+        const result = await this.mcpClient.callTool(cmd.data);
+        verbose('result:', result)
         return stringify(result)
       }
 
