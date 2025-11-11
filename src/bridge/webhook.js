@@ -14,6 +14,10 @@ import webServer from './web-server.js'
 
 const verbose = Verbose('sd:bridge/webhook'); verbose('')
 
+// Example webhook call with curl:
+//   curl -X POST http://localhost:6370/wh/679b3c9a6e26f022ca69515b/webhook/post \
+//     -H "Content-Type: application/json" \
+//     -d '{"key":"value", "key2": "value222" }'
 
 export default class Webhook extends Connector {
   constructor(args) {
@@ -33,26 +37,6 @@ export default class Webhook extends Connector {
     });
 
     this.path = null
-    this.pendingResponses = null
-  }
-
-  waitForXmppResponse(requestId) {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.pendingResponses.delete(requestId);
-        reject(new Error('Timeout waiting for response'));
-      }, (this.bridge.options.webhook.timeoutSec || 300) * 1000);
-
-      this.pendingResponses.set(requestId, { resolve, reject, timeout });
-    });
-  }
-
-  resolveXmppResponse(requestId, response) {
-    const entry = this.pendingResponses.get(requestId);
-    if (!entry) return;
-    clearTimeout(entry.timeout);
-    entry.resolve(response);
-    this.pendingResponses.delete(requestId);
   }
 
   async start() {
@@ -61,7 +45,6 @@ export default class Webhook extends Connector {
 
     try {
       await webServer.start();
-      this.pendingResponses = new Map();
 
       this.path = path.join(
         '/wh/' + this.bridge.userId._id.toString(),
@@ -127,7 +110,10 @@ export default class Webhook extends Connector {
             }
 
             // Wait for correlated XMPP response
-            const response = await this.waitForXmppResponse(requestId);
+            const response = await this.waitForXmppResponse({
+              requestId,
+              timeoutSec: this.bridge.options.webhook?.timeoutSec,
+            });
             res.json(response);
           } catch (err) {
             error('Error handling webhook:', this.bridge.options.name, ', error:', err);
@@ -159,18 +145,7 @@ export default class Webhook extends Connector {
           verbose('setRequestId:', this.bridge.options.webhook.setRequestId)
           verbose('requestIdKey:', this.bridge.options.webhook.requestIdKey)
 
-          if (msg && requestId && this.pendingResponses.has(requestId)) {
-            this.resolveXmppResponse(msg.requestId, prompt);
-          } else {
-            // Fallback: if XMPP reply doesn’t contain requestId
-            warn('Unmatched XMPP response:', msg, 'Attempting fallback by sender/room');
-            // Example fallback: match last pending request by sender
-            const lastEntry = Array.from(this.pendingResponses.entries()).pop();
-            if (lastEntry) {
-              const [lastRequestId] = lastEntry;
-              this.resolveXmppResponse(lastRequestId, prompt);
-            }
-          }
+          this.resolveXmppResponse({ requestId: msg.requestId, response: prompt });
         } catch (err) {
           error('Failed to handle XMPP message:', prompt, err);
         }
@@ -189,7 +164,6 @@ export default class Webhook extends Connector {
     });
     webServer.stop();
     this.xmppAgent.stop();
-    this.pendingResponses = null
     verbose('Webhook stopped');
   }
 }

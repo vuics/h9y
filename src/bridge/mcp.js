@@ -13,6 +13,11 @@ import webServer from './web-server.js'
 
 const verbose = Verbose('sd:bridge/mcp'); verbose('');
 
+// Example mcp tool call:
+//   npm run mcp:inspector
+// or:
+//   DANGEROUSLY_OMIT_AUTH=true  npx @modelcontextprotocol/inspector --server-url http://localhost:6370/mcp/679b3c9a6e26f022ca69515b/mcp-server
+
 
 export default class Mcp extends Connector {
   constructor(args) {
@@ -33,34 +38,11 @@ export default class Mcp extends Connector {
     });
 
     this.path = null
-    // Map<requestId, { resolve, reject, timeout }>
-    this.pendingResponses = null;
 
     // Unique tool name registered on the MCP server for this bridge
     this.mcpServer = null
     this.toolName = `send`;
     this.registeredTool = false;
-  }
-
-  waitForXmppResponse(requestId) {
-    return new Promise((resolve, reject) => {
-      const timeoutMs = (this.bridge.options.mcp?.timeoutSec || 300) * 1000;
-      const timeout = setTimeout(() => {
-        this.pendingResponses.delete(requestId);
-        reject(new Error('Timeout waiting for XMPP response'));
-      }, timeoutMs);
-
-      this.pendingResponses.set(requestId, { resolve, reject, timeout });
-    });
-  }
-
-  resolveXmppResponse(requestId, response) {
-    const entry = this.pendingResponses.get(requestId);
-    if (!entry) return false;
-    clearTimeout(entry.timeout);
-    entry.resolve(response);
-    this.pendingResponses.delete(requestId);
-    return true;
   }
 
   async start() {
@@ -69,7 +51,6 @@ export default class Mcp extends Connector {
 
     try {
       await webServer.start();
-      this.pendingResponses = new Map();
 
       this.mcpServer = new McpServer({
         name: this.bridge.options.name,
@@ -147,20 +128,7 @@ export default class Mcp extends Connector {
           }
 
           verbose('parsed msg:', msg, ', requestId:', requestId);
-
-          if (requestId && this.pendingResponses.has(requestId)) {
-            this.resolveXmppResponse(requestId, prompt);
-          } else {
-            // fallback: match last pending request
-            warn('Unmatched XMPP response; attempting fallback match');
-            const lastEntry = Array.from(this.pendingResponses.entries()).pop();
-            if (lastEntry) {
-              const [lastRequestId] = lastEntry;
-              this.resolveXmppResponse(lastRequestId, prompt);
-            } else {
-              warn('No pending MCP requests to match XMPP response.');
-            }
-          }
+          this.resolveXmppResponse({ requestId, response: prompt });
         } catch (err) {
           error('Error handling XMPP message in MCP bridge:', err);
         }
@@ -219,7 +187,10 @@ export default class Mcp extends Connector {
               }
 
               // Wait for response from XMPP correlated by requestId
-              const xmppResponse = await this.waitForXmppResponse(requestId);
+              const xmppResponse = await this.waitForXmppResponse({
+                requestId,
+                timeoutSec: this.bridge.options.mcp?.timeoutSec,
+              });
 
               // Return structured output expected by MCP clients
               return {
@@ -263,17 +234,6 @@ export default class Mcp extends Connector {
       await this.xmppAgent.stop();
     } catch (err) {
       warn('Failed to stop xmppAgent gracefully:', err);
-    }
-
-    // Clear pending responses
-    if (this.pendingResponses) {
-      for (const [, entry] of this.pendingResponses.entries()) {
-        try {
-          clearTimeout(entry.timeout);
-          entry.reject && entry.reject(new Error('Bridge stopped'));
-        } catch (e) {}
-      }
-      this.pendingResponses = null;
     }
 
     this.registeredTool = false;

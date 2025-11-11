@@ -11,14 +11,29 @@ export default class Connector {
 
     this.logs = ''
     this.collectLogs = true
+
+    // Map<requestId, { resolve, reject, timeout }>
+    this.pendingResponses = null;
   }
 
   async start () {
     verbose('Connector started')
+    this.pendingResponses = new Map();
   }
 
   async stop () {
     verbose('Connector stopped')
+
+    // Clear pending responses
+    if (this.pendingResponses) {
+      for (const [, entry] of this.pendingResponses.entries()) {
+        try {
+          clearTimeout(entry.timeout);
+          entry.reject && entry.reject(new Error('Bridge stopped'));
+        } catch (e) {}
+      }
+      this.pendingResponses = null;
+    }
   }
 
   async saveLogs () {
@@ -34,6 +49,38 @@ export default class Connector {
     } catch (err) {
       error('Error saving logs:', err)
     }
+  }
+
+  waitForXmppResponse({ requestId, timeoutSec = 300 } = {}) {
+    return new Promise((resolve, reject) => {
+      const timeoutMs = timeoutSec * 1000;
+      const timeout = setTimeout(() => {
+        this.pendingResponses.delete(requestId);
+        reject(new Error('Timeout waiting for XMPP response'));
+      }, timeoutMs);
+
+      this.pendingResponses.set(requestId, { resolve, reject, timeout });
+    });
+  }
+
+  resolveXmppResponse({ requestId, response }) {
+    if (!requestId || !this.pendingResponses.has(requestId)) {
+      // fallback: match last pending request
+      warn('Unmatched XMPP response; attempting fallback match');
+      const lastEntry = Array.from(this.pendingResponses.entries()).pop();
+      if (lastEntry) {
+        const [lastRequestId] = lastEntry;
+        requestId = lastRequestId
+      } else {
+        warn('No pending MCP requests to match XMPP response.');
+      }
+    }
+    const entry = this.pendingResponses.get(requestId);
+    if (!entry) return false;
+    clearTimeout(entry.timeout);
+    entry.resolve(response);
+    this.pendingResponses.delete(requestId);
+    return true;
   }
 }
 
