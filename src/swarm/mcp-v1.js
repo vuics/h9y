@@ -115,15 +115,18 @@ export default class McpV1 extends XmppAgent {
         return stringify(tools)
       }
 
-      // Call a tool
-      // const result = await this.mcpClient.callTool({
-      //   name: 'example-tool',
-      //   arguments: {
-      //     arg1: 'value'
-      //   }
-      // });
+      if (prompt === 'CALL_TOOL') {
+        // Call a tool
+        const result = await this.mcpClient.callTool({
+          name: 'send',
+          arguments: {
+            payload: { 'key': 'value' },
+          }
+        });
+        return stringify(result)
+      }
 
-      return;
+      return ' ';
     } catch (err) {
       error('Error chatting McpV1:', err)
       return err.toString()
