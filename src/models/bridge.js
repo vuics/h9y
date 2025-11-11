@@ -178,9 +178,8 @@ const EmailSchema = new mongoose.Schema({
 }, { _id: false })
 
 const McpSchema = new mongoose.Schema({
-  // method: String,
   endpoint: String,
-  // timeoutSec: Number,
+  timeoutSec: Number,
   // setRequestId: Boolean,
   // requestIdKey: String,
 
