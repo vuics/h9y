@@ -9,6 +9,8 @@ export default class Connector {
     this.bridge = bridge
     verbose('Connector constructed')
 
+    // FIXME: Deprecate.
+    //        Saving logs restarts the Bridge because it modifies the updatedAt
     this.logs = ''
     this.collectLogs = true
 
@@ -37,18 +39,22 @@ export default class Connector {
   }
 
   async saveLogs () {
-    try {
-      const bridgeDoc = await Bridge.findById(this.bridge._id)
-      if (bridgeDoc) {
-        bridgeDoc.logs = this.logs
-        await bridgeDoc.save()
-        log('Logs saved for bridge:', this.bridge._id, ":", this.bridge.options.name)
-        // verbose('bridgeDoc:', bridgeDoc)
-        // verbose('bridgeDoc.logs:', bridgeDoc.logs)
-      }
-    } catch (err) {
-      error('Error saving logs:', err)
-    }
+    // FIXME: Deprecate.
+    //        Saving logs restarts the Bridge because it modifies the updatedAt
+    //
+    // try {
+    //   const bridgeDoc = await Bridge.findById(this.bridge._id)
+    //   if (bridgeDoc) {
+    //     bridgeDoc.logs = this.logs
+
+    //     // Do not update the updatedAt field on save()
+    //     log('Logs saved for bridge:', this.bridge._id, ":", this.bridge.options.name)
+    //     // verbose('bridgeDoc:', bridgeDoc)
+    //     // verbose('bridgeDoc.logs:', bridgeDoc.logs)
+    //   }
+    // } catch (err) {
+    //   error('Error saving logs:', err)
+    // }
   }
 
   waitForXmppResponse({ requestId, timeoutSec = 300 } = {}) {

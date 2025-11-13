@@ -7,6 +7,7 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import { log, warn, error, Verbose } from '../services.js'
 import Connector from './connector.js'
 import XmppAgent from '../swarm/xmpp-agent.js'
+import Bridge from '../models/bridge.js'
 import conf from '../conf.js'
 import webServer from './web-server.js'
 import { sleep } from '../utils/helper.js'
@@ -211,39 +212,41 @@ export default class Webapp extends Connector {
       );
       verbose('path:', this.path);
 
-      // const proxyOptions = {
-      //   target: "http://localhost:3001",
-      //   changeOrigin: true,
-      //   logLevel: "debug",
-      //   router: {
-      //     [`http://localhost:6370/${this.path}`]: "http://localhost:3001",
-      //     'http://localhost:6370/_next': "http://localhost:3001/_next",
-      //   },
-      //   // pathFilter: [this.path, '/_next', '/api', '/icon.svg', '/manifest.webmanifest', '/.well-known' ]
-      // };
-
+      // NOTE: Below code works
+      //
       const proxyOptions = {
-        target: "http://localhost:3001",
+        target: `http://localhost:${this.port}`,
         changeOrigin: true,
         logLevel: "debug",
         router: {
-          [`http://localhost:6370/${this.path}`]: "http://localhost:3001",
-          'http://localhost:6370/_next': "http://localhost:3001/_next",
+          [`http://localhost:${conf.webServer.port}/${this.path}`]: `http://localhost:${this.port}`,
+          [`http://localhost:${conf.webServer.port}/_next`]: `http://localhost:${this.port}/_next`,
         },
         // pathFilter: [this.path, '/_next', '/api', '/icon.svg', '/manifest.webmanifest', '/.well-known' ]
-        pathRewrite: (path) => path.replace(this.path, ''),
-
-        onProxyRes(proxyRes, req, res) {
-          verbose('onProxyRes proxyRes:', proxyRes)
-          const location = proxyRes.headers['location'];
-          verbose('location:', location)
-          if (location && location.startsWith('/')) {
-            // Rewrite redirects to stay under the same prefix
-            proxyRes.headers['location'] = this.path + location;
-            verbose('🔁 Rewrote redirect location:', location, '→', proxyRes.headers['location']);
-          }
-        },
       };
+
+      // const proxyOptions = {
+      //   target: `http://localhost:${this.port}`,
+      //   changeOrigin: true,
+      //   logLevel: "debug",
+      //   router: {
+      //     [`http://localhost:${conf.webServer.port}/${this.path}`]: `http://localhost:${this.port}`,
+      //     [`http://localhost:${conf.webServer.port}/_next`]: `http://localhost:${this.port}/_next`,
+      //   },
+      //   // pathFilter: [this.path, '/_next', '/api', '/icon.svg', '/manifest.webmanifest', '/.well-known' ]
+      //   pathRewrite: (path) => path.replace(this.path, ''),
+
+      //   onProxyRes(proxyRes, req, res) {
+      //     verbose('onProxyRes proxyRes:', proxyRes)
+      //     const location = proxyRes.headers['location'];
+      //     verbose('location:', location)
+      //     if (location && location.startsWith('/')) {
+      //       // Rewrite redirects to stay under the same prefix
+      //       proxyRes.headers['location'] = this.path + location;
+      //       verbose('🔁 Rewrote redirect location:', location, '→', proxyRes.headers['location']);
+      //     }
+      //   },
+      // };
 
 
       // Main route
@@ -282,7 +285,7 @@ export default class Webapp extends Connector {
             verbose('file is written:', filename)
           }
           // FIXME: replace localhost with domain name
-          out += `<iframe src="http://localhost:6370${this.path}" title="Web App Bridge" width="550" height="600"></iframe>\n`
+          out += `<iframe src="http://localhost:${conf.webServer.port}${this.path}" title="Web App Bridge" width="550" height="600"></iframe>\n`
           return out
         } catch (err) {
           error('Failed to handle XMPP message:', prompt, err);
