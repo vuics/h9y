@@ -8,6 +8,7 @@ import { log, warn, error, Verbose } from '../services.js'
 import Connector from './connector.js'
 import XmppAgent from '../swarm/xmpp-agent.js'
 import Bridge from '../models/bridge.js'
+import State from '../models/state.js'
 import conf from '../conf.js'
 import webServer from './web-server.js'
 import { sleep } from '../utils/helper.js'
@@ -69,6 +70,7 @@ export default class Webapp extends Connector {
     this.path = null
     this.port = null
     this.lowdefy = null
+    this.state = null
   }
 
   async start() {
@@ -94,9 +96,17 @@ export default class Webapp extends Connector {
       }
       verbose('dirname created:', devDirname)
 
-      const filename = path.join(dirname, 'lowdefy.yaml')
-      const lowdefyYaml = this.bridge.options.webapp.updatedCode || this.bridge.options.webapp.defaultCode || fallbackCode
+      this.state = await State.findOne({
+        userId: this.bridge.userId,
+        bridgeId: this.bridge._id,
+      })
+      if (this.state) {
+        log('Found state:', this.state, ' for bridge:', this.bridge.options.name)
+      }
+      const lowdefyYaml = this.state?.bridge.webapp.updatedCode || this.bridge.options.webapp.defaultCode || fallbackCode
       verbose('lowdefyYaml:', lowdefyYaml)
+
+      const filename = path.join(dirname, 'lowdefy.yaml')
       await fs.promises.writeFile(filename, lowdefyYaml, 'utf-8');
       verbose('file is written:', filename)
 
@@ -269,17 +279,18 @@ export default class Webapp extends Connector {
             out += 'Updates are not allowed.\n'
           } else {
             verbose('lowdefyCode from prompt:', prompt)
-            this.bridge.options.webapp.updatedCode = prompt
-
-            const bridgeDoc = await Bridge.findById(this.bridge._id)
-            if (bridgeDoc) {
-              bridgeDoc.options.webapp.updatedCode = this.bridge.options.webapp.updatedCode
-              bridgeDoc.markModified('options.webapp.updatedCode');
-              await bridgeDoc.save()
-              log('Saved updatedCode for bridge:', this.bridge._id, ":", this.bridge.options.name)
+            if (!this.state) {
+              this.state = new State({
+                userId: this.bridge.userId,
+                bridgeId: this.bridge._id,
+              })
             }
+            this.state.bridge.webapp.updatedCode = prompt
+            await this.state.save()
+            log('Saved updatedCode for bridge:', this.bridge.options.name,
+              ', with state:', this.state)
 
-            const lowdefyYaml = this.bridge.options.webapp.updatedCode || this.bridge.options.webapp.defaultCode || fallbackCode
+            const lowdefyYaml = this.state.bridge.webapp.updatedCode || this.bridge.options.webapp.defaultCode || fallbackCode
             verbose('lowdefyYaml:', lowdefyYaml)
             await fs.promises.writeFile(filename, lowdefyYaml, 'utf-8');
             verbose('file is written:', filename)

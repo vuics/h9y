@@ -151,7 +151,6 @@ const WebappSchema = new mongoose.Schema({
   endpoint: String,
   defaultCode: String,
   allowUpdates: Boolean,
-  updatedCode: String,
 }, { _id: false })
 
 const BridgeSchema = new mongoose.Schema({
