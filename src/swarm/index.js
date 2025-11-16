@@ -34,6 +34,27 @@ const archetypeClasses = {
 
 const runningXmppAgents = {};
 
+
+// TODO: Move to prometheus.js
+//
+// Configure Pushgateway
+const { Pushgateway, register } = prom;
+const promgw = new Pushgateway('http://pushgateway:9091');
+
+// Create a counter metric
+const m_agents_processed = new prom.Counter({
+  name: 'agents_processed',
+  help: 'Counts something important',
+  labelNames: ['service']
+});
+
+const m_running_agents = new prom.Counter({
+  name: 'running_agents',
+  help: 'Counts something important',
+  labelNames: ['service']
+});
+
+
 function isValid({ agent }) {
   return Boolean(
     agent.deployed &&
@@ -192,31 +213,21 @@ async function syncAgents() {
 
 
 
-    // TODO: push better metrics
-    //       this is just experimental
-    //
-    // Create a counter metric
-    const counter = new prom.Counter({
-      name: 'agents_processed',
-      help: 'Counts something important',
-      labelNames: ['service']
-    });
 
     // Increment the counter
-    counter.inc({ service: 'node-app' }, agents?.length || 0);
+    m_agents_processed.inc({ service: 'node-app' }, agents?.length || 0);
     verbose('agents.length:', agents?.length || 0)
-    verbose('send metrics to prometheus:', counter)
+    verbose('send metrics to prometheus:', m_agents_processed)
 
-    // Configure Pushgateway
-    const { Pushgateway, register } = prom;
-    const promgw = new Pushgateway('http://pushgateway:9091');
+    m_running_agents.inc({ service: 'node-app' }, runningXmppAgents?.length || 0);
+    verbose('runningXmppAgents.length:', runningXmppAgents?.length || 0)
+    verbose('send metrics to prometheus:', m_running_agents)
 
     // Push metrics to Pushgateway
     promgw.pushAdd({ jobName: 'nodejs-app' }, (err, resp, body) => {
       if (err) console.error('Push failed:', err);
       else console.log('Metrics pushed successfully');
     });
-
 
 
 
