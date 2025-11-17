@@ -40,8 +40,8 @@ export function buildLogQuery({
   userId,
   skip = 0,
   limit = 100,
-  startTs,
-  endTs,
+  start,
+  end,
   sort = '@timestamp:desc'
 }) {
   const [sortField, sortOrder = 'desc'] = sort.split(':');
@@ -53,12 +53,12 @@ export function buildLogQuery({
   const dsl = convertDqlToDsl(dql, forcedFilters);
 
   // Add time range
-  if (startTs || endTs) {
+  if (start || end) {
     dsl.bool.must.push({
       range: {
         '@timestamp': {
-          ...(startTs ? { gte: startTs } : {}),
-          ...(endTs   ? { lte: endTs   } : {})
+          ...(start ? { gte: start } : {}),
+          ...(end   ? { lte: end   } : {})
         }
       }
     });
@@ -75,7 +75,7 @@ export function buildLogQuery({
       // Useful aggregations for a dashboard UI
       aggs: {
         levels:   { terms: { field: 'level.keyword',   size: 20 }},
-        services: { terms: { field: 'service.keyword', size: 20 }},
+        names: { terms: { field: 'name.keyword', size: 1000 }},
         per_minute: {
           date_histogram: {
             field: '@timestamp',
@@ -98,38 +98,21 @@ router.get('/', checkAuth, async (req, res, next) => {
     const {
       q = '*',
       skip = 0,
-      // limit = 1000,  // FIXME: use this
-      limit = 100,
-      startTs,
-      endTs,
+      limit = 1000,
+      start,
+      end,
       sort = '@timestamp:desc'
     } = req.query;
 
     const userId = req.user?._id?.toString();
 
-    // const query = {
-    //   index: 'logs',
-    //   body: {
-    //     from: skip,
-    //     size: limit,
-    //     sort: [{ '@timestamp': "desc" }],
-    //     query: {
-    //       match: {
-    //         userId: {
-    //           query: req.user._id,
-    //         }
-    //       }
-    //     }
-    //   },
-    // }
-    // // verbose('query:', query)
     const query = buildLogQuery({
       dql: q,
       userId,
       skip,
       limit,
-      startTs,
-      endTs,
+      start,
+      end,
       sort
     });
 
