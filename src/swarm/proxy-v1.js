@@ -15,11 +15,13 @@ export default class ProxyV1 extends XmppAgent {
   async start () {
     super.start()
     verbose('ProxyV1 started')
+    this.slog('debug', 'Agent started')
   }
 
   async stop () {
     super.stop()
     verbose('ProxyV1 stopped')
+    this.slog('debug', 'Agent stopped')
   }
 
   async chat({ prompt, replyFunc=()=>{}, from } = {}) {
@@ -59,6 +61,9 @@ export default class ProxyV1 extends XmppAgent {
         // The response from recipient can be a regular text.
       }
       verbose('control:', control)
+      this.slog('debug', 'Parsed control object', {
+        control,
+      })
 
       if (control && control.action && control.recipient && control.message && control.controlKey) {
         if (control.controlKey !== proxy.controlKey) {
@@ -93,6 +98,9 @@ export default class ProxyV1 extends XmppAgent {
       return;
     } catch (err) {
       error('Error chatting ProxyV1:', err)
+      this.slog('error', 'Error chatting', {
+        error: err.toString()
+      })
       return err.toString()
     }
   }

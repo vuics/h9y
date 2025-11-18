@@ -51,11 +51,13 @@ export default class Curl extends XmppAgent {
   async start() {
     super.start();
     verbose('CurlV1 started');
+    this.slog('debug', 'Agent started')
   }
 
   async stop() {
     super.stop();
     verbose('CurlV1 stopped');
+    this.slog('debug', 'Agent stopped')
   }
 
   async chat({ prompt, replyFunc=()=>{}, from } = {}) {

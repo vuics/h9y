@@ -30,11 +30,13 @@ export default class TransformV1 extends XmppAgent {
   async start () {
     super.start()
     verbose('TransformV1 started')
+    this.slog('debug', 'Agent started')
   }
 
   async stop () {
     super.stop()
     verbose('TransformV1 stopped')
+    this.slog('debug', 'Agent stopped')
   }
 
 
@@ -139,21 +141,21 @@ export default class TransformV1 extends XmppAgent {
 
   async chat({ prompt, replyFunc=()=>{}} = {}) {
     try {
-      this.slog('info', `Received prompt: ${prompt}`)
-
       verbose(`prompt: ${prompt}`);
       // verbose(`this.agent.options: ${JSON.stringify(this.agent.options)}`);
       const { transform } = this.agent.options;
       verbose('transform:', transform)
 
       const content = this.transformer({ transform, prompt })
-      this.slog('info', `Responded with content: ${content}`)
       return content
 
       verbose('TransformV1 output:', output)
       return ' '
     } catch (err) {
       error('Error chatting TransformV1:', err)
+      this.slog('error', 'Error chatting', {
+        error: err.toString()
+      })
       return err.toString()
     }
   }

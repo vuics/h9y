@@ -31,11 +31,13 @@ export default class SystemV1 extends XmppAgent {
   async start () {
     super.start()
     verbose('SystemV1 started')
+    this.slog('debug', 'Agent started')
   }
 
   async stop () {
     super.stop()
     verbose('SystemV1 stopped')
+    this.slog('debug', 'Agent stopped')
   }
 
   async chat({ prompt, replyFunc=()=>{}} = {}) {
@@ -233,6 +235,9 @@ export default class SystemV1 extends XmppAgent {
       return output
     } catch (err) {
       error('Error propmting SystemV1:', err)
+      this.slog('error', 'Error chatting', {
+        error: err.toString()
+      })
       return err?.toString() || "Error serving system request"
     }
   }

@@ -52,27 +52,36 @@ export default class McpV1 extends XmppAgent {
             log('Connecting using stdio transport');
           }
 
-
-          log('Connecting to MCP server...')
+          // log('Connecting to MCP server...')
+          this.slog('info', 'Connecting to MCP server...')
           await this.mcpClient.connect(this.transport);
-          log('Connected')
+          // log('Connected')
+          this.slog('info', 'Connected to MCP server')
           break
         } catch (err) {
           error('Error connecting to MCP server:', err)
+          this.slog('error', 'Error connecting to MCP server', {
+            error: err.toString()
+          })
           log('Attempt to reconnect in', this.sleepSec, 'seconds...')
           await sleep(this.sleepSec * 1000)
           this.sleepSec = Math.min(this.sleepSec * 2, 300)
           continue
         }
       }
+      this.slog('debug', 'Agent started')
     } catch (err) {
       error('Error starting MCP client:', err)
+      this.slog('error', 'Error starting MCP client', {
+        error: err.toString()
+      })
     }
   }
 
   async stop () {
     super.stop()
     verbose('McpV1 stopped')
+    this.slog('debug', 'Agent stopped')
   }
 
   async chat({ prompt, replyFunc=()=>{}, from } = {}) {
@@ -129,6 +138,9 @@ export default class McpV1 extends XmppAgent {
       return ' ';
     } catch (err) {
       error('Error chatting McpV1:', err)
+      this.slog('error', 'Error chatting', {
+        error: err.toString()
+      })
       return err.toString()
     }
   }

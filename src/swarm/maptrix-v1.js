@@ -23,11 +23,13 @@ export default class MaptrixV1 extends XmppAgent {
   async start () {
     super.start()
     verbose('MaptrixV1 started')
+    this.slog('debug', 'Agent started')
   }
 
   async stop () {
     super.stop()
     verbose('MaptrixV1 stopped')
+    this.slog('debug', 'Agent stopped')
   }
 
   async chat({ prompt, replyFunc=()=>{}} = {}) {
@@ -78,6 +80,10 @@ export default class MaptrixV1 extends XmppAgent {
       if (maptrix.sendStatus) {
         replyFunc({ content: `Initialized result map ${resultMap.title}` })
       }
+      this.slog('debug', 'Initialized result map', {
+        mapTitle: resultMap.title,
+        mapId: resultMap._id,
+      })
 
       const serviceAgent = this.agent
       serviceAgent.options.name = `__maptor_${this.agent.options.name}`
@@ -88,11 +94,17 @@ export default class MaptrixV1 extends XmppAgent {
       })
       await serviceXmppAgent.start()
 
+      this.slog('debug', 'Executing map')
       const output_text = await executeMap({
         map: resultMap,
         xmppClient: serviceXmppAgent.xmppClient,
         input,
         output: maptrix.output,
+      })
+      this.slog('debug', 'Finished map execution', {
+        mapTitle: resultMap.title,
+        mapId: resultMap._id,
+        output_text,
       })
       if (maptrix.sendStatus) {
         replyFunc({ content: `Done execution of result map ${resultMap.title}` })

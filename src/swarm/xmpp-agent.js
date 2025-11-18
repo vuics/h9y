@@ -58,10 +58,18 @@ export default class XmppAgent {
     if (this.handleChat) {
       this.xmppClient.emitter.on('chatMessage', async ({ from, body }) => {
         verbose('Received a chat message from:', from, ', body:', body)
+
         const replyFunc = async ({ content }) => {
           verbose('replyFunc content:', content)
+          this.slog('debug', `Sends personal message`, {
+            recipient: from, content
+          })
           return this.xmppClient.sendPersonalMessage({ recipient: from, prompt: content })
         }
+
+        this.slog('debug', 'Receives personal message', {
+          from, body
+        })
         const content = await this.chat({ prompt: body, replyFunc, from })
         verbose('chat returned content:', content)
         await replyFunc({ content })
@@ -78,6 +86,9 @@ export default class XmppAgent {
           verbose('room replyFunc content:', content)
           const [ roomJid ] = from.split('/')
           const [ , mucHost ] = roomJid.split('@')
+          this.slog('debug', `Sends group message`, {
+            recipient: from, content, room: roomJid,
+          })
           return this.xmppClient.sendRoomMessage({
             recipient: from,
             prompt: content,
@@ -85,6 +96,10 @@ export default class XmppAgent {
             mucHost,
           })
         }
+
+        this.slog('debug', 'Receives group message', {
+          from, body
+        })
         const content = await this.chat({ prompt: body, replyFunc, from })
         verbose('chat returned content for room:', content)
         await replyFunc({ content })
@@ -160,7 +175,6 @@ export default class XmppAgent {
   }
 
   async chat({ prompt, replyFunc=()=>{} } = {}) {
-    this.slog('info', 'Agent received prompt')
     // replyFunc({ content: prompt })
     return prompt
   }
