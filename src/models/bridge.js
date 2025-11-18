@@ -184,8 +184,6 @@ const BridgeSchema = new mongoose.Schema({
     mcp: McpSchema,
     webapp: WebappSchema,
   },
-
-  logs: String
 })
 
 BridgeSchema.plugin(mongooseTimestamp)

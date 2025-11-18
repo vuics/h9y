@@ -100,18 +100,18 @@ export default class Messengers extends Connector {
     const command = '/bin/matterbridge';
     const args = ['-conf', filename];
 
-    this.collectLogs = true
-    this.logs = '';
-
+    // FIXME:
+    // this.collectLogs = true
+    // this.logs = '';
 
     this.matterbridge = spawn(command, args, {
       // stdio: 'inherit'
     });
 
-    setTimeout(async () => {
-      await this.saveLogs()
-      this.collectLogs = false
-    }, 10000)
+    // setTimeout(async () => {
+    //   await this.saveLogs()
+    //   this.collectLogs = false
+    // }, 10000)
 
     // Handle errors
     this.matterbridge.on('error', (err) => {
@@ -124,23 +124,29 @@ export default class Messengers extends Connector {
       } else {
         log(`Matterbridge was killed by signal ${signal}`);
       }
-      await this.saveLogs()
+      // await this.saveLogs()
     });
     // Capture stdout
     this.matterbridge.stdout.on('data', (data) => {
-      if (this.collectLogs) {
-        const text = data.toString();
-        this.logs += text;
-        console.log('stdout:', text); // optional: still print to console
-      }
+      // FIXME:
+      // if (this.collectLogs) {
+      //   const text = data.toString();
+      //   this.logs += text;
+      //   console.log('stdout:', text); // optional: still print to console
+      // }
+      const text = data.toString();
+      console.log('stdout:', text); // optional: still print to console
     });
     // Capture stderr
     this.matterbridge.stderr.on('data', (data) => {
-      if (this.collectLogs) {
-        const text = data.toString();
-        this.logs += text;
-        console.error('stderr:', text); // optional: still print to console
-      }
+      // FIXME:
+      // if (this.collectLogs) {
+      //   const text = data.toString();
+      //   this.logs += text;
+      //   console.error('stderr:', text); // optional: still print to console
+      // }
+      const text = data.toString();
+      console.error('stderr:', text); // optional: still print to console
     });
   }
 

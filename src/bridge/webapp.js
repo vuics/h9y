@@ -138,6 +138,7 @@ export default class Webapp extends Connector {
       verbose('command:', command, ', args:', args, ', opts:', opts)
       this.lowdefy = spawn(command, args, opts);
 
+      // FIXME:
       // setTimeout(async () => {
       //   await this.saveLogs()
       //   this.collectLogs = false
@@ -160,6 +161,7 @@ export default class Webapp extends Connector {
       });
       // Capture stdout
       this.lowdefy.stdout.on('data', async (data) => {
+        // FIXME:
         // if (this.collectLogs) {
         //   const text = data.toString();
         //   this.logs += text;
@@ -169,24 +171,33 @@ export default class Webapp extends Connector {
       });
       // Capture stderr
       this.lowdefy.stderr.on('data', async (data) => {
-        if (this.collectLogs) {
-          const text = data.toString();
+        // FIXME:
+        // if (this.collectLogs) {
+        //   const text = data.toString();
+        //   if (text.includes('∙  ✓ Ready') ||
+        //       text.includes(`∙   - Local:        http://localhost:${this.port}`)) {
+        //     this.lowdefyIsReady = true
+        //   }
+        //   if (text.includes('Failed to start server') ||
+        //       text.includes('Error: listen EADDRINUSE: address already in use')) {
+        //     this.lowdefyIsFailed = true
+        //   }
+        //   this.logs += text;
+        //   console.error('stderr:', text); // optional: still print to console
+        //   // await this.sendMessage({ prompt: 'stderr: ' + text })
+        // }
 
-          if (text.includes('∙  ✓ Ready') ||
-              text.includes(`∙   - Local:        http://localhost:${this.port}`)) {
-            this.lowdefyIsReady = true
-          }
-          if (text.includes('Failed to start server') ||
-              text.includes('Error: listen EADDRINUSE: address already in use')) {
-            this.lowdefyIsFailed = true
-          }
-
-          this.logs += text;
-          console.error('stderr:', text); // optional: still print to console
-          // await this.sendMessage({ prompt: 'stderr: ' + text })
+        const text = data.toString();
+        if (text.includes('∙  ✓ Ready') ||
+            text.includes(`∙   - Local:        http://localhost:${this.port}`)) {
+          this.lowdefyIsReady = true
         }
+        if (text.includes('Failed to start server') ||
+            text.includes('Error: listen EADDRINUSE: address already in use')) {
+          this.lowdefyIsFailed = true
+        }
+        console.error('stderr:', text); // optional: still print to console
       });
-
 
       async function waitForLowdefy() {
         while (true) {
