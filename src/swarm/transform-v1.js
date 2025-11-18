@@ -139,7 +139,7 @@ export default class TransformV1 extends XmppAgent {
 
   async chat({ prompt, replyFunc=()=>{}} = {}) {
     try {
-      this.sLog('info', `Received prompt: ${prompt}`)
+      this.slog('info', `Received prompt: ${prompt}`)
 
       verbose(`prompt: ${prompt}`);
       // verbose(`this.agent.options: ${JSON.stringify(this.agent.options)}`);
@@ -147,7 +147,7 @@ export default class TransformV1 extends XmppAgent {
       verbose('transform:', transform)
 
       const content = this.transformer({ transform, prompt })
-      this.sLog('info', `Responded with content: ${content}`)
+      this.slog('info', `Responded with content: ${content}`)
       return content
 
       verbose('TransformV1 output:', output)

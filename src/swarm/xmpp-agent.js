@@ -28,7 +28,7 @@ export default class XmppAgent {
     this.currentDelay = 1;
   }
 
-  async sLog(level, message, meta = {}) {
+  async slog(level, message, meta = {}) {
     sendLog(level, message, {
       ...meta,
       agentId: this.agent._id.toString(),
@@ -39,7 +39,7 @@ export default class XmppAgent {
   }
 
   async start () {
-    this.sLog('info', 'Starting agent')
+    this.slog('info', 'Starting agent')
 
     this.xmppClient = new XmppClient()
     this.xmppClient.emitter.on('online', ({ jid }) => {
@@ -126,20 +126,20 @@ export default class XmppAgent {
 
   connected ({ jid }) {
     log(`${jid} agent is connected.`);
-    this.sLog('info', `${jid} agent is connected.`)
+    this.slog('info', `${jid} agent is connected.`)
     // Reset reconnection parameters on successful connection
     this.reconnectAttempts = 0;
     this.currentDelay = 1;
   }
 
   async stop () {
-    this.sLog('info', 'Stopping agent')
+    this.slog('info', 'Stopping agent')
     this.xmppClient?.disconnect()
   }
 
   async registerAgent () {
     log('Register a new XMPP user with credentials:', this.credentials);
-    this.sLog('info', 'Register a new XMPP agentic user')
+    this.slog('info', 'Register a new XMPP agentic user')
     try {
       const response = await axios.get(`${conf.xmpp.commanderUrl}/register-agent`, {
         params: this.credentials,
@@ -160,7 +160,7 @@ export default class XmppAgent {
   }
 
   async chat({ prompt, replyFunc=()=>{} } = {}) {
-    this.sLog('info', 'Agent received prompt')
+    this.slog('info', 'Agent received prompt')
     // replyFunc({ content: prompt })
     return prompt
   }
