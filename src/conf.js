@@ -546,6 +546,7 @@ const conf = {
   prometheus: {
     url: process.env.PROMETHEUS_URL || 'http://prometheus:9090',
     pushgatewayUrl: process.env.PROMETHEUS_PUSHGATEWAY_URL || 'http://pushgateway:9091',
+    pushIntervalSec: num(process.env.PROMETHEUS_PUSH_INTERVAL_SEC || 30),
   },
 }
 

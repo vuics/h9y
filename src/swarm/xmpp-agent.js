@@ -6,9 +6,20 @@ import { XmppClient } from '../maptor.js'
 import conf from '../conf.js'
 import { sleep } from '../utils/helper.js'
 import { sendLog } from '../opensearch.js'
+import prometheus from '../prometheus.js'
 
 const verbose = Verbose('sd:swarm/xmpp-agent'); verbose('')
 
+const c_messages_received = new prometheus.Counter({
+  name: 'c_messages_received',
+  help: 'Number of messages the agent received from XMPP',
+  labelNames: ['channel', 'agentId', 'userId', 'archetype', 'name'],
+});
+const c_messages_sent = new prometheus.Counter({
+  name: 'c_messages_sent',
+  help: 'Number of messages the agent sent from XMPP',
+  labelNames: ['channel', 'agentId', 'userId', 'archetype', 'name'],
+});
 
 export default class XmppAgent {
   constructor ({ agent, handleChat=true, handleRooms=true } = {}) {
@@ -26,15 +37,20 @@ export default class XmppAgent {
 
     this.reconnectAttempts = 0;
     this.currentDelay = 1;
+
+    this.metadata = {
+      agentId: this.agent._id.toString(),
+      userId: this.agent.userId._id.toString(),
+      archetype: this.agent.archetype,
+      name: this.agent.options.name,
+    }
+
   }
 
   async slog(level, message, meta = {}) {
     sendLog(level, message, {
       ...meta,
-      agentId: this.agent._id.toString(),
-      userId: this.agent.userId._id.toString(),
-      archetype: this.agent.archetype,
-      name: this.agent.options.name,
+      ...this.metadata,
     })
   }
 
@@ -57,6 +73,7 @@ export default class XmppAgent {
     })
     if (this.handleChat) {
       this.xmppClient.emitter.on('chatMessage', async ({ from, body }) => {
+        c_messages_received.inc({ channel: 'chat', ...this.metadata }, 1);
         verbose('Received a chat message from:', from, ', body:', body)
 
         const replyFunc = async ({ content }) => {
@@ -64,6 +81,7 @@ export default class XmppAgent {
           this.slog('debug', `Sends personal message`, {
             recipient: from, content
           })
+          c_messages_sent.inc({ channel: 'chat', ...this.metadata }, 1);
           return this.xmppClient.sendPersonalMessage({ recipient: from, prompt: content })
         }
 
@@ -78,6 +96,7 @@ export default class XmppAgent {
     if (this.handleRooms) {
       this.xmppClient.emitter.on('groupMessage', async ({ from, body, mentioned }) => {
         verbose('Received a group message from:', from, ', body:', body)
+        c_messages_received.inc({ channel: 'group', ...this.metadata }, 1);
 
         if (!mentioned) { return }
 
@@ -89,6 +108,7 @@ export default class XmppAgent {
           this.slog('debug', `Sends group message`, {
             recipient: from, content, room: roomJid,
           })
+          c_messages_sent.inc({ channel: 'group', ...this.metadata }, 1);
           return this.xmppClient.sendRoomMessage({
             recipient: from,
             prompt: content,

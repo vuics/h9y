@@ -1,6 +1,5 @@
 import process from 'process';
 import { inspect } from 'util'
-import prom from 'prom-client'
 
 import { log, warn, error, Verbose } from '../services.js'
 import conf, { revealConf } from '../conf.js'
@@ -17,6 +16,7 @@ import User from '../models/user.js'
 import Agent from '../models/agent.js'
 import { redisClient, connectToRedis } from '../redis.js'
 import { replaceVaultValues } from '../vault.js'
+import prometheus from '../prometheus.js'
 
 const verbose = Verbose('sd:swarm/index'); verbose('')
 
@@ -35,22 +35,16 @@ const archetypeClasses = {
 const runningXmppAgents = {};
 
 
-// TODO: Move to prometheus.js
-//
-// Configure Pushgateway
-const { Pushgateway, register } = prom;
-const promgw = new Pushgateway(conf.prometheus.pushgatewayUrl);
-
 // Create a counter metric
-const m_agents_processed = new prom.Counter({
-  name: 'agents_processed',
-  help: 'Counts something important',
+const g_agents_processed = new prometheus.Gauge({
+  name: 'g_agents_processed',
+  help: 'How many agents were processed',
   labelNames: ['service']
 });
 
-const m_running_agents = new prom.Counter({
-  name: 'running_agents',
-  help: 'Counts something important',
+const g_running_agents = new prometheus.Gauge({
+  name: 'g_running_agents',
+  help: 'How many agents are running',
   labelNames: ['service']
 });
 
@@ -209,29 +203,9 @@ async function syncAgents() {
 
     const shouldRun = {};
 
-
-
-
-
-
-    // Increment the counter
-    m_agents_processed.inc({ service: 'node-app' }, agents?.length || 0);
-    verbose('agents.length:', agents?.length || 0)
-    verbose('send metrics to prometheus:', m_agents_processed)
-
-    m_running_agents.inc({ service: 'node-app' }, runningXmppAgents?.length || 0);
-    verbose('runningXmppAgents.length:', runningXmppAgents?.length || 0)
-    verbose('send metrics to prometheus:', m_running_agents)
-
-    // Push metrics to Pushgateway
-    promgw.pushAdd({ jobName: 'nodejs-app' }, (err, resp, body) => {
-      if (err) console.error('Push failed:', err);
-      else console.log('Metrics pushed successfully');
-    });
-
-
-
-
+    g_agents_processed.set({ service: 'swarm' }, agents?.length || 0);
+    // verbose('agents.length:', agents?.length || 0)
+    // verbose('send metrics to prometheus:', g_agents_processed)
 
     for (const agent of agents) {
       // verbose('agent:', agent, ', isValid:', isValid({ agent }))
@@ -254,6 +228,10 @@ async function syncAgents() {
         }
       }
     }
+
+    g_running_agents.set({ service: 'swarm' }, Object.keys(runningXmppAgents)?.length || 0);
+    // verbose('runningXmppAgents.length:', Object.keys(runningXmppAgents)?.length || 0)
+    // verbose('send metrics to prometheus:', g_running_agents)
 
     for (const agentId of Object.keys(runningXmppAgents)) {
       if (!(agentId in shouldRun)) {
