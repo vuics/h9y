@@ -12,6 +12,7 @@
     "workers:autopayment": "NODE_ENV=production DEBUG=sd:* node ./src/workers/autopayment.js",
     "swarm": "NODE_ENV=development DEBUG=sd:* nodemon --exec node -- ./src/swarm/index.js",
     "bridge": "NODE_ENV=development DEBUG=sd:* nodemon --exec node -- ./src/bridge/index.js",
+    "files": "NODE_ENV=development DEBUG=sd:* nodemon --exec node -- ./src/files/index.js",
     "mcp:inspector": "DANGEROUSLY_OMIT_AUTH=true  npx @modelcontextprotocol/inspector --server-url http://selfdev-bridge.dev.local:6370/mcp/679b3c9a6e26f022ca69515b/mcp-server",
     "mcp:inspector:lo": "DANGEROUSLY_OMIT_AUTH=true  npx @modelcontextprotocol/inspector --server-url http://localhost:6370/mcp/679b3c9a6e26f022ca69515b/mcp-server",
     "test": "echo \"Error: no test specified\" && exit 1"

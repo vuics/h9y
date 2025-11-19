@@ -548,6 +548,13 @@ const conf = {
     pushgatewayUrl: process.env.PROMETHEUS_PUSHGATEWAY_URL || 'http://pushgateway:9091',
     pushIntervalSec: num(process.env.PROMETHEUS_PUSH_INTERVAL_SEC || 30),
   },
+
+  files: {
+    port: num(process.env.FILES_PORT || 6371),
+    secure: bool(process.env.FILES_SECURE || false),
+    uploadSecret: process.env.FILES_UPLOAD_SECRET || 'U2VjcmV0VG9rZW4wMzYz',
+    storageDir: process.env.FILES_STORAGE_DIR || '/opt/data',
+  },
 }
 
 export default conf
