@@ -233,7 +233,6 @@ log = {
 -- For more info see https://prosody.im/doc/statistics
 -- statistics = "internal"
 
-
 -- Certificates
 -- Every virtual host and component needs a certificate so that clients and
 -- servers can securely verify its identity. Prosody will automatically load
@@ -331,6 +330,14 @@ Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
 
   -- Restricting file types to {"image/*","video/*","audio/*","text/plain"}
   -- http_file_share_allowed_file_types = { "image/*" }
+
+  -- Using a separate HTTP upload service:
+  --   https://prosody.im/doc/modules/mod_http_file_share
+  local HTTP_FILE_SHARE_BASE_URL = os.getenv("HTTP_FILE_SHARE_BASE_URL")
+  if HTTP_FILE_SHARE_BASE_URL and HTTP_FILE_SHARE_BASE_URL ~= "" then
+    http_file_share_base_url = os.getenv("HTTP_FILE_SHARE_BASE_URL")
+    http_file_share_secret = (os.getenv("HTTP_FILE_SHARE_SECRET") or "U2VjcmV0VG9rZW4wMzYz")
+  end
 
 ---Set up an external component (default component port is 5347)
 --
