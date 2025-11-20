@@ -13,8 +13,8 @@ import conf from '../conf.js'
 const verbose = Verbose('sd:routes/files'); verbose('');
 const router = Router();
 
-// FIXME: Use?
-//
+// NOTE:  The /v1/files is excluded from global express middleware in ../index.js
+
 // Raw body for PUT uploads
 router.use("/", express.raw({ type: "*/*", limit: "500mb" }));
 
@@ -91,9 +91,13 @@ router.put("/:slot/:filename", async (req, res) => {
   }
 });
 
+// FIXME: Getting files is not secure
+//        This is because we use Prosody XMPP file uploading mechanism
+//
 // ---- GET DOWNLOAD HANDLER ----
 router.get("/:slot/:filename", (req, res) => {
   const filePath = path.join(conf.files.storageDir, req.params.slot, req.params.filename);
+  verbose('Accessing file filePath:', filePath)
 
   if (!fs.existsSync(filePath)) {
     error('Not found')
@@ -103,12 +107,21 @@ router.get("/:slot/:filename", (req, res) => {
   res.sendFile(filePath);
 });
 
-// TODO: check auth?
-//
-// ---- ASYNC DELETE HANDLER ----
-router.delete("/:slot/:filename", async (req, res) => {
-  const slot = req.params.slot;
-  const filename = req.params.filename;
+function getToken(req) {
+  const header = req.headers["authorization"];
+  if (!header) throw new Error("Missing authorization");
+  if (!header.startsWith("Bearer ")) throw new Error("Invalid header");
+  return header.substring("Bearer ".length);
+}
+
+export async function deleteFile({ fileId }) {
+  const file = await File.findById(fileId)
+  if (!file) {
+    throw new Error('File document not found')
+  }
+  const slot = file.slot;
+  const filename = file.filename;
+  log('Deleting file:', filename, 'from slot:', slot, ', fileId:', fileId)
 
   const filePath = path.join(conf.files.storageDir, slot, filename);
   const slotDir = path.join(conf.files.storageDir, slot);
@@ -125,23 +138,14 @@ router.delete("/:slot/:filename", async (req, res) => {
     if (filesInSlot.length === 0) {
       await fs.promises.rmdir(slotDir);
     }
-
-    res.sendStatus(204); // No Content
+    log('File deleted:', filePath)
   } catch (err) {
     if (err.code === 'ENOENT') {
-      return res.status(404).send("Not found");
+      return "Not found"
     }
     console.error("Delete error:", err);
-    res.status(500).send("Internal Server Error");
+    throw new Error(`Delete Error: ${err.toString()}`);
   }
-});
-
-function getToken(req) {
-  const header = req.headers["authorization"];
-  if (!header) throw new Error("Missing authorization");
-  if (!header.startsWith("Bearer ")) throw new Error("Invalid header");
-  return header.substring("Bearer ".length);
 }
-
 
 export default router;

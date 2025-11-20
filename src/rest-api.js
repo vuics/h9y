@@ -17,6 +17,7 @@ import File from './models/file.js'
 import Storage from './models/storage.js'
 
 import { checkLoginOrBearer } from './middleware/check-auth.js'
+import { deleteFile } from './routes/files.js'
 import { Verbose } from './services.js'
 import conf from './conf.js'
 
@@ -304,6 +305,14 @@ const getResources = (app) => {
 
           req.body.userId = req.user._id;
           req.modelQuery = File.where('userId', req.user._id);
+
+          if (req.method === 'DELETE') {
+            try {
+              await deleteFile({ fileId: req.params.fileId })
+            } catch (err) {
+            }
+          }
+
           next()
         });
       }
