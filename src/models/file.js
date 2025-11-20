@@ -20,7 +20,6 @@ const FileSchema = new mongoose.Schema({
   filesize: Number,
   exp: Date,
   path: String,
-  uploaded: Boolean,
 })
 
 FileSchema.plugin(mongooseTimestamp)

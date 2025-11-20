@@ -4,6 +4,7 @@ import fs, { readFileSync } from 'fs'
 import path from "path"
 import jwt from "jsonwebtoken"
 
+import User from '../models/user.js'
 import File from '../models/file.js'
 import { sleep } from '../utils/helper.js'
 import { checkAuth } from '../middleware/check-auth.js';
@@ -59,32 +60,26 @@ router.put("/:slot/:filename", async (req, res) => {
     log("Uploaded:", fullPath);
     res.status(201).send("Uploaded");
 
-    // NOTE: It was made for compatibility with standard XMPP clients
-    //       like Converse.js and other that use XMPP features to transfer
-    //       files. Nevertheless, we store metadata in Mongo to allow
-    //       users to manage their files.
-    //       So when we upload file, we add the doc with metadata to Mongo
-    //
-    let file = await File.findOne({ slot: payload.slot })
-    if (!file) {
-      for (let i = 0; i < 10; i++) {
-        verbose('sleep 3 sec...')
-        await sleep(3_000)
-        verbose('look for file')
-        file = await File.findOne({ slot: payload.slot })
-        if (file) { break }
-      }
-    }
-    if (!file) {
-      return error('Error: cannot find the file slot in database')
-    }
-    file.filename = payload.filename
-    file.filesize = payload.filesize
-    file.exp = payload.exp
-    file.path = '/'
-    file.uploaded = true
-    await file.save()
 
+    try {
+      const xmppUser = payload.sub.split('@')[0]
+      // verbose('xmppUser:', xmppUser)
+      const user = await User.findOne({ "xmpp.user": xmppUser })
+      // verbose('By sub:', payload.sub, 'found user:', user)
+
+      const file = new File({
+        userId: user._id,
+        slot: payload.slot,
+        contentType: req.headers['content-type'],
+        filename: payload.filename,
+        filesize: payload.filesize,
+        exp: payload.exp,
+        path: '/',
+      })
+      await file.save()
+    } catch (err) {
+      error('Error saving file document to database:', err)
+    }
   } catch (err) {
     error('Error uploading file:', err);
     res.status(400).send("Invalid token or upload failed");
