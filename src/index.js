@@ -87,36 +87,50 @@ app.use('/v1/prometheus', createProxyMiddleware(proxyOptions))
 
 
 // Express middleware configuration
-app.use(compression()) // gzip compression
-app.use(cookieParser()) // for parsing cookie
-app.use(express.json({ limit: '100mb' })) // for parsing application/json
-app.use(express.urlencoded({ extended: true, limit: '100mb' })) // for parsing application/x-www-form-urlencoded
-app.use(express.text({ limit: '100mb' }))
-app.use(express.raw({ limit: '100mb' }))
-process.env.NODE_ENV !== 'test' && app.use(morgan('tiny')) // for logging HTTP-requests
-app.use(flash()) // to support passport.js errors through flash
 
-// Security
-if (conf.security.hpp) {
-  app.use(hpp()) // Prevent HTTP Parameter Pollution
+const exclusions = ['/v1/files', '/v1/prometheus'];
+function isExcluded(req) {
+  return exclusions.some(path => req.path.startsWith(path));
 }
-if (conf.security.helmet) {
-  app.use(helmet()) // Use appropriate security headers
+
+// Middleware wrapper
+function useUnlessExcluded(middleware) {
+  return (req, res, next) => {
+    if (isExcluded(req)) return next();
+    return middleware(req, res, next);
+  };
 }
+
+// Apply all middlewares using the wrapper
+app.use(useUnlessExcluded(compression()));           // gzip compression
+app.use(useUnlessExcluded(cookieParser()));         // cookie parsing
+app.use(useUnlessExcluded(express.json({ limit: '100mb' })));
+app.use(useUnlessExcluded(express.urlencoded({ extended: true, limit: '100mb' })));
+app.use(useUnlessExcluded(express.text({ limit: '100mb' })));
+app.use(useUnlessExcluded(express.raw({ limit: '100mb' })));
+if (process.env.NODE_ENV !== 'test') app.use(useUnlessExcluded(morgan('tiny')));
+app.use(useUnlessExcluded(flash()));
+
+// Security middlewares
+if (conf.security.hpp) app.use(useUnlessExcluded(hpp()));
+if (conf.security.helmet) app.use(useUnlessExcluded(helmet()));
 if (conf.security.csp) {
-  app.use(helmetCsp({
-    directives: {
-      defaultSrc: ["'self'"], // default value for all directives that are absent
-      scriptSrc: ["'self'"], // helps prevent XSS attacks
-      objectSrc: ["'self'"],
-      imgSrc: ["'self'"],
-      styleSrc: ["'self'"],
-      frameAncestors: ["'none'"], // helps prevent Clickjacking attacks
-      upgradeInsecureRequests: [],
-    },
-    reportOnly: false,
-  })) // Content Security Policy
+  app.use(useUnlessExcluded(
+    helmetCsp({
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        objectSrc: ["'self'"],
+        imgSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+      reportOnly: false,
+    })
+  ));
 }
+
 if (conf.security.trustProxy) {
   // HTTP(s) headers
   app.set('trust proxy', 1) // trust 1st proxy

@@ -1,59 +1,52 @@
-import express from "express"
+import express, { Router } from 'express';
+import { inspect } from 'util'
 import fs, { readFileSync } from 'fs'
 import path from "path"
 import jwt from "jsonwebtoken"
-import https from 'https'
-import http from 'http'
-import cors from 'cors'
-import { inspect } from 'util'
 
-import { log, warn, error, Verbose } from '../services.js'
-import conf, { revealConf } from '../conf.js'
-import '../mongo.js'
 import File from '../models/file.js'
 import { sleep } from '../utils/helper.js'
+import { checkAuth } from '../middleware/check-auth.js';
+import { Verbose, log, warn, error } from '../services.js';
+import conf from '../conf.js'
 
-const verbose = Verbose('sd:files/index'); verbose('')
-log('public conf:', inspect(revealConf(), { colors: true, depth: null }))
+const verbose = Verbose('sd:routes/files'); verbose('');
+const router = Router();
 
-const app = express();
-
-if (conf.cors.enabled) {
-  app.use(cors({
-    origin: (origin, callback) => {
-      if (!origin || conf.cors.whitelist.includes(origin)) {
-        return callback(null, true)
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  }))
-}
-
+// FIXME: Use?
+//
 // Raw body for PUT uploads
-app.use("/fs", express.raw({ type: "*/*", limit: "500mb" }));
+router.use("/", express.raw({ type: "*/*", limit: "500mb" }));
 
 // ---- PUT UPLOAD HANDLER ----
-app.put("/fs/:slot/:filename", async (req, res) => {
+router.put("/:slot/:filename", async (req, res) => {
   try {
     const token = getToken(req);
     const payload = jwt.verify(token, conf.files.uploadSecret);
-    // log('token:', token)
-    // log('payload:', payload)
+    log('token:', token)
+    log('payload:', payload)
     log('Upload file to fs> filename:', )
 
     // Validate slot + filename
-    if (payload.slot !== req.params.slot)
+    if (payload.slot !== req.params.slot) {
+      error('Slot mistmatch')
       return res.status(400).send("Slot mismatch");
+    }
 
-    if (payload.filename !== req.params.filename)
+    if (payload.filename !== req.params.filename) {
+      error('Filename mistmatch:', payload.filename, 'vs', req.params.filename)
       return res.status(400).send("Filename mismatch");
+    }
 
-    if (payload.filesize !== req.body.length)
-      return res.status(400).send("Filesize mismatch");
+    // if (payload.filesize !== req.body.length) {
+    //   error("Filesize mismatch:", payload.filesize, 'vs', req.params.filesize)
+    //   return res.status(400).send("Filesize mismatch");
+    // }
 
-    if (Date.now() / 1000 > payload.exp)
+    if (Date.now() / 1000 > payload.exp) {
+      error("Token expired");
       return res.status(403).send("Token expired");
+    }
 
     // Write file
     const dir = path.join(conf.files.storageDir, payload.slot);
@@ -92,23 +85,28 @@ app.put("/fs/:slot/:filename", async (req, res) => {
     file.uploaded = true
     await file.save()
 
-  } catch (e) {
-    error(e);
+  } catch (err) {
+    error('Error uploading file:', err);
     res.status(400).send("Invalid token or upload failed");
   }
 });
 
 // ---- GET DOWNLOAD HANDLER ----
-app.get("/fs/:slot/:filename", (req, res) => {
+router.get("/:slot/:filename", (req, res) => {
   const filePath = path.join(conf.files.storageDir, req.params.slot, req.params.filename);
 
-  if (!fs.existsSync(filePath)) return res.status(404).send("Not found");
+  if (!fs.existsSync(filePath)) {
+    error('Not found')
+    return res.status(404).send("Not found");
+  }
 
   res.sendFile(filePath);
 });
 
+// TODO: check auth?
+//
 // ---- ASYNC DELETE HANDLER ----
-app.delete("/fs/:slot/:filename", async (req, res) => {
+router.delete("/:slot/:filename", async (req, res) => {
   const slot = req.params.slot;
   const filename = req.params.filename;
 
@@ -138,10 +136,6 @@ app.delete("/fs/:slot/:filename", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send('Selfdev-Files Server');
-});
-
 function getToken(req) {
   const header = req.headers["authorization"];
   if (!header) throw new Error("Missing authorization");
@@ -149,16 +143,5 @@ function getToken(req) {
   return header.substring("Bearer ".length);
 }
 
-let server
-if (conf.files.secure) {
-  server = https.createServer({
-    key: readFileSync(conf.ssl.keyFile),
-    cert: readFileSync(conf.ssl.certFile)
-  }, app)
-} else {
-  server = http.createServer(app)
-}
 
-server.listen(conf.files.port, () =>
-  log(`Upload service running on http${conf.files.secure ? 's' : ''}://0.0.0.0:${conf.files.port}`)
-);
+export default router;

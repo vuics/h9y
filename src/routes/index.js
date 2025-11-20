@@ -24,6 +24,7 @@ import firefly from './firefly.js'
 import apps from './apps.js'
 import dashboard from './dashboard.js'
 import logs from './logs.js'
+import files from './files.js'
 
 const verbose = Verbose('sd:routes/index'); verbose('')
 
@@ -52,5 +53,6 @@ router.use('/v1/firefly', firefly)
 router.use('/v1/apps', apps)
 router.use('/v1/dashboard', dashboard)
 router.use('/v1/logs', logs)
+router.use('/v1/files', files)
 
 export default router

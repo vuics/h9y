@@ -11,12 +11,12 @@ import prometheus from '../prometheus.js'
 const verbose = Verbose('sd:swarm/xmpp-agent'); verbose('')
 
 const c_messages_received = new prometheus.Counter({
-  name: 'c_messages_received',
+  name: 'h9y_c_messages_received',
   help: 'Number of messages the agent received from XMPP',
   labelNames: ['channel', 'agentId', 'userId', 'archetype', 'name'],
 });
 const c_messages_sent = new prometheus.Counter({
-  name: 'c_messages_sent',
+  name: 'h9y_c_messages_sent',
   help: 'Number of messages the agent sent from XMPP',
   labelNames: ['channel', 'agentId', 'userId', 'archetype', 'name'],
 });
