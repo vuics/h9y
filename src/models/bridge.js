@@ -75,6 +75,9 @@ const ProtocolSchema = new mongoose.Schema({
 }, { _id: false })
 
 const MessengersSchema = new mongoose.Schema({
+  direction: { type: String, enum: ['inout', 'in', 'out'], default: 'inout' },
+  PrefixMessagesWithNick: { type: Boolean, default: undefined },
+
   general: { type: GeneralSchema, required: true, default: () => ({}) },
   protocols: { type: [ProtocolSchema], required: true, default: [] },
 }, { _id: false })
