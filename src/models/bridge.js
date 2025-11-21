@@ -69,32 +69,14 @@ const ProtocolSchema = new mongoose.Schema({
   TLSClientCertificate: String,
   TLSClientKey: String,
   TLSCACertificate: String,
-}, { _id: false })
 
-const GatewayChannelSchema = new mongoose.Schema({
-  account: { type: String, required: true },
   channel: { type: String, required: true },
-  direction: {
-    type: String,
-    enum: ['inout', 'in', 'out'],
-    default: 'inout'
-  }
-}, { _id: false })
-
-const GatewaySchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  enable: { type: Boolean, default: true },
-  inout: {
-    type: [GatewayChannelSchema],
-    required: true,
-    default: []
-  }
+  direction: { type: String, enum: ['inout', 'in', 'out'], default: 'inout' }
 }, { _id: false })
 
 const MessengersSchema = new mongoose.Schema({
   general: { type: GeneralSchema, required: true, default: () => ({}) },
   protocols: { type: [ProtocolSchema], required: true, default: [] },
-  gateways: { type: [GatewaySchema], required: true, default: [] }
 }, { _id: false })
 
 const PhoneSchema = new mongoose.Schema({

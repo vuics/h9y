@@ -43,19 +43,13 @@ NoTLS = {{ proto.NoTLS | default(false) | string }}
 RemoteNickFormat = "{{ proto.RemoteNickFormat | default('[{PROTOCOL}] <{NICK}> ') }}"
 {% endfor %}
 
-{% for gw in gateways %}
-# =====================================================
-# Gateway: {{ gw.name }}
-# =====================================================
 [[gateway]]
-name = "{{ gw.name }}"
-enable = {{ gw.enable | default(true) | string }}
-{% for io in gw.inout %}
-  [[gateway.inout]]
-  account = "{{ io.account }}"
-  channel = "{{ io.channel }}"
-  direction = "{{ io.direction | default('inout') }}"
-{% endfor %}
+name = "h9y-gateway"
+enable = true
+{% for proto in protocols %}
+  [[gateway.{{ proto.direction | default('inout') }}]]
+  account = "{{ proto.type }}.{{ proto.name }}"
+  channel = "{{ proto.channel }}"
 {% endfor %}
 `
 
