@@ -65,7 +65,6 @@ enable = true
   [[gateway.inout]]
   account = "xmpp.{{ xmpp.Name }}"
   channel = "{{ xmpp.channel }}"
-  direction = "{{ xmpp.direction }}"
 {% for proto in protocols %}
   [[gateway.{{ proto.direction | default('inout') }}]]
   account = "{{ proto.type }}.{{ proto.name }}"
@@ -85,7 +84,7 @@ export default class Messengers extends Connector {
         archetype: `bridge:${this.bridge.connector}`,
         options: {
           name: this.bridge.options.name,
-          joinRooms: [this.bridge.options.joinRoom],
+          joinRooms: this.bridge.options.joinRooms,
         },
         userId: this.bridge.userId,
       },
@@ -115,7 +114,7 @@ export default class Messengers extends Connector {
           UseTLS: true,
           SkipTLSVerify: true,  // FIXME: verify TLS for better security
           NoTLS: false,
-          channel: this.bridge.options.joinRoom,
+          channel: this.bridge.options.joinRooms[0],
 
           direction: this.bridge.options.messengers.direction,
           PrefixMessagesWithNick: this.bridge.options.messengers.PrefixMessagesWithNick,

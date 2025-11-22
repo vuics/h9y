@@ -27,7 +27,7 @@ export default class Scheduler extends Connector {
         archetype: `bridge:${this.bridge.connector}`,
         options: {
           name: this.bridge.options.name,
-          joinRooms: [this.bridge.options.joinRoom],
+          joinRooms: this.bridge.options.joinRooms,
         },
         userId: this.bridge.userId,
       },
@@ -60,9 +60,9 @@ export default class Scheduler extends Connector {
               prompt: this.bridge.options.scheduler.message,
             })
           }
-          if (this.bridge.options.enableRoom) {
+          if (this.bridge.options.enableRoom && this.bridge.options.joinRooms?.length > 0) {
             await this.xmppAgent.xmppClient.sendRoomMessage({
-              room: this.bridge.options.joinRoom,
+              room: this.bridge.options.joinRooms[0],
               recipient: this.bridge.options.recipientNickname,
               prompt: this.bridge.options.scheduler.message,
               mucHost: conf.xmpp.mucHost,

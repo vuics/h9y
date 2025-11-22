@@ -25,7 +25,7 @@ export default class Webhook extends Connector {
         archetype: `bridge:${this.bridge.connector}`,
         options: {
           name: this.bridge.options.name,
-          joinRooms: [this.bridge.options.joinRoom],
+          joinRooms: this.bridge.options.joinRooms,
         },
         userId: this.bridge.userId,
       },
@@ -107,9 +107,9 @@ export default class Webhook extends Connector {
                 prompt: text || JSON.stringify(payload),
               });
             }
-            if (this.bridge.options.enableRoom) {
+            if (this.bridge.options.enableRoom && this.bridge.options.joinRooms?.length > 0) {
               await this.xmppAgent.xmppClient.sendRoomMessage({
-                room: this.bridge.options.joinRoom,
+                room: this.bridge.options.joinRooms[0],
                 recipient: this.bridge.options.recipientNickname,
                 prompt: text || JSON.stringify(payload),
                 mucHost: conf.xmpp.mucHost,

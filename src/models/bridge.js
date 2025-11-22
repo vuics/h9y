@@ -175,7 +175,7 @@ const BridgeSchema = new mongoose.Schema({
 
     enableRoom: Boolean,
     recipientNickname: String,
-    joinRoom: String,
+    joinRooms: [ String ], // XMPP rooms to join,
 
     messengers: MessengersSchema,
     phone: PhoneSchema,

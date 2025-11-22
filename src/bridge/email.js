@@ -174,7 +174,7 @@ export default class Email extends Connector {
         archetype: `bridge:${this.bridge.connector}`,
         options: {
           name: this.bridge.options.name,
-          joinRooms: [this.bridge.options.joinRoom],
+          joinRooms: this.bridge.options.joinRooms,
         },
         userId: this.bridge.userId,
       },
@@ -414,9 +414,9 @@ export default class Email extends Connector {
             });
             log(`📤 Sent email UID ${uid} to XMPP recipient ${this.bridge.options.recipient}.`);
           }
-          if (this.bridge.options.enableRoom) {
+          if (this.bridge.options.enableRoom && this.bridge.options.joinRooms?.length > 0) {
             await this.xmppAgent.xmppClient.sendRoomMessage({
-              room: this.bridge.options.joinRoom,
+              room: this.bridge.options.joinRooms[0],
               recipient: this.bridge.options.recipientNickname,
               mucHost: conf.xmpp.mucHost,
               prompt: emailText,
