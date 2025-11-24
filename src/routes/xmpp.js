@@ -122,9 +122,9 @@ router.post('/client/:bridgeId', checkAuth, async (req, res, next) => {
       uppercase: true,
       strict: true,
     })
-    verbose('bridge.options.client:', bridge.options.client)
+    // verbose('bridge.options.client:', bridge.options.client)
     const host = `${req.user.xmpp.user}.${conf.xmpp.host}`
-    verbose('host:', host)
+    // verbose('host:', host)
 
     try {
       verbose('Register a new XMPP agent:', bridge.options.client.user)
@@ -143,7 +143,7 @@ router.post('/client/:bridgeId', checkAuth, async (req, res, next) => {
       }
 
       await bridge.save();
-      verbose('Saved new client XMPP credentials to bridge doc:', bridge);
+      // verbose('Saved new client XMPP credentials to bridge doc:', bridge);
 
       const out = {
         result: 'ok',
@@ -165,6 +165,56 @@ router.post('/client/:bridgeId', checkAuth, async (req, res, next) => {
     }
   } catch (err) {
     error('Registering client bridge error:', err)
+    res.status(500).json({ result: 'error', message: err.toString()})
+  }
+})
+
+router.delete('/client/:bridgeId', checkAuth, async (req, res, next) => {
+  try {
+    const { bridgeId } = req.params
+    verbose('xmpp client bridgeId:', bridgeId)
+    const bridge = await Bridge.findById(bridgeId)
+    if (!bridge) {
+      throw new Error("Client bridge not found")
+    }
+    verbose('bridge:', bridge)
+
+    try {
+      verbose('Register a new XMPP agent:', bridge.options.client.user)
+      const response = await axios.get(`${conf.xmpp.commanderUrl}/delete-agent`, {
+        params: {
+          jid: `${bridge.options.client.user}@${req.user.xmpp.user}.${conf.xmpp.host}`,
+        },
+        headers: { 'Content-Type': 'application/json' },
+      });
+      verbose(`Client bridge XMPP Registration Status Code: ${response.status}`);
+      verbose(`Client bridge XMPP Registration Data: ${response.data}`);
+      if (response.status >= 400) {
+        throw new Error(`Error registering client bridge, status: ${response.status}`)
+      }
+
+      bridge.options.client.user = undefined
+      bridge.options.client.password = undefined
+      await bridge.save();
+      verbose('Deleted client bridge XMPP credentials from bridge doc:', bridge);
+
+      const out = {
+        result: 'ok',
+      }
+      verbose('out:', out)
+      res.json(out)
+    } catch (err) {
+      verbose('Client bridge XMPP delition error:', err.message);
+      if (err.response) {
+        verbose('Client bridge XMPP deletion error, status:', err.response.status);
+        verbose('Client bridge XMPP deletion error, data:', err.response.data);
+      } else if (err.request) {
+        verbose('Client bridge XMPP deletion error: No response received');
+      }
+      throw new Error('Failed to delete client bridge XMPP: ' + err.message);
+    }
+  } catch (err) {
+    error('Deleting client bridge xmpp error:', err)
     res.status(500).json({ result: 'error', message: err.toString()})
   }
 })
