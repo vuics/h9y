@@ -155,6 +155,11 @@ const WebappSchema = new mongoose.Schema({
   allowUpdates: Boolean,
 }, { _id: false })
 
+const ClientSchema = new mongoose.Schema({
+  user: String,
+  password: String,
+}, { _id: false })
+
 const BridgeSchema = new mongoose.Schema({
   userId: {
     type: ObjectId,
@@ -184,6 +189,7 @@ const BridgeSchema = new mongoose.Schema({
     email: EmailSchema,
     mcp: McpSchema,
     webapp: WebappSchema,
+    client: ClientSchema,
   },
 })
 

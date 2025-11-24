@@ -7,9 +7,10 @@ import { customAlphabet } from 'nanoid'
 import { transliterate } from 'transliteration'
 
 import { checkAuth, checkAPIAuth } from '../middleware/check-auth.js'
-import { Verbose } from '../services.js'
+import { Verbose, log, warn, error } from '../services.js'
 import conf from '../conf.js'
 import User from '../models/user.js'
+import Bridge from '../models/bridge.js'
 
 const customNanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 10)
 
@@ -98,5 +99,74 @@ const credentials = async (req, res, next) => {
 
 router.post('/credentials', checkAuth, credentials)
 // router.post('/api', checkAPIAuth, ask)
+
+
+router.post('/client/:bridgeId', checkAuth, async (req, res, next) => {
+  try {
+    const { bridgeId } = req.params
+    verbose('xmpp client bridgeId:', bridgeId)
+    const bridge = await Bridge.findById(bridgeId)
+    if (!bridge) {
+      throw new Error("Client bridge not found")
+    }
+    verbose('bridge:', bridge)
+
+    if (!bridge.options.client) {
+      bridge.options.client = {}
+    }
+    bridge.options.client.user = bridge.options.name
+    bridge.options.client.password = generator.generate({
+      length: 32,
+      numbers: true,
+      symbols: true,
+      uppercase: true,
+      strict: true,
+    })
+    verbose('bridge.options.client:', bridge.options.client)
+    const host = `${req.user.xmpp.user}.${conf.xmpp.host}`
+    verbose('host:', host)
+
+    try {
+      verbose('Register a new XMPP agent:', bridge.options.client.user)
+      const response = await axios.get(`${conf.xmpp.commanderUrl}/register-agent`, {
+        params: {
+          user: bridge.options.client.user,
+          password: bridge.options.client.password,
+          host,
+        },
+        headers: { 'Content-Type': 'application/json' },
+      });
+      verbose(`Client bridge XMPP Registration Status Code: ${response.status}`);
+      verbose(`Client bridge XMPP Registration Data: ${response.data}`);
+      if (response.status >= 400) {
+        throw new Error(`Error registering client bridge, status: ${response.status}`)
+      }
+
+      await bridge.save();
+      verbose('Saved new client XMPP credentials to bridge doc:', bridge);
+
+      const out = {
+        result: 'ok',
+        jid: `${bridge.options.client.user}@${host}`,
+        password: bridge.options.client.password,
+        server: conf.xmpp.host,
+      }
+      verbose('out:', out)
+      res.json(out)
+    } catch (err) {
+      verbose('Client bridge XMPP registration error:', err.message);
+      if (err.response) {
+        verbose('Client bridge XMPP Error Status:', err.response.status);
+        verbose('Client bridge XMPP Error Data:', err.response.data);
+      } else if (err.request) {
+        verbose('Client bridge XMPP Error: No response received');
+      }
+      throw new Error('Failed to register client bridge XMPP: ' + err.message);
+    }
+  } catch (err) {
+    error('Registering client bridge error:', err)
+    res.status(500).json({ result: 'error', message: err.toString()})
+  }
+})
 
 export default router
