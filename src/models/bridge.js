@@ -160,6 +160,13 @@ const ClientSchema = new mongoose.Schema({
   password: String,
 }, { _id: false })
 
+const A2aSchema = new mongoose.Schema({
+  endpoint: String,
+  timeoutSec: Number,
+  setRequestId: Boolean,
+  requestIdKey: String,
+}, { _id: false })
+
 const BridgeSchema = new mongoose.Schema({
   userId: {
     type: ObjectId,
@@ -190,6 +197,7 @@ const BridgeSchema = new mongoose.Schema({
     mcp: McpSchema,
     webapp: WebappSchema,
     client: ClientSchema,
+    a2a: A2aSchema,
   },
 })
 

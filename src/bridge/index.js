@@ -17,6 +17,7 @@ import Webhook from './webhook.js'
 import Email from './email.js'
 import Mcp from './mcp.js'
 import Webapp from './webapp.js'
+import A2a from './a2a.js'
 
 const verbose = Verbose('sd:bridge/index'); verbose('')
 
@@ -31,6 +32,7 @@ const connectorClasses = {
   "email": Email,
   "mcp": Mcp,
   "webapp": Webapp,
+  "a2a": A2a,
 }
 
 const runningConnectorBridges = {};

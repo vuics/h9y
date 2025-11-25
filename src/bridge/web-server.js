@@ -78,6 +78,7 @@ class WebServer {
       this.server.listen(conf.webServer.port, () => {
         log('Bridge WebServer is listening on port', conf.webServer.port);
         verbose(`  http://localhost:${conf.webServer.port}`);
+        verbose(`  ${conf.webServer.origin}`);
       });
     }
     return this.app;
@@ -96,11 +97,13 @@ class WebServer {
     this.app[method](path, handler);
   }
 
-  removeRoute({ path, method = 'post' }) {
+  removeRoute({ path, method = 'post' } = {}) {
     this.app._router.stack = this.app._router.stack.filter(layer => {
-      if (!layer.route) return true;
-      if (layer.route.path !== path) return true;
-      if (!layer.route.methods[method]) return true;
+      if (!layer.route) { return true; }
+      if (layer.route.path !== path) { return true; }
+      if (method) {
+        if (!layer.route.methods[method]) { return true; }
+      }
       return false;
     });
   }
