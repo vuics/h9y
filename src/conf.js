@@ -531,7 +531,7 @@ const conf = {
 
   webServer: {
     port: num(process.env.WEB_SERVER_PORT || 6370),
-    origin: process.env.WEB_SERVER_ORIGIN || 'http://localhost:6370',
+    origin: process.env.WEB_SERVER_ORIGIN || 'http://selfdev-bridge.dev.local:6370',
   },
 
   webapp: {

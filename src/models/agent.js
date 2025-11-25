@@ -57,6 +57,11 @@ export default mongoose.model(
         args: [String],
       },
 
+      a2a: {
+        url: String,
+        textOnly: Boolean,
+      },
+
       system: {
         operation: String,
         model: String,

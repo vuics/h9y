@@ -2,7 +2,6 @@ import path from 'path'
 import { randomUUID } from 'crypto'
 import { inspect } from 'util'
 import express, { Router } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { DefaultRequestHandler, InMemoryTaskStore, } from '@a2a-js/sdk/server';
 import { A2AExpressApp } from '@a2a-js/sdk/server/express';
 
@@ -71,7 +70,7 @@ class AgentExecutor {
       if (this.a2a.bridge.options.a2a.textOnly) {
         message = {
           kind: 'message',
-          messageId: uuidv4(),
+          messageId: randomUUID(),
           role: 'agent',
           parts: [{ kind: 'text', text: response }],
           contextId: requestContext.contextId,
@@ -86,7 +85,7 @@ class AgentExecutor {
           })
           message = {
             kind: 'message',
-            messageId: uuidv4(),
+            messageId: randomUUID(),
             role: 'agent',
             parts: [{ kind: 'text', text: `Cannot parse response: ${err.toString()}`}],
             contextId: requestContext.contextId,

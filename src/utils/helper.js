@@ -148,3 +148,11 @@ export function processJsonPath(cmd) {
       throw new Error(`Unknown op: ${op}`);
   }
 }
+
+export function joinUrl(base, path) {
+  // Ensure base ends with "/"
+  const normalized = base.endsWith('/') ? base : base + '/';
+  // Remove leading slash from path
+  const relative = path.replace(/^\//, '');
+  return new URL(relative, normalized).toString();
+}
