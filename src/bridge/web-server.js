@@ -97,14 +97,23 @@ class WebServer {
     this.app[method](path, handler);
   }
 
-  removeRoute({ path, method = 'post' } = {}) {
+  // Remove direct routes only
+  removeRoute({ path, method = null } = {}) {
     this.app._router.stack = this.app._router.stack.filter(layer => {
-      if (!layer.route) { return true; }
-      if (layer.route.path !== path) { return true; }
-      if (method) {
-        if (!layer.route.methods[method]) { return true; }
-      }
-      return false;
+      if (!layer.route) return true;
+      if (layer.route.path !== path) return true;
+      if (method && !layer.route.methods[method]) return true;
+      return false; // remove
+    });
+  }
+
+  // Remove router layers only
+  removeRouter({ path } = {}) {
+    this.app._router.stack = this.app._router.stack.filter(layer => {
+      if (layer.name !== 'router') return true;
+      if (!layer.regexp) return true;
+      if (!layer.regexp.test(path)) return true;
+      return false; // remove
     });
   }
 

@@ -219,9 +219,8 @@ export default class A2a extends Connector {
 
   async stop() {
     super.stop();
-    webServer.removeRoute({
+    webServer.removeRouter({
       path: this.path,
-      method: null,
     });
 
     // NOTE: Keep the server running since it might be used by other bridges
