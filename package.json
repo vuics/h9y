@@ -11,7 +11,9 @@
     "workers:scheduler": "NODE_ENV=development DEBUG=sd:* nodemon --exec node -- ./src/workers/scheduler.js",
     "workers:autopayment": "NODE_ENV=production DEBUG=sd:* node ./src/workers/autopayment.js",
     "swarm": "NODE_ENV=development DEBUG=sd:* nodemon --exec node -- ./src/swarm/index.js",
+    "swarm:prod": "NODE_ENV=production DEBUG=sd:* node ./src/swarm/index.js",
     "bridge": "NODE_ENV=development DEBUG=sd:* nodemon --exec node -- ./src/bridge/index.js",
+    "bridge:prod": "NODE_ENV=production DEBUG=sd:* node ./src/bridge/index.js",
     "mcp:inspector": "DANGEROUSLY_OMIT_AUTH=true  npx @modelcontextprotocol/inspector --server-url http://selfdev-bridge.dev.local:6370/mcp/679b3c9a6e26f022ca69515b/mcp-server",
     "mcp:inspector:lo": "DANGEROUSLY_OMIT_AUTH=true  npx @modelcontextprotocol/inspector --server-url http://localhost:6370/mcp/679b3c9a6e26f022ca69515b/mcp-server",
     "test": "echo \"Error: no test specified\" && exit 1"
