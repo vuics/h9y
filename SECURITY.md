@@ -8,4 +8,4 @@ In order for us to best respond to your report, please include any of the follow
 * Any relevant tools, including versions used.
 * Tool output.
 
-For additional information about Vuics security, please see https://hyag.org/security.
+For additional information about Vuics security, please see https://h9y.ai/security.

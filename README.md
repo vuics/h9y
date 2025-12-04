@@ -1,4 +1,4 @@
-# 🐙 HyperAgency (HyAg)
+# 🐙 HyperAgency (h9y)
 
 ![HyperAgency Text Logo](./hyperagency.png)
 
@@ -6,7 +6,7 @@
 [![Contribute](https://img.shields.io/badge/contribute-here-brightgreen)]
 
 
-[**HyperAgency**](https://hyag.org/) is an **open-source agentic AI operating system** for building, orchestrating, and deploying collaborative systems of AI agents and humans. It has self-developing tools for building fully autonomous software companies. The agents can be generated in semi-automatic mode. It includes web3 marketplace for selling and buying hyper agents. The hyper agents can make deals with each other and with people on behalf of their users.
+[**HyperAgency**](https://h9y.ai/) is an **open-source agentic AI operating system** for building, orchestrating, and deploying collaborative systems of AI agents and humans. It has self-developing tools for building fully autonomous software companies. The agents can be generated in semi-automatic mode. It includes web3 marketplace for selling and buying hyper agents. The hyper agents can make deals with each other and with people on behalf of their users.
 
 We envision a future where software companies can operate with minimal human intervention — composed of agents that code, plan, manage, and evolve. HyperAgency provides the **framework and infrastructure** to explore and build toward that future.
 
@@ -39,7 +39,7 @@ With HyperAgency, you can:
 
 While still in active development, HyperAgency already includes many of the core components required to experiment with **autonomous system coordination**.
 
-📘 See the [Docs](https://docs.hyag.org) for full capabilities, architecture, and usage examples.
+📘 See the [Docs](https://docs.h9y.ai) for full capabilities, architecture, and usage examples.
 
 ---
 
@@ -60,7 +60,7 @@ To run HyperAgency locally, install the following:
 
 If you don’t want to manage infrastructure yourself, you can request access to our hosted **HyperAgency Cloud**, where everything is pre-configured and ready to use.
 
-👉 [Get Cloud Access](https://hyag.org/signup)
+👉 [Get Cloud Access](https://h9y.ai/signup)
 
 > The cloud environment is perfect for early testing, team collaboration, or demoing agentic flows without running Docker or Vault locally.
 
@@ -257,13 +257,13 @@ docker-compose down
 It already offers powerful capabilities for orchestrating agents, coordinating distributed systems, and integrating LLMs and humans in real-time workflows. By joining early, you can contribute to defining what autonomous organizations of the future look like.
 
 > 🔍 Explore. 🤝 Collaborate. 🚀 Build.
-> Start building your own **agentic stack** with [HyperAgency](https://hyag.org/) today.
+> Start building your own **agentic stack** with [HyperAgency](https://h9y.ai/) today.
 
 ---
 
 ## 🙏 Acknowledgements
 
-Special thanks to **Hal Casteel** and **William McKinley** for their early ideas, feedback, and discussions. Their insights into intelligent systems and automation inspired much of what became [HyperAgency](https://hyag.org/).
+Special thanks to **Hal Casteel** and **William McKinley** for their early ideas, feedback, and discussions. Their insights into intelligent systems and automation inspired much of what became [HyperAgency](https://h9y.ai/).
 
 ---
 
