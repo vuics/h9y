@@ -492,7 +492,7 @@ const conf = {
   },
 
   apps: {
-    registryUrl: process.env.APPS_REGISTRY_URL || 'https://verdaccio.h9y.ai',
+    registryUrl: process.env.APPS_REGISTRY_URL || 'https://hyag.org',
   },
 
   freeswitch: {
