@@ -154,7 +154,7 @@ app.post('/map/:mapId', checkAuth, async (req, res) => {
         password: req.user.xmpp.password,
         jid: `${req.user.xmpp.user}@${conf.xmpp.host}`,
       },
-      service: conf.xmpp.websocketUrl,
+      service: conf.xmpp.connectHost,
       domain: conf.xmpp.host,
     })
     console.log('XMPP initialized');

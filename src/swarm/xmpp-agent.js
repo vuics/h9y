@@ -149,7 +149,7 @@ export default class XmppAgent {
 
       await this.xmppClient.connect({
         credentials: this.credentials,
-        service: conf.xmpp.websocketUrl,
+        service: conf.xmpp.connectHost,
         domain: this.credentials.host,
         mucHost: this.handleRooms ? conf.xmpp.mucHost : undefined,
         joinRooms: this.handleRooms ? this.agent.options.joinRooms : undefined,
