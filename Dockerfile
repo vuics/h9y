@@ -61,6 +61,4 @@ ENV PYTORCH_ENABLE_MPS_FALLBACK=1
 
 EXPOSE 8533
 
-# CMD ["nodemon", "--exec", "python", "/opt/app/src/avatar.py"]
-# CMD ["conda", "run", "-n", "sadtalker", "nodemon", "--exec", "python", "/opt/app/src/avatar.py"]
 CMD ["./run.sh"]
