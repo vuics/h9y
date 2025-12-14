@@ -1,32 +1,70 @@
-# HyperAgency (HyAg) Docker-compose Stack
-
 version: '3.9'
-
 services:
 
+  ### INGRESS ###
+
+  traefik:
+    profiles: [all, h9y, main, traefik]
+    image: traefik:v3.6.4
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--providers.file.filename=/dynamic/tls.yaml"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--metrics.prometheus=false"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/tls.yaml:/dynamic/tls.yaml:ro
+      - ./certs/${DOMAIN}/tls.crt:/certs/local.crt:ro
+      - ./certs/${DOMAIN}/tls.key:/certs/local.key:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls=true"
+      # Basic‑auth middleware
+      # - "traefik.http.middlewares.traefik-auth.basicauth.users=<PASTE_HASH_HERE>"
+      # - "traefik.http.routers.traefik.middlewares=dashboard-auth@docker"
+
+  ### DATABASES ###
+
   mongo:
-    profiles: [all, main]
-    hostname: mongo.${DOMAIN}
+    profiles: [all, h9y, mongo, main]
     image: mongo:8.0.11-noble
     ports:
-    - 27017:27017
+      - 27017:27017
     volumes:
-    - mongo-volume:/data/db
+      - mongo-volume:/data/db
 
   redis:
-    profiles: [all, main]
-    hostname: redis.${DOMAIN}
+    profiles: [all, h9y, main]
     image: redis:6-alpine
     command: redis-server --appendonly yes
     ports:
-    - 6379:6379
+      - 6379:6379
     volumes:
-    - redis-volume:/data
+      - redis-volume:/data
     stop_grace_period: 30s
 
   vault:
-    profiles: [all, vault, main, agents]
-    hostname: vault.${DOMAIN}
+    profiles: [all, h9y, vault, main, agency]
     image: hashicorp/vault:1.13.3
     command: vault server -config=/vault/config/config.hcl
     cap_add:
@@ -39,270 +77,386 @@ services:
       - ./config/vault/config.hcl:/vault/config/config.hcl
 
   chroma:
-    profiles: [all, agents, chroma]
-    hostname: chroma.${DOMAIN}
-    image: chromadb/chroma:1.0.15
+    profiles: [all, h9y, chroma, rag]
+    image: chromadb/chroma:1.3.6
     ports:
-    - 8121:8121
+      - 8121:8121
     environment:
-    - CHROMA_PERSIST_DIRECTORY=/chroma/data
-    - CHROMA_HOST_PORT=8121
+      - CHROMA_PERSIST_DIRECTORY=/chroma/data
+      - CHROMA_PORT=8121
     volumes:
-    - chroma-volume:/chroma/chroma
+      - chroma-volume:/chroma/chroma
 
   postgres:
-    profiles: [all, postgres, agents, prosody]
-    hostname: postgres.${DOMAIN}
+    profiles: [all, h9y, postgres, agency, prosody]
     image: postgres:17.4
     restart: always
     shm_size: 128mb
     environment:
-    - POSTGRES_DB=postgres_prosody
-    - POSTGRES_PASSWORD=postgres_secret_123
-    - POSTGRES_USER=postgres_user
+      - POSTGRES_DB=postgres_prosody
+      - POSTGRES_PASSWORD=postgres_secret_123
+      - POSTGRES_USER=postgres_user
     volumes:
-    - postgres-volume:/var/lib/postgresql/data
+      - postgres-volume:/var/lib/postgresql/data
 
   ollama:
-    profiles: [all, ollama]
-    hostname: ollama.${DOMAIN}
+    profiles: [all, h9y, ollama]
     image: ollama/ollama:0.5.7
     ports:
-    - 11436:11436
+      - 11436:11436
     environment:
-    - OLLAMA_HOST=0.0.0.0:11436
+      - OLLAMA_HOST=0.0.0.0:11436
     volumes:
-    - ~/.ollama:/root/.ollama
+      - ~/.ollama:/root/.ollama
+
+  opensearch:
+    profiles: [all, h9y, opensearch]
+    image: opensearchproject/opensearch:3.3.2
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch
+      - discovery.seed_hosts=opensearch
+      - cluster.initial_cluster_manager_nodes=opensearch
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=freeS0cketKeep-1iveTimeout
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-volume:/usr/share/opensearch/data
+    ports:
+      - 9200:9200 # REST API
+      - 9600:9600 # Performance Analyzer
+
+  prometheus:
+    profiles: [all, h9y, prometheus]
+    image: prom/prometheus:v3.7.3
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-volume:/prometheus
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAIN}`)"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+
+  pushgateway:
+    profiles: [all, h9y, pushgateway]
+    image: prom/pushgateway:v1.11.2
+    ports:
+      - "9091:9091"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pushgateway.rule=Host(`pushgateway.${DOMAIN}`)"
+      - "traefik.http.routers.pushgateway.entrypoints=websecure"
+      - "traefik.http.routers.pushgateway.tls=true"
+      - "traefik.http.services.pushgateway.loadbalancer.server.port=9091"
+
+  ### FRONTENT ###
+
+  selfdev-web:
+    profiles: [all, h9y, web, main]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-web:${VERSION}
+    build:
+      context: ./selfdev-web/
+    command: sh -c "rm -rf node_modules/.vite && npm start"
+    ports:
+      - 3690:3690
+    environment:
+      - PORT=3690
+      - ALLOWED_HOSTS=${DOMAIN}
+      - VITE_API_URL=https://api.${DOMAIN}/v1
+      - VITE_DOCS_URL=https://docs.${DOMAIN}
+      - VITE_XMPP_HOST=x.${DOMAIN}
+      - VITE_XMPP_WEBSOCKET_URL=wss://x.${DOMAIN}/xmpp-websocket
+      - VITE_XMPP_MUC_HOST=g.${DOMAIN}
+      - VITE_XMPP_SHARE_HOST=f.${DOMAIN}
+      - VITE_XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - VITE_BRIDGE_URL=https://bridge.${DOMAIN}
+      - VITE_UNAMI_ENABLE=true
+      - VITE_UNAMI_URL=https://umami.h9y.localhost/script.js
+      - VITE_UNAMI_WEBSITE_ID=90f2b94f-3ee4-4988-b67c-e720100b65a3
+    volumes:
+      - ./selfdev-web/src:/opt/app/src
+      - ./selfdev-web/public:/opt/app/public
+      - ./selfdev-web/vite.config.js:/opt/app/vite.config.js
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.services.web.loadbalancer.server.port=3690"
+
+  ### BACKEND ###
 
   selfdev-prosody:
-    profiles: [all, agents, prosody]
-    hostname: selfdev-prosody.${DOMAIN}
-    image: selfdev-prosody:v0.0.1
+    profiles: [all, h9y, agency, prosody]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-prosody:${VERSION}
     build:
       context: ./selfdev-prosody/
     restart: unless-stopped
     ports:
-    - 5001:5000
-    - 5222:5222
-    - 5269:5269
-    - 5280:5280
-    - 5281:5281
-    - 5347:5347
-    - 8387:8387
-    links:
-    - dockerhost
+      - 5001:5000
+      - 5222:5222
+      - 5269:5269
+      - 5280:5280
+      - 5281:5281
+      - 5347:5347
+      - 8387:8387
     environment:
-    - HOST=selfdev-prosody.${DOMAIN}
-    - MUC_HOST=conference.selfdev-prosody.${DOMAIN}
-    - SHARE_HOST=share.selfdev-prosody.${DOMAIN}
-    - TURN_HOST=eturnal.${DOMAIN}
-    - ADMINS=
-    - S2S_INSECURE_DOMAINS=selfdev-prosody.${REMOTE_DOMAIN}
-    - S2S_SECURE_DOMAINS=
-    - STORAGE=sql
-    - SQL_DRIVER=PostgreSQL
-    - SQL_DATABASE=postgres_prosody
-    - SQL_USER=postgres_user
-    - SQL_PASSWORD=postgres_secret_123
-    - SQL_HOST=postgres.${DOMAIN}
+      - HOST=x.${DOMAIN}
+      - MUC_HOST=g.${DOMAIN}
+      - SHARE_HOST=f.${DOMAIN}
+      - TURN_HOST=eturnal.${DOMAIN}
+      - ADMINS=
+      - S2S_INSECURE_DOMAINS=x.${REMOTE_DOMAIN}
+      - S2S_SECURE_DOMAINS=
+      - STORAGE=sql
+      - SQL_DRIVER=PostgreSQL
+      - SQL_DATABASE=postgres_prosody
+      - SQL_USER=postgres_user
+      - SQL_PASSWORD=postgres_secret_123
+      - SQL_HOST=postgres
+      # - HTTP_EXTERNAL_URL=https://x.${DOMAIN}/
+      # - TRUSTED_PROXIES=127.0.0.1,::1,10.0.0.0/8,172.0.0.0/8
+      - HTTP_FILE_SHARE_BASE_URL=https://api.${DOMAIN}/v1/files/
+      - HTTP_FILE_SHARE_SECRET=U2VjcmV0VG9rZW4wMzYz
     volumes:
-    - ./selfdev-prosody/prosody.cfg.lua:/etc/prosody/prosody.cfg.lua
-    - ./selfdev-prosody/commander.sh:/commander.sh
-    - ./certs/selfdev-prosody.${DOMAIN}/tls.key:/etc/prosody/certs/selfdev-prosody.${DOMAIN}.key
-    - ./certs/selfdev-prosody.${DOMAIN}/tls.crt:/etc/prosody/certs/selfdev-prosody.${DOMAIN}.crt
-    - ./certs/conference.selfdev-prosody.${DOMAIN}/tls.key:/etc/prosody/certs/conference.selfdev-prosody.${DOMAIN}.key
-    - ./certs/conference.selfdev-prosody.${DOMAIN}/tls.crt:/etc/prosody/certs/conference.selfdev-prosody.${DOMAIN}.crt
-    - ./certs/share.selfdev-prosody.${DOMAIN}/tls.key:/etc/prosody/certs/share.selfdev-prosody.${DOMAIN}.key
-    - ./certs/share.selfdev-prosody.${DOMAIN}/tls.crt:/etc/prosody/certs/share.selfdev-prosody.${DOMAIN}.crt
-
-  # NOTE: The "dockerhost" container is for giving access from docker
-  #       to services launched on the localhost system
-  #
-  dockerhost:
-    hostname: dockerhost.${DOMAIN}
-    image: qoomon/docker-host:3.3.2
-    deploy:
-      restart_policy:
-        condition: on-failure
-    cap_add:
-    - NET_ADMIN
-    - NET_RAW
+      - ./selfdev-prosody/prosody.cfg.lua:/etc/prosody/prosody.cfg.lua
+      - ./selfdev-prosody/commander.sh:/commander.sh
+      - ./certs/${DOMAIN}/tls.key:/etc/prosody/certs/${DOMAIN}.key
+      - ./certs/${DOMAIN}/tls.crt:/etc/prosody/certs/${DOMAIN}.crt
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.prosody.rule=HostSNI(`x.${DOMAIN}`)"
+      - "traefik.tcp.routers.prosody.entrypoints=websecure"
+      - "traefik.tcp.routers.prosody.tls=true"
+      - "traefik.tcp.routers.prosody.tls.passthrough=true"
+      - "traefik.tcp.services.prosody.loadbalancer.server.port=5281"
 
   selfdev-api:
-    profiles: [all, main]
-    hostname: selfdev-api.${DOMAIN}
+    profiles: [all, h9y, api, main]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-api:${VERSION}
     build:
       context: ./selfdev-api/
-    image: selfdev-api:v1.0.0
     ports:
-    - 6369:6369
-    links:
-    - dockerhost
+      - 6369:6369
     depends_on:
       - mongo
       - vault
     env_file:
-    - ./selfdev-api/.env
+      - ./selfdev-api/.env
     environment:
-    - SSL_ENABLE=true
-    - DB_URL=mongodb://mongo.${DOMAIN}:27017/selfdev
-    - ARANGODB_ENABLE=0
-    - ARANGODB_URL=http://arangodb.${DOMAIN}:8529
-    - ARANGODB_DATABASE=selfdev
-    - AGENCY_URL=http://selfdev-agency.${DOMAIN}:6600/v1
-    - WEB_APP_ORIGIN=http://selfdev-web.${DOMAIN}:3690
-    - CORS_WHITELIST=http://selfdev-web.${DOMAIN}:3690,https://selfdev-web.${DOMAIN}:3690,http://localhost:8081,http://selfdev-mobile.${DOMAIN}:8127
-    - XMPP_HOST=selfdev-prosody.${DOMAIN}
-    - XMPP_COMMANDER_URL=http://selfdev-prosody.${DOMAIN}:8387
-    - VAULT_ENABLE=true
-    - VAULT_ADDR=http://vault.${DOMAIN}:8200
-    - VAULT_UNSEAL=true
-    - LIMITS_ENABLE=false
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - WEB_APP_ORIGIN=https://${DOMAIN}
+      - CORS_WHITELIST=https://${DOMAIN},http://m.${DOMAIN}
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_WEBSOCKET_URL=wss://selfdev-prosody:5281/xmpp-websocket
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - LIMITS_ENABLE=false
+      - STRIPE_ENABLE=true
+      - YOOKASSA_ENABLE=true
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_URL=http://prometheus:9090
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+      - FILES_SECURE=true
+      - FILES_UPLOAD_SECRET=U2VjcmV0VG9rZW4wMzYz
+      - FILES_STORAGE_DIR=/opt/data
     volumes:
-    - ./selfdev-api/src:/opt/app/src
-    - ./certs/selfdev-api.${DOMAIN}/tls.key:/opt/ssl/tls.key
-    - ./certs/selfdev-api.${DOMAIN}/tls.crt:/opt/ssl/tls.crt
+      - selfdev-api-volume:/opt/data/
+      - ./selfdev-api/src:/opt/app/src
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.services.api.loadbalancer.server.port=6369"
 
-  selfdev-web:
-    profiles: [all, main]
-    hostname: selfdev-web.${DOMAIN}
-    image: selfdev-web:v1.0.0
+  selfdev-swarm:
+    profiles: [all, h9y, swarm]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-api:${VERSION}
     build:
-      context: ./selfdev-web/
-    command: npm start
-    ports:
-    - 3690:3690
+      context: ./selfdev-api/
+    command: npm run swarm
     links:
-    - dockerhost
-    environment:
-    - PORT=3690
-    - HTTPS=true
-    - ALLOWED_HOSTS=selfdev-web.${DOMAIN}
-    - SSL_KEY_FILE=/opt/ssl/tls.key
-    - SSL_CRT_FILE=/opt/ssl/tls.crt
-    - VITE_API_URL=https://selfdev-api.${DOMAIN}:6369/v1
-    - VITE_SYNTHETIC_COMPONENTS={"talk":{},"meet":{},"hive":{},"flow":{"url":"http://${DOMAIN}:7860/"},"node":{"url":"http://${DOMAIN}:1880/"},"docs":{"url":"http://docs.${DOMAIN}:9188"}}
-    - VITE_CHAT_ENABLE=true
-    - VITE_MAP_ENABLE=true
-    - VITE_HIVE_ENABLE=true
-    - VITE_DOCS_ENABLE=true
-    - VITE_DOCS_URL=http://docs.${DOMAIN}:9298
-    - VITE_XMPP_HOST=selfdev-prosody.${DOMAIN}
-    - VITE_XMPP_WEBSOCKET_URL=wss://selfdev-prosody.${DOMAIN}:5281/xmpp-websocket
-    - VITE_XMPP_MUC_HOST=conference.selfdev-prosody.${DOMAIN}
-    - VITE_XMPP_SHARE_HOST=share.selfdev-prosody.${DOMAIN}
-    - VITE_SHARE_URL_PREFIX=https://selfdev-prosody.dev.local:5281/file_share/
-    volumes:
-    - ./selfdev-web/src:/opt/app/src
-    - ./selfdev-web/public:/opt/app/public
-    - ./selfdev-web/vite.config.js:/opt/app/vite.config.js
-    - ./certs/selfdev-web.${DOMAIN}/tls.key:/opt/ssl/tls.key
-    - ./certs/selfdev-web.${DOMAIN}/tls.crt:/opt/ssl/tls.crt
-
-  selfdev-agents:
-    profiles: [all, agents]
-    image: selfdev-agency:v1.0.0
-    build:
-      context: ./selfdev-agency/
-    command: nodemon --exec python src/agents.py
-    links:
-    - dockerhost
+      - selfdev-bridge
     depends_on:
       - mongo
       - redis
-      - vault
-      - selfdev-prosody
-    environment:
-    - CONTAINER_ID=selfdev-agents
-    - ALLOW_INSECURE=True
-    - DB_URL=mongodb://mongo.${DOMAIN}:27017/selfdev
-    - XMPP_HOST=selfdev-prosody.${DOMAIN}
-    - XMPP_CONNECT_HOST=selfdev-prosody.${DOMAIN}
-    - XMPP_MUC_HOST=conference.selfdev-prosody.${DOMAIN}
-    - XMPP_COMMANDER_URL=http://selfdev-prosody.${DOMAIN}:8387
-    - REDIS_URL=redis://redis.${DOMAIN}:6379/1
-    - OLLAMA_BASE_URL=http://ollama.${DOMAIN}:11436
-    - LANGFLOW_URL=http://selfdev-langflow:7860
-    - NODERED_URL=http://selfdev-nodered:1880
-    - VAULT_ENABLE=true
-    - VAULT_ADDR=http://vault.${DOMAIN}:8200
-    - VAULT_UNSEAL=true
-    - CHROMA_HOST=chroma.${DOMAIN}
-    - CHROMA_PORT=8121
-    - SHARE_URL_PREFIX=https://selfdev-prosody.${DOMAIN}:5281/file_share/
-    - XMPP_SHARE_HOST=share.selfdev-prosody.${DOMAIN}
-    - SSL_VERIFY=false
-    - SPEACHES_BASE_URL=http://selfdev-speech.${DOMAIN}:8372/v1
-    - AVATAR_URL=http://selfdev-avatar.${DOMAIN}:8533
     env_file:
-    - ./selfdev-agency/.env
+      - ./selfdev-api/.env
+    environment:
+      - CONTAINER_ID=selfdev-swarm
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - REDIS_ENABLE=true
+      - REDIS_URL=redis://redis:6379/1
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_CONNECT_HOST=selfdev-prosody
+      - XMPP_WEBSOCKET_URL=wss://selfdev-prosody:5281/xmpp-websocket
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
     volumes:
-    - ./selfdev-agency/src/:/opt/app/src/
-    - ./selfdev-agency/credentials.json:/opt/app/credentials.json
-    - ./selfdev-agency/token.json:/opt/app/token.json
-    - ./selfdev-agency/token.pickle:/opt/app/token.pickle
+      - ./selfdev-api/src:/opt/app/src
+
+  selfdev-bridge:
+    profiles: [all, h9y, bridge]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-bridge:${VERSION}
+    build:
+      context: ./selfdev-api/
+      dockerfile: Dockerfile.bridge
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+    ports:
+      - 6370:6370
+    env_file:
+      - ./selfdev-api/.env
+    environment:
+      - CONTAINER_ID=selfdev-bridge
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - REDIS_ENABLE=true
+      - REDIS_URL=redis://redis:6379/1
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_CONNECT_HOST=selfdev-prosody
+      - XMPP_WEBSOCKET_URL=wss://selfdev-prosody:5281/xmpp-websocket
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - FREESWITCH_HOST=192.168.50.100
+      - FREESWITCH_PORT=8022
+      - FREESWITCH_SSH_HOST=192.168.50.100
+      - SPEACHES_BASE_URL=http://selfdev-speech:8372/v1
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+      - WEB_SERVER_PORT=6370
+      - WEB_SERVER_ORIGIN=https://bridge.${DOMAIN}
+    volumes:
+      - ./selfdev-api/src:/opt/app/src
+      - ./tmp/recordings:/tmp/recordings
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bridge.rule=Host(`bridge.${DOMAIN}`)"
+      - "traefik.http.routers.bridge.entrypoints=websecure"
+      - "traefik.http.routers.bridge.tls=true"
+      - "traefik.http.services.bridge.loadbalancer.server.port=6370"
+
+  selfdev-agency:
+    profiles: [all, h9y, agency]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-agency:${VERSION}
+    build:
+      context: ./selfdev-agency/
+    command: nodemon --exec python src/agency.py
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - CONTAINER_ID=selfdev-agency
+      - ALLOW_INSECURE=True
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_CONNECT_HOST=selfdev-prosody
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - REDIS_URL=redis://redis:6379/1
+      - OLLAMA_BASE_URL=http://ollama:11436
+      - LANGFLOW_URL=http://langflow:7860
+      - NODERED_URL=http://nodered:1880
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8121
+      - API_FILES_URL=http://selfdev-api:6369/v1/files/
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - SSL_VERIFY=false
+      - SPEACHES_BASE_URL=http://selfdev-speech:8372/v1
+      - AVATAR_URL=http://selfdev-avatar:8533
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+    env_file:
+      - ./selfdev-agency/.env
+    volumes:
+      - ./selfdev-agency/src/:/opt/app/src/
     stop_grace_period: 25s
 
-  selfdev-docs:
-    profiles: [all, docs]
-    hostname: docs.${DOMAIN}
-    image: selfdev-docs:v1.0.0
+  selfdev-fleet:
+    profiles: [all, h9y, fleet]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-fleet:${VERSION}
     build:
-      context: ./selfdev-docs/
-    command: npm start
-    ports:
-      - 9298:9298
-    environment:
-      - PORT=9298
-    volumes:
-      - ./selfdev-docs/docs/:/opt/app/docs/
-      - ./selfdev-docs/src/:/opt/app/src/
-      - ./selfdev-docs/static/:/opt/app/static/
-      - ./selfdev-docs/blog/:/opt/app/blog/
-      - ./selfdev-docs/i18n/:/opt/app/i18n/
-
-  selfdev-langflow:
-    # hostname: langflow.${DOMAIN}
-    profiles: [all, flow, langflow]
-    image: langflowai/langflow:1.3.4
-    pull_policy: always
-    ports:
-      - 7860:7860
+      context: ./selfdev-agency/
+      dockerfile: Dockerfile.fleet
+    command: nodemon --exec python src/fleet.py
     depends_on:
-      - selfdev-langflowdb
+      - mongo
+      - redis
     environment:
-      - LANGFLOW_DATABASE_URL=postgresql://langflow:langflow@selfdev-langflowdb:5432/langflow
-      - LANGFLOW_CONFIG_DIR=app/langflow
-      - DO_NOT_TRACK=true
+      - CONTAINER_ID=selfdev-fleet
+      - ALLOW_INSECURE=True
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_CONNECT_HOST=selfdev-prosody
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - REDIS_URL=redis://redis:6379/1
+      - OLLAMA_BASE_URL=http://ollama:11436
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - API_FILES_URL=http://selfdev-api:6369/v1/files/
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - SSL_VERIFY=false
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+    env_file:
+      - ./selfdev-agency/.env
     volumes:
-      - langflow-volume:/app/langflow
-
-  selfdev-langflowdb:
-    profiles: [all, flow, langflow]
-    image: postgres:16
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_USER: langflow
-      POSTGRES_PASSWORD: langflow
-      POSTGRES_DB: langflow
-    volumes:
-      - langflowdb-volume:/var/lib/postgresql/data
-
-  selfdev-nodered:
-    profiles: [all, node, nodered]
-    image: nodered/node-red:4.0.9-22
-    environment:
-      - TZ=Europe/Amsterdam
-    ports:
-      - 1880:1880
-    volumes:
-      - ./selfdev-hub/nodered/node-red-data:/data
+      - ./selfdev-agency/src/:/opt/app/src/
+    stop_grace_period: 25s
 
   selfdev-speech:
-    profiles: [all, speech, agents, agents_stt, agents_tts]
-    hostname: selfdev-speech.${DOMAIN}
-    image: selfdev-speech:v0.0.1
+    profiles: [all, h9y, speech]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-speech:${VERSION}
     build:
       context: ./selfdev-speech/
     restart: unless-stopped
@@ -318,9 +472,9 @@ services:
       - speech-volume:/home/ubuntu/.cache/huggingface/hub
 
   selfdev-avatar:
-    profiles: [all, avatar, agents_avatar]
-    hostname: selfdev-avatar.${DOMAIN}
-    image: selfdev-avatar:v0.0.1
+    profiles: [all, h9y, avatar]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-avatar:${VERSION}
     build:
       context: ./selfdev-avatar/
     restart: unless-stopped
@@ -331,12 +485,66 @@ services:
       - ./selfdev-avatar/src:/opt/app/src
       - ./selfdev-avatar/data:/opt/app/data
 
+  ### AUTOMATION ###
+
+  langflow:
+    profiles: [all, h9y, flow, langflow]
+    image: langflowai/langflow:1.3.4
+    ports:
+      - 7860:7860
+    depends_on:
+      - langflowdb
+    environment:
+      - LANGFLOW_DATABASE_URL=postgresql://langflow:langflow@langflowdb:5432/langflow
+      - LANGFLOW_CONFIG_DIR=app/langflow
+      - DO_NOT_TRACK=true
+    volumes:
+      - langflow-volume:/app/langflow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.langflow.rule=Host(`langflow.${DOMAIN}`)"
+      - "traefik.http.routers.langflow.entrypoints=websecure"
+      - "traefik.http.routers.langflow.tls=true"
+      - "traefik.http.services.langflow.loadbalancer.server.port=7860"
+
+  langflowdb:
+    profiles: [all, h9y, langflow]
+    image: postgres:16
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: langflow
+      POSTGRES_PASSWORD: langflow
+      POSTGRES_DB: langflow
+    volumes:
+      - langflowdb-volume:/var/lib/postgresql/data
+
+  nodered:
+    profiles: [all, h9y, nodered]
+    image: nodered/node-red:4.0.9-22
+    environment:
+      - TZ=Europe/Amsterdam
+    ports:
+      - 1880:1880
+    volumes:
+      - ./selfdev-hub/nodered/node-red-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nodered.rule=Host(`nodered.${DOMAIN}`)"
+      - "traefik.http.routers.nodered.entrypoints=websecure"
+      - "traefik.http.routers.nodered.tls=true"
+      - "traefik.http.services.nodered.loadbalancer.server.port=1880"
+
 volumes:
   mongo-volume:
   redis-volume:
   chroma-volume:
   postgres-volume:
+  selfdev-api-volume:
   langflow-volume:
   langflowdb-volume:
   vault-volume:
   speech-volume:
+  opensearch-volume:
+  prometheus-volume:
+

@@ -10,9 +10,6 @@
 [submodule "selfdev-agency"]
 	path = selfdev-agency
 	url = git@github.com:vuics/selfdev-agency.git
-[submodule "selfdev-docs"]
-	path = selfdev-docs
-	url = git@github.com:vuics/selfdev-docs.git
 [submodule "selfdev-speech"]
 	path = selfdev-speech
 	url = git@github.com:vuics/selfdev-speech.git
