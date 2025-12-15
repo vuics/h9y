@@ -75,6 +75,12 @@ services:
     volumes:
       - vault-volume:/vault/file
       - ./config/vault/config.hcl:/vault/config/config.hcl
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vault.rule=Host(`vault.${DOMAIN}`)"
+      - "traefik.http.routers.vault.entrypoints=websecure"
+      - "traefik.http.routers.vault.tls=true"
+      - "traefik.http.services.vault.loadbalancer.server.port=8200"
 
   chroma:
     profiles: [all, h9y, chroma, rag]
@@ -270,6 +276,8 @@ services:
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
       - LIMITS_ENABLE=false
       - STRIPE_ENABLE=true
       - YOOKASSA_ENABLE=true
@@ -319,6 +327,8 @@ services:
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
@@ -355,6 +365,8 @@ services:
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
       - FREESWITCH_HOST=192.168.50.100
       - FREESWITCH_PORT=8022
       - FREESWITCH_SSH_HOST=192.168.50.100
@@ -399,6 +411,8 @@ services:
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
       - CHROMA_HOST=chroma
       - CHROMA_PORT=8121
       - API_FILES_URL=http://selfdev-api:6369/v1/files/
@@ -440,6 +454,8 @@ services:
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
       - API_FILES_URL=http://selfdev-api:6369/v1/files/
       - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
       - XMPP_SHARE_HOST=f.${DOMAIN}
@@ -527,7 +543,7 @@ services:
     ports:
       - 1880:1880
     volumes:
-      - ./selfdev-hub/nodered/node-red-data:/data
+      - ./tmp/nodered/data:/data
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nodered.rule=Host(`nodered.${DOMAIN}`)"

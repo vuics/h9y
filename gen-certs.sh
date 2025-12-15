@@ -23,7 +23,7 @@ generate_cert() {
     echo "Creating directory: $dir"
     mkdir -p "$dir"
     echo "Generating certificate for $host"
-    mkcert -key-file "$dir/tls.key" -cert-file "$dir/tls.crt" "$host"
+    mkcert -key-file "$dir/tls.key" -cert-file "$dir/tls.crt" "$host" "*.$host"
   else
     echo "Directory already exists: $dir — skipping"
   fi
@@ -32,8 +32,9 @@ generate_cert() {
 # List of hostnames to generate certificates for
 generate_cert "${DOMAIN}"
 generate_cert "localhost"
-generate_cert "selfdev-web.${DOMAIN}"
-generate_cert "selfdev-api.${DOMAIN}"
-generate_cert "selfdev-prosody.${DOMAIN}"
-generate_cert "conference.selfdev-prosody.${DOMAIN}"
-generate_cert "share.selfdev-prosody.${DOMAIN}"
+
+# NOTE: Another way to generate cert
+#
+# openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+#   -keyout certs/traefik/local.key -out certs/traefik/local.crt \
+#   -subj "/CN=*.h9y.localhost,h9y.localhost"

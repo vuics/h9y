@@ -70,16 +70,47 @@ If you don’t want to manage infrastructure yourself, you can request access to
 ### 📦 1. Clone the Repository with Submodules
 
 ```bash
-git clone git@github.com:vuics/hyag.git
-cd hyag
+git clone git@github.com:vuics/h9y.git
+cd h9y
 git submodule update --init --recursive
 ```
 
 ---
 
-### 🌐 2. Configure Local DNS
+### ⚙️ 2. Configure `.env` Files
 
-Set up `/etc/hosts` entries:
+Copy and customize `.env` files for the main platform and submodules:
+
+```bash
+cp env.example .env
+cp selfdev-api/env.example selfdev-api/.env
+cp selfdev-agency/env.example selfdev-agency/.env
+```
+
+Edit the `.env` files to define:
+
+* `DOMAIN`
+* `REMOTE_DOMAIN` (optional)
+* `VAULT_TOKEN`, `VAULT_UNSEAL_KEYS` (See below how to initialize Vault)
+* Keys and service-specific values for each component.
+
+---
+
+### 🔐 3. Generate TLS Certificates (Local Dev)
+
+```bash
+./gen-certs.sh
+```
+
+On macOS, double-click each `.crt` file in `./certs/` to trust them in **Keychain Access**.
+
+---
+
+### 🌐 4. Configure Local DNS
+
+If your domain is `h9y.localhost` or anything on localhost, you may not need to configure the DNS, since the locahost often resolves to `127.0.0.1` automatically.
+
+If your domain name does not resolve, set up `/etc/hosts` entries:
 
 ```bash
 export $(xargs < .env) && \
@@ -87,20 +118,13 @@ sudo tee -a /etc/hosts << EOF
 
 # HyperAgency Local Services
 127.0.0.1 ${DOMAIN}
-127.0.0.1 mongo.${DOMAIN}
-127.0.0.1 redis.${DOMAIN}
+127.0.0.1 api.${DOMAIN}
+127.0.0.1 x.${DOMAIN}
+127.0.0.1 g.${DOMAIN}
+127.0.0.1 f.${DOMAIN}
 127.0.0.1 vault.${DOMAIN}
-127.0.0.1 postgres.${DOMAIN}
-127.0.0.1 chroma.${DOMAIN}
-127.0.0.1 selfdev-prosody.${DOMAIN}
-127.0.0.1 conference.selfdev-prosody.${DOMAIN}
-127.0.0.1 share.selfdev-prosody.${DOMAIN}
-127.0.0.1 ollama.${DOMAIN}
-127.0.0.1 selfdev-speech.${DOMAIN}
-127.0.0.1 selfdev-avatar.${DOMAIN}
-127.0.0.1 selfdev-api.${DOMAIN}
-127.0.0.1 selfdev-web.${DOMAIN}
-127.0.0.1 docs.${DOMAIN}
+127.0.0.1 langflow.${DOMAIN}
+127.0.0.1 nodered.${DOMAIN}
 
 EOF
 ```
@@ -117,44 +141,13 @@ sudo tee -a /etc/hosts << EOF
 
 # Remote HyperAgency Node
 ${IP} ${REMOTE_DOMAIN}
-${IP} selfdev-api.${REMOTE_DOMAIN}
-${IP} selfdev-web.${REMOTE_DOMAIN}
-${IP} conference.${REMOTE_DOMAIN}
-${IP} selfdev-prosody.${REMOTE_DOMAIN}
-${IP} conference.selfdev-prosody.${REMOTE_DOMAIN}
+${IP} api.${REMOTE_DOMAIN}
+${IP} x.${REMOTE_DOMAIN}
+${IP} g.${REMOTE_DOMAIN}
+${IP} f.${REMOTE_DOMAIN}
 
 EOF
 ```
-
----
-
-### ⚙️ 3. Configure `.env` Files
-
-Copy and customize `.env` files for the main platform and submodules:
-
-```bash
-cp env.example .env
-cp selfdev-api/env.example selfdev-api/.env
-cp selfdev-agency/env.example selfdev-agency/.env
-```
-
-Edit the `.env` files to define:
-
-* `DOMAIN`
-* `REMOTE_DOMAIN` (optional)
-* `VAULT_TOKEN`, `VAULT_UNSEAL_KEYS` (after vault init)
-* Keys and service-specific values for each component.
-
----
-
-### 🔐 4. Generate TLS Certificates (Local Dev)
-
-```bash
-./gen-certs.sh
-```
-
-On macOS, double-click each `.crt` file in `./certs/` to trust them in **Keychain Access**.
-
 ---
 
 ### 🧱 5. Start the Stack
@@ -173,57 +166,38 @@ docker-compose up
 | Profile    | Purpose                        |
 | ---------- | ------------------------------ |
 | `all`      | All services                   |
-| `main`     | Frontend (web) + backend (API) |
-| `prosody`  | XMPP messaging infrastructure  |
-| `agents`   | Agent orchestration            |
-| `docs`     | Run documentation interface    |
-| `postgres` | PostgreSQL database            |
-| `vault`    | Secrets manager (Vault)        |
-| `ollama`   | Ollama LLM service             |
-| `chroma`   | Chroma vector DB               |
+| `h9y`      | Recommended stack              |
+| `main`     | Main services                  |
 
-📜 Full list in [`docker-compose.yml`](https://github.com/vuics/hyag/blob/main/docker-compose.yml)
+📜 Full list in [`docker-compose.yml`](https://github.com/vuics/h9y/blob/main/docker-compose.yml)
 
 ---
 
 ### 🔑 6. Initialize Vault
 
+Replace `h9y.localhost` with your `${DOMAIN}`.
+
+| App   | URL                                                |
+| ----- | -------------------------------------------------- |
+| Vault | [vault.h9y.localhost](https://vault.h9y.localhost) |
+
+1. Open Vault, input:
+  • Key shares: `5`
+  • Key threshold: `3`
+
+2. Set the env vars with initial root token and the keys
 ```bash
-export VAULT_ADDR='http://127.0.0.1:8200'
-vault operator init -key-shares=5 -key-threshold=3
+VAULT_TOKEN=(Initial root token)
+VAULT_UNSEAL_KEYS=(Key 1),(Key 2),(Key 3),(Key 4),(Key 5)
 ```
 
-Then **unseal Vault**:
-
-```bash
-vault operator unseal
-# Repeat 3x with 3 unique keys
-```
-
-Check Vault is unsealed:
-
-```bash
-vault status
-```
-
-Login:
-
-```bash
-export VAULT_TOKEN='<your-root-token>'
-vault login $VAULT_TOKEN
-```
-
-Enable secret storage:
-
-```bash
-vault secrets enable -path=secret kv-v2
-```
-
-Then update:
-
-* `.env`
+Set those env vars in the files below: * `.env`
 * `selfdev-api/.env`
 * `selfdev-agency/.env`
+
+3. Unseal the vault by inputing 3 of the keys.
+4. Sing into vault with the initial root token.
+5. Enable new engine with type KV (kv-v2) and path `secret`.
 
 > 💡 Restart Docker after setting Vault secrets.
 
@@ -231,14 +205,12 @@ Then update:
 
 ### 🌐 7. Open in Browser
 
-Replace `dev.local` with your `${DOMAIN}`.
+Replace `h9y.localhost` with your `${DOMAIN}`.
 
-| App           | URL                                                                       |
-| ------------- | ------------------------------------------------------------------------- |
-| Web Interface | [https://selfdev-web.dev.local:3690](https://selfdev-web.dev.local:3690)  |
-| API Backend   | [https://selfdev-api.dev.local:6369](https://selfdev-api.dev.local:6369)  |
-
-> 🛡️ You may need to accept self-signed certificates the first time you visit.
+| App | URL                                             |
+| --- | ----------------------------------------------- |
+| Web | [h9y.localhost](https://h9y.localhost)          |
+| API | [api.h9y.localhost](https://api.h9y.localhost)  |
 
 ---
 

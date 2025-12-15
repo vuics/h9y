@@ -1,3 +1,6 @@
+certs/
+tmp/
+
 # Logs
 logs
 *.log
