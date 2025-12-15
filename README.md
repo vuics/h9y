@@ -77,7 +77,7 @@ git submodule update --init --recursive
 
 ---
 
-### ⚙️ 2. Configure `.env` Files
+### ⚙️ 2. Configure .Env Files
 
 Copy and customize `.env` files for the main platform and submodules:
 
@@ -111,42 +111,8 @@ On macOS, double-click each `.crt` file in `./certs/` to trust them in **Keychai
 If your domain is `h9y.localhost` or anything on localhost, you may not need to configure the DNS, since the locahost often resolves to `127.0.0.1` automatically.
 
 If your domain name does not resolve, set up `/etc/hosts` entries:
-
 ```bash
-export $(xargs < .env) && \
-sudo tee -a /etc/hosts << EOF
-
-# HyperAgency Local Services
-127.0.0.1 ${DOMAIN}
-127.0.0.1 api.${DOMAIN}
-127.0.0.1 x.${DOMAIN}
-127.0.0.1 g.${DOMAIN}
-127.0.0.1 f.${DOMAIN}
-127.0.0.1 vault.${DOMAIN}
-127.0.0.1 langflow.${DOMAIN}
-127.0.0.1 nodered.${DOMAIN}
-
-EOF
-```
----
-
-### 🤝 Optional: Setup DNS for Multi-Node Communication
-
-To enable server-to-server messaging between multiple HyperAgency instances:
-
-```bash
-export $(xargs < .env)
-export IP=$(ping -c 1 ${REMOTE_DOMAIN} | awk -F '[()]' '/PING/ { print $2 }')
-sudo tee -a /etc/hosts << EOF
-
-# Remote HyperAgency Node
-${IP} ${REMOTE_DOMAIN}
-${IP} api.${REMOTE_DOMAIN}
-${IP} x.${REMOTE_DOMAIN}
-${IP} g.${REMOTE_DOMAIN}
-${IP} f.${REMOTE_DOMAIN}
-
-EOF
+sudo ./setup-hosts.sh
 ```
 ---
 
