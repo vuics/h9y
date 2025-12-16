@@ -566,7 +566,6 @@ volumes:
   selfdev-avatar-volume:
   langflow-volume:
   langflowdb-volume:
-  langflowdb-volume:
   nodered-volume:
   vault-volume:
   speech-volume:
