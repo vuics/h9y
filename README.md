@@ -43,12 +43,12 @@ While still in active development, HyperAgency already includes many of the core
 
 ---
 
-## ⚙️ Installation Guide
+## 📦 Installation
 
 > You can **self-host HyperAgency locally** in just a few steps —
 > or skip the setup entirely and **use our cloud environment** for a faster start.
 
-### 🧰 Prerequisites (for local setup)
+### 🧰 Prerequisites
 
 To run HyperAgency locally, install the following:
 
@@ -66,7 +66,7 @@ If you don’t want to manage infrastructure yourself, you can request access to
 
 ---
 
-### Option A: Simplified Install
+### 🇦 Option A: Simplified Install
 
 ```bash
 mkdir hyperagency
@@ -83,7 +83,10 @@ curl --fresh-connect https://raw.githubusercontent.com/vuics/h9y/refs/heads/main
   touch .env.api .env.agency && \
   chmod +x gen-certs.sh setup-hosts.sh && \
   ./gen-certs.sh
+```
 
+Run:
+```bash
 docker compose up
 ```
 
@@ -91,7 +94,8 @@ Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for 
 
 ---
 
-### Option B: Install from Repo
+### 🇧 Option B: Install from Repo
+
 
 #### 📦 1. Clone the Repository with Submodules
 
@@ -145,7 +149,7 @@ After you started the stack, you can open in the browser:
 
 NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
 
-#### 🔑 6. Initialize Vault
+### 🔑 Initialize Vault
 
 1. Open [Vault](https://vault.h9y.localhost) (replace `h9y.localhost` with your `${DOMAIN}`), and input:
   • Key shares: `5`
