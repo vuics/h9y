@@ -64,10 +64,34 @@ If you don’t want to manage infrastructure yourself, you can request access to
 
 > The cloud environment is perfect for early testing, team collaboration, or demoing agentic flows without running Docker or Vault locally.
 
+### Option A: Simplified Install
+
+```bash
+mkdir hyperagency
+cd hyperagency/
+
+curl --fresh-connect https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/docker-compose.yml --output docker-compose.yml && \
+  curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/env.example --output .env && \
+  curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/gen-certs.sh --output gen-certs.sh && \
+  curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/setup-hosts.sh --output setup-hosts.sh && \
+  mkdir -p config/prometheus/ config/traefik/ config/vault/ && \
+  curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/config/prometheus/prometheus.yml --output config/prometheus/prometheus.yml && \
+  curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/config/traefik/tls.yaml --output config/traefik/tls.yaml && \
+  curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/config/vault/config.hcl --output config/vault/config.hcl && \
+  touch .env.api .env.agency && \
+  chmod +x gen-certs.sh setup-hosts.sh && \
+  ./gen-certs.sh
+
+docker compose up
+```
+
+Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
 
 ---
 
-### 📦 1. Clone the Repository with Submodules
+### Option B: Install from Repo
+
+#### 📦 1. Clone the Repository with Submodules
 
 ```bash
 git clone git@github.com:vuics/h9y.git
@@ -77,14 +101,14 @@ git submodule update --init --recursive
 
 ---
 
-### ⚙️ 2. Configure .Env Files
+#### ⚙️ 2. Configure .Env Files
 
 Copy and customize `.env` files for the main platform and submodules:
 ```bash
 cp env.example .env && touch .env.api .env.agency
 ```
 
-### 🔐 3. Generate TLS Certificates
+#### 🔐 3. Generate TLS Certificates
 
 ```bash
 ./gen-certs.sh
@@ -94,7 +118,7 @@ On macOS, double-click each `.crt` file in `./certs/` to trust them in **Keychai
 
 ---
 
-### 🌐 4. Configure Local DNS (Optionally)
+#### 🌐 4. Configure Local DNS (Optionally)
 
 If your domain is `h9y.localhost` or anything on localhost, you may not need to configure the DNS, since the locahost often resolves to `127.0.0.1` automatically.
 
@@ -104,7 +128,7 @@ sudo ./setup-hosts.sh
 ```
 ---
 
-### 🧱 5. Start the Stack
+#### 🧱 5. Start the Stack
 
 Use Docker Compose to start all services:
 
@@ -126,7 +150,7 @@ NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
 
 ---
 
-### 🔑 6. Initialize Vault
+#### 🔑 6. Initialize Vault
 
 1. Open [Vault](https://vault.h9y.localhost) (replace `h9y.localhost` with your `${DOMAIN}`), and input:
   • Key shares: `5`
