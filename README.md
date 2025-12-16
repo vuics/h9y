@@ -64,6 +64,8 @@ If you don’t want to manage infrastructure yourself, you can request access to
 
 > The cloud environment is perfect for early testing, team collaboration, or demoing agentic flows without running Docker or Vault locally.
 
+---
+
 ### Option A: Simplified Install
 
 ```bash
@@ -99,8 +101,6 @@ cd h9y
 git submodule update --init --recursive
 ```
 
----
-
 #### ⚙️ 2. Configure .Env Files
 
 Copy and customize `.env` files for the main platform and submodules:
@@ -116,8 +116,6 @@ cp env.example .env && touch .env.api .env.agency
 
 On macOS, double-click each `.crt` file in `./certs/` to trust them in **Keychain Access**.
 
----
-
 #### 🌐 4. Configure Local DNS (Optionally)
 
 If your domain is `h9y.localhost` or anything on localhost, you may not need to configure the DNS, since the locahost often resolves to `127.0.0.1` automatically.
@@ -126,7 +124,6 @@ If your domain name does not resolve, set up `/etc/hosts` entries:
 ```bash
 sudo ./setup-hosts.sh
 ```
----
 
 #### 🧱 5. Start the Stack
 
@@ -147,8 +144,6 @@ After you started the stack, you can open in the browser:
 | Nodered  | [api.h9y.localhost](https://api.h9y.localhost)     |
 
 NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
-
----
 
 #### 🔑 6. Initialize Vault
 
