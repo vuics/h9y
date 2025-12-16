@@ -262,7 +262,7 @@ services:
       - mongo
       - vault
     env_file:
-      - ./selfdev-api/.env
+      - ./.env.api
     environment:
       - DB_URL=mongodb://mongo:27017/selfdev
       - WEB_APP_ORIGIN=https://${DOMAIN}
@@ -273,6 +273,7 @@ services:
       - XMPP_SHARE_HOST=f.${DOMAIN}
       - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
@@ -311,7 +312,7 @@ services:
       - mongo
       - redis
     env_file:
-      - ./selfdev-api/.env
+      - ./.env.api
     environment:
       - CONTAINER_ID=selfdev-swarm
       - DB_URL=mongodb://mongo:27017/selfdev
@@ -324,6 +325,7 @@ services:
       - XMPP_SHARE_HOST=f.${DOMAIN}
       - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
@@ -349,7 +351,7 @@ services:
     ports:
       - 6370:6370
     env_file:
-      - ./selfdev-api/.env
+      - ./.env.api
     environment:
       - CONTAINER_ID=selfdev-bridge
       - DB_URL=mongodb://mongo:27017/selfdev
@@ -362,6 +364,7 @@ services:
       - XMPP_SHARE_HOST=f.${DOMAIN}
       - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
@@ -396,6 +399,8 @@ services:
     depends_on:
       - mongo
       - redis
+    env_file:
+      - ./.env.agency
     environment:
       - CONTAINER_ID=selfdev-agency
       - ALLOW_INSECURE=True
@@ -404,6 +409,7 @@ services:
       - XMPP_CONNECT_HOST=selfdev-prosody
       - XMPP_MUC_HOST=g.${DOMAIN}
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - REDIS_URL=redis://redis:6379/1
       - OLLAMA_BASE_URL=http://ollama:11436
       - LANGFLOW_URL=http://langflow:7860
@@ -424,8 +430,6 @@ services:
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
-    env_file:
-      - ./selfdev-agency/.env
     volumes:
       - ./selfdev-agency/src/:/opt/app/src/
     stop_grace_period: 25s
@@ -441,6 +445,8 @@ services:
     depends_on:
       - mongo
       - redis
+    env_file:
+      - ./.env.agency
     environment:
       - CONTAINER_ID=selfdev-fleet
       - ALLOW_INSECURE=True
@@ -449,6 +455,7 @@ services:
       - XMPP_CONNECT_HOST=selfdev-prosody
       - XMPP_MUC_HOST=g.${DOMAIN}
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - REDIS_URL=redis://redis:6379/1
       - OLLAMA_BASE_URL=http://ollama:11436
       - VAULT_ENABLE=true
@@ -463,8 +470,6 @@ services:
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
-    env_file:
-      - ./selfdev-agency/.env
     volumes:
       - ./selfdev-agency/src/:/opt/app/src/
     stop_grace_period: 25s

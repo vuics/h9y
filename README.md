@@ -80,23 +80,11 @@ git submodule update --init --recursive
 ### ⚙️ 2. Configure .Env Files
 
 Copy and customize `.env` files for the main platform and submodules:
-
 ```bash
 cp env.example .env
-cp selfdev-api/env.example selfdev-api/.env
-cp selfdev-agency/env.example selfdev-agency/.env
 ```
 
-Edit the `.env` files to define:
-
-* `DOMAIN`
-* `REMOTE_DOMAIN` (optional)
-* `VAULT_TOKEN`, `VAULT_UNSEAL_KEYS` (See below how to initialize Vault)
-* Keys and service-specific values for each component.
-
----
-
-### 🔐 3. Generate TLS Certificates (Local Dev)
+### 🔐 3. Generate TLS Certificates
 
 ```bash
 ./gen-certs.sh
@@ -106,7 +94,7 @@ On macOS, double-click each `.crt` file in `./certs/` to trust them in **Keychai
 
 ---
 
-### 🌐 4. Configure Local DNS
+### 🌐 4. Configure Local DNS (Optionally)
 
 If your domain is `h9y.localhost` or anything on localhost, you may not need to configure the DNS, since the locahost often resolves to `127.0.0.1` automatically.
 
@@ -124,59 +112,37 @@ Use Docker Compose to start all services:
 docker-compose up
 ```
 
-> The `COMPOSE_PROFILES` env var defines the sepecific set of services to run.
-> 🧪 Alternatively, you can use `--profile <name>` to run a specific set of services.
+After you started the stack, you can open in the browser:
 
-**Available profiles:**
+| App      | URL                                                |
+| -------- | -------------------------------------------------- |
+| Web      | [h9y.localhost](https://h9y.localhost)             |
+| API      | [api.h9y.localhost](https://api.h9y.localhost)     |
+| Vault    | [vault.h9y.localhost](https://vault.h9y.localhost) |
+| Langflow | [h9y.localhost](https://h9y.localhost)             |
+| Nodered  | [api.h9y.localhost](https://api.h9y.localhost)     |
 
-| Profile    | Purpose                        |
-| ---------- | ------------------------------ |
-| `all`      | All services                   |
-| `h9y`      | Recommended stack              |
-| `main`     | Main services                  |
-
-📜 Full list in [`docker-compose.yml`](https://github.com/vuics/h9y/blob/main/docker-compose.yml)
+NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
 
 ---
 
 ### 🔑 6. Initialize Vault
 
-Replace `h9y.localhost` with your `${DOMAIN}`.
-
-| App   | URL                                                |
-| ----- | -------------------------------------------------- |
-| Vault | [vault.h9y.localhost](https://vault.h9y.localhost) |
-
-1. Open Vault, input:
+1. Open [Vault](https://vault.h9y.localhost) (replace `h9y.localhost` with your `${DOMAIN}`), and input:
   • Key shares: `5`
   • Key threshold: `3`
-
-2. Set the env vars with initial root token and the keys
-```bash
-VAULT_TOKEN=(Initial root token)
-VAULT_UNSEAL_KEYS=(Key 1),(Key 2),(Key 3),(Key 4),(Key 5)
-```
-
-Set those env vars in the files below: * `.env`
-* `selfdev-api/.env`
-* `selfdev-agency/.env`
-
-3. Unseal the vault by inputing 3 of the keys.
-4. Sing into vault with the initial root token.
-5. Enable new engine with type KV (kv-v2) and path `secret`.
-
-> 💡 Restart Docker after setting Vault secrets.
-
----
-
-### 🌐 7. Open in Browser
-
-Replace `h9y.localhost` with your `${DOMAIN}`.
-
-| App | URL                                             |
-| --- | ----------------------------------------------- |
-| Web | [h9y.localhost](https://h9y.localhost)          |
-| API | [api.h9y.localhost](https://api.h9y.localhost)  |
+2. Set the env vars with displayed initial root token and the keys in the `.env` file in the format:
+  ```bash
+  VAULT_TOKEN=(Initial root token)
+  VAULT_UNSEAL_KEYS=(Key 1),(Key 2),(Key 3),(Key 4),(Key 5)
+  ```
+3. Unseal the vault by inputing 3 of the keys, and sing into vault with the initial root token.
+4. Enable new engine with type KV (kv-v2) and path `secret`.
+5. Restart Docker Compose.
+  ```bash
+  docker compose down
+  docker compose up
+  ```
 
 ---
 
@@ -209,11 +175,11 @@ Special thanks to **Hal Casteel** and **William McKinley** for their early ideas
 
 HyperAgency is available under a [multi-license](./LICENSE) model:
 
-| Use Case | License |
-|---------|---------|
-| Personal, educational, non-commercial | Apache-2.0-NC |
-| Commercial projects that remain open-source | AGPL-3.0 |
-| Commercial closed-source applications | Commercial License |
+| Use Case                                    | License            |
+| ------------------------------------------- | ------------------ |
+| Personal, educational, non-commercial       | Apache-2.0-NC      |
+| Commercial projects that remain open-source | AGPL-3.0           |
+| Commercial closed-source applications       | Commercial License |
 
 Choose the license that matches your use:
 
