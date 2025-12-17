@@ -78,8 +78,8 @@ router.get('/status', (req, res) => {
       lastName: req.user.lastName,
       phone: req.user.phone,
       roles: req.user.roles,
-      // limits: req.user.limits,
-      // settings: req.user.settings,
+      limits: req.user.limits,
+      settings: req.user.settings,
     }
   })
 })

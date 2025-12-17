@@ -60,6 +60,7 @@ const conf = {
     httpOnly: bool(process.env.SESSION_HTTP_ONLY || true),
     sameSite: process.env.SESSION_SAME_SITE || 'lax',
     proxy: bool(process.env.SESSION_PROXY || true),
+    domain: process.env.SESSION_DOMAIN || '.localhost',
   },
 
   db: {

@@ -20,7 +20,7 @@ export default session({
     sameSite: conf.session.sameSite,
     secure: conf.ssl.enable, // Enable for HTTPS only
     path: '/',
-    // domain: '.h9y.ai', // TODO: Should I set from conf to allow using on h9y.ai and app.h9y.ai
+    domain: conf.session.domain,
   },
   resave: true,
   saveUninitialized: false, // do not save session before login
