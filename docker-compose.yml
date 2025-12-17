@@ -192,6 +192,8 @@ services:
       - VITE_UMAMI_ENABLE=true
       - VITE_UMAMI_URL=https://umami.h9y.localhost/script.js
       - VITE_UMAMI_WEBSITE_ID=90f2b94f-3ee4-4988-b67c-e720100b65a3
+      - VITE_SUBSCRIPTION_ENABLE=false
+      - VITE_SUBSCRIBE_ENABLE=false
     # volumes:
     #   - ./selfdev-app/src:/opt/app/src
     #   - ./selfdev-app/public:/opt/app/public
