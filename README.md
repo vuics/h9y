@@ -72,7 +72,7 @@ If you don’t want to manage infrastructure yourself, you can request access to
 mkdir hyperagency
 cd hyperagency/
 
-curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/install.sh --output install.sh && chmod +x install.sh && ./install.sh
+curl -fsSL https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/install.sh | sh
 ```
 
 Run:
