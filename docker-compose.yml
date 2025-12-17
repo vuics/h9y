@@ -179,7 +179,7 @@ services:
       - 3990:3990
     environment:
       - PORT=3990
-      - ALLOWED_HOSTS=app.${DOMAIN}
+      - ALLOWED_HOSTS=${DOMAIN}
       - VITE_WEB_URL=https://${DOMAIN}
       - VITE_API_URL=https://api.${DOMAIN}/v1
       - VITE_BRIDGE_URL=https://bridge.${DOMAIN}
@@ -198,7 +198,7 @@ services:
     #   - ./selfdev-app/vite.config.js:/opt/app/vite.config.js
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`app.${DOMAIN}`)"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.app.entrypoints=websecure"
       - "traefik.http.routers.app.tls=true"
       - "traefik.http.services.app.loadbalancer.server.port=3990"

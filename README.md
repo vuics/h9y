@@ -90,7 +90,7 @@ Run:
 docker compose up
 ```
 
-Open [app.h9y.localhost](https://app.h9y.localhost) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
+Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
 
 ---
 
@@ -141,7 +141,7 @@ After you started the stack, you can open in the browser:
 
 | App Name | URL                                                      |
 | -------- | -------------------------------------------------------- |
-| App      | [app.h9y.localhost](https://app.h9y.localhost)           |
+| App      | [h9y.localhost](https://h9y.localhost)                   |
 | API      | [api.h9y.localhost](https://api.h9y.localhost)           |
 | Vault    | [vault.h9y.localhost](https://vault.h9y.localhost)       |
 | Langflow | [langflow.h9y.localhost](https://langflow.h9y.localhost) |

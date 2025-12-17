@@ -1,3 +1,5 @@
+.env.agency
+.env.api
 certs/
 tmp/
 
