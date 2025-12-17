@@ -72,7 +72,7 @@ If you don’t want to manage infrastructure yourself, you can request access to
 mkdir hyperagency
 cd hyperagency/
 
-curl --fresh-connect https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/docker-compose.yml --output docker-compose.yml && \
+curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/docker-compose.yml --output docker-compose.yml && \
   curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/env.example --output .env && \
   curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/gen-certs.sh --output gen-certs.sh && \
   curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/setup-hosts.sh --output setup-hosts.sh && \
