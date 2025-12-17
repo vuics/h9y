@@ -1,6 +1,3 @@
-[submodule "selfdev-web"]
-	path = selfdev-web
-	url = git@github.com:vuics/selfdev-web.git
 [submodule "selfdev-api"]
 	path = selfdev-api
 	url = git@github.com:vuics/selfdev-api.git
@@ -22,3 +19,6 @@
 [submodule "selfdev-py"]
 	path = selfdev-py
 	url = git@github.com:vuics/selfdev-py.git
+[submodule "selfdev-app"]
+	path = selfdev-app
+	url = git@github.com:vuics/selfdev-app.git

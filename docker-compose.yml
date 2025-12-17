@@ -168,39 +168,40 @@ services:
 
   ### FRONTENT ###
 
-  selfdev-web:
-    profiles: [all, h9y, web, main]
+  selfdev-app:
+    profiles: [all, h9y, app, main]
     platform: ${PLATFORM}
-    image: ${REGISTRY}selfdev-web:${VERSION}
+    image: ${REGISTRY}selfdev-app:${VERSION}
     build:
-      context: ./selfdev-web/
+      context: ./selfdev-app/
     command: sh -c "rm -rf node_modules/.vite && npm start"
     ports:
-      - 3690:3690
+      - 3990:3990
     environment:
-      - PORT=3690
-      - ALLOWED_HOSTS=${DOMAIN}
+      - PORT=3990
+      - ALLOWED_HOSTS=app.${DOMAIN}
+      - VITE_WEB_URL=https://${DOMAIN}
       - VITE_API_URL=https://api.${DOMAIN}/v1
+      - VITE_BRIDGE_URL=https://bridge.${DOMAIN}
       - VITE_DOCS_URL=https://docs.${DOMAIN}
       - VITE_XMPP_HOST=x.${DOMAIN}
       - VITE_XMPP_WEBSOCKET_URL=wss://x.${DOMAIN}/xmpp-websocket
       - VITE_XMPP_MUC_HOST=g.${DOMAIN}
       - VITE_XMPP_SHARE_HOST=f.${DOMAIN}
       - VITE_XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
-      - VITE_BRIDGE_URL=https://bridge.${DOMAIN}
-      - VITE_UNAMI_ENABLE=true
-      - VITE_UNAMI_URL=https://umami.h9y.localhost/script.js
-      - VITE_UNAMI_WEBSITE_ID=90f2b94f-3ee4-4988-b67c-e720100b65a3
+      - VITE_UMAMI_ENABLE=true
+      - VITE_UMAMI_URL=https://umami.h9y.localhost/script.js
+      - VITE_UMAMI_WEBSITE_ID=90f2b94f-3ee4-4988-b67c-e720100b65a3
     # volumes:
-    #   - ./selfdev-web/src:/opt/app/src
-    #   - ./selfdev-web/public:/opt/app/public
-    #   - ./selfdev-web/vite.config.js:/opt/app/vite.config.js
+    #   - ./selfdev-app/src:/opt/app/src
+    #   - ./selfdev-app/public:/opt/app/public
+    #   - ./selfdev-app/vite.config.js:/opt/app/vite.config.js
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.web.entrypoints=websecure"
-      - "traefik.http.routers.web.tls=true"
-      - "traefik.http.services.web.loadbalancer.server.port=3690"
+      - "traefik.http.routers.app.rule=Host(`app.${DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.services.app.loadbalancer.server.port=3990"
 
   ### BACKEND ###
 
@@ -266,7 +267,8 @@ services:
     environment:
       - DB_URL=mongodb://mongo:27017/selfdev
       - WEB_APP_ORIGIN=https://${DOMAIN}
-      - CORS_WHITELIST=https://${DOMAIN},http://m.${DOMAIN}
+      - CORS_WHITELIST=https://${DOMAIN},https://app.${DOMAIN},http://m.${DOMAIN}
+      - SESSION_DOMAIN=.${DOMAIN}
       - XMPP_HOST=x.${DOMAIN}
       - XMPP_WEBSOCKET_URL=wss://selfdev-prosody:5281/xmpp-websocket
       - XMPP_MUC_HOST=g.${DOMAIN}
