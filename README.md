@@ -182,6 +182,8 @@ HyperAgency ships with **predefined Docker Compose profiles** that let you start
 | `h9y`        | **Core HyperAgency services** included in the `h9y` repository. Best for active development and local iteration.             |
 | `all`        | **Complete HyperAgency Cloud stack**, mirroring the services available at [HyperAgency Cloud](https://h9y.ai).               |
 
+You can find the **exhaustive list of available profiles** in the [`docker-compose.yaml`](https://github.com/vuics/h9y/blob/main/docker-compose.yml).
+
 #### ⚙️ Selecting a Profile
 
 Choose the profile that matches your current goal by setting it in the [`.env`](https://github.com/vuics/h9y/blob/main/env.example) file:
@@ -190,34 +192,13 @@ Choose the profile that matches your current goal by setting it in the [`.env`](
 COMPOSE_PROFILES=h9y
 ```
 
-Then start HyperAgency using Docker Compose as usual. Docker will automatically enable **only** the services associated with the selected profile.
-
-#### 🧩 Mixing Profiles
-
-HyperAgency profiles are **composable by design**. You can enable multiple profiles at the same time and Docker Compose will merge them into a single runtime configuration.
+You can enable multiple profiles at the same time and Docker Compose will merge them into a single runtime configuration:
 
 ```bash
 COMPOSE_PROFILES=try,logs,metrics
 ```
 
-This allows you to keep a **lean base setup** while selectively adding cross‑cutting capabilities such as observability, integrations, or experimental services.
-
-* ➕ Profiles are **additive** — services are combined, not overridden
-* 🔀 Order does not matter — Docker Compose resolves the union automatically
-* 🧠 Ideal for power users who want fine‑grained control
-
-You can find the **exhaustive list of available profiles** in the [`docker-compose.yaml`](https://github.com/vuics/h9y/blob/main/docker-compose.yml).
-
----
-
-## 🎯 Conclusion
-
-**HyperAgency is an evolving framework for building agentic, autonomous systems — and eventually, fully autonomous software companies.**
-
-It already offers powerful capabilities for orchestrating agents, coordinating distributed systems, and integrating LLMs and humans in real-time workflows. By joining early, you can contribute to defining what autonomous organizations of the future look like.
-
-> 🔍 Explore. 🤝 Collaborate. 🚀 Build.
-> Start building your own **agentic stack** with [HyperAgency](https://h9y.ai/) today.
+Then start HyperAgency using Docker Compose as usual. Docker will automatically enable **only** the services associated with the selected profile.
 
 ---
 
@@ -268,3 +249,15 @@ This separation protects users from confusion while keeping the software ecosyst
 
 > **In short:**
 > **Open code encourages innovation. Protected branding ensures trust.**
+
+---
+
+## 🎯 Conclusion
+
+**HyperAgency is an evolving framework for building agentic, autonomous systems — and eventually, fully autonomous software companies.**
+
+It already offers powerful capabilities for orchestrating agents, coordinating distributed systems, and integrating LLMs and humans in real-time workflows. By joining early, you can contribute to defining what autonomous organizations of the future look like.
+
+> 🔍 Explore. 🤝 Collaborate. 🚀 Build.
+> Start building your own **agentic stack** with [HyperAgency](https://h9y.ai/) today.
+
