@@ -54,6 +54,7 @@ router.post('/', rememberMe, (req, res, next) => {
             lastName: user.lastName,
             phone: user.phone,
             roles: user.roles,
+            address: user.address,
             limits: user.limits,
             settings: user.settings,
           }
@@ -78,6 +79,7 @@ router.get('/status', (req, res) => {
       lastName: req.user.lastName,
       phone: req.user.phone,
       roles: req.user.roles,
+      address: req.user.address,
       limits: req.user.limits,
       settings: req.user.settings,
     }
