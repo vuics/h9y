@@ -39,9 +39,6 @@ services:
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.tls=true"
-      # Basic‑auth middleware
-      # - "traefik.http.middlewares.traefik-auth.basicauth.users=<PASTE_HASH_HERE>"
-      # - "traefik.http.routers.traefik.middlewares=dashboard-auth@docker"
 
   ### DATABASES ###
 
@@ -194,10 +191,6 @@ services:
       - VITE_UMAMI_WEBSITE_ID=90f2b94f-3ee4-4988-b67c-e720100b65a3
       - VITE_SUBSCRIPTION_ENABLE=false
       - VITE_SUBSCRIBE_ENABLE=false
-    # volumes:
-    #   - ./selfdev-app/src:/opt/app/src
-    #   - ./selfdev-app/public:/opt/app/public
-    #   - ./selfdev-app/vite.config.js:/opt/app/vite.config.js
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
@@ -241,8 +234,6 @@ services:
       - HTTP_FILE_SHARE_BASE_URL=https://api.${DOMAIN}/v1/files/
       - HTTP_FILE_SHARE_SECRET=U2VjcmV0VG9rZW4wMzYz
     volumes:
-      # - ./selfdev-prosody/prosody.cfg.lua:/etc/prosody/prosody.cfg.lua
-      # - ./selfdev-prosody/commander.sh:/commander.sh
       - ./certs/${DOMAIN}/tls.key:/etc/prosody/certs/${DOMAIN}.key
       - ./certs/${DOMAIN}/tls.crt:/etc/prosody/certs/${DOMAIN}.crt
     labels:
@@ -295,7 +286,6 @@ services:
       - FILES_STORAGE_DIR=/opt/data
     volumes:
       - selfdev-api-volume:/opt/data/
-      # - ./selfdev-api/src:/opt/app/src
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)"
@@ -338,8 +328,6 @@ services:
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
-    # volumes:
-    #   - ./selfdev-api/src:/opt/app/src
 
   selfdev-bridge:
     profiles: [all, h9y, bridge]
@@ -384,7 +372,6 @@ services:
       - WEB_SERVER_PORT=6370
       - WEB_SERVER_ORIGIN=https://bridge.${DOMAIN}
     volumes:
-      # - ./selfdev-api/src:/opt/app/src
       - selfdev-bridge-volume:/tmp/recordings
     labels:
       - "traefik.enable=true"
@@ -434,8 +421,6 @@ services:
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
-    # volumes:
-    #   - ./selfdev-agency/src/:/opt/app/src/
     stop_grace_period: 25s
 
   selfdev-fleet:
@@ -474,8 +459,6 @@ services:
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
-    # volumes:
-    #   - ./selfdev-agency/src/:/opt/app/src/
     stop_grace_period: 25s
 
   selfdev-speech:
@@ -507,7 +490,6 @@ services:
     ports:
       - 8533:8533
     volumes:
-      # - ./selfdev-avatar/src:/opt/app/src
       - selfdev-avatar-volume:/opt/app/data
 
   ### AUTOMATION ###
