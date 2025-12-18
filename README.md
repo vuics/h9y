@@ -184,22 +184,44 @@ Special thanks to **Hal Casteel** and **William McKinley** for their early ideas
 
 ---
 
-## 📜 Licensing
+## 📜 Licensing Overview
 
-HyperAgency is available under a [multi-license](./LICENSE) model:
+HyperAgency follows a **clear separation between software licensing and brand ownership**.
+This ensures **maximum openness for developers** while **protecting the HyperAgency identity and trust**.
+
+### 🧠 Software (Source Code) Licensing
+
+The **HyperAgency source code** is available under a **[multi-license model](./LICENSE)**, allowing you to choose the license that best fits your use case.
 
 | Use Case                                    | License            |
 | ------------------------------------------- | ------------------ |
-| Personal, educational, non-commercial       | Apache-2.0-NC      |
+| Personal, educational, non-commercial use   | Apache-2.0-NC      |
 | Commercial projects that remain open-source | AGPL-3.0           |
-| Commercial closed-source applications       | Commercial License |
+| Commercial closed-source or proprietary use | Commercial License |
 
-Choose the license that matches your use:
+#### Choose the license that matches your use:
 
-- [**Apache-2.0-NC**](./LICENSE-Apache-2.0-NC) – free for non-commercial usage  
-- [**AGPL-3.0**](./LICENSE-AGPL-3.0) – free for commercial use if modifications remain open  
-- [**Commercial License**](./LICENSE-COMMERCIAL) – required for closed-source or proprietary use  
+* [**Apache-2.0-NC**](./LICENSE-Apache-2.0-NC) – Free for personal, educational, and non-commercial usage
+* [**AGPL-3.0**](./LICENSE-AGPL-3.0) – Free for commercial use **if modifications remain open-source**
+* [**Commercial License**](./LICENSE-COMMERCIAL) – Required for proprietary, closed-source, or SaaS offerings
 
 Answers on the most frequent licensing questions are listed in [Licensing FAQ](./Licensing-FAQ.md).
 
-For commercial licensing inquiries, contact **admin@vuics.com**.
+For commercial licensing inquiries, contact **[artem@h9y.ai](mailto:artem@h9y.ai)**.
+
+### 🛡️ Brand, Name & Logo (Trademark Protection)
+
+The **HyperAgency name, logo, and visual identity are NOT covered by the open-source licenses above**.
+
+They are protected under **trademark law** and governed by the
+➡️ **HyperAgency Trademark Policy**.
+
+This means:
+
+* ✅ You may **use, install, modify, and distribute the code** according to its license
+* ❌ You may **NOT use the HyperAgency name or logo** in ways that imply official endorsement, ownership, or affiliation unless explicitly permitted
+
+This separation protects users from confusion while keeping the software ecosystem open and extensible.
+
+> **In short:**
+> **Open code encourages innovation. Protected branding ensures trust.**
