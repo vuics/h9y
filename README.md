@@ -156,6 +156,26 @@ NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
   docker compose down
   docker compose up
   ```
+---
+
+### 👥 Profiles
+
+HyperAgency ships with **predefined Docker Compose profiles** so you can start small, scale fast, and run exactly what you need—no more, no less. Choose a profile that matches your intent, from first exploration to a full production-like stack.
+
+| Profile Name | Description                                                                                                            |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `try`        | **Minimal, zero-friction setup** to explore HyperAgency (default). Ideal for first-time users and quick demos.         |
+| `h9y`        | **Core HyperAgency services** included in the `h9y` repository. Best for active development and local experimentation. |
+| `all`        | **Complete HyperAgency Cloud stack**, mirroring the services available at [HyperAgency Cloud](https://h9y.ai).         |
+
+#### ⚙️ Selecting a Profile
+
+Set the desired profile in the [`.env`](./.env) file:
+```bash
+COMPOSE_PROFILES=h9y
+```
+
+Then start HyperAgency using Docker Compose as usual. Docker will automatically enable only the services associated with the selected profile. This modular approach keeps HyperAgency **approachable for newcomers** while remaining **powerful and extensible for advanced teams**.
 
 ---
 
