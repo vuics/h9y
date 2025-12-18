@@ -43,7 +43,7 @@ services:
   ### DATABASES ###
 
   mongo:
-    profiles: [all, h9y, try, mongo, main]
+    profiles: [all, h9y, try, main, mongo]
     image: mongo:8.0.11-noble
     ports:
       - 27017:27017
@@ -51,7 +51,7 @@ services:
       - mongo-volume:/data/db
 
   redis:
-    profiles: [all, h9y, try, main]
+    profiles: [all, h9y, try, main, redis]
     image: redis:6-alpine
     command: redis-server --appendonly yes
     ports:
@@ -61,7 +61,7 @@ services:
     stop_grace_period: 30s
 
   vault:
-    profiles: [all, h9y, try, vault, main, agency]
+    profiles: [all, h9y, try, main, agency, vault]
     image: hashicorp/vault:1.13.3
     command: vault server -config=/vault/config/config.hcl
     cap_add:
@@ -80,7 +80,7 @@ services:
       - "traefik.http.services.vault.loadbalancer.server.port=8200"
 
   chroma:
-    profiles: [all, h9y, chroma, rag]
+    profiles: [all, h9y, rag, chroma]
     image: chromadb/chroma:1.3.6
     ports:
       - 8121:8121
@@ -91,7 +91,7 @@ services:
       - chroma-volume:/chroma/chroma
 
   postgres:
-    profiles: [all, h9y, try, postgres, agency, prosody]
+    profiles: [all, h9y, try, agency, prosody, postgres]
     image: postgres:17.4
     restart: always
     shm_size: 128mb
@@ -113,7 +113,7 @@ services:
       - ~/.ollama:/root/.ollama
 
   opensearch:
-    profiles: [all, h9y, opensearch, logs]
+    profiles: [all, h9y, logs, opensearch]
     image: opensearchproject/opensearch:3.3.2
     environment:
       - cluster.name=opensearch-cluster
@@ -137,7 +137,7 @@ services:
       - 9600:9600 # Performance Analyzer
 
   prometheus:
-    profiles: [all, h9y, prometheus, metrics]
+    profiles: [all, h9y, metrics, prometheus]
     image: prom/prometheus:v3.7.3
     ports:
       - "9090:9090"
@@ -152,7 +152,7 @@ services:
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
 
   pushgateway:
-    profiles: [all, h9y, pushgateway, metrics]
+    profiles: [all, h9y, metrics, pushgateway]
     image: prom/pushgateway:v1.11.2
     ports:
       - "9091:9091"
@@ -166,7 +166,7 @@ services:
   ### FRONTENT ###
 
   selfdev-app:
-    profiles: [all, h9y, try, app, main]
+    profiles: [all, h9y, try, main, app]
     platform: ${PLATFORM}
     image: ${REGISTRY}selfdev-app:${VERSION}
     build:
@@ -241,7 +241,7 @@ services:
       - "traefik.tcp.services.prosody.loadbalancer.server.port=5281"
 
   selfdev-api:
-    profiles: [all, h9y, try, api, main]
+    profiles: [all, h9y, try, main, api]
     platform: ${PLATFORM}
     image: ${REGISTRY}selfdev-api:${VERSION}
     build:
