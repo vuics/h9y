@@ -183,7 +183,7 @@ services:
       - VITE_WEB_URL=https://${DOMAIN}
       - VITE_API_URL=https://api.${DOMAIN}/v1
       - VITE_BRIDGE_URL=https://bridge.${DOMAIN}
-      - VITE_DOCS_URL=https://docs.${DOMAIN}
+      - VITE_DOCS_URL=https://docs.h9y.ai
       - VITE_XMPP_HOST=x.${DOMAIN}
       - VITE_XMPP_WEBSOCKET_URL=wss://x.${DOMAIN}/xmpp-websocket
       - VITE_XMPP_MUC_HOST=g.${DOMAIN}
