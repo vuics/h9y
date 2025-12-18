@@ -191,7 +191,7 @@ This ensures **maximum openness for developers** while **protecting the HyperAge
 
 ### 🧠 Software (Source Code) Licensing
 
-The **HyperAgency source code** is available under a **[multi-license model](./LICENSE)**, allowing you to choose the license that best fits your use case.
+The **HyperAgency source code** is available under a [**multi-license model**](./LICENSE), allowing you to choose the license that best fits your use case.
 
 | Use Case                                    | License            |
 | ------------------------------------------- | ------------------ |
@@ -213,8 +213,8 @@ For commercial licensing inquiries, contact **[artem@h9y.ai](mailto:artem@h9y.ai
 
 The **HyperAgency name, logo, and visual identity are NOT covered by the open-source licenses above**.
 
-They are protected under **trademark law** and governed by the
-➡️ **HyperAgency Trademark Policy**.
+They are protected under **trademark law** and governed by the  
+➡️  [**HyperAgency Trademark Policy**](./TRADEMARK.md).
 
 This means:
 
