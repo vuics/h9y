@@ -73,6 +73,12 @@ mkdir hyperagency
 cd hyperagency/
 
 curl -fsSL https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/install.sh | sh
+
+# OPTIONALLY: Generate TLS certificates
+./gen-certs.sh
+
+# OPTIONALLY: Setup DNS with /etc/hosts
+./setup-hosts.sh
 ```
 
 Run:

@@ -9,5 +9,4 @@ curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/docker-compose.
   curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/config/traefik/tls.yaml --output config/traefik/tls.yaml && \
   curl https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/config/vault/config.hcl --output config/vault/config.hcl && \
   touch .env.api .env.agency && \
-  chmod +x gen-certs.sh setup-hosts.sh && \
-  ./gen-certs.sh
+  chmod +x gen-certs.sh setup-hosts.sh
