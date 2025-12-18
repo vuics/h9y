@@ -254,6 +254,7 @@ services:
     env_file:
       - ./.env.api
     environment:
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - DB_URL=mongodb://mongo:27017/selfdev
       - WEB_APP_ORIGIN=https://${DOMAIN}
       - CORS_WHITELIST=https://${DOMAIN},https://app.${DOMAIN},http://m.${DOMAIN}
@@ -305,6 +306,7 @@ services:
       - ./.env.api
     environment:
       - CONTAINER_ID=selfdev-swarm
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - DB_URL=mongodb://mongo:27017/selfdev
       - REDIS_ENABLE=true
       - REDIS_URL=redis://redis:6379/1
@@ -342,6 +344,7 @@ services:
       - ./.env.api
     environment:
       - CONTAINER_ID=selfdev-bridge
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - DB_URL=mongodb://mongo:27017/selfdev
       - REDIS_ENABLE=true
       - REDIS_URL=redis://redis:6379/1
@@ -390,6 +393,7 @@ services:
       - ./.env.agency
     environment:
       - CONTAINER_ID=selfdev-agency
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - ALLOW_INSECURE=True
       - DB_URL=mongodb://mongo:27017/selfdev
       - XMPP_HOST=x.${DOMAIN}
@@ -434,6 +438,7 @@ services:
       - ./.env.agency
     environment:
       - CONTAINER_ID=selfdev-fleet
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - ALLOW_INSECURE=True
       - DB_URL=mongodb://mongo:27017/selfdev
       - XMPP_HOST=x.${DOMAIN}
