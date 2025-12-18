@@ -62,8 +62,8 @@ export default class XmppAgent {
       this.connected({ jid })
     })
     this.xmppClient.emitter.on('error', async (err) => {
-      if (err.condition.includes('not-authorized') ||
-          err.condition.includes('host-unknown')) {
+      if (err?.condition?.includes('not-authorized') ||
+          err?.condition?.includes('host-unknown')) {
         verbose('Received not-authorized error. Registering an agent...')
         await this.registerAgent()
         await this.connect()

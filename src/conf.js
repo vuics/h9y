@@ -18,6 +18,8 @@ export const json = (val) => val && JSON.parse(val)
 export const num = (val) => val ? Number(val) : (val === 0 ? 0 : undefined)
 export const arr = (str) => str ? str.split(',') : []
 
+export const hasProfile = (profiles) => profiles.some(x => conf.compose.profiles.includes(x))
+
 const conf = {
 
   node: {
@@ -564,6 +566,10 @@ const conf = {
     secure: bool(process.env.FILES_SECURE || false),
     uploadSecret: process.env.FILES_UPLOAD_SECRET || 'U2VjcmV0VG9rZW4wMzYz',
     storageDir: process.env.FILES_STORAGE_DIR || '/opt/data',
+  },
+
+  compose: {
+    profiles: arr(process.env.COMPOSE_PROFILES || 'all'),
   },
 }
 
