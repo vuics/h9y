@@ -187,18 +187,16 @@ You can find the **exhaustive list of available profiles** in the [`docker-compo
 #### ⚙️ Selecting a Profile
 
 Choose the profile that matches your current goal by setting it in the [`.env`](https://github.com/vuics/h9y/blob/main/env.example) file:
-
 ```bash
 COMPOSE_PROFILES=h9y
 ```
 
-You can enable multiple profiles at the same time and Docker Compose will merge them into a single runtime configuration:
-
+You can enable multiple profiles and Docker Compose will merge them into a single runtime configuration:
 ```bash
 COMPOSE_PROFILES=try,logs,metrics
 ```
 
-Then start HyperAgency using Docker Compose as usual. Docker will automatically enable **only** the services associated with the selected profile.
+Then start HyperAgency using Docker Compose as usual. Docker will run **only** the services associated with the selected profiles.
 
 ---
 
