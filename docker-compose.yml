@@ -4,7 +4,7 @@ services:
   ### INGRESS ###
 
   traefik:
-    profiles: [all, h9y, main, traefik]
+    profiles: [all, h9y, try, main, traefik]
     image: traefik:v3.6.4
     restart: unless-stopped
     security_opt:
@@ -43,7 +43,7 @@ services:
   ### DATABASES ###
 
   mongo:
-    profiles: [all, h9y, mongo, main]
+    profiles: [all, h9y, try, mongo, main]
     image: mongo:8.0.11-noble
     ports:
       - 27017:27017
@@ -51,7 +51,7 @@ services:
       - mongo-volume:/data/db
 
   redis:
-    profiles: [all, h9y, main]
+    profiles: [all, h9y, try, main]
     image: redis:6-alpine
     command: redis-server --appendonly yes
     ports:
@@ -61,7 +61,7 @@ services:
     stop_grace_period: 30s
 
   vault:
-    profiles: [all, h9y, vault, main, agency]
+    profiles: [all, h9y, try, vault, main, agency]
     image: hashicorp/vault:1.13.3
     command: vault server -config=/vault/config/config.hcl
     cap_add:
@@ -91,7 +91,7 @@ services:
       - chroma-volume:/chroma/chroma
 
   postgres:
-    profiles: [all, h9y, postgres, agency, prosody]
+    profiles: [all, h9y, try, postgres, agency, prosody]
     image: postgres:17.4
     restart: always
     shm_size: 128mb
@@ -113,7 +113,7 @@ services:
       - ~/.ollama:/root/.ollama
 
   opensearch:
-    profiles: [all, h9y, opensearch]
+    profiles: [all, h9y, opensearch, logs]
     image: opensearchproject/opensearch:3.3.2
     environment:
       - cluster.name=opensearch-cluster
@@ -137,7 +137,7 @@ services:
       - 9600:9600 # Performance Analyzer
 
   prometheus:
-    profiles: [all, h9y, prometheus]
+    profiles: [all, h9y, prometheus, metrics]
     image: prom/prometheus:v3.7.3
     ports:
       - "9090:9090"
@@ -152,7 +152,7 @@ services:
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
 
   pushgateway:
-    profiles: [all, h9y, pushgateway]
+    profiles: [all, h9y, pushgateway, metrics]
     image: prom/pushgateway:v1.11.2
     ports:
       - "9091:9091"
@@ -166,7 +166,7 @@ services:
   ### FRONTENT ###
 
   selfdev-app:
-    profiles: [all, h9y, app, main]
+    profiles: [all, h9y, try, app, main]
     platform: ${PLATFORM}
     image: ${REGISTRY}selfdev-app:${VERSION}
     build:
@@ -181,16 +181,12 @@ services:
       - VITE_API_URL=https://api.${DOMAIN}/v1
       - VITE_BRIDGE_URL=https://bridge.${DOMAIN}
       - VITE_DOCS_URL=https://docs.h9y.ai
+      - VITE_COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - VITE_XMPP_HOST=x.${DOMAIN}
       - VITE_XMPP_WEBSOCKET_URL=wss://x.${DOMAIN}/xmpp-websocket
       - VITE_XMPP_MUC_HOST=g.${DOMAIN}
       - VITE_XMPP_SHARE_HOST=f.${DOMAIN}
       - VITE_XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
-      - VITE_UMAMI_ENABLE=true
-      - VITE_UMAMI_URL=https://umami.h9y.localhost/script.js
-      - VITE_UMAMI_WEBSITE_ID=90f2b94f-3ee4-4988-b67c-e720100b65a3
-      - VITE_SUBSCRIPTION_ENABLE=false
-      - VITE_SUBSCRIBE_ENABLE=false
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
@@ -201,7 +197,7 @@ services:
   ### BACKEND ###
 
   selfdev-prosody:
-    profiles: [all, h9y, agency, prosody]
+    profiles: [all, h9y, try, agency, prosody]
     platform: ${PLATFORM}
     image: ${REGISTRY}selfdev-prosody:${VERSION}
     build:
@@ -245,7 +241,7 @@ services:
       - "traefik.tcp.services.prosody.loadbalancer.server.port=5281"
 
   selfdev-api:
-    profiles: [all, h9y, api, main]
+    profiles: [all, h9y, try, api, main]
     platform: ${PLATFORM}
     image: ${REGISTRY}selfdev-api:${VERSION}
     build:
@@ -381,7 +377,7 @@ services:
       - "traefik.http.services.bridge.loadbalancer.server.port=6370"
 
   selfdev-agency:
-    profiles: [all, h9y, agency]
+    profiles: [all, h9y, try, agency]
     platform: ${PLATFORM}
     image: ${REGISTRY}selfdev-agency:${VERSION}
     build:
@@ -495,7 +491,7 @@ services:
   ### AUTOMATION ###
 
   langflow:
-    profiles: [all, h9y, flow, langflow]
+    profiles: [all, h9y, langflow]
     image: langflowai/langflow:1.3.4
     ports:
       - 7860:7860
