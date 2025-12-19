@@ -135,7 +135,7 @@ const conf = {
     "contact": {
       "name": "API Support",
       "url": "https://h9y.ai/",
-      "email": "admin@vuics.com"
+      "email": "admin@h9y.ai"
     }
   },
   "host": "api.h9y.ai",
@@ -145,7 +145,7 @@ const conf = {
     "url": "https://api.h9y.ai",
     "description": "HyperAgency Cloud"
   }, {
-    "url": "https://selfdev-api.dev.local:6369",
+    "url": "https://api.h9y.localhost",
     "description": "Self-hosted Deployment"
   } ]
 }`),
