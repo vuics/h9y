@@ -31,3 +31,31 @@ export function addInterval(date, intervalType, amount = 1) {
   return addFn(date, amount);
 }
 
+const DELTA_SYMBOL_MAP = {
+  '1m':  { type: 'minute', amount: 1 },
+  '1h':  { type: 'hour', amount: 1 },
+  '12h': { type: 'hour', amount: 12 },
+  '1d':  { type: 'day', amount: 1 },
+  '1w':  { type: 'week', amount: 1 },
+  '1mo': { type: 'month', amount: 1 }, // calendar month ✅
+};
+
+export function offsetTime(timeAt, deltaSymbol) {
+  if (!timeAt || !deltaSymbol) return null;
+
+  let date;
+  if (typeof timeAt === 'string') {
+    date = new Date(timeAt); // ISO-8601 → UTC-safe
+  } else if (timeAt instanceof Date) {
+    date = timeAt;
+  } else {
+    throw new Error('Invalid timeAt');
+  }
+
+  const delta = DELTA_SYMBOL_MAP[deltaSymbol];
+  if (!delta) {
+    throw new Error(`Unknown deltaSymbol: ${deltaSymbol}`);
+  }
+
+  return addInterval(date, delta.type, delta.amount);
+}

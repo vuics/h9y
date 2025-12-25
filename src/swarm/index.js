@@ -18,6 +18,7 @@ import Agent from '../models/agent.js'
 import { redisClient, connectToRedis } from '../redis.js'
 import { replaceVaultValues } from '../vault.js'
 import prometheus from '../prometheus.js'
+import { offsetTime } from '../utils/datetime.js'
 
 const verbose = Verbose('sd:swarm/index'); verbose('')
 
@@ -57,6 +58,20 @@ function isValid({ agent }) {
     agent.archetype in archetypeClasses &&
     (conf.swarm.filterArchetypes.length === 0 || conf.swarm.filterArchetypes.includes(agent.archetype))
   );
+}
+
+async function undeployExpired({ agent }) {
+  const now = new Date();
+  if (agent.deployed && agent.options.expire) {
+    const undeployAt = offsetTime(agent.updatedAt, agent.options.expire);
+    if (undeployAt && now >= undeployAt) {
+      log(`Undeploying expired agent ${agent._id}:${agent.options.name} after ${agent.options.expire} of deployment`);
+      agent.deployed = false;
+      await Agent.findByIdAndUpdate(agent._id, { deployed: agent.deployed });
+      return true;
+    }
+  }
+  return false;
 }
 
 // ----------------- Distributed Lock -----------------
@@ -212,7 +227,10 @@ async function syncAgents() {
     for (const agent of agents) {
       // verbose('agent:', agent, ', isValid:', isValid({ agent }))
       if (isValid({ agent })) {
-        shouldRun[agent._id] = agent;
+        const expired = await undeployExpired({ agent })
+        if (!expired) {
+          shouldRun[agent._id] = agent;
+        }
 
         if (!(agent._id in runningXmppAgents)) {
           verbose('start agent')
