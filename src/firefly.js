@@ -6,10 +6,16 @@ import conf from './conf.js'
 
 const verbose = Verbose('sd:firefly'); verbose('')
 
-const firefly = new FireFly({
-  host: conf.firefly.host,
+const fireflyOptions = {
+  host: `${conf.firefly.proto}://${conf.firefly.username}:${conf.firefly.password}@${conf.firefly.host}`,
   namespace: conf.firefly.namespace,
-});
+}
+// verbose('fireflyOptions:', fireflyOptions)
+const firefly = new FireFly(fireflyOptions)
+// verbose('firefly:', firefly)
+// const fireflyStatus = await firefly.getStatus()
+// verbose('firefly status:', fireflyStatus)
+
 export default firefly
 
 

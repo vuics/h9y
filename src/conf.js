@@ -469,8 +469,11 @@ const conf = {
 
   firefly: {
     enable: bool(process.env.FIREFLY_ENABLE || true),
-    host: process.env.FIREFLY_HOST || 'https://firefly1.h9y.ai',
+    proto: process.env.FIREFLY_PROTO || 'https',
+    host: process.env.FIREFLY_HOST || 'firefly1.h9y.ai',
     namespace: process.env.FIREFLY_NAMESPACE || 'default',
+    username: process.env.FIREFLY_USERNAME || '(set-username)',
+    password: process.env.FIREFLY_PASSWORD || '(set-password)',
     commanderUrl: process.env.FIREFLY_COMMANDER_URL || 'http://aaa-wn.local:8387',
 
     pools: json(process.env.FIREFLY_POOLS || `[ {
