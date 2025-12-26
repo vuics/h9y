@@ -222,20 +222,20 @@ const conf = {
         apiAccess: false,
         maps: 3,
         deployedAgents: 1,
-        archetypes: ['chat-v1.0'],
+        archetypes: ['chat-v1.0', 'transform-v1.0'],
         agentExpires: ['1m', '1h'],
         chatProviders: ['openai', 'ollama'],
         ragProviders: [ ],
         ragEmbeddingsProviders: [ ],
         sttProviders: [],
         ttsProviders: [],
-        imagegenProviders: [],
+        imagegenProviders: [ 'openai' ],
         avatarProviders: [],
         deployedBridges: 0,
         connectors: [],
         bridgeExpires: [],
-        audioRecordings: false,
         fileAttachments: false,
+        audioRecordings: false,
         synthetic: false,
 
         // TODO:
@@ -282,20 +282,23 @@ const conf = {
         apiAccess: false,
         maps: 30,
         deployedAgents: 3,
-        archetypes: [ 'chat-v1.0', 'rag-v1.0', 'storage-v1.0', ],
+        archetypes: [
+          'chat-v1.0', 'transform-v1.0', 'rag-v1.0', 'storage-v1.0',
+          'imagegen-v1.0',
+        ],
         agentExpires: ['1m', '1h', '12h', '1d', '1w'],
         chatProviders: [ 'openai', 'google_genai', 'ollama' ],
         ragProviders: [ 'openai', 'google_genai', 'ollama' ],
         ragEmbeddingsProviders: [ 'openai', 'google_genai', 'ollama' ],
         sttProviders: [],
         ttsProviders: [],
-        imagegenProviders: [],
+        imagegenProviders: [ 'openai' ],
         avatarProviders: [],
         deployedBridges: 1,
         connectors: ['scheduler'],
         bridgeExpires: ['1h', '12h', '1d', '1w'],
+        fileAttachments: true,
         audioRecordings: false,
-        fileAttachments: false,
         synthetic: false,
 
         // TODO:
@@ -343,8 +346,9 @@ const conf = {
         maps: 100,
         deployedAgents: 10,
         archetypes: [
-          'chat-v1.0', 'rag-v1.0', 'storage-v1.0',
-          'stt-v1.0', 'tts-v1.0', 'imagegen-v1.0',
+          'chat-v1.0', 'transform-v1.0', 'rag-v1.0', 'storage-v1.0',
+          'imagegen-v1.0', 'stt-v1.0', 'tts-v1.0', 'maptrix-v1.0',
+          'mcp-v1.0', 'a2a-v1.0', 'curl-v1.0', 'browseruse-v1.0',
         ],
         agentExpires: ['1m', '1h', '12h', '1d', '1w', '1mo'],  // '1m', '1h', '12h', '1d', '1w', '1mo', ''
         chatProviders: [ 'openai', 'google_genai', 'anthropic', , 'ollama' ],
@@ -357,8 +361,8 @@ const conf = {
         deployedBridges: 3,
         connectors: ['messengers', 'scheduler', 'webhook', 'email', 'mcp', 'a2a'],
         bridgeExpires: ['1m', '1h', '12h', '1d', '1w', '1mo'],
-        audioRecordings: true,
         fileAttachments: true,
+        audioRecordings: true,
         synthetic: false,
 
         // TODO:
@@ -386,8 +390,8 @@ const conf = {
         deployedBridges: null,
         connectors: null,
         bridgeExpires: null,
-        audioRecordings: true,
         fileAttachments: true,
+        audioRecordings: true,
         synthetic: true,
 
         // TODO:
