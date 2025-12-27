@@ -251,8 +251,6 @@ services:
     depends_on:
       - mongo
       - vault
-    env_file:
-      - ./.env.api
     environment:
       - COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - DB_URL=mongodb://mongo:27017/selfdev
@@ -271,7 +269,6 @@ services:
       - VAULT_UNSEAL=true
       - VAULT_TOKEN
       - VAULT_UNSEAL_KEYS
-      - LIMITS_ENABLE=false
       - STRIPE_ENABLE=true
       - YOOKASSA_ENABLE=true
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
@@ -281,6 +278,7 @@ services:
       - FILES_SECURE=true
       - FILES_UPLOAD_SECRET=U2VjcmV0VG9rZW4wMzYz
       - FILES_STORAGE_DIR=/opt/data
+      - LIMITS_ENABLE=false
     volumes:
       - selfdev-api-volume:/opt/data/
     labels:
@@ -302,8 +300,6 @@ services:
     depends_on:
       - mongo
       - redis
-    env_file:
-      - ./.env.api
     environment:
       - CONTAINER_ID=selfdev-swarm
       - COMPOSE_PROFILES=${COMPOSE_PROFILES}
@@ -340,8 +336,6 @@ services:
       - redis
     ports:
       - 6370:6370
-    env_file:
-      - ./.env.api
     environment:
       - CONTAINER_ID=selfdev-bridge
       - COMPOSE_PROFILES=${COMPOSE_PROFILES}
@@ -389,8 +383,6 @@ services:
     depends_on:
       - mongo
       - redis
-    env_file:
-      - ./.env.agency
     environment:
       - CONTAINER_ID=selfdev-agency
       - COMPOSE_PROFILES=${COMPOSE_PROFILES}
@@ -434,8 +426,6 @@ services:
     depends_on:
       - mongo
       - redis
-    env_file:
-      - ./.env.agency
     environment:
       - CONTAINER_ID=selfdev-fleet
       - COMPOSE_PROFILES=${COMPOSE_PROFILES}

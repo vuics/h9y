@@ -105,7 +105,7 @@ git submodule update --init --recursive
 
 Copy and customize `.env` files for the main platform and submodules:
 ```bash
-cp env.example .env && touch .env.api .env.agency
+cp env.example .env
 ```
 
 #### 🔐 3. Generate TLS Certificates
