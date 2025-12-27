@@ -269,8 +269,6 @@ services:
       - VAULT_UNSEAL=true
       - VAULT_TOKEN
       - VAULT_UNSEAL_KEYS
-      - STRIPE_ENABLE=true
-      - YOOKASSA_ENABLE=true
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_URL=http://prometheus:9090
