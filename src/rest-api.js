@@ -145,7 +145,7 @@ const getResources = (app) => {
                     deployedCount >= req.user.limits.deployedAgents) {
                   return res.status(403).json({
                     result: 'error',
-                    message: 'Deployed agents limit reached'
+                    message: `Deployed agents limit reached on your current plan: ${req.user.limits.deployedAgents}`,
                   });
                 }
                 if (has(req.user?.limits, 'archetypes') &&
@@ -153,7 +153,7 @@ const getResources = (app) => {
                     !req.user?.limits?.archetypes.includes(req.body.archetype)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy agents of the archetype: ${req.body.archetype}`,
+                    message: `Your current plan does not allow to deploy agents of the archetype: ${req.body.archetype}, allowed: ${req.user?.limits?.archetypes}`,
                   });
                 }
                 if (has(req.user?.limits, 'agentExpires') &&
@@ -162,7 +162,7 @@ const getResources = (app) => {
                     !req.user?.limits?.agentExpires.includes(req.body.options.expire)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy agents with expire: ${req.body.options.expire}`,
+                    message: `Your current plan does not allow to deploy agents with expiry: ${req.body.options.expire}, allowed: ${req.user?.limits?.agentExpires}`,
                   });
                 }
                 if (has(req.user?.limits, 'chatProviders') &&
@@ -171,7 +171,7 @@ const getResources = (app) => {
                     !req.user?.limits?.chatProviders.includes(req.body.options.chat.model.provider)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy chat agents with model provider: ${req.body.options.chat.model.provider}`,
+                    message: `Your current plan does not allow to deploy chat agents with model provider: ${req.body.options.chat.model.provider}, allowed: ${req.user?.limits?.chatProviders}`,
                   });
                 }
                 if (has(req.user?.limits, 'ragProviders') &&
@@ -180,7 +180,7 @@ const getResources = (app) => {
                     !req.user?.limits?.ragProviders.includes(req.body.options.rag.model.provider)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy rag agents with model provider: ${req.body.options.rag.model.provider}`,
+                    message: `Your current plan does not allow to deploy rag agents with model provider: ${req.body.options.rag.model.provider}, allowed: ${req.user?.limits?.ragProviders}`,
                   });
                 }
                 if (has(req.user?.limits, 'ragEmbeddingsProviders') &&
@@ -189,7 +189,7 @@ const getResources = (app) => {
                     !req.user?.limits?.ragEmbeddingsProviders.includes(req.body.options.rag.embeddings.provider)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy rag agents with embeddings provider: ${req.body.options.rag.embeddings.provider}`,
+                    message: `Your current plan does not allow to deploy rag agents with embeddings provider: ${req.body.options.rag.embeddings.provider}, allowed: ${req.user?.limits?.ragEmbeddingsProviders}`,
                   });
                 }
                 if (has(req.user?.limits, 'sttProviders') &&
@@ -198,7 +198,7 @@ const getResources = (app) => {
                     !req.user?.limits?.sttProviders.includes(req.body.options.stt.model.provider)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy stt agents with model provider: ${req.body.options.stt.model.provider}`,
+                    message: `Your current plan does not allow to deploy stt agents with model provider: ${req.body.options.stt.model.provider}, allowed: ${req.user?.limits?.sttProviders}`,
                   });
                 }
                 if (has(req.user?.limits, 'ttsProviders') &&
@@ -207,7 +207,7 @@ const getResources = (app) => {
                     !req.user?.limits?.ttsProviders.includes(req.body.options.tts.model.provider)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy tts agents with model provider: ${req.body.options.tts.model.provider}`,
+                    message: `Your current plan does not allow to deploy tts agents with model provider: ${req.body.options.tts.model.provider}, allowed: ${req.user?.limits?.ttsProviders}`,
                   });
                 }
                 if (has(req.user?.limits, 'imagegenProviders') &&
@@ -216,7 +216,7 @@ const getResources = (app) => {
                     !req.user?.limits?.imagegenProviders.includes(req.body.options.imagegen.model.provider)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy imagegen agents with model provider: ${req.body.options.imagegen.model.provider}`,
+                    message: `Your current plan does not allow to deploy imagegen agents with model provider: ${req.body.options.imagegen.model.provider}, allowed: ${req.user?.limits?.imagegenProviders}`,
                   });
                 }
                 if (has(req.user?.limits, 'avatarProviders') &&
@@ -225,7 +225,7 @@ const getResources = (app) => {
                     !req.user?.limits?.avatarProviders.includes(req.body.options.avatar.model.provider)) {
                   return res.status(403).json({
                     result: 'error',
-                    message: `You are not allowed to deploy avatar agents with model provider: ${req.body.options.avatar.model.provider}`,
+                    message: `Your current plan does not allow to deploy avatar agents with model provider: ${req.body.options.avatar.model.provider}, allowed: ${req.user?.limits?.avatarProviders}`,
                   });
                 }
               }
@@ -335,7 +335,7 @@ const getResources = (app) => {
                       deployedCount >= req.user.limits.deployedBridges) {
                     return res.status(403).json({
                       result: 'error',
-                      message: 'Deployed bridges limit reached'
+                      message: `Deployed bridges limit reached on your current plan: ${req.user.limits.deployedBridges}`
                     });
                   }
                   if (has(req.user?.limits, 'connectors') &&
@@ -343,7 +343,7 @@ const getResources = (app) => {
                       !req.user?.limits?.connectors.includes(req.body.connector || currentBridge?.connector)) {
                     return res.status(403).json({
                       result: 'error',
-                      message: `You are not allowed to deploy bridges of the connector: ${req.body.connector || currentBridge?.connector}`,
+                      message: `Your current plan does not allow to deploy bridges of the connector: ${req.body.connector || currentBridge?.connector}, allowed: ${req.user?.limits?.connectors}`,
                     });
                   }
                   if (has(req.user?.limits, 'bridgeExpires') &&
@@ -352,7 +352,7 @@ const getResources = (app) => {
                       !req.user?.limits?.bridgeExpires.includes(req.body.options?.expire || currentBridge?.options?.expire)) {
                     return res.status(403).json({
                       result: 'error',
-                      message: `You are not allowed to deploy bridges with expire: ${req.body.options?.expire || currentBridge?.options?.expire}`,
+                      message: `Your current plan does not allow to deploy bridges with expire: ${req.body.options?.expire || currentBridge?.options?.expire}, allowed: ${req.user?.limits?.bridgeExpires}`,
                     });
                   }
                 }
