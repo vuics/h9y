@@ -6,7 +6,7 @@
 [![Contribute](https://img.shields.io/badge/contribute-here-brightgreen)]
 
 
-[**HyperAgency**](https://h9y.ai/) is an **open-source agentic AI operating system** for building, orchestrating, and deploying collaborative systems of AI agents and humans. It has self-developing tools for building fully autonomous software companies. The agents can be generated in semi-automatic mode. It includes web3 marketplace for selling and buying hyper agents. The hyper agents can make deals with each other and with people on behalf of their users.
+[**HyperAgency**](https://h9y.ai/) is an Agentic AI Operating System designed for long-lived, self-improving systems with explicit control, memory, and governance — not a generic automation toolkit. It is an **open-source self-hosted & cloud solution** for building, orchestrating, and deploying collaborative systems of AI agents and humans. It has self-developing tools for building fully autonomous software companies. The agents can be generated in semi-automatic mode. It includes web3 marketplace for selling and buying hyper agents. The hyper agents can make deals with each other and with people on behalf of their users.
 
 We envision a future where software companies can operate with minimal human intervention — composed of agents that code, plan, manage, and evolve. HyperAgency provides the **framework and infrastructure** to explore and build toward that future.
 
@@ -14,11 +14,13 @@ We envision a future where software companies can operate with minimal human int
 
 ---
 
-## 📢 Pre-Public Release Notice
+## 📢 Public Release
 
-HyperAgency is currently in a pre-public release phase. The repository you are viewing contains the core project structure along with links to several internal Git submodules. These submodule repositories are presently private while we complete stabilization, security reviews, and licensing preparations.
-When the platform officially launches, we will open the source code of all associated submodules under the same multi-license model that governs this main repository (Apache-2.0-NC for non-commercial use, AGPL-3.0 for commercial open-source use, and a Commercial License for closed-source enterprise deployments).
-Until then, this repository serves as the central public entry point for documentation, roadmap previews, and integration guidelines.
+HyperAgency is now publicly released as an open-source agentic AI platform.
+
+This repository serves as the primary public entry point for the HyperAgency ecosystem, including core architecture, documentation, and integration guidelines. All previously internal submodules are now publicly available and governed under the same multi-license model as this repository.
+
+HyperAgency is under active development. While core concepts and interfaces are stable, some components may still evolve. This repository is intended for developers, architects, and organizations exploring long-lived, agentic systems rather than turnkey automation scripts.
 
 ---
 
