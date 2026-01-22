@@ -55,6 +55,7 @@ While still in active development, HyperAgency already includes many of the core
 To run HyperAgency locally, install the following:
 
 * [Docker](https://www.docker.com/)
+* [mkcert](https://github.com/FiloSottile/mkcert)
 
 ---
 

@@ -7,7 +7,7 @@ set +a
 
 # Install mkcert. For more info about how to install on your OS, see:
 #   https://github.com/FiloSottile/mkcert
-brew install mkcert
+# brew install mkcert
 mkcert -install
 
 # Make sure DOMAIN is set
