@@ -76,7 +76,8 @@ cd hyperagency/
 
 curl -fsSL https://raw.githubusercontent.com/vuics/h9y/refs/heads/main/install.sh | sh
 
-# OPTIONALLY: Generate TLS certificates
+# RECOMMENDED: Generate TLS certificates.
+#   (Otherwise, use your own certificates.)
 ./gen-certs.sh
 
 # OPTIONALLY: Setup DNS with /etc/hosts

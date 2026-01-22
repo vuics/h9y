@@ -5,7 +5,8 @@ set -a
 source .env
 set +a
 
-# Install
+# Install mkcert. For more info about how to install on your OS, see:
+#   https://github.com/FiloSottile/mkcert
 brew install mkcert
 mkcert -install
 
