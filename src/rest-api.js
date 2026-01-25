@@ -250,8 +250,8 @@ const getResources = (app) => {
           req.body.userId = req.user._id;
           req.modelQuery = Map.where('userId', req.user._id);
 
-          verbose('req.user.limits:', req.user.limits)
-          verbose('req.user.limits.maps:', req.user.limits.maps)
+          // verbose('req.user.limits:', req.user.limits)
+          // verbose('req.user.limits.maps:', req.user.limits.maps)
           try {
             if (req.method === 'POST') {
               if (has(req.user, 'limits.maps') &&
