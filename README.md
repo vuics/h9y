@@ -1,47 +1,154 @@
-# 🐙 HyperAgency (h9y)
+# 🐙 HyperAgency (h9y.ai)
 
-![HyperAgency Text Logo](./hyperagency.png)
+[![Contribute](https://img.shields.io/badge/contribute-here-brightgreen)](https://github.com/vuics/h9y)
 
+[**HyperAgency**](https://h9y.ai/) is an **Agentic AI Operating System** that replaces brittle, fragile automations with **long-lived, self-improving systems**. HyperAgency allows organizations to deploy autonomous agents that **remember, adapt, and act on your behalf**, under **human governance and auditability**.  
 
-[![Contribute](https://img.shields.io/badge/contribute-here-brightgreen)]
+It is **open-source, model-agnostic, and cloud/self-hosted**, providing the infrastructure to build **fully autonomous AI-human organizations**.
 
+> 🧠 Think of HyperAgency as your **operating system for autonomous workflows** — distributed, flexible, and composable.
 
-[**HyperAgency**](https://h9y.ai/) is an Agentic AI Operating System designed for long-lived, self-improving systems with explicit control, memory, and governance — not a generic automation toolkit. It is an **open-source self-hosted & cloud solution** for building, orchestrating, and deploying collaborative systems of AI agents and humans. It has self-developing tools for building fully autonomous software companies. The agents can be generated in semi-automatic mode. It includes web3 marketplace for selling and buying hyper agents. The hyper agents can make deals with each other and with people on behalf of their users.
+[![Website](https://img.shields.io/badge/h9y.ai-Visit-blue)](https://h9y.ai)
 
-We envision a future where software companies can operate with minimal human intervention — composed of agents that code, plan, manage, and evolve. HyperAgency provides the **framework and infrastructure** to explore and build toward that future.
-
-> 🧠 Think of it as your operating system for autonomous workflows — distributed, flexible, and customizable.
-
----
-
-## 📢 Public Release
-
-HyperAgency is now publicly released as an open-source agentic AI platform.
-
-This repository serves as the primary public entry point for the HyperAgency ecosystem, including core architecture, documentation, and integration guidelines. All previously internal submodules are now publicly available and governed under the same multi-license model as this repository.
-
-HyperAgency is under active development. While core concepts and interfaces are stable, some components may still evolve. This repository is intended for developers, architects, and organizations exploring long-lived, agentic systems rather than turnkey automation scripts.
+📘 Explore the [**HyperAgency Documentation**](https://docs.h9y.ai) for full capabilities, architecture, agent archetypes, integration examples, and step-by-step guides.
 
 ---
 
-## 🧠 Why HyperAgency?
+## 🚀 What is HyperAgency?
 
-With HyperAgency, you can:
+HyperAgency is more than an AI platform — it's a **new operational layer**:
 
-* ✅ **Create, deploy, and manage agents** — quickly iterate and improve.
-* 💬 **Communicate across agents and humans** — all in one unified interface.
-* 🧩 **Assemble smart, collaborative AI-human teams** — for coding, design, planning, or operations.
-* 🗺️ **Coordinate visually** — with an intuitive Map view.
-* 🧪 **Use an interactive playground** — test flows step-by-step in real time.
-* 🔀 **Orchestrate conversations** — with multi-agent dialog and memory.
-* 🔐 **Stay in control** — enterprise-ready with secure APIs, self-hosting, and customizable source code.
-* 🌍 **Scale across distributed nodes** — federated and connectable infrastructure.
+- **Persistent Agency** — agents maintain memory and context across time, adapting to real-world changes.  
+- **Coordinated Intelligence** — multiple agents work together to solve complex problems.  
+- **Human Governance** — clear approval points, credential management, and auditable behavior.  
+- **Omni-Channel Connectivity** — integrate across messengers, web apps, email, and APIs.  
+- **Decentralized Architecture** — connect multiple HyperAgency instances for distributed collaboration.  
+- **Web3 Marketplace** — publish, buy, and monetize agentic workflows and HyperAgents.  
+- **MetaAgent** — self-developing AI that creates, evolves, and orchestrates agents autonomously.
 
-> ✨ Build your own autonomous AI-first organization — or enhance your existing one.
+> HyperAgency turns AI from **fragile scripts and prompts** into **living, compound intelligence systems**.
 
-While still in active development, HyperAgency already includes many of the core components required to experiment with **autonomous system coordination**.
+---
 
-📘 See the [Docs](https://docs.h9y.ai) for full capabilities, architecture, and usage examples.
+## 🌟 Key Features
+
+- ✅ **Create & Deploy Agents** — instant archetypes or custom blueprints.  
+- 💬 **Multi-Agent Communication** — human and AI interaction in one interface.  
+- 🗺️ **Map View** — visualize workflows and agent coordination.  
+- 🧩 **Composable Systems** — agents can orchestrate other agents, integrate APIs, run scripts, generate content, or process data.  
+- 🔀 **Persistent Memory** — knowledge, workflow state, and context are shared and versioned.  
+- 🔐 **Governance & Security** — Vault-secured credentials, audit logs, approvals.  
+- 🌍 **Distributed Nodes** — federated network for scalable collaboration.  
+- ⚡ **Rapid Deployment** — cloud or local containerized setup, production-ready.
+
+---
+
+## 🧩 Agent Archetypes
+
+HyperAgency comes with **20+ production-ready agents** you can deploy instantly:
+
+| Archetype        | Role / Function |
+|-----------------|----------------|
+| **Chat**         | Natural language communication |
+| **RAG**          | Research & document retrieval |
+| **ImageGen**     | Image generation from prompts |
+| **Illustrator**  | Creative visual generation |
+| **BrowserUse**   | Web navigation & task automation |
+| **STT**          | Speech-to-text transcription |
+| **TTS**          | Text-to-speech synthesis |
+| **Avatar**       | Talking faces with lip-sync |
+| **Maptrix**      | Nested workflow execution |
+| **Code**         | Python, JavaScript, Bash computation |
+| **Command**      | Linux command execution |
+| **Quantum**      | Quantum computing tasks |
+| **Storage**      | Key-value and file storage |
+| **Transform**    | Text transformation & templating |
+| **System**       | HyperAgency infrastructure management |
+| **MCP**          | Tool execution via Model Context Protocol |
+| **A2A**          | Agent-to-agent delegation |
+| **Curl**         | API / HTTP requests |
+| **Langflow**     | AI strategy & multi-agent orchestration |
+| **Node-RED**     | External API & IoT workflow integration |
+| **N8n**          | Flexible automation workflows |
+| **Notebook**     | Parameterized Jupyter notebooks |
+
+> All agents are **composable, versionable, portable (JSON), auditable, and reproducible**.
+
+---
+
+## ⚙️ Model Providers
+
+Each agent can run **any compatible LLM or model** based on role, cost, latency, or compliance:
+
+- **Ollama** (open-source LLMs)  
+- **Speaches** (open-source TTS/STT models)  
+- OpenAI  
+- Anthropic  
+- Google (Vertex AI / GenAI)  
+- Azure  
+- Mistral  
+- Groq  
+- Cohere  
+- Fireworks  
+- Together  
+- Hugging Face  
+- NVIDIA  
+- Amazon / Bedrock  
+- Databricks  
+- IBM  
+- AI21  
+- Upstage  
+- xAI  
+- Perplexity  
+
+> Agents are bound to intent, not to a single model — **no vendor lock-in**.
+
+---
+
+## 💬 Omni-Channel Integration
+
+Deploy agents across **any communication channel** in seconds:
+
+- **Messengers & Collaboration**: Telegram, Discord, Slack, MS Teams, WhatsApp, VK, Mattermost, Matrix, IRC, Zulip, Rocket.Chat, NextCloud Talk, Mumble, Keybase  
+- Email  
+- Phone  
+- Scheduler (CRON)  
+- Webhooks  
+- A2A Server  
+- MCP Server  
+- Web App  
+- XMPP Server  
+
+> Bridges let agents **communicate, automate, and act** across your digital ecosystem.
+
+---
+
+## 🧭 Observability
+
+Full visibility into **agent actions, memory, and evolution**:
+
+- Logs & metrics in real-time  
+- Debug and trace workflows across agents  
+- Performance monitoring and system health  
+- Privacy-first design — isolated data per organization  
+
+---
+
+## 🌐 Distributed & Decentralized
+
+HyperAgency supports **secure peer-to-peer networks**:
+
+- Scale horizontally with multiple nodes  
+- Share agents across trusted nodes and teams  
+- Retain **full control over privacy and data ownership**  
+
+---
+
+## 🏪 Web3 Marketplace
+
+- Publish, share, and monetize **HyperAgent packages**  
+- Join a **global ecosystem of builders and innovators**  
+- Enable agentic deals with verifiable capabilities  
 
 ---
 
@@ -254,6 +361,39 @@ This separation protects users from confusion while keeping the software ecosyst
 
 ---
 
+## 💼 Paid Pilot / Early Access
+
+HyperAgency isn’t just for experimentation — you can run **real production-grade agentic systems** in your environment under **founder-led guidance**.
+
+Our **2–3 week pilot programs** are designed to answer one critical question:
+
+> *Can persistent, governed agents replace fragile AI automations in your organization?*
+
+### 🏁 What You’ll Get
+
+* Live HyperAgency deployment in **cloud or self-hosted environment**
+* **1–2 production-grade agentic systems** solving a real operational problem
+* Persistent **memory, coordination, and observability** running end-to-end
+* Clear **governance points** with human approvals, audit logs, and permissions
+* Concrete **go / no-go decision** for scaling agentic AI in your org
+
+### 📅 Pilot Options
+
+| Duration | Scope                                                                 |
+| -------- | --------------------------------------------------------------------- |
+| 2 Weeks  | Proof of viability with 1 agentic map (1–5 agents)                    |
+| 3 Weeks  | Operational readiness with 2 agentic maps (up to 10 agents + bridges) |
+
+> All pilots are **hands-on, production deployments** — not demos or slides.
+
+### 🚀 Apply Now
+
+[**Apply for a Paid Pilot**](https://forms.gle/bCACFoXj7so4paDg8)
+
+> Early participation lets you **shape your autonomous workflows**, get direct collaboration with the HyperAgency team, and **jumpstart your agentic AI adoption**.
+
+---
+
 ## 🎯 Conclusion
 
 **HyperAgency is an evolving framework for building agentic, autonomous systems — and eventually, fully autonomous software companies.**
@@ -261,5 +401,14 @@ This separation protects users from confusion while keeping the software ecosyst
 It already offers powerful capabilities for orchestrating agents, coordinating distributed systems, and integrating LLMs and humans in real-time workflows. By joining early, you can contribute to defining what autonomous organizations of the future look like.
 
 > 🔍 Explore. 🤝 Collaborate. 🚀 Build.
-> Start building your own **agentic stack** with [HyperAgency](https://h9y.ai/) today.
+> Build your **autonomous AI organization** today — from fragile AI to **living, compound intelligence systems**.
+
+
+## 📞 Contact & Community
+
+* Website: [h9y.ai](https://h9y.ai)
+* Email: [artem@h9y.ai](mailto:artem@h9y.ai)
+* LinkedIn: [Artem Arakcheev](https://linkedin.com/in/artem-arakcheev)
+* Paid Pilot / Early Access: [Apply here](https://forms.gle/bCACFoXj7so4paDg8)
+
 
