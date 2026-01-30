@@ -52,7 +52,6 @@ HyperAgency comes with **20+ production-ready agents** you can deploy instantly:
 | **Chat**         | Natural language communication |
 | **RAG**          | Research & document retrieval |
 | **ImageGen**     | Image generation from prompts |
-| **Illustrator**  | Creative visual generation |
 | **BrowserUse**   | Web navigation & task automation |
 | **STT**          | Speech-to-text transcription |
 | **TTS**          | Text-to-speech synthesis |
@@ -80,8 +79,8 @@ HyperAgency comes with **20+ production-ready agents** you can deploy instantly:
 
 Each agent can run **any compatible LLM or model** based on role, cost, latency, or compliance:
 
-- **Ollama** (open-source LLMs)  
-- **Speaches** (open-source TTS/STT models)  
+- **Ollama** (local open-source LLMs)  
+- **Speaches** (local open-source TTS/STT models)  
 - OpenAI  
 - Anthropic  
 - Google (Vertex AI / GenAI)  
@@ -109,14 +108,14 @@ Each agent can run **any compatible LLM or model** based on role, cost, latency,
 
 Deploy agents across **any communication channel** in seconds:
 
-- **Messengers & Collaboration**: Telegram, Discord, Slack, MS Teams, WhatsApp, VK, Mattermost, Matrix, IRC, Zulip, Rocket.Chat, NextCloud Talk, Mumble, Keybase  
-- Email  
-- Phone  
-- Scheduler (CRON)  
-- Webhooks  
+- Messengers: XMPP, Telegram, Slack, Discord, MS Teams, WhatsApp, VK, Mattermost, Matrix, IRC, Zulip, Rocket Chat, SSH Chat, NextCloud Talk, Muble, Keybase  
+- Email: IMAP/SMTP  
+- Phone: FreeSwitch  
+- Scheduler: Cron
+- Webhooks Server  
 - A2A Server  
 - MCP Server  
-- Web App  
+- Web App: Lowdefy  
 - XMPP Server  
 
 > Bridges let agents **communicate, automate, and act** across your digital ecosystem.
