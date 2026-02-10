@@ -4,9 +4,10 @@
 
 [![Website](https://img.shields.io/badge/h9y.ai-Visit-blue)](https://h9y.ai)
 [![Docs](https://img.shields.io/badge/Docs-HyperAgency-blue?logo=read-the-docs&style=flat)](https://docs.h9y.ai)
-[![Contribute](https://img.shields.io/badge/contribute-here-brightgreen)](https://github.com/vuics/h9y)
+[![Paper](https://img.shields.io/badge/Paper-DOI-blueviolet?style=flat)](https://doi.org/10.13140/RG.2.2.27454.55365)
+[![Contribute](https://img.shields.io/badge/Contribute-Here-brightgreen)](https://github.com/vuics/h9y)
 [![License](https://img.shields.io/badge/License-Multi%20License-lightgrey?style=flat)](https://github.com/vuics/h9y/blob/main/LICENSE)
-[![Pilot Program](https://img.shields.io/badge/Pilot-Early%20Access-orange?style=flat)](https://forms.gle/bCACFoXj7so4paDg8)
+[![Pilot](https://img.shields.io/badge/Pilot-Early%20Access-orange?style=flat)](https://forms.gle/bCACFoXj7so4paDg8)
 
 [**HyperAgency**](https://h9y.ai/) is an **Agentic AI Operating System** that replaces brittle, fragile automations with **long-lived, self-improving systems**. HyperAgency allows organizations to deploy autonomous agents that **remember, adapt, and act on your behalf**, under **human governance and auditability**.  
 
@@ -14,7 +15,9 @@ It is **open-source, model-agnostic, and cloud/self-hosted**, providing the infr
 
 > 🧠 Think of HyperAgency as your **operating system for autonomous workflows** — distributed, flexible, and composable.
 
-📘 Explore the [**HyperAgency Documentation**](https://docs.h9y.ai) for full capabilities, architecture, agent archetypes, integration examples, and step-by-step guides.
+📘 Explore the [**HyperAgency Documentation**](https://docs.h9y.ai) for full capabilities, architecture, agent archetypes, integration examples, and step-by-step guides.  
+
+📄 Read the [**HyperAgency Research Paper**](https://doi.org/10.13140/RG.2.2.27454.55365) for the system design, implementation and use cases.  
 
 ---
 
