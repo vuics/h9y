@@ -19,6 +19,10 @@ It is **open-source, model-agnostic, and cloud/self-hosted**, providing the infr
 
 📄 Read the [**HyperAgency Research Paper**](https://doi.org/10.13140/RG.2.2.27454.55365) for the system design, implementation and use cases.  
 
+#### 🎬 Watch about HyperAgency on YouTube
+
+[![Watch About Video](https://img.youtube.com/vi/N_uJlCHf77s/0.jpg)](https://youtu.be/N_uJlCHf77s)
+
 ---
 
 ## 🚀 What is HyperAgency?
@@ -35,6 +39,8 @@ HyperAgency is more than an AI platform — it's a **new operational layer**:
 
 > HyperAgency turns AI from **fragile scripts and prompts** into **living, compound intelligence systems**.
 
+![What Is](./images/what-is.png)
+
 ---
 
 ## 🌟 Key Features
@@ -47,6 +53,8 @@ HyperAgency is more than an AI platform — it's a **new operational layer**:
 - 🔐 **Governance & Security** — Vault-secured credentials, audit logs, approvals.  
 - 🌍 **Distributed Nodes** — federated network for scalable collaboration.  
 - ⚡ **Rapid Deployment** — cloud or local containerized setup, production-ready.
+
+![Experience Components](./images/experience-components.png)
 
 ---
 
@@ -80,6 +88,8 @@ HyperAgency comes with **20+ production-ready agents** you can deploy instantly:
 
 > All agents are **composable, versionable, portable (JSON), auditable, and reproducible**.
 
+![Agent Archetypes](./images/agent-archetypes.png)
+
 ---
 
 ## ⚙️ Model Providers
@@ -109,6 +119,8 @@ Each agent can run **any compatible LLM or model** based on role, cost, latency,
 
 > Agents are bound to intent, not to a single model — **no vendor lock-in**.
 
+![Model Agnostic](./images/model-agnostic.png)
+
 ---
 
 ## 💬 Omni-Channel Integration
@@ -127,6 +139,8 @@ Deploy agents across **any communication channel** in seconds:
 
 > Bridges let agents **communicate, automate, and act** across your digital ecosystem.
 
+![Omni Channel](./images/omni-channel.png)
+
 ---
 
 ## 🧭 Observability
@@ -138,6 +152,8 @@ Full visibility into **agent actions, memory, and evolution**:
 - Performance monitoring and system health  
 - Privacy-first design — isolated data per organization  
 
+![Logs & Metrics](./images/logs-metrics.png)
+
 ---
 
 ## 🌐 Distributed & Decentralized
@@ -148,6 +164,8 @@ HyperAgency supports **secure peer-to-peer networks**:
 - Share agents across trusted nodes and teams  
 - Retain **full control over privacy and data ownership**  
 
+![Distributed System](./images/distributed-system.png)
+
 ---
 
 ## 🏪 Web3 Marketplace
@@ -155,6 +173,8 @@ HyperAgency supports **secure peer-to-peer networks**:
 - Publish, share, and monetize **HyperAgent packages**  
 - Join a **global ecosystem of builders and innovators**  
 - Enable agentic deals with verifiable capabilities  
+
+![Web3 Marketplace](./images/web3-marketplace.png)
 
 ---
 
@@ -404,6 +424,10 @@ Our **2–3 week pilot programs** are designed to answer one critical question:
 
 ---
 
+![Launch Map](./images/launch-map.png)
+
+---
+
 ## 🎯 Conclusion
 
 **HyperAgency is an evolving framework for building agentic, autonomous systems — and eventually, fully autonomous software companies.**
@@ -412,7 +436,6 @@ It already offers powerful capabilities for orchestrating agents, coordinating d
 
 > 🔍 Explore. 🤝 Collaborate. 🚀 Build.
 > Build your **autonomous AI organization** today — from fragile AI to **living, compound intelligence systems**.
-
 
 ## 📞 Contact & Community
 
