@@ -343,7 +343,7 @@ Then start HyperAgency using Docker Compose as usual. Docker will run **only** t
 
 #### 🎬 Watch Usage Video on YouTube
 
-[![Watch Usage Video](https://img.youtube.com/vi/96emBUqcJkYt/0.jpg)](https://youtu.be/96emBUqcJkYt=579)
+[![Watch Usage Video](https://img.youtube.com/vi/96emBUqcJkY/0.jpg)](https://youtu.be/96emBUqcJkY?t=579)
 
 ---
 
