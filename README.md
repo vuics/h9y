@@ -205,6 +205,10 @@ docker compose up
 
 Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
 
+#### 🎬 Watch Simple Install Video on YouTube
+
+[![Watch the Simple Install Video](https://img.youtube.com/vi/VslDuuoJ46c/0.jpg)](https://youtu.be/VslDuuoJ46c?t=136)
+
 ---
 
 ### Option B: Install from Repo
