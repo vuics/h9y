@@ -347,12 +347,6 @@ Then start HyperAgency using Docker Compose as usual. Docker will run **only** t
 
 ---
 
-## 🙏 Acknowledgements
-
-Special thanks to **Hal Casteel** and **William McKinley** for their early ideas, feedback, and discussions. Their insights into intelligent systems and automation inspired much of what became [HyperAgency](https://h9y.ai/).
-
----
-
 ## 📜 Licensing Overview
 
 HyperAgency follows a **clear separation between software licensing and brand ownership**.
