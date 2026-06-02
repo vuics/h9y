@@ -63,6 +63,7 @@ VAULT_TOKEN = os.getenv("VAULT_TOKEN", "(not-set)")
 VAULT_UNSEAL = str_to_bool(os.getenv("VAULT_UNSEAL", "false"))
 VAULT_UNSEAL_KEYS = os.getenv("VAULT_UNSEAL_KEYS", "(not-set),(not-set),(not-set),(not-set),(not-set)").split(',')
 
+MAX_AGENTS_RUN = int(os.getenv("MAX_AGENTS_RUN", "0"))  # 0 = unlimited
 
 # Configure logging
 logging.basicConfig(
@@ -523,6 +524,7 @@ async def sync_agents(db, ARCHETYPE_CLASSES):
 
   # Track which agents should be running
   should_run = {}
+  capacity_reached = False
 
   # Start new agents or update existing ones
   for config in configs:
@@ -532,11 +534,27 @@ async def sync_agents(db, ARCHETYPE_CLASSES):
         should_run[config.id] = config
 
       if config.id not in running_agents:
-        # Start new agent
-        logger.info(f'▶️ Start agent: {config.id}:{config.name}, config: {config}')
-        agent = await start_agent(config, ARCHETYPE_CLASSES)
-        if agent:
-          running_agents[config.id] = agent
+        logger.info(
+          f"Agents capacity:"
+          f"({len(running_agents)}/{MAX_AGENTS_RUN}), "
+          f"current agent {config.id}:{config.name}"
+        )
+        if not capacity_reached:
+          capacity_reached = (MAX_AGENTS_RUN > 0 and len(running_agents) >= MAX_AGENTS_RUN)
+          logger.info(f"capacity_reached = {capacity_reached}")
+          if capacity_reached:
+            logger.info(
+              f"Agent limit reached "
+              f"({len(running_agents)}/{MAX_AGENTS_RUN}), "
+              f"skipping agent {config.id}:{config.name}"
+            )
+          else:
+            # Start new agent
+            logger.info(f'▶️ Start agent: {config.id}:{config.name}, config: {config}')
+            agent = await start_agent(config, ARCHETYPE_CLASSES)
+            if agent:
+              running_agents[config.id] = agent
+
       else:
         # Check if config was updated, then need to restart the agent
         if config.updatedAt != running_agents[config.id].config.updatedAt:
