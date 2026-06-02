@@ -1,0 +1,37 @@
+FROM nousresearch/hermes-agent:v2026.5.29.2
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    unzip \
+    wget \
+    git \
+    build-essential \
+    libmagic1 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+    # && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN node -v && npm -v
+RUN npm i -g nodemon
+
+
+WORKDIR /opt/app/
+
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | /opt/hermes/.venv/bin/python
+RUN /opt/hermes/.venv/bin/python -m pip install --upgrade pip
+
+COPY requirements_olympus.txt ./
+RUN /opt/hermes/.venv/bin/python -m pip install -r requirements_olympus.txt
+
+COPY setup.py ./
+RUN /opt/hermes/.venv/bin/python -m pip install .
+
+COPY src/*.py ./src/
+COPY README.md ./
+COPY ./input/ ./input/
+
+CMD ["nodemon", "--exec", "python", "/opt/app/src/olympus.py"]
