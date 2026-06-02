@@ -975,7 +975,7 @@ const archetypes = {
     key: 'browseruse-v1.0',
     value: 'browseruse-v1.0',
     enable: hasProfile(['all', 'h9y', 'fleet']),
-    category: 'Web',
+    category: 'LLM',
     icon: 'compass',
     text: 'Browser-Use v1.0',
     description: t('browseruse.description'),
@@ -1002,6 +1002,47 @@ const archetypes = {
                   title: 'API Key',
                   properties: {
                     valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'OPENAI_API_KEY' },
+                  },
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  },
+
+  'hermes-v1.0': {
+    key: 'hermes-v1.0',
+    value: 'hermes-v1.0',
+    enable: hasProfile(['all', 'h9y', 'olympus']),
+    category: 'LLM',
+    icon: 'compass',
+    text: 'Hermes-Agent v1.0',
+    description: t('hermes.description'),
+    docUrl: getDocUrl('hermes'),
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', title: 'Name', default: faker.internet.username().toLowerCase() },
+        description: { type: 'string', title: 'Description', format: 'textarea', default: '' },
+        joinRooms: { type: 'array', items: { type: 'string' }, title: 'Join Rooms', default: [], },
+        expire: { type: 'string', enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'], title: 'Expire Deployment', default: '' },
+        hermes: {
+          type: 'object',
+          title: 'Hermes-Agent Configuration',
+          properties: {
+            model: {
+              type: 'object',
+              title: 'Large Language Model (LLM)',
+              properties: {
+                provider: { type: 'string', title: 'LLM Provider', default: 'custom' },
+                name: { type: 'string', title: 'LLM Name', default: 'gemma4' },
+                apiKey: {
+                  type: 'object',
+                  title: 'API Key',
+                  properties: {
+                    valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'OLLAMA_API_KEY' },
                   },
                 },
               }

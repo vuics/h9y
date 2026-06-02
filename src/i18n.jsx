@@ -943,6 +943,9 @@ const resources = {
       browseruse: {
         description: 'Navigator operates a real browser to perform web-based tasks.',
       },
+      hermes: {
+        description: 'Proactive self-improving general-purpose AI agent',
+      },
     },
     connectors: {
       mcp: {
@@ -1903,6 +1906,9 @@ const resources = {
       },
       browseruse: {
         description: 'Навигатор управляет реальным браузером для выполнения веб-задач.',
+      },
+      hermes: {
+        description: 'Проактивный самосовершенствующийся универсальный ИИ-агент',
       },
     },
     connectors: {
