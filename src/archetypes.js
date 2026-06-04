@@ -1077,8 +1077,8 @@ const archetypes = {
               type: 'object',
               title: 'Large Language Model (LLM)',
               properties: {
-                provider: { type: 'string', title: 'LLM Provider', default: 'custom' },
-                name: { type: 'string', title: 'LLM Name', default: 'gemma4' },
+                provider: { type: 'string', title: 'LLM Provider', default: 'ollama' },
+                name: { type: 'string', title: 'LLM Name', default: 'qwen2.5:0.5b' },
                 apiKey: {
                   type: 'object',
                   title: 'API Key',
