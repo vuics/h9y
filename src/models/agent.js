@@ -299,6 +299,16 @@ export default mongoose.model(
         },
       },
 
+      openclaw: {
+        model: {
+          provider: String,
+          name: String,
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
+      },
+
     },
   })
     .plugin(mongooseTimestamp)

@@ -1,0 +1,79 @@
+FROM alpine/openclaw:2026.5.27
+
+# RUN apk add --no-cache bash curl wget git make gcc g++ python3 nodejs npm expect openssl
+
+# # Install and enable Corepack
+# RUN npm install -g corepack@latest && corepack enable
+# RUN corepack prepare pnpm@latest --activate
+# # 👇 Define PNPM_HOME and update PATH so global packages work
+# ENV PNPM_HOME="/usr/local/share/pnpm"
+# ENV PATH="$PNPM_HOME:$PATH"
+# RUN mkdir -p $PNPM_HOME && chmod -R 755 $PNPM_HOME
+# # RUN pnpm add -g @lowdefy/cli@4.5.2
+# RUN pnpm add -g lowdefy@4.5.2
+
+
+# RUN whoami && id
+# USER root
+
+WORKDIR /opt/app/
+# COPY package*.json ./
+COPY --chown=node:node package*.json ./
+RUN npm install
+# COPY . .
+COPY --chown=node:node . .
+
+# ENTRYPOINT ["npm"]
+# CMD ["run", "ocean"]
+
+# TODO: remove comments below
+#
+# ◇  Existing config detected ─────────╮
+# │                                    │
+# │  Workspace: ~/.openclaw/workspace  │
+# │  Gateway: local                    │
+# │                                    │
+# ├────────────────────────────────────╯
+
+
+# openclaw onboard --non-interactive \
+#   --auth-choice ollama \
+#   --gateway-auth token \
+#   --gateway-token 123 \
+#   --custom-base-url "http://ollama:11436" \
+#   --custom-model-id "qwen2.5:0.5b" \
+#   --accept-risk
+
+# openclaw onboard
+#
+# ~ = /home/node
+# Updated config: ~/.openclaw/openclaw.json
+#   Backup: ~/.openclaw/openclaw.json.bak
+# Workspace OK: ~/.openclaw/workspace
+# Sessions OK: ~/.openclaw/agents/main/sessions
+
+# Disable codex plugin:
+# mv \
+#   ~/.openclaw/npm/node_modules/@openclaw/codex \
+#   ~/.openclaw/npm/node_modules/@openclaw/codex.disabled
+
+# openclaw agent --agent main --message "Hi"
+# openclaw agent --agent main --message "How are you?"
+
+
+# # 1. Enable the Chat Completions endpoint
+# openclaw config set gateway.http.endpoints.chatCompletions.enabled true
+# # 2. Restart the gateway service
+# openclaw gateway restart
+
+
+# curl -s -X POST "http://127.0.0.1:18789/v1/chat/completions" \
+#   -H "Authorization: Bearer 123" \
+#   -H "Content-Type: application/json" \
+#   -d '{ "model": "openclaw:main", "messages": [{"role":"user","content":"Hello!"}] }'
+
+
+
+COPY --chown=node:node ocean-start.sh /ocean-start.sh
+
+CMD ["/ocean-start.sh"]
