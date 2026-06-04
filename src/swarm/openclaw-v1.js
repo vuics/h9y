@@ -130,6 +130,9 @@ export default class Openclaw extends XmppAgent {
       const { openclaw } = this.agent.options;
       verbose('openclaw:', openclaw)
 
+      if (!this.client) {
+        throw new Error('OpenClaw client is still initializing...')
+      }
       verbose('XMPP chat received:', prompt);
       const completion = await this.client.chat.completions.create({
         messages: [
