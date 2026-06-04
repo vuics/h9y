@@ -946,6 +946,9 @@ const resources = {
       hermes: {
         description: 'Proactive self-improving general-purpose AI agent',
       },
+      openclaw: {
+        description: 'Proactive personal AI assistant',
+      },
     },
     connectors: {
       mcp: {
@@ -1909,6 +1912,9 @@ const resources = {
       },
       hermes: {
         description: 'Проактивный самосовершенствующийся универсальный ИИ-агент',
+      },
+      openclaw: {
+        description: 'Проактивный персональный ИИ-помощник',
       },
     },
     connectors: {

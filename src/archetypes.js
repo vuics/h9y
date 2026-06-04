@@ -1017,7 +1017,7 @@ const archetypes = {
     value: 'hermes-v1.0',
     enable: hasProfile(['all', 'h9y', 'olympus']),
     category: 'LLM',
-    icon: 'compass',
+    icon: 'lightning',
     text: 'Hermes-Agent v1.0',
     description: t('hermes.description'),
     docUrl: getDocUrl('hermes'),
@@ -1031,6 +1031,47 @@ const archetypes = {
         hermes: {
           type: 'object',
           title: 'Hermes-Agent Configuration',
+          properties: {
+            model: {
+              type: 'object',
+              title: 'Large Language Model (LLM)',
+              properties: {
+                provider: { type: 'string', title: 'LLM Provider', default: 'custom' },
+                name: { type: 'string', title: 'LLM Name', default: 'gemma4' },
+                apiKey: {
+                  type: 'object',
+                  title: 'API Key',
+                  properties: {
+                    valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'OLLAMA_API_KEY' },
+                  },
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  },
+
+  'openclaw-v1.0': {
+    key: 'openclaw-v1.0',
+    value: 'openclaw-v1.0',
+    enable: hasProfile(['all', 'h9y', 'ocean']),
+    category: 'LLM',
+    icon: 'paw',
+    text: 'OpenClaw v1.0',
+    description: t('openclaw.description'),
+    docUrl: getDocUrl('openclaw'),
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', title: 'Name', default: faker.internet.username().toLowerCase() },
+        description: { type: 'string', title: 'Description', format: 'textarea', default: '' },
+        joinRooms: { type: 'array', items: { type: 'string' }, title: 'Join Rooms', default: [], },
+        expire: { type: 'string', enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'], title: 'Expire Deployment', default: '' },
+        openclaw: {
+          type: 'object',
+          title: 'OpenClaw Configuration',
           properties: {
             model: {
               type: 'object',

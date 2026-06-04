@@ -331,7 +331,6 @@ export default function Hive () {
         </Button.Group>
        </div>
       )}
-      <br/>
 
       { adding && (
         <Segment secondary>
@@ -409,8 +408,6 @@ export default function Hive () {
 
         </Segment>
       )}
-      <br/>
-      <br/>
 
       <Segment tertiary>
         <Grid>
