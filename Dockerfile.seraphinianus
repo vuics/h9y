@@ -1,0 +1,14 @@
+# FROM ghcr.io/openai/codex-universal:latest
+FROM node:18.17.1
+
+# RUN curl -fsSL https://chatgpt.com/codex/install.sh | sh
+RUN npm install -g @openai/codex
+
+WORKDIR /opt/app/
+# COPY --chown=node:node package*.json ./
+COPY package*.json ./
+RUN npm install
+# COPY --chown=node:node . .
+COPY . .
+
+CMD ["npm", "run", "seraphinianus"]

@@ -19,7 +19,7 @@ const verbose = Verbose('sd:swarm/openclaw-v1'); verbose('')
 const OPENCLAW_GATEWAY_TOKEN='SelfDev-GW-Token'
 
 
-export default class Openclaw extends XmppAgent {
+export default class OpenclawV1 extends XmppAgent {
   constructor(args) {
     super(args);
     // const { agent } = args

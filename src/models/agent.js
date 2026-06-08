@@ -309,6 +309,16 @@ export default mongoose.model(
         },
       },
 
+      codex: {
+        model: {
+          provider: String,
+          name: String,
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
+      },
+
     },
   })
     .plugin(mongooseTimestamp)
