@@ -949,6 +949,9 @@ const resources = {
       openclaw: {
         description: 'Proactive personal AI assistant',
       },
+      codex: {
+        description: 'Proactive software engineering agent',
+      },
     },
     connectors: {
       mcp: {
@@ -1915,6 +1918,9 @@ const resources = {
       },
       openclaw: {
         description: 'Проактивный персональный ИИ-помощник',
+      },
+      codex: {
+        description: 'Проактивный агент для разработки программного обеспечения',
       },
     },
     connectors: {
