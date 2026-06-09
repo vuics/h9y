@@ -1056,7 +1056,7 @@ const archetypes = {
   'openclaw-v1.0': {
     key: 'openclaw-v1.0',
     value: 'openclaw-v1.0',
-    enable: hasProfile(['all', 'h9y', 'ocean', 'openclaw']), // FIXME: remove ocean
+    enable: hasProfile(['all', 'h9y', 'openclaw']),
     category: 'Proactive',
     icon: 'paw',
     text: 'OpenClaw v1.0',
@@ -1097,7 +1097,7 @@ const archetypes = {
   'codex-v1.0': {
     key: 'codex-v1.0',
     value: 'codex-v1.0',
-    enable: hasProfile(['all', 'h9y', 'seraphinianus', 'codex']), // FIXME: remove seraphinianus
+    enable: hasProfile(['all', 'h9y', 'codex']),
     category: 'Proactive',
     icon: 'volleyball ball',
     text: 'Codex v1.0',
