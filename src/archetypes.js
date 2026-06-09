@@ -974,7 +974,7 @@ const archetypes = {
   'browseruse-v1.0': {
     key: 'browseruse-v1.0',
     value: 'browseruse-v1.0',
-    enable: hasProfile(['all', 'h9y', 'fleet', 'browseruse']), // FIXME: remove fleet
+    enable: hasProfile(['all', 'h9y', 'browseruse']),
     category: 'Proactive',
     icon: 'compass',
     text: 'Browser-Use v1.0',
@@ -1015,7 +1015,7 @@ const archetypes = {
   'hermes-v1.0': {
     key: 'hermes-v1.0',
     value: 'hermes-v1.0',
-    enable: hasProfile(['all', 'h9y', 'olympus', 'hermes']), // FIXME: remove olympus
+    enable: hasProfile(['all', 'h9y', 'hermes']),
     category: 'Proactive',
     icon: 'lightning',
     text: 'Hermes-Agent v1.0',
