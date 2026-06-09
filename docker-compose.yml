@@ -104,7 +104,7 @@ services:
 
   ollama:
     profiles: [all, h9y, ollama]
-    image: ollama/ollama:0.5.7
+    image: ollama/ollama:0.30.0
     ports:
       - 11436:11436
     environment:
@@ -321,6 +321,84 @@ services:
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
 
+  selfdev-openclaw:
+    profiles: [all, h9y, openclaw]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-openclaw:${VERSION}
+    build:
+      context: ./selfdev-api/
+      dockerfile: Dockerfile.openclaw
+    links:
+      - selfdev-bridge
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - CONTAINER_ID=selfdev-openclaw
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - REDIS_ENABLE=true
+      - REDIS_URL=redis://redis:6379/1
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_CONNECT_HOST=selfdev-prosody
+      - XMPP_WEBSOCKET_URL=wss://selfdev-prosody:5281/xmpp-websocket
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+      - OLLAMA_BASE_URL=http://ollama:11436
+      - MAX_AGENTS_RUN=1
+    volumes:
+      - selfdev-openclaw-volume:/home/node/.openclaw
+
+  selfdev-codex:
+    profiles: [all, h9y, codex]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-codex:${VERSION}
+    build:
+      context: ./selfdev-api/
+      dockerfile: Dockerfile.codex
+    links:
+      - selfdev-bridge
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - CONTAINER_ID=selfdev-codex
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - REDIS_ENABLE=true
+      - REDIS_URL=redis://redis:6379/1
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_CONNECT_HOST=selfdev-prosody
+      - XMPP_WEBSOCKET_URL=wss://selfdev-prosody:5281/xmpp-websocket
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+      - OLLAMA_BASE_URL=http://ollama:11436
+      - MAX_AGENTS_RUN=1
+    volumes:
+      - selfdev-codex-volume:/root/.codex
+
   selfdev-bridge:
     profiles: [all, h9y, bridge]
     platform: ${PLATFORM}
@@ -413,19 +491,19 @@ services:
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
     stop_grace_period: 25s
 
-  selfdev-fleet:
-    profiles: [all, h9y, fleet]
+  selfdev-browseruse:
+    profiles: [all, h9y, browseruse]
     platform: ${PLATFORM}
-    image: ${REGISTRY}selfdev-fleet:${VERSION}
+    image: ${REGISTRY}selfdev-browseruse:${VERSION}
     build:
       context: ./selfdev-agency/
-      dockerfile: Dockerfile.fleet
-    command: nodemon --exec python src/fleet.py
+      dockerfile: Dockerfile.browseruse
+    command: nodemon --exec python src/swarm_browseruse.py
     depends_on:
       - mongo
       - redis
     environment:
-      - CONTAINER_ID=selfdev-fleet
+      - CONTAINER_ID=selfdev-browseruse
       - COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - ALLOW_INSECURE=True
       - DB_URL=mongodb://mongo:27017/selfdev
@@ -448,7 +526,52 @@ services:
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+      - MAX_AGENTS_RUN=1
     stop_grace_period: 25s
+
+  selfdev-hermes:
+    profiles: [all, h9y, hermes]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-hermes:${VERSION}
+    build:
+      context: ./selfdev-agency/
+      dockerfile: Dockerfile.hermes
+    command: nodemon --exec python /opt/app/src/swarm_hermes.py
+    depends_on:
+      - mongo
+      - redis
+    links:
+      - ollama
+      - vault
+      - opensearch
+    environment:
+      - CONTAINER_ID=selfdev-hermes
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
+      - ALLOW_INSECURE=True
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_CONNECT_HOST=selfdev-prosody
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
+      - REDIS_URL=redis://redis:6379/1
+      - OLLAMA_BASE_URL=http://ollama:11436
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
+      - API_FILES_URL=http://selfdev-api:6369/v1/files/
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - SSL_VERIFY=false
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+      - MAX_AGENTS_RUN=1
+    stop_grace_period: 25s
+    volumes:
+      - selfdev-hermes-volume:/opt/data
 
   selfdev-speech:
     profiles: [all, h9y, speech]
@@ -537,7 +660,10 @@ volumes:
   chroma-volume:
   postgres-volume:
   selfdev-api-volume:
+  selfdev-openclaw-volume:
+  selfdev-codex-volume:
   selfdev-bridge-volume:
+  selfdev-hermes-volume:
   selfdev-avatar-volume:
   langflow-volume:
   langflowdb-volume:
