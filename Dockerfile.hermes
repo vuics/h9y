@@ -18,14 +18,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 RUN node -v && npm -v
 RUN npm i -g nodemon
 
-
 WORKDIR /opt/app/
 
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | /opt/hermes/.venv/bin/python
 RUN /opt/hermes/.venv/bin/python -m pip install --upgrade pip
 
-COPY requirements_olympus.txt ./
-RUN /opt/hermes/.venv/bin/python -m pip install -r requirements_olympus.txt
+COPY requirements_hermes.txt ./
+RUN /opt/hermes/.venv/bin/python -m pip install -r requirements_hermes.txt
 
 COPY setup.py ./
 RUN /opt/hermes/.venv/bin/python -m pip install .
@@ -34,4 +33,4 @@ COPY src/*.py ./src/
 COPY README.md ./
 COPY ./input/ ./input/
 
-CMD ["nodemon", "--exec", "python", "/opt/app/src/olympus.py"]
+CMD ["nodemon", "--exec", "python", "/opt/app/src/swarm_hermes.py"]

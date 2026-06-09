@@ -58,7 +58,7 @@ RUN ijsinstall --install=global
 
 
 # Browser-Use requires python3.12
-# I am using Dockerfile.fleet for that
+# I am using Dockerfile.browseruse for that
 #
 # RUN pip install --no-cache-dir uv
 # RUN uv pip install --system --no-cache-dir browser-use

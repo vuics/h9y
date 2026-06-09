@@ -42,8 +42,8 @@ ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /opt/app/
 
-COPY requirements_fleet.txt ./
-RUN pip install -r requirements_fleet.txt
+COPY requirements_browseruse.txt ./
+RUN pip install -r requirements_browseruse.txt
 
 COPY setup.py ./
 RUN pip install .
@@ -52,4 +52,4 @@ COPY src/*.py ./src/
 COPY README.md ./
 COPY ./input/ ./input/
 
-CMD ["nodemon", "--exec", "python", "src/fleet.py"]
+CMD ["nodemon", "--exec", "python", "src/swarm_browseruse.py"]
