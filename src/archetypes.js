@@ -1138,10 +1138,7 @@ const archetypes = {
   'claudecode-v1.0': {
     key: 'claudecode-v1.0',
     value: 'claudecode-v1.0',
-
-    // FIXME: use only claudecode profile
-    enable: hasProfile(['all', 'h9y', 'claudecode']),
-
+    enable: hasProfile(['all', 'claudecode']),
     category: 'Proactive',
     icon: 'sun',
     text: 'Claude Code v1.0',
