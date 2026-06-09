@@ -974,7 +974,7 @@ const archetypes = {
   'browseruse-v1.0': {
     key: 'browseruse-v1.0',
     value: 'browseruse-v1.0',
-    enable: hasProfile(['all', 'h9y', 'fleet']),
+    enable: hasProfile(['all', 'h9y', 'fleet', 'browseruse']), // FIXME: remove fleet
     category: 'Proactive',
     icon: 'compass',
     text: 'Browser-Use v1.0',
@@ -1015,7 +1015,7 @@ const archetypes = {
   'hermes-v1.0': {
     key: 'hermes-v1.0',
     value: 'hermes-v1.0',
-    enable: hasProfile(['all', 'h9y', 'olympus']),
+    enable: hasProfile(['all', 'h9y', 'olympus', 'hermes']), // FIXME: remove olympus
     category: 'Proactive',
     icon: 'lightning',
     text: 'Hermes-Agent v1.0',
@@ -1056,7 +1056,7 @@ const archetypes = {
   'openclaw-v1.0': {
     key: 'openclaw-v1.0',
     value: 'openclaw-v1.0',
-    enable: hasProfile(['all', 'h9y', 'ocean']),
+    enable: hasProfile(['all', 'h9y', 'ocean', 'openclaw']), // FIXME: remove ocean
     category: 'Proactive',
     icon: 'paw',
     text: 'OpenClaw v1.0',
@@ -1097,9 +1097,9 @@ const archetypes = {
   'codex-v1.0': {
     key: 'codex-v1.0',
     value: 'codex-v1.0',
-    enable: hasProfile(['all', 'h9y', 'ocean']),
+    enable: hasProfile(['all', 'h9y', 'seraphinianus', 'codex']), // FIXME: remove seraphinianus
     category: 'Proactive',
-    icon: 'paw',
+    icon: 'volleyball ball',
     text: 'Codex v1.0',
     description: t('codex.description'),
     docUrl: getDocUrl('codex'),
@@ -1135,6 +1135,49 @@ const archetypes = {
     },
   },
 
+  'claudecode-v1.0': {
+    key: 'claudecode-v1.0',
+    value: 'claudecode-v1.0',
+
+    // FIXME: use only claudecode profile
+    enable: hasProfile(['all', 'h9y', 'claudecode']),
+
+    category: 'Proactive',
+    icon: 'sun',
+    text: 'Claude Code v1.0',
+    description: t('claudecode.description'),
+    docUrl: getDocUrl('claudecode'),
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', title: 'Name', default: faker.internet.username().toLowerCase() },
+        description: { type: 'string', title: 'Description', format: 'textarea', default: '' },
+        joinRooms: { type: 'array', items: { type: 'string' }, title: 'Join Rooms', default: [], },
+        expire: { type: 'string', enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'], title: 'Expire Deployment', default: '' },
+        claudecode: {
+          type: 'object',
+          title: 'Claude Code Configuration',
+          properties: {
+            model: {
+              type: 'object',
+              title: 'Large Language Model (LLM)',
+              properties: {
+                provider: { type: 'string', title: 'LLM Provider', default: 'ollama' },
+                name: { type: 'string', title: 'LLM Name', default: 'gemma4' },
+                apiKey: {
+                  type: 'object',
+                  title: 'API Key',
+                  properties: {
+                    valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'OLLAMA_API_KEY' },
+                  },
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  },
 }
 
 export default archetypes
