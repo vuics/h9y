@@ -11,8 +11,8 @@
     "build:gke": "NODE_OPTIONS=--max-old-space-size=8192  vite build --debug --mode gke",
     "lint": "eslint .",
     "preview": "vite preview",
-    "serve": "serve -s build",
-    "serve:ssl": "serve -s build --ssl-cert /opt/ssl/tls.crt --ssl-key /opt/ssl/tls.key",
+    "serve": "serve -s dist",
+    "serve:ssl": "serve -s dist --ssl-cert /opt/ssl/tls.crt --ssl-key /opt/ssl/tls.key",
     "test": ""
   },
   "dependencies": {
