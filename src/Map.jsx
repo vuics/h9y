@@ -2308,7 +2308,6 @@ function Map () {
 
   const [ currentSlide, setCurrentSlide ] = useState(-1)
   const [ deckSidebar, setDeckSidebar ] = useState(false)
-  const [ promptInput, setPromptInput ] = useState(true)
 
   const reactFlowWrapper = useRef(null);
   const [ nodes, setNodes, onNodesChange ] = useNodesState([]);
@@ -2429,6 +2428,14 @@ function Map () {
   useEffect(() => {
     localStorage.setItem('map.showPrompt', showPrompt.toString());
   }, [showPrompt]);
+
+  const [ promptInput, setPromptInput ] = useState(() => {
+    const saved = localStorage.getItem('map.promptInput')
+    return saved !== null ? bool(saved) : false
+  })
+  useEffect(() => {
+    localStorage.setItem('map.promptInput', promptInput.toString());
+  }, [promptInput]);
 
   const [ editorTheme, setEditorTheme ] = useState(() => {
     return localStorage.getItem('map.editorTheme') || 'default'
