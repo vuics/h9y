@@ -11,7 +11,7 @@ const connectors = {
   'mcp': {
     key: 'mcp',
     value: 'mcp',
-    enable: hasProfile(['all', 'h9y', 'bridge']),
+    enable: hasProfile(['all', 'h9y', 'bridge', 'singleton']),
     // icon: 'puzzle piece',
     icon: 'dot circle',
     text: 'MCP Server',
@@ -51,7 +51,7 @@ const connectors = {
   'a2a': {
     key: 'a2a',
     value: 'a2a',
-    enable: hasProfile(['all', 'h9y', 'bridge']),
+    enable: hasProfile(['all', 'h9y', 'bridge', 'singleton']),
     icon: 'chess',
     text: 'A2A Server',
     description: t('a2a.description'),
@@ -89,7 +89,7 @@ const connectors = {
   'email': {
     key: 'email',
     value: 'email',
-    enable: hasProfile(['all', 'h9y', 'bridge']),
+    enable: hasProfile(['all', 'h9y', 'bridge', 'singleton']),
     icon: 'mail',
     text: 'Email',
     description: t('email.description'),
@@ -691,7 +691,7 @@ const connectors = {
   'scheduler': {
     key: 'scheduler',
     value: 'scheduler',
-    enable: hasProfile(['all', 'h9y', 'bridge']),
+    enable: hasProfile(['all', 'h9y', 'bridge', 'singleton']),
     icon: 'calendar alternate outline',
     text: 'Scheduler',
     description: t('scheduler.description'),
@@ -732,7 +732,7 @@ const connectors = {
   'webhook': {
     key: 'webhook',
     value: 'webhook',
-    enable: hasProfile(['all', 'h9y', 'bridge']),
+    enable: hasProfile(['all', 'h9y', 'bridge', 'singleton']),
     icon: 'anchor',
     text: 'Webhook',
     description: t('webhook.description'),
@@ -810,7 +810,7 @@ const connectors = {
   'client': {
     key: 'client',
     value: 'client',
-    enable: hasProfile(['all', 'h9y', 'try', 'prosody']),
+    enable: hasProfile(['all', 'h9y', 'try', 'prosody', 'singleton']),
     icon: 'user secret',
     text: 'XMPP Client',
     description: t('client.description'),
