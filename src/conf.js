@@ -77,7 +77,7 @@ const conf = {
   },
 
   o11y: {
-    enable: bool(import.meta.env.VITE_O11Y_ENABLE || true),
+    enable: bool(import.meta.env.VITE_O11Y_ENABLE || false),
     skip: 0,
     limit: 1000,
   },
@@ -89,7 +89,9 @@ const conf = {
 
   docs: {
     enable: bool(import.meta.env.VITE_DOCS_ENABLE || true),
-    url: import.meta.env.VITE_DOCS_URL || 'http://docs.dev.local:9298/',
+    // url: import.meta.env.VITE_DOCS_URL || 'http://docs.dev.local:9298/',
+    url: import.meta.env.VITE_DOCS_URL || 'https://docs.h9y.ai/',
+    // http://docs.dev.local:9298/
     i18n: {
       'en-US': '',
       'ru-RU': '/ru',
@@ -117,7 +119,7 @@ const conf = {
   },
 
   wallet: {
-    enable: bool(import.meta.env.VITE_WALLET_ENABLE || true),
+    enable: bool(import.meta.env.VITE_WALLET_ENABLE || false),
   },
 
   settings: {
