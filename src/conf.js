@@ -22,6 +22,10 @@ export const hasProfile = (profiles) => profiles.some(x => conf.compose.profiles
 
 const conf = {
 
+  // NOTE: All defaults for env vars should be set for running
+  //       all microservices in a single docker container
+  //       (COMPOSE_PROFILES=singleton)
+
   node: {
     tlsRejectUnauthorized: process.env.NODE_TLS_REJECT || '',
     defaultMaxListeners: num(process.env.NODE_DEFAULT_MAX_LISTENERS || 1000),
@@ -52,7 +56,7 @@ const conf = {
 
   cors: {
     enabled: bool(process.env.CORS_ENABLED || true),
-    whitelist: arr(process.env.CORS_WHITELIST || 'http://localhost:3000,https://localhost:3000'),
+    whitelist: arr(process.env.CORS_WHITELIST || 'http://localhost:3990,https://localhost:3990'),
   },
 
   session: {
@@ -88,8 +92,8 @@ const conf = {
   },
 
   redis: {
-    enable: bool(process.env.REDIS_ENABLE || false),
-    url: process.env.REDIS_URL || 'redis://redis.dev.local:6379/0',
+    enable: bool(process.env.REDIS_ENABLE || true),
+    url: process.env.REDIS_URL || 'redis://127.0.0.1:6379/1',
     connectTimeoutSeconds: num(process.env.REDIS_CONNECT_TIMEOUT_SECONDS || 15000),
   },
 
@@ -164,10 +168,10 @@ const conf = {
   },
 
   vault: {
-    enable: bool(process.env.VAULT_ENABLE || false),
+    enable: bool(process.env.VAULT_ENABLE || true),
     addr: process.env.VAULT_ADDR || 'http://127.0.0.1:8200',
     token: process.env.VAULT_TOKEN || '(TBS)',
-    unseal: bool(process.env.VAULT_UNSEAL || false),
+    unseal: bool(process.env.VAULT_UNSEAL || true),
     unsealKeys: arr(process.env.VAULT_UNSEAL_KEYS || '(TBS),(TBS),(TBS),(TBS),(TBS)'),
   },
 
@@ -186,7 +190,7 @@ const conf = {
   },
 
   webApp: {
-    origin: process.env.WEB_APP_ORIGIN || 'http://localhost:3008'
+    origin: process.env.WEB_APP_ORIGIN || 'http://localhost:3990'
   },
 
   stripe: {
@@ -213,7 +217,7 @@ const conf = {
   },
 
   limits: {
-    enable: bool(process.env.LIMITS_ENABLE || true),
+    enable: bool(process.env.LIMITS_ENABLE || false),
   },
 
   plans: {
@@ -453,15 +457,14 @@ const conf = {
   },
 
   xmpp: {
-    host: process.env.XMPP_HOST || 'selfdev-prosody.dev.local',
-    connectHost: process.env.XMPP_CONNECT_HOST || 'selfdev-prosody',
+    host: process.env.XMPP_HOST || 'localhost',
+    connectHost: process.env.XMPP_CONNECT_HOST || 'localhost',
 
-    websocketUrl: process.env.XMPP_WEBSOCKET_URL || 'wss://selfdev-prosody.dev.local:5281/xmpp-websocket',
-    commanderUrl: process.env.XMPP_COMMANDER_URL || 'http://selfdev-prosody.dev.local:8387',
-
-    mucHost: process.env.XMPP_MUC_HOST || 'conference.selfdev-prosody.dev.local',
-    shareHost: process.env.XMPP_SHARE_HOST || 'share.selfdev-prosody.dev.local',
-    shareUrlPrefix: process.env.SHARE_URL_PREFIX || 'https://selfdev-prosody.dev.local:5281/file_share/',
+    websocketUrl: process.env.XMPP_WEBSOCKET_URL || 'wss://localhost:5281/xmpp-websocket',
+    mucHost: process.env.XMPP_MUC_HOST || 'g.localhost',
+    shareHost: process.env.XMPP_SHARE_HOST || 'f.localhost',
+    shareUrlPrefix: process.env.XMPP_SHARE_URL_PREFIX || 'http://localhost:6369/v1/files/',
+    commanderUrl: process.env.XMPP_COMMANDER_URL || 'http://localhost:8387',
 
     password: process.env.XMPP_PASSWORD || "a-geNt-$sec-ret-10m_pp",
     reconnectMaxDelay: num(process.env.XMPP_RECONNECT_MAX_DELAY || 300),
@@ -589,7 +592,7 @@ const conf = {
 
   webServer: {
     port: num(process.env.WEB_SERVER_PORT || 6370),
-    origin: process.env.WEB_SERVER_ORIGIN || 'http://selfdev-bridge.dev.local:6370',
+    origin: process.env.WEB_SERVER_ORIGIN || 'http://127.0.0.1:6370',
 
     secure: bool(process.env.WEB_SERVER_SECURE || false),
     keyFile: process.env.WEB_SERVER_KEY_FILE || '/opt/ssl/tls.key',
@@ -620,7 +623,7 @@ const conf = {
 
   files: {
     port: num(process.env.FILES_PORT || 6371),
-    secure: bool(process.env.FILES_SECURE || false),
+    secure: bool(process.env.FILES_SECURE || true),
     uploadSecret: process.env.FILES_UPLOAD_SECRET || 'U2VjcmV0VG9rZW4wMzYz',
     storageDir: process.env.FILES_STORAGE_DIR || '/opt/data',
   },
