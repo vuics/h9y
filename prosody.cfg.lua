@@ -276,7 +276,7 @@ VirtualHost (os.getenv("HOST") or "localhost")
 --modules_enabled = { "muc_mam" }
 
 -- Component "conference.selfdev-prosody.dev.local" "muc"
-Component (os.getenv("MUC_HOST") or "conference.localhost") "muc"
+Component (os.getenv("MUC_HOST") or "g.localhost") "muc"
   name = "The selfdev-prosody chatrooms server"
   restrict_room_creation = false
   modules_enabled = { "muc_mam" } -- Store MUC messages in an archive and allow users to access it
@@ -284,7 +284,7 @@ Component (os.getenv("MUC_HOST") or "conference.localhost") "muc"
 ---Set up a file sharing component
 --Component "share.example.com" "http_file_share"
 -- Component "share.selfdev-prosody.dev.local" "http_file_share"
-Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
+Component (os.getenv("SHARE_HOST") or "f.localhost") "http_file_share"
   modules_enabled = { "muc_mam" } -- Store MUC messages in an archive and allow users to access it
   muc_log_by_default = true
   muc_log_presences = true
@@ -333,11 +333,8 @@ Component (os.getenv("SHARE_HOST") or "share.localhost") "http_file_share"
 
   -- Using a separate HTTP upload service:
   --   https://prosody.im/doc/modules/mod_http_file_share
-  local HTTP_FILE_SHARE_BASE_URL = os.getenv("HTTP_FILE_SHARE_BASE_URL")
-  if HTTP_FILE_SHARE_BASE_URL and HTTP_FILE_SHARE_BASE_URL ~= "" then
-    http_file_share_base_url = os.getenv("HTTP_FILE_SHARE_BASE_URL")
-    http_file_share_secret = (os.getenv("HTTP_FILE_SHARE_SECRET") or "U2VjcmV0VG9rZW4wMzYz")
-  end
+  http_file_share_base_url = os.getenv("HTTP_FILE_SHARE_BASE_URL") or "http://127.0.0.1:6369/v1/files"
+  http_file_share_secret = os.getenv("HTTP_FILE_SHARE_SECRET") or "U2VjcmV0VG9rZW4wMzYz"
 
 ---Set up an external component (default component port is 5347)
 --
