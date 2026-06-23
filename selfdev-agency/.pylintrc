@@ -1,0 +1,26 @@
+# http://pylint.org/
+#
+# Docs:
+# http://pylint.pycqa.org/en/latest/
+#
+# Generate example config with possible options
+# ```
+# pylint --generate-rcfile
+# ```
+
+[MESSAGES CONTROL]
+disable=broad-except,line-too-long,logging-fstring-interpolation,missing-function-docstring,
+
+[FORMAT]
+indent-string='  '
+indent-after-paren=2
+module-naming-style=any
+const-naming-style=any
+class-naming-style=PascalCase
+function-naming-style=any
+method-naming-style=any
+attr-naming-style=any
+argument-naming-style=any
+variable-naming-style=any
+class-attribute-naming-style=any
+inlinevar-naming-style=any

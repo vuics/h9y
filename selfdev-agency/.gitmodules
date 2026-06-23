@@ -1,0 +1,3 @@
+[submodule "input/tech-docs"]
+	path = input/tech-docs
+	url = git@github.com:vuics/tech-docs.git

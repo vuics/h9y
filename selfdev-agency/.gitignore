@@ -1,0 +1,10 @@
+.env
+.env.aaa
+.env.gke
+
+credentials.json
+token.json
+token.pickle
+__pycache__/
+.aider*
+.DS_Store

@@ -1,0 +1,43 @@
+python-dotenv==1.0.1
+fastapi==0.115.8
+uvicorn==0.34.0
+httpx
+waitress==3.0.2
+redis==5.2.1
+langchain==0.3.18
+langchain-core      # langchain-core==0.3.33
+python-magic==0.4.27
+libmagic==1.0
+
+langchain[groq]==0.3.18
+langchain[openai]==0.3.18
+langchain[anthropic]==0.3.18
+langchain[google-vertexai]==0.3.18
+langchain[aws]==0.3.18
+langchain[cohere]==0.3.18
+langchain[fireworks]==0.3.18
+langchain[mistralai]==0.3.18
+langchain[together]==0.3.18
+langchain-google-genai==2.0.9
+langchain-nvidia-ai-endpoints==0.3.9
+langchain-ibm==0.3.6
+databricks-langchain==0.3.0
+langchain-huggingface==0.1.2
+langchain-ollama==0.2.3
+langchain-ai21==1.0.1
+# langchain-upstage==0.6.0  # langchain-upstage==0.7.3  # FIXME: temporarily disabled since causes errors
+langchain-xai==0.2.0
+
+python-box==7.3.2
+
+https://codeberg.org/poezio/slixmpp/archive/slix-1.9.0.tar.gz
+
+# MongoDB driver for Python
+motor==3.7.1
+pymongo==4.13.0
+
+hvac==2.3.0
+
+# stripe==11.4.1
+opensearch-py==3.0.0
+prometheus-client==0.23.1
