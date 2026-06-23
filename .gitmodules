@@ -1,6 +1,3 @@
-[submodule "selfdev-speech"]
-	path = selfdev-speech
-	url = git@github.com:vuics/selfdev-speech.git
 [submodule "selfdev-avatar"]
 	path = selfdev-avatar
 	url = git@github.com:vuics/selfdev-avatar.git
