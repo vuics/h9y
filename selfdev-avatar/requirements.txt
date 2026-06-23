@@ -1,0 +1,7 @@
+python-dotenv==1.0.1
+fastapi
+uvicorn
+python-multipart
+# fastapi==0.115.12
+# uvicorn==0.34.3
+# python-multipart==0.0.20

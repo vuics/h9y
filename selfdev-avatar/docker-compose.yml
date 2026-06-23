@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+
+  selfdev-avatar:
+    # profiles: [all, avatar]
+    # hostname: selfdev-avatar.${DOMAIN}
+    image: selfdev-avatar:v0.0.1
+    build:
+      context: ./
+    restart: unless-stopped
+    shm_size: '2gb'
+    ports:
+      - 8533:8533
+    volumes:
+      - ./src:/opt/app/src
+      - ./data:/opt/app/data
+    #   - avatar-volume:/opt/app/data
+
+  # wav2lip:
+  #   profiles: [all, wav2lip]
+  #   image: selfdev-wav2lip:v0.0.1
+  #   build:
+  #     context: ./wav2lip/
+  #     dockerfile: Dockerfile
+
+  # lipgan:
+  #   profiles: [all, lipgan]
+  #   image: selfdev-lipgan:v0.0.1
+  #   build:
+  #     context: ./lipgan/
+  #     dockerfile: Dockerfile
+  #   command: sleep 99999
+  #   volumes:
+  #     - ./src:/opt/app/src
+  #     - ./data:/opt/app/data
+  #     - ./lipgan/logs:/app/LipGAN/logs
+
+# volumes:
+  # avatar-volume:
