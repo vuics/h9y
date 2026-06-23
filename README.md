@@ -245,7 +245,7 @@ Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using unt
 
 Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
 
-### Option B: Simple Cluster Install
+### Option C: Simple Cluster Install
 
 ```bash
 mkdir hyperagency
@@ -274,7 +274,7 @@ Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for 
 
 ---
 
-### Option C: Install Cluster from Repo
+### Option D: Install Cluster from Repo
 
 
 #### 📦 1. Clone the Repository with Submodules
