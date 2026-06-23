@@ -1,0 +1,91 @@
+HyperAgency Agentic AI OS – Multi-License Agreement
+Copyright © 2025 Vuics LLC.
+Licensor: Vuics LLC.
+Licensed Work: HyperAgency Version 1.0.0 or later.
+
+This project is provided under a three-tier multi-license model. Users may choose the license that applies to their intended use.
+
+================================================================================
+1. Apache-2.0-NC License (Non-Commercial Use Only)
+================================================================================
+
+Allowed:
+   • Personal, individual, hobby use
+   • Academic and scientific research
+   • Non-profit and non-commercial open-source projects
+   • Evaluation, experimentation, and internal prototyping
+
+Restrictions:
+   • Commercial use is NOT permitted under this license.
+   • “Commercial Use” means use by any company, startup, SaaS provider,
+     or organization that sells products/services, generates revenue,
+     or uses the Work in any revenue-generating context.
+
+The Apache License 2.0 terms apply EXCEPT where modified by the
+non-commercial restriction above.
+
+Full base terms (Apache 2.0): http://www.apache.org/licenses/LICENSE-2.0
+Non-commercial modification text: see LICENSE-Apache-2.0-NC
+
+================================================================================
+2. AGPL-3.0 License (Commercial Use Allowed, but Source Must Remain Open)
+================================================================================
+
+This license applies to organizations engaging in commercial use *and*
+releasing their derived works as open source under a strong copyleft license.
+
+Allowed:
+   • Commercial use, including use by companies and startups
+   • Modification, distribution, and monetized deployment
+   • SaaS and hosted services
+
+Requirements:
+   • If you modify the software and operate it over a network,
+     you MUST release your source code under AGPL-3.0.
+   • All derivative works must remain open-source under AGPL-3.0.
+
+Full license: https://www.gnu.org/licenses/agpl-3.0.en.html
+
+See the copied text of the license: LICENSE-AGPL-3.0
+
+================================================================================
+3. Commercial License (Proprietary / Closed-Source)
+================================================================================
+
+A commercial license is required if:
+
+   • You wish to use the Work in a commercial or revenue-generating context
+     *without* releasing your derived source code under AGPL-3.0; or
+   • You need closed-source product integration; or
+   • You require official support, warranties, indemnification,
+     or patent protections from Vuics LLC.
+
+Commercial license benefits may include:
+   • Closed-source rights
+   • Premium modules or enterprise extensions
+   • Patent protection and indemnification
+   • Support, consulting, and SLAs
+   • Deployment-based or subscription-based terms
+
+See: LICENSE-COMMERCIAL
+
+To obtain a commercial license, contact:
+   admin@vuics.com
+
+================================================================================
+License Selection Summary
+================================================================================
+
+Use Case                             License
+-----------------------------------  -----------------------------------------
+Personal, educational, research      Apache-2.0-NC
+Non-commercial open-source           Apache-2.0-NC
+Commercial + open-source             AGPL-3.0
+Commercial + closed-source           Commercial License
+
+================================================================================
+Notices
+================================================================================
+By using the Work, you agree to be bound by the terms of the license you select.
+For questions regarding licensing, please contact Vuics LLC at admin@vuics.com.
+
