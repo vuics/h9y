@@ -13,12 +13,6 @@
 [submodule "selfdev-avatar"]
 	path = selfdev-avatar
 	url = git@github.com:vuics/selfdev-avatar.git
-[submodule "selfdev-js"]
-	path = selfdev-js
-	url = git@github.com:vuics/selfdev-js.git
-[submodule "selfdev-py"]
-	path = selfdev-py
-	url = git@github.com:vuics/selfdev-py.git
 [submodule "selfdev-app"]
 	path = selfdev-app
 	url = git@github.com:vuics/selfdev-app.git
