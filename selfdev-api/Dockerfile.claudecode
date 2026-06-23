@@ -1,0 +1,20 @@
+FROM node:24.16.0
+
+# LEGAL NOTE:
+#   Claude Code is proprietary software owned by Anthropic.
+#   It is NOT included or redistributed in this repository or image.
+#   If used, it must be installed separately by the user from Anthropic's
+#     official sources.
+#   Use is subject to Anthropic Commercial Terms:
+#     https://github.com/anthropics/claude-code/blob/main/LICENSE.md
+#     https://www.anthropic.com/legal/commercial-terms
+RUN curl -fsSL https://claude.ai/install.sh | bash
+ENV PATH="/root/.local/bin:${PATH}"
+
+WORKDIR /opt/app/
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+
+CMD ["npm", "run", "swarm:claudecode"]

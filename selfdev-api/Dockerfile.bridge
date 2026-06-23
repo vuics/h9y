@@ -1,0 +1,23 @@
+FROM 42wim/matterbridge:1.26
+# FROM node:20-alpine AS base      # Use a lightweight Node base image (instead of matterbridge)
+
+RUN apk add --no-cache bash curl wget git make gcc g++ python3 nodejs npm expect openssl
+
+# Install and enable Corepack
+RUN npm install -g corepack@latest && corepack enable
+RUN corepack prepare pnpm@latest --activate
+# 👇 Define PNPM_HOME and update PATH so global packages work
+ENV PNPM_HOME="/usr/local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN mkdir -p $PNPM_HOME && chmod -R 755 $PNPM_HOME
+# RUN pnpm add -g @lowdefy/cli@4.5.2
+RUN pnpm add -g lowdefy@4.5.2
+
+
+WORKDIR /opt/app/
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+ENTRYPOINT ["npm"]
+CMD ["run", "bridge"]

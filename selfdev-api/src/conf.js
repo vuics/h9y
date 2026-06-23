@@ -1,0 +1,666 @@
+import { config } from 'dotenv'
+import { randomUUID } from 'crypto'
+import lodash from 'lodash'
+const { cloneDeep } = lodash
+
+const name = 'selfdev-api'
+
+const result = config()
+if (result.error) {
+  result.error.code === 'ENOENT'
+    ? console.log('.env file is omitted')
+    : console.error('.env error:', result.error)
+}
+// console.log('process.env:', process.env)
+
+export const bool = (val) => ['true', '1', true, 1].includes(val)
+export const json = (val) => val && JSON.parse(val)
+export const num = (val) => val ? Number(val) : (val === 0 ? 0 : undefined)
+export const arr = (str) => str ? str.split(',') : []
+
+export const hasProfile = (profiles) => profiles.some(x => conf.compose.profiles.includes(x))
+
+const conf = {
+
+  // NOTE: All defaults for env vars should be set for running
+  //       all microservices in a single docker container
+  //       (COMPOSE_PROFILES=singleton)
+
+  node: {
+    tlsRejectUnauthorized: process.env.NODE_TLS_REJECT || '',
+    defaultMaxListeners: num(process.env.NODE_DEFAULT_MAX_LISTENERS || 1000),
+  },
+
+  container: {
+    id: process.env.CONTAINER_ID || process.env.HOSTNAME || randomUUID(),
+  },
+
+  port: process.env.PORT || 6369,
+
+  ssl: {
+    // NOTE:
+    //   It is better to run the Web & API servers through HTTP.
+    //   It is exposed through HTTPS in production anyway.
+    enable: bool(process.env.SSL_ENABLE || false),
+    keyFile: process.env.SSL_KEY_FILE || '/opt/ssl/tls.key',
+    certFile: process.env.SSL_CERT_FILE || '/opt/ssl/tls.crt',
+  },
+
+  security: {
+    hpp: bool(process.env.SECURITY_HPP || true),
+    helmet: bool(process.env.SECURITY_HELMET || true),
+    csp: bool(process.env.SECURITY_CSP || false), // This is disabled because it does not allow to load fonts.
+    trustProxy: bool(process.env.SECURITY_TRUST_PROXY || true),
+    powered: bool(process.env.SECURITY_POWERED || true),
+  },
+
+  cors: {
+    enabled: bool(process.env.CORS_ENABLED || true),
+    whitelist: arr(process.env.CORS_WHITELIST || 'http://localhost:3990,https://localhost:3990'),
+  },
+
+  session: {
+    key: process.env.SESSION_KEY || 'SelfDev.sid',
+    maxAge: process.env.SESSION_MAX_AGE || (1000 * 3600 * 24 * 7), // 7 days
+    secret: process.env.SESSION_SECRET || '!Se1f!DEV!$ecret',
+    httpOnly: bool(process.env.SESSION_HTTP_ONLY || true),
+    sameSite: process.env.SESSION_SAME_SITE || 'lax',
+    proxy: bool(process.env.SESSION_PROXY || true),
+    domain: process.env.SESSION_DOMAIN || '.localhost',
+  },
+
+  db: {
+    enable: bool(process.env.DB_ENABLE || true),
+    url: process.env.DB_URL || 'mongodb://localhost:27017/selfdev',
+    replicaSet: process.env.DB_REPLICA_SET || '',
+    ssl: bool(process.env.DB_SSL || false),
+    // sslValidate: bool(process.env.DB_SSL_VALIDATE || false),
+    sslCAFiles: process.env.DB_SSL_CA_FILES || null,
+    sslCertFile: process.env.DB_SSL_CERT_FILE || null,
+    sslKeyFile: process.env.DB_SSL_KEY_FILE || null,
+    sslPass: process.env.DB_SSL_PASS || null
+  },
+
+  arangodb: {
+    enable: bool(process.env.ARANGODB_ENABLE || false),
+    url: process.env.ARANGODB_URL || 'mongodb://localhost:8529',
+    database: process.env.ARANGODB_DATABASE || 'selfdev',
+    auth: {
+      username: process.env.ARANGODB_AUTH_USERNAME || 'root',
+      password: process.env.ARANGODB_AUTH_PASSWORD || '',
+    },
+  },
+
+  redis: {
+    enable: bool(process.env.REDIS_ENABLE || true),
+    url: process.env.REDIS_URL || 'redis://127.0.0.1:6379/1',
+    connectTimeoutSeconds: num(process.env.REDIS_CONNECT_TIMEOUT_SECONDS || 15000),
+  },
+
+  jwt: {
+    issuer: process.env.JWT_ISSUER || 'selfde-jwt-issuer',
+    jwks: process.env.JWT_JWKS || null,
+
+    secret: process.env.JWT_SECRET || 'SF-Jwt-$ecreT',
+
+    // Expressed in seconds or
+    // a string describing a time span: https://github.com/zeit/ms
+    // Eg: 60, "2 days", "10h", "7d".
+    expiresIn: process.env.JWT_EXPIRESIN || '8h',
+
+    // HS256 HS384 HS512 RS256 RS384 RS512 PS256 PS384 PS512 ES256 ES384 ES512
+    algorithm: process.env.JWT_ALGORITHM || 'HS256',
+  },
+
+  resource: {
+    // Resource.js API
+    user: bool(process.env.RESOURCE_USER || false),
+    key: bool(process.env.RESOURCE_KEY || true),
+    dialog: bool(process.env.RESOURCE_DIALOG || false),
+    landing: bool(process.env.RESOURCE_LANDING || false),
+    interest: bool(process.env.RESOURCE_INTEREST || false),
+    agent: bool(process.env.RESOURCE_AGENT || true),
+    map: bool(process.env.RESOURCE_MAP || true),
+    app: bool(process.env.RESOURCE_APP || true),
+    bridge: bool(process.env.RESOURCE_BRIDGE || true),
+    file: bool(process.env.RESOURCE_FILE || true),
+    storage: bool(process.env.RESOURCE_STORAGE || true),
+
+    // Swagger Specification
+    spec: {
+      enable: bool(process.env.RESOURCE_SPEC_ENABLE || true),
+      excludes: arr(process.env.RESOURCE_SPEC_EXCLUDES || 'key,dialog,landing,interest'),
+
+      json: json(process.env.RESOURCE_SPEC_JSON || `{
+  "info": {
+    "title": "HyperAgency API Reference",
+    "description": "HyperAgency API provides a RESTful interface for managing and automating resources in the HyperAgency platform, including agents, execution maps, and other operational components. This API allows developers, integrators, and DevOps engineers to programmatically create, retrieve, update, and delete resources over HTTPS using standard tools such as curl or through client libraries in languages like Node.js, Python, and others. The API follows common REST conventions and supports JSON-encoded request and response bodies. All endpoints are versioned under v1 prefix and secured via HTTPS. Resources are organized by type (e.g., agent, map), and standard HTTP methods (GET, POST, PUT, DELETE) are used to perform operations.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "url": "https://h9y.ai/",
+      "email": "admin@h9y.ai"
+    }
+  },
+  "host": "api.h9y.ai",
+  "basePath": "",
+  "schemes": ["https"],
+  "servers": [ {
+    "url": "https://api.h9y.ai",
+    "description": "HyperAgency Cloud"
+  }, {
+    "url": "https://api.h9y.localhost",
+    "description": "Self-hosted Deployment"
+  } ]
+}`),
+    }
+  },
+
+  agency: {
+    enable: bool(process.env.AGENCY_ENABLE || true),
+    url: process.env.AGENCY_URL || 'http://127.0.0.1:6600/v1',
+  },
+
+  // TODO: deprecate
+  snake: {
+    enbale: bool(process.env.SNAKE_ENABLE || false),
+    url: process.env.SNAKE_URL || 'http://127.0.0.1:6699/v1',
+  },
+
+  vault: {
+    enable: bool(process.env.VAULT_ENABLE || true),
+    addr: process.env.VAULT_ADDR || 'http://127.0.0.1:8200',
+    token: process.env.VAULT_TOKEN || '(TBS)',
+    unseal: bool(process.env.VAULT_UNSEAL || true),
+    unsealKeys: arr(process.env.VAULT_UNSEAL_KEYS || '(TBS),(TBS),(TBS),(TBS),(TBS)'),
+  },
+
+  smtp: {
+    // TODO: USE GCP MAILING
+    host: process.env.SMPT_HOST || 'smtp.mail.us-west-2.awsapps.com',
+    port: num(process.env.SMPT_PORT || 465),
+    secure: bool(process.env.SMPT_SECURE || true),
+    user: process.env.SMTP_USER || 'admin@vuics.awsapps.com',
+    pass: process.env.SMTP_PASS || '<SMTP_PASSWORD_PLACEHOLDER>',
+    from: process.env.SMTP_FROM || '"Self-developing" <admin@vuics.com>',
+  },
+
+  reset: {
+    expiresMinutes: num(process.env.RESET_EXPIRES_MINUTES || 20),
+  },
+
+  webApp: {
+    origin: process.env.WEB_APP_ORIGIN || 'http://localhost:3990'
+  },
+
+  stripe: {
+    enable: bool(process.env.STRIPE_ENABLE || 'false'),
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '(TBS)',
+    secretKey: process.env.STRIPE_SECRET_KEY || '(TBS)',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '(TBS)',
+  },
+
+  yookassa: {
+    enable: bool(process.env.YOOKASSA_ENABLE || 'false'),
+    shopId: process.env.YOOKASSA_SHOP_ID || '(TBS)',
+    apiKey: process.env.YOOKASSA_API_KEY || '(TBS)',
+
+    // false -> type: "embedded"
+    // true -> type: "redirect"
+    confirmationRedirect: bool(process.env.YOOKASSA_CONFIRMATION_REDIRECT || false),
+    // confirmationRedirect: bool(process.env.YOOKASSA_CONFIRMATION_REDIRECT || true),
+
+    pendingExpiration: {
+      interval: process.env.YOOKASSA_PENDING_EXPIRATION_INTERVAL || 'day',
+      number: num(process.env.YOOKASSA_PENDING_EXPIRATION_NUMBER || 3),
+    },
+  },
+
+  limits: {
+    enable: bool(process.env.LIMITS_ENABLE || false),
+  },
+
+  plans: {
+    free: {
+      limits: {
+        apiAccess: false,
+        maps: 3,
+        deployedAgents: 1,
+        archetypes: ['chat-v1.0', 'transform-v1.0'],
+        agentExpires: ['1m', '1h'],
+        chatProviders: ['openai', 'ollama'],
+        ragProviders: [ ],
+        ragEmbeddingsProviders: [ ],
+        sttProviders: [],
+        ttsProviders: [],
+        imagegenProviders: [ 'openai' ],
+        avatarProviders: [],
+        deployedBridges: 0,
+        connectors: [],
+        bridgeExpires: [],
+        fileAttachments: false,
+        audioRecordings: false,
+        synthetic: false,
+
+        // TODO:
+        // files: 0,
+        // filesSize: '0',
+        // storages: 0,
+        // logs: false,
+        // metrics: false,
+      },
+    },
+    basic1: {
+      product: {
+        name: 'basic1-product',
+      },
+      pricesRu: { // Yookassa
+        value: '1.23',
+        currency: 'RUB',
+        interval: 'month',
+        number: 1,
+      },
+      prices: [{ // Stripe
+        lookup_key: 'basic1-fixed-price',  // NOTE: lookup_key should be unique
+        unit_amount: 3999,
+        currency: 'usd',
+        recurring: { interval: 'month', },
+      }, {
+        lookup_key: 'basic1-metered1-price',
+        unit_amount_decimal: '0.0042',
+        currency: 'usd',
+        recurring: {
+          interval: 'month',
+          usage_type: 'metered',
+          meter: {   // NOTE: the subobject will be replaced with meter: meter.id,
+            display_name: 'meter1',
+            event_name: 'meter1',   // NOTE: another meter name maybe reused
+            default_aggregation: { formula: 'sum', },
+          },
+        },
+      }],
+      // subscription: {
+      //   trial_period_days: 3,
+      // },
+      limits: {
+        apiAccess: false,
+        maps: 30,
+        deployedAgents: 3,
+        archetypes: [
+          'chat-v1.0', 'transform-v1.0', 'rag-v1.0', 'storage-v1.0',
+          'imagegen-v1.0',
+        ],
+        agentExpires: ['1m', '1h', '12h', '1d', '1w'],
+        chatProviders: [ 'openai', 'google_genai', 'ollama' ],
+        ragProviders: [ 'openai', 'google_genai', 'ollama' ],
+        ragEmbeddingsProviders: [ 'openai', 'google_genai', 'ollama' ],
+        sttProviders: [],
+        ttsProviders: [],
+        imagegenProviders: [ 'openai' ],
+        avatarProviders: [],
+        deployedBridges: 1,
+        connectors: ['scheduler'],
+        bridgeExpires: ['1h', '12h', '1d', '1w'],
+        fileAttachments: true,
+        audioRecordings: false,
+        synthetic: false,
+
+        // TODO:
+        // files: 0,
+        // filesSize: '100Mi',
+        // storages: 0,
+        // logs: true,
+        // metrics: true,
+      },
+    },
+    premium1: {
+      product: {  // Yookassa & Stripe
+        name: 'premium1-product',
+      },
+      pricesRu: {  // Yookassa
+        value: '2.34',
+        currency: 'RUB',
+        interval: 'month',
+        number: 1,
+      },
+      prices: [{ // Stripe
+        lookup_key: 'premium1-fixed-price',  // NOTE: lookup_key should be unique
+        unit_amount: 9699,
+        currency: 'usd',
+        recurring: { interval: 'month', },
+      }, {
+        lookup_key: 'premium1-metered1-price',
+        unit_amount_decimal: '0.0039',
+        currency: 'usd',
+        recurring: {
+          interval: 'month',
+          usage_type: 'metered',
+          meter: {   // NOTE: the subobject will be replaced with meter: meter.id,
+            display_name: 'meter1',
+            event_name: 'meter1',   // NOTE: another meter name maybe reused
+            default_aggregation: { formula: 'sum', },
+          },
+        },
+      }],
+      // subscription: {
+      //   trial_period_days: 3,
+      // },
+      limits: {
+        apiAccess: true,
+        maps: 100,
+        deployedAgents: 10,
+        archetypes: [
+          'chat-v1.0', 'transform-v1.0', 'rag-v1.0', 'storage-v1.0',
+          'imagegen-v1.0', 'stt-v1.0', 'tts-v1.0', 'maptrix-v1.0',
+          'mcp-v1.0', 'a2a-v1.0', 'curl-v1.0', 'browseruse-v1.0',
+        ],
+        agentExpires: ['1m', '1h', '12h', '1d', '1w', '1mo'],  // '1m', '1h', '12h', '1d', '1w', '1mo', ''
+        chatProviders: [ 'openai', 'google_genai', 'anthropic', , 'ollama' ],
+        ragProviders: [ 'openai', 'google_genai', 'anthropic', 'ollama' ],
+        ragEmbeddingsProviders: [ 'openai', 'google_genai', 'anthropic', 'ollama' ],
+        sttProviders: [ 'speaches' ],
+        ttsProviders: [ 'speaches' ],
+        imagegenProviders: [ 'openai' ],
+        avatarProviders: [ ],
+        deployedBridges: 3,
+        connectors: ['messengers', 'scheduler', 'webhook', 'email', 'mcp', 'a2a'],
+        bridgeExpires: ['1m', '1h', '12h', '1d', '1w', '1mo'],
+        fileAttachments: true,
+        audioRecordings: true,
+        synthetic: false,
+
+        // TODO:
+        // files: 50,
+        // filesSize: '300Mi',
+        // storages: 0,
+        // logs: true,
+        // metrics: true,
+      },
+    },
+    enterprise: {
+      limits: {
+        apiAccess: true,
+        maps: null,
+        deployedAgents: null,
+        archetypes: null,
+        agentExpires: null,
+        chatProviders: null,
+        ragProviders: null,
+        ragEmbeddingsProviders: null,
+        sttProviders: null,
+        ttsProviders: null,
+        imagegenProviders: null,
+        avatarProviders: null,
+        deployedBridges: null,
+        connectors: null,
+        bridgeExpires: null,
+        fileAttachments: true,
+        audioRecordings: true,
+        synthetic: true,
+
+        // TODO:
+        // files: null,
+        // filesSize: null,
+        // storages: null,
+        // logs: true,
+        // metrics: true,
+      },
+    },
+
+    // NOTE: this is for the test of creating product/price/meters
+    //
+    /* /
+    test8: {
+      product: {
+        name: 'Test8',
+      },
+      prices: [{
+        lookup_key: 'test8',
+        unit_amount: 12.34,
+        currency: 'usd',
+        recurring: { interval: 'month', },
+      }, {
+        lookup_key: 'test8-payasyougo',
+        unit_amount_decimal: '0.02',
+        currency: 'usd',
+        recurring: {
+          interval: 'month',
+          usage_type: 'metered',
+          meter: {   // NOTE: the subobject will be replaced with meter: meter.id,
+            display_name: 'Test8-Meter1',
+            event_name: 'test8-meter1',
+            default_aggregation: { formula: 'sum', },
+          },
+        },
+      }],
+      // subscription: {
+      //   trial_period_days: 7,
+      // },
+      limits: {
+        apiAccess: true,
+        maps: 300,
+        deployedAgents: 133,
+        archetypes: [ 'chat-v1.0', 'rag-v1.0' ],
+        chatProviders: [ 'openai', 'google_genai' ],
+        ragProviders: [ 'openai', 'google_genai' ],
+        ragEmbeddingsProviders: [ 'openai', 'google_genai' ],
+        sttProviders: [],
+        ttsProviders: [],
+        imagegenProviders: [],
+        avatarProviders: [],
+        audioRecordings: true,
+        fileAttachments: true,
+        synthetic: true,
+      },
+    },
+    /**/
+  },
+
+  xmpp: {
+    host: process.env.XMPP_HOST || 'localhost',
+    connectHost: process.env.XMPP_CONNECT_HOST || 'localhost',
+
+    websocketUrl: process.env.XMPP_WEBSOCKET_URL || 'wss://localhost:5281/xmpp-websocket',
+    mucHost: process.env.XMPP_MUC_HOST || 'g.localhost',
+    shareHost: process.env.XMPP_SHARE_HOST || 'f.localhost',
+    shareUrlPrefix: process.env.XMPP_SHARE_URL_PREFIX || 'http://localhost:6369/v1/files/',
+    commanderUrl: process.env.XMPP_COMMANDER_URL || 'http://localhost:8387',
+
+    password: process.env.XMPP_PASSWORD || "a-geNt-$sec-ret-10m_pp",
+    reconnectMaxDelay: num(process.env.XMPP_RECONNECT_MAX_DELAY || 300),
+  },
+
+  firefly: {
+    enable: bool(process.env.FIREFLY_ENABLE || true),
+    proto: process.env.FIREFLY_PROTO || 'https',
+    host: process.env.FIREFLY_HOST || 'firefly1.h9y.ai',
+    namespace: process.env.FIREFLY_NAMESPACE || 'default',
+    username: process.env.FIREFLY_USERNAME || '(set-username)',
+    password: process.env.FIREFLY_PASSWORD || '(set-password)',
+    commanderUrl: process.env.FIREFLY_COMMANDER_URL || 'http://aaa-wn.local:8387',
+
+    pools: json(process.env.FIREFLY_POOLS || `[ {
+        "name": "hyperagency-currency",
+        "symbol": "HYAG",
+        "type": "fungible",
+        "config": {
+          "blockNumber": "0"
+        }
+      }, {
+        "name": "hyperagency-nft",
+        "symbol": "HYAGN",
+        "type": "nonfungible",
+        "config": {
+          "blockNumber": "0"
+        }
+      }, {
+        "name": "hyperagency-purchase",
+        "symbol": "HYAGP",
+        "type": "nonfungible",
+        "config": {
+          "blockNumber": "0"
+        }
+      }, {
+        "name": "hyperagency-governance",
+        "symbol": "HYAGV",
+        "type": "fungible",
+        "config": {
+          "blockNumber": "0"
+        }
+      }, {
+        "name": "hyperagency-award",
+        "symbol": "HYAGW",
+        "type": "fungible",
+        "config": {
+          "blockNumber": "0"
+        }
+      } ]`),
+
+    // The orgAddress is the wallet address of the firefly organization that issued the token pools.
+    // Only this organization is allowed to mint the tokens.
+    orgAddress: process.env.FIREFLY_ORG_ADDRESS || '0x82e4cbb4dc0c2bdccaac3d38e573c6cf41a49a0a',
+    purchaseSymbol: 'HYAGP',
+    purchaseProto: 'web+hyag',
+  },
+
+  // only for selfdev-apiworkers
+  scheduler: {
+    enable: (process.env.SCHEDULER_ENABLE || false),
+    autopayment: {
+      enable: (process.env.SCHEDULER_AUTOPAYMENT_ENABLE || true),
+      cron: process.env.SCHEDULER_AUTOPAYMENT_CRON || "0 * * * *", // "*/1 * * * *",
+    }
+  },
+
+  swarm: {
+    filterArchetypes: arr(process.env.SWARM_FILTER_ARCHETYPES || ''), // 'maptrix-v1.0,transform-v1.0'
+
+    monitorSeconds: num(process.env.SWARM_MONITOR_SECONDS || 60),
+    lockTimeoutSeconds: num(process.env.SWARM_LOCK_TIMEOUT_SECONDS || 120),
+    lockRefreshSeconds: num(process.env.SWARM_LOCK_REFRESH_SECONDS || 30),
+
+    maxAgentsRun: num(process.env.MAX_AGENTS_RUN || 0),
+  },
+
+  bridge: {
+    filterConnectors: arr(process.env.BRIDGE_FILTER_ARCHETYPES || ''), // 'messengers'
+
+    monitorSeconds: num(process.env.BRIDGE_MONITOR_SECONDS || 60),
+    lockTimeoutSeconds: num(process.env.BRIDGE_LOCK_TIMEOUT_SECONDS || 120),
+    lockRefreshSeconds: num(process.env.BRIDGE_LOCK_REFRESH_SECONDS || 30),
+  },
+
+  apps: {
+    registryUrl: process.env.APPS_REGISTRY_URL || 'https://hyag.org',
+  },
+
+  freeswitch: {
+    // NOTE: host can only be ip addess x.y.z.v
+    host: process.env.FREESWITCH_HOST || '192.168.50.100', // '127.0.0.1'
+    port: num(process.env.FREESWITCH_PORT || 8022),  // 8021
+    password: process.env.FREESWITCH_PASSWORD || 'ClueCon',
+
+    path: process.env.FREESWITCH_PATH || '/opt/homebrew/bin/',
+    configDir: process.env.FREESWITCH_ETC_DIR || '/opt/homebrew/Cellar/freeswitch/1.10.12/etc/freeswitch',
+    sshHost: process.env.FREESWITCH_SSH_HOST || '192.168.50.100',
+    sshUsername: process.env.FREESWITCH_SSH_USERNAME || '(TBS)',
+    sshPassword: process.env.FREESWITCH_SSH_PASSWORD || '(TBS)',
+
+    ensureRunning: bool(process.env.FREESWITCH_ENSURE_RUNNING || true),
+    reloadxml: bool(process.env.FREESWITCH_RELOAD_XML || false),
+    restartSofia: bool(process.env.FREESWITCH_RELOAD_XML || false),
+    shutdown: bool(process.env.FREESWITCH_SHUTDOWN || true),
+  },
+
+  speech: {
+    url: process.env.SPEACHES_BASE_URL || 'http://selfdev-speech.dev.local:8372/v1',
+    sttModel: process.env.TRANSCRIPTION_MODEL_ID || 'Systran/faster-distil-whisper-small.en',
+    ttsModel: process.env.SPEECH_MODEL_ID || 'speaches-ai/Kokoro-82M-v1.0-ONNX',
+    ttsVoice: process.env.VOICE_ID || 'af_heart',
+  },
+
+  phone: {
+    recordingsDir: process.env.RECORDINGS_DIR || '/tmp/recordings',
+    recordingsExternalDir: process.env.RECORDINGS_EXTERNAL_DIR || '/Users/artemarakcheev/workspace/vuics/self-developing/tmp/recordings',
+    recordMaxSec: num(process.env.RECORD_MAX_SEC || 3600),
+
+    // Useful to debug
+    saveTranscript: bool(process.env.SAVE_TRANSCRIPT || false),
+    saveAudio: bool(process.env.SAVE_RECORDING || false),
+    saveTts: bool(process.env.SAVE_TTS_FILE || false),
+  },
+
+  webServer: {
+    port: num(process.env.WEB_SERVER_PORT || 6370),
+    origin: process.env.WEB_SERVER_ORIGIN || 'http://127.0.0.1:6370',
+
+    secure: bool(process.env.WEB_SERVER_SECURE || false),
+    keyFile: process.env.WEB_SERVER_KEY_FILE || '/opt/ssl/tls.key',
+    certFile: process.env.WEB_SERVER_CERT_FILE || '/opt/ssl/tls.crt',
+  },
+
+  webapp: {
+    portStart: num(process.env.WEBAPP_PORT_START || 3001),
+  },
+
+  opensearch: {
+    secure: bool(process.env.OPENSEARCH_SECURE || true),
+    username: process.env.OPENSEARCH_USERNAME || 'admin',
+    password: process.env.OPENSEARCH_PASSWORD || 'freeS0cketKeep-1iveTimeout',
+    host: process.env.OPENSEARCH_HOST || 'opensearch-node1',
+    port: process.env.OPENSEARCH_PORT || '9200',
+  },
+
+  prometheus: {
+    url: process.env.PROMETHEUS_URL || 'http://prometheus:9090',
+    pushgatewayUrl: process.env.PROMETHEUS_PUSHGATEWAY_URL || 'http://pushgateway:9091',
+    pushIntervalSec: num(process.env.PROMETHEUS_PUSH_INTERVAL_SEC || 30),
+  },
+
+  ollama: {
+    baseUrl: process.env.OLLAMA_BASE_URL || 'http://ollama:11436',
+  },
+
+  files: {
+    port: num(process.env.FILES_PORT || 6371),
+    secure: bool(process.env.FILES_SECURE || true),
+    uploadSecret: process.env.FILES_UPLOAD_SECRET || 'U2VjcmV0VG9rZW4wMzYz',
+    storageDir: process.env.FILES_STORAGE_DIR || '/opt/data',
+  },
+
+  compose: {
+    profiles: arr(process.env.COMPOSE_PROFILES || 'all'),
+  },
+}
+
+export default conf
+
+export const revealConf = () => {
+  const publicConf = cloneDeep(conf)
+
+  delete publicConf.session.secret
+  delete publicConf.db.sslPass
+  delete publicConf.jwt.secret
+  delete publicConf.db.url
+  delete publicConf.smtp.pass
+
+  delete publicConf.stripe.publishableKey
+  delete publicConf.stripe.secretKey
+  delete publicConf.stripe.webhookSecret
+  delete publicConf.yookassa.apiKey
+
+  delete publicConf.vault.token
+  delete publicConf.vault.unsealKeys
+
+  delete publicConf.xmpp.password
+
+  delete publicConf.firefly.password
+
+  delete publicConf.freeswitch.password
+  delete publicConf.freeswitch.sshUsername
+  delete publicConf.freeswitch.sshPassword
+
+  delete publicConf.opensearch.password
+
+  return publicConf
+}

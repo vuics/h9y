@@ -1,0 +1,10 @@
+.env
+.env.aaa
+.env.gke
+
+node_modules
+dist
+npm-debug.log
+yarn-debug.log
+.DS_Store
+.aider*

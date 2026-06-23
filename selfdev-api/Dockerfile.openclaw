@@ -1,0 +1,8 @@
+FROM alpine/openclaw:2026.5.27
+
+WORKDIR /opt/app/
+COPY --chown=node:node package*.json ./
+RUN npm install
+COPY --chown=node:node . .
+
+CMD ["npm", "run", "swarm:openclaw"]
