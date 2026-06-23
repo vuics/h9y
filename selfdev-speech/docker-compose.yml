@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+
+  # speaches:
+  #   profiles: [disabled, speaches]
+  #   hostname: speaches.${DOMAIN}
+  #   # container_name: speaches
+  #   image: ghcr.io/speaches-ai/speaches:0.8.0-cpu
+  #   # image: selfdev-speech
+  #   build:
+  #     context: ./selfdev-speech/
+  #     # dockerfile: Dockerfile
+  #   #   args:
+  #   #     BASE_IMAGE: ubuntu:24.04
+  #   #   platforms:
+  #   #     - linux/amd64
+  #   #     - linux/arm64
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8000:8000
+  #   healthcheck:
+  #     test: ["CMD", "curl", "--fail", "http://0.0.0.0:8000/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 5s
+  #   volumes:
+  #     - speaches-volume:/home/ubuntu/.cache/huggingface/hub
+
+  selfdev-speech:
+    hostname: selfdev-speech.${DOMAIN}
+    image: selfdev-speech:v0.0.1
+    build:
+      context: ./
+    restart: unless-stopped
+    ports:
+      - 8372:8372
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://0.0.0.0:8372/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - speech-volume:/home/ubuntu/.cache/huggingface/hub
+
+volumes:
+  speaches-volume:
+  speech-volume:
