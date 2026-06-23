@@ -202,7 +202,50 @@ If you don’t want to manage infrastructure yourself, you can request access to
 
 ---
 
-### Option A: Simple Install
+### Option A: Quick Start (Standalone)
+
+Quick start:
+```bash
+docker run -d \
+  -p 6369:6369 \
+  -p 6370:6370 \
+  -p 3990:3990 \
+  -p 5281:5281 \
+  -p 8200:8200 \
+  -e VAULT_TOKEN=token \
+  -e VAULT_UNSEAL_KEYS=key \
+  -v h9y-api-volume:/opt/data \
+  -v h9y-mongo-volume:/data/db \
+  -v h9y-prosody-volume:/var/lib/prosody \
+  -v h9y-vault-volume:/vault/file \
+  ghcr.io/vuics/h9y:v1.39.0
+
+# Or
+#   ghcr.io/vuics/h9y:latest
+```
+
+Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using untrusted certificate.
+
+Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below. Substitute the Vault token and key values in the command above and restart the command.
+```bash
+  -e VAULT_TOKEN=token \
+  -e VAULT_UNSEAL_KEYS=key \
+```
+
+### Option B: Install Standalone from Repo
+
+```bash
+git clone git@github.com:vuics/h9y.git
+cd h9y
+docker-compose -f h9y.yml build
+docker-compose -f h9y.yml up
+```
+
+Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using untrusted certificate.
+
+Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
+
+### Option B: Simple Cluster Install
 
 ```bash
 mkdir hyperagency
@@ -231,7 +274,7 @@ Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for 
 
 ---
 
-### Option B: Install from Repo
+### Option C: Install Cluster from Repo
 
 
 #### 📦 1. Clone the Repository with Submodules
@@ -239,7 +282,6 @@ Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for 
 ```bash
 git clone git@github.com:vuics/h9y.git
 cd h9y
-git submodule update --init --recursive
 ```
 
 #### ⚙️ 2. Configure .Env Files
@@ -289,14 +331,14 @@ NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
 ### 🔑 Initialize Vault
 
 1. Open [Vault](https://vault.h9y.localhost) (replace `h9y.localhost` with your `${DOMAIN}`), and input:
-  • Key shares: `5`
-  • Key threshold: `3`
+  • Key shares: `1`
+  • Key threshold: `1`
 2. Set the env vars with displayed initial root token and the keys in the `.env` file in the format:
   ```bash
   VAULT_TOKEN=(Initial root token)
-  VAULT_UNSEAL_KEYS=(Key 1),(Key 2),(Key 3),(Key 4),(Key 5)
+  VAULT_UNSEAL_KEYS=(Key 1)
   ```
-3. Unseal the vault by inputing 3 of the keys, and sing into vault with the initial root token.
+3. Unseal the vault by inputing the key, and sing into vault with the initial root token.
 4. Enable new engine with type KV (kv-v2) and path `secret`.
 5. Restart Docker Compose.
   ```bash
@@ -313,7 +355,7 @@ docker-compose down
 
 ---
 
-### 👥 Compose Profiles
+### 👥 Compose Profiles (for Cluster Only)
 
 HyperAgency ships with **predefined Docker Compose profiles** that let you start small, scale fast, and run *exactly* what you need—no more, no less. Profiles align the platform with your **intent**, from first exploration to a full, production-grade agentic stack.
 
@@ -347,47 +389,21 @@ Then start HyperAgency using Docker Compose as usual. Docker will run **only** t
 
 ---
 
-## 📜 Licensing Overview
-
-HyperAgency follows a **clear separation between software licensing and brand ownership**.
-This ensures **maximum openness for developers** while **protecting the HyperAgency identity and trust**.
-
-### 🧠 Software (Source Code) Licensing
+## 🧠 Software (Source Code) Licensing
 
 The **HyperAgency source code** is available under a [**multi-license model**](./LICENSE), allowing you to choose the license that best fits your use case.
 
-| Use Case                                    | License            |
-| ------------------------------------------- | ------------------ |
-| Personal, educational, non-commercial use   | Apache-2.0-NC      |
-| Commercial projects that remain open-source | AGPL-3.0           |
-| Commercial closed-source or proprietary use | Commercial License |
-
-#### Choose the license that matches your use:
-
-* [**Apache-2.0-NC**](./LICENSE-Apache-2.0-NC) – Free for personal, educational, and non-commercial usage
-* [**AGPL-3.0**](./LICENSE-AGPL-3.0) – Free for commercial use **if modifications remain open-source**
-* [**Commercial License**](./LICENSE-COMMERCIAL) – Required for proprietary, closed-source, or SaaS offerings
+| Use Case                                                                  | License                                    |
+| ------------------------------------------------------------------------- | ------------------------------------------ |
+| Free for personal, educational, non-commercial use                        | [Apache-2.0-NC](./LICENSE-Apache-2.0-NC)   |
+| Free for commercial projects that remain open-source                      | [AGPL-3.0](./LICENSE-AGPL-3.0)             |
+| Required for commercial closed-source, proprietary use, or SaaS offerings | [Commercial License](./LICENSE-COMMERCIAL) |
 
 Answers on the most frequent licensing questions are listed in [Licensing FAQ](./Licensing-FAQ.md).
 
 For commercial licensing inquiries, contact **[artem@h9y.ai](mailto:artem@h9y.ai)**.
 
-### 🛡️ Brand, Name & Logo (Trademark Protection)
-
-The **HyperAgency name, logo, and visual identity are NOT covered by the open-source licenses above**.
-
-They are protected under **trademark law** and governed by the  
-➡️  [**HyperAgency Trademark Policy**](./TRADEMARK.md).
-
-This means:
-
-* ✅ You may **use, install, modify, and distribute the code** according to its license
-* ❌ You may **NOT use the HyperAgency name or logo** in ways that imply official endorsement, ownership, or affiliation unless explicitly permitted
-
-This separation protects users from confusion while keeping the software ecosystem open and extensible.
-
-> **In short:**
-> **Open code encourages innovation. Protected branding ensures trust.**
+⚠️  HyperAgency name and logo are trademarked. See [TRADEMARK.md](./TRADEMARK.md).
 
 ---
 

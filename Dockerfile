@@ -221,6 +221,7 @@ RUN chmod +x /etc/services.d/prosody/run
 # Vault (binary install)
 # ------------------------------------------------------------
 
+# NOTE: Vault needs connecting to VPN to download
 RUN set -eux; \
     case "$TARGETARCH" in \
         amd64) VAULT_ARCH="amd64" ;; \
