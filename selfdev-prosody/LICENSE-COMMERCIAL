@@ -1,0 +1,272 @@
+HyperAgency Agentic AI OS
+Commercial License Agreement
+Version 1.1
+
+This Commercial License Agreement (“Agreement”) is entered into between Vuics LLC
+(“Licensor”) and the Licensee identified below. By signing this Agreement or by
+using the Licensed Work under a commercial entitlement, Licensee agrees to be
+bound by the terms below.
+
+Effective Date: _______________________
+Licensor: Vuics LLC, [Address]
+Licensee: _____________________________
+
+--------------------------------------------------------------------------------
+1. DEFINITIONS
+--------------------------------------------------------------------------------
+
+1.1 “Work” refers to the HyperAgency Agentic AI Operating System and all related
+software, components, tools, modules, and documentation provided under this
+Agreement.
+
+1.2 “Deployment” means an instance of the Work operating on a server, virtual
+machine, container, cluster, node, or cloud environment.
+
+1.3 “Premium Modules” means add-on proprietary features, connectors, analytics,
+or orchestration components made available only to Commercial License holders.
+
+1.4 “Subscription” means a time-limited commercial licensing term entitling
+Licensee to support, updates, and other features as defined herein.
+
+1.5 “Authorized Users” means Licensee’s employees, contractors, or agents
+accessing the Work on behalf of Licensee.
+
+--------------------------------------------------------------------------------
+2. GRANT OF LICENSE
+--------------------------------------------------------------------------------
+
+2.1 **Commercial License Grant**  
+Licensor grants Licensee a **non-exclusive, non-transferable, revocable, limited
+license** to use, modify, integrate, and deploy the Work **for commercial
+purposes**, including SaaS offerings, internal enterprise operations, and resale
+of Licensee’s own products incorporating the Work.
+
+2.2 **License Models**  
+The Agreement may be executed under one or more models:
+
+(a) **Per-Organization License**  
+   Licensee may deploy unlimited instances of the Work within a single legal
+   entity, including subsidiaries expressly listed in the Purchase Order.
+
+(b) **Per-Deployment License**  
+   Licensee must obtain a license for each production Deployment.
+
+(c) **Subscription License**  
+   Time-limited commercial license including updates, support, and (optionally)
+   Premium Modules.
+
+2.3 **License Restrictions**  
+Licensee may not:
+
+- sublicense or redistribute the Work except as permitted in Section 2.1;  
+- remove or tamper with copyright or attribution notices;  
+- use the Work to create a competing AI automation platform;  
+- use the Work, directly or indirectly, to build, operate, or
+offer a competing agent marketplace, agent orchestration platform, or any
+substantially similar service that competes with the HyperAgency Marketplace.
+- offer the Work as a hosted service, unless expressly permitted
+in writing by Vuics LLC.
+- engage in any use prohibited by export or sanctions laws.
+
+--------------------------------------------------------------------------------
+3. PREMIUM MODULES AND CLOUD INTEGRATION
+--------------------------------------------------------------------------------
+
+3.1 Premium Modules may be provided as part of a Subscription or as separate
+add-ons.
+
+3.2 Premium Modules are licensed under the same terms as the Work unless
+explicitly stated otherwise.
+
+3.3 Cloud integration services, orchestration features, analytics dashboards,
+and proprietary connectors may require additional fees or activation keys.
+
+--------------------------------------------------------------------------------
+4. FEES AND PAYMENT TERMS
+--------------------------------------------------------------------------------
+
+4.1 License fees are specified in the executed Purchase Order or Subscription
+agreement. The following models may apply:
+
+- Per-Organization: $________ per year  
+- Per-Deployment: $________ per instance per year  
+- Subscription: $________ per month/year based on tier or number of agents  
+
+4.2 All fees are due within **30 days of invoice** unless otherwise agreed.
+
+4.3 Late payments incur **1.5% monthly interest** or the maximum permitted by law.
+
+4.4 Fees are non-refundable except where required by law.
+
+--------------------------------------------------------------------------------
+5. SUPPORT, MAINTENANCE, AND SLA
+--------------------------------------------------------------------------------
+
+5.1 **Support**  
+Licensor will provide support per the tier purchased, which may include:
+
+- Email, chat, or ticket-based support  
+- Priority code fixes  
+- Integration assistance  
+
+5.2 **Updates and Maintenance**  
+Licensee is entitled to receive:
+
+- Security patches  
+- Bug fixes  
+- Version upgrades  
+- Performance improvements  
+
+5.3 **Optional SLA (if included)**  
+- Critical issue response time: **4 hours**  
+- Critical resolution target: **48 hours**  
+- Availability of support: **24/7 enterprise tier**
+
+--------------------------------------------------------------------------------
+6. INTELLECTUAL PROPERTY RIGHTS
+--------------------------------------------------------------------------------
+
+6.1 Ownership  
+All intellectual property rights in the Work remain exclusively with Licensor.
+No ownership rights transfer to Licensee.
+
+6.2 Patent Grant  
+Licensor grants Licensee a **limited, non-exclusive, royalty-free patent license**
+to practice any Vuics-contributed patents necessary to use the Work.
+
+6.3 Feedback  
+Any feedback or improvements proposed by Licensee may be used by Licensor
+without restriction.
+
+6.4 Trademarks  
+Nothing in this Agreement grants Licensee any rights to use the trademarks,
+logos, service marks, brand names, marketplace names, or other branding
+belonging to Vuics LLC. Licensee may not use the “HyperAgency” name or any
+related marks for marketing, promotion, or product naming without prior written
+permission from Vuics LLC.
+
+6.5 Derivative Contributions
+
+(a) Modifications to the Work (Mandatory Contribution)
+
+Any extensions, enhancements, integrations, or plugins developed by Licensee that
+modify, extend, or directly interact with the **HyperAgency source code or core OS**
+must be offered to Vuics LLC for consideration for upstream inclusion.  
+Vuics LLC may accept, reject, or modify such contributions at its discretion.  
+
+Licensee grants Vuics LLC a perpetual, irrevocable, worldwide, non-exclusive
+license to use, modify, and incorporate any such contributions into the Work.
+Nothing in this clause obligates Licensee to assign ownership; Licensee retains
+ownership of the submitted code.
+
+Examples include, but are not limited to:
+
+- New Bridges or Connectors (messaging, telephony, webhooks, cloud APIs)  
+- OS Core Extensions (agent orchestration modules, deployment configuration, microservices code)  
+- System-level Improvements (performance optimization, security hardening, scaling tools)  
+- API/SDK Extensions that enhance or extend the Work’s core functionality  
+- New agent archetypes or templates that modify the microservices framework of the Work
+
+(b) Content Created on the Platform (Voluntary Contribution)
+
+Licensee retains full ownership of any agents, HyperAgent Apps, workflows, or
+other applications created using the Work that **do not modify the core source code**.  
+Offering these creations to Vuics LLC for consideration for upstream inclusion is
+**encouraged, but not required**.
+
+For clarity:
+
+- Contributions used solely for internal purposes, or not deployed/distributed,
+  are exempt from the mandatory submission requirements.  
+- Vuics LLC may accept, reject, or modify any submitted contributions at its discretion.
+
+--------------------------------------------------------------------------------
+7. WARRANTIES AND DISCLAIMERS
+--------------------------------------------------------------------------------
+
+7.1 **Limited Warranty**  
+For 30 days from delivery, Licensor warrants that the Work will perform
+substantially as described in the documentation.
+
+7.2 **Disclaimer**  
+Except as expressly stated above, the Work is provided **“AS IS”** without
+warranty of any kind. Licensor disclaims all implied warranties, including but
+not limited to merchantability, fitness for a particular purpose, and
+non-infringement.
+
+--------------------------------------------------------------------------------
+8. LIMITATION OF LIABILITY
+--------------------------------------------------------------------------------
+
+8.1 Licensor shall not be liable for any:
+
+- indirect, incidental, punitive, or consequential damages;  
+- lost profits, revenue, or data;  
+- business interruption or failure.  
+
+8.2 Liability Cap  
+Licensor’s total and aggregate liability is limited to the fees paid by Licensee
+in the **12 months preceding the claim**.
+
+--------------------------------------------------------------------------------
+9. TERM AND TERMINATION
+--------------------------------------------------------------------------------
+
+9.1 This Agreement remains effective until terminated.
+
+9.2 Licensor may terminate immediately if Licensee:
+
+- fails to pay required fees,  
+- breaches any material term, or  
+- uses the Work outside the agreed scope.
+
+9.3 Upon termination:
+
+- Licensee must **cease all commercial use** of the Work,  
+- destroy all copies except for internal archival and audit purposes,  
+- disable deployed systems unless relicensed.  
+
+--------------------------------------------------------------------------------
+10. CONFIDENTIALITY
+--------------------------------------------------------------------------------
+
+Both parties agree to maintain as confidential all non-public, proprietary, or
+technical information exchanged under this Agreement.
+
+--------------------------------------------------------------------------------
+11. AUDIT RIGHTS
+--------------------------------------------------------------------------------
+
+Licensor may, with 15 days’ notice, audit Licensee’s usage (electronically or
+on-site) to verify compliance. Any underpayment discovered must be paid within
+30 days.
+
+--------------------------------------------------------------------------------
+12. GOVERNING LAW
+--------------------------------------------------------------------------------
+
+This Agreement is governed by the laws of the State of __________, excluding its
+conflict-of-laws rules.
+
+--------------------------------------------------------------------------------
+13. ENTIRE AGREEMENT
+--------------------------------------------------------------------------------
+
+This Agreement, together with the executed Purchase Order or Subscription, forms
+the **entire agreement** between the parties and supersedes all prior proposals.
+
+-----------------------------------------
+AUTHORIZED SIGNATURES
+-----------------------------------------
+
+LICENSOR: Vuics LLC  
+By: ____________________________________  
+Name: __________________________________  
+Title: __________________________________  
+Date: __________________________________  
+
+LICENSEE  
+By: ____________________________________  
+Name: __________________________________  
+Title: __________________________________  
+Date: __________________________________  
