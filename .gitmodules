@@ -1,6 +1,3 @@
-[submodule "selfdev-api"]
-	path = selfdev-api
-	url = git@github.com:vuics/selfdev-api.git
 [submodule "selfdev-prosody"]
 	path = selfdev-prosody
 	url = git@github.com:vuics/selfdev-prosody.git
