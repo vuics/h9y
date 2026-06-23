@@ -1,0 +1,33 @@
+version: '3.9'
+services:
+
+  h9y:
+    platform: ${PLATFORM}
+    image: ${REGISTRY}h9y:${VERSION}
+    build:
+      context: ./
+      args:
+        - COMPOSE_PROFILES=singleton
+    ports:
+      - 6369:6369    # api
+      - 6370:6370    # bridge
+      - 3990:3990    # app
+      - 5281:5281    # prosody wss, https
+      - 8200:8200    # vault
+    environment:
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
+    volumes:
+      - h9y-api-volume:/opt/data/
+      - h9y-mongo-volume:/data/db
+      - h9y-prosody-volume:/var/lib/prosody/
+      - h9y-vault-volume:/vault/file
+      - ./selfdev-api/src:/opt/api/src
+      - ./selfdev-app/src:/opt/app/src
+
+volumes:
+  h9y-api-volume:
+  h9y-mongo-volume:
+  h9y-prosody-volume:
+  h9y-vault-volume:
+

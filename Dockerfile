@@ -1,0 +1,319 @@
+# ============================================================
+# BUILD STAGE: API
+# ============================================================
+
+FROM node:26.3.0-bookworm-slim AS api-builder
+
+ARG COMPOSE_PROFILES=singleton
+ENV COMPOSE_PROFILES=$COMPOSE_PROFILES
+
+WORKDIR /build/api
+
+COPY selfdev-api/package*.json ./
+RUN npm ci
+
+COPY selfdev-api/ .
+RUN npm prune --omit=dev \
+ && npm cache clean --force
+
+
+# ============================================================
+# BUILD STAGE: APP
+# ============================================================
+
+FROM node:26.3.0-bookworm-slim AS app-builder
+
+ARG COMPOSE_PROFILES=singleton
+ENV VITE_COMPOSE_PROFILES=$COMPOSE_PROFILES
+
+WORKDIR /build/app
+
+COPY selfdev-app/package*.json ./
+RUN npm ci
+
+COPY selfdev-app/ .
+RUN npm run build
+
+# Keep only runtime deps if serve requires them
+RUN npm prune --omit=dev \
+ && npm cache clean --force
+
+
+# ============================================================
+# FINAL IMAGE
+# ============================================================
+
+FROM node:26.3.0-bookworm-slim
+
+LABEL maintainer="Artem Arakcheev <artarakcheev@gmail.com>"
+
+ARG TARGETARCH
+ENV S6_OVERLAY_VERSION=v3.2.0.0
+ENV S6_KEEP_ENV=1
+ENV __FLUSH_LOG=yes
+
+ARG COMPOSE_PROFILES=singleton
+ENV COMPOSE_PROFILES=$COMPOSE_PROFILES
+ENV VITE_COMPOSE_PROFILES=$COMPOSE_PROFILES
+
+# ------------------------------------------------------------
+# Base packages
+# ------------------------------------------------------------
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        curl \
+        wget \
+        tar \
+        jq \
+        xz-utils \
+        ca-certificates \
+        gnupg \
+        gpg \
+        lsb-release \
+        extrepo \
+        tini \
+        unzip \
+        lua5.4 \
+        lua-unbound \
+        lua-sec \
+        lua-readline \
+        lua-dbi-sqlite3 \
+        lua-dbi-postgresql \
+        lua-dbi-mysql \
+        luarocks \
+        liblua5.4-dev \
+        redis \
+        libcap2-bin \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apt/*
+
+# ------------------------------------------------------------
+# S6 Overlay
+# ------------------------------------------------------------
+
+RUN set -eux; \
+    case "$TARGETARCH" in \
+        amd64) S6_ARCH="x86_64" ;; \
+        arm64) S6_ARCH="aarch64" ;; \
+        *) echo "Unsupported arch: $TARGETARCH"; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/s6-overlay-noarch.tar.xz \
+      https://github.com/just-containers/s6-overlay/releases/download/${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz; \
+    curl -fsSL -o /tmp/s6-overlay-arch.tar.xz \
+      https://github.com/just-containers/s6-overlay/releases/download/${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz; \
+    tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz; \
+    tar -C / -Jxpf /tmp/s6-overlay-arch.tar.xz; \
+    rm -f /tmp/s6-overlay-*.tar.xz
+
+# ------------------------------------------------------------
+# MongoDB
+# ------------------------------------------------------------
+
+WORKDIR /tmp
+
+RUN set -eux; \
+    case "$TARGETARCH" in \
+        amd64) MONGO_ARCH="amd64" ;; \
+        arm64) MONGO_ARCH="arm64" ;; \
+        *) echo "Unsupported architecture"; exit 1 ;; \
+    esac; \
+    wget -q -O mongodb.deb \
+      https://repo.mongodb.org/apt/ubuntu/dists/jammy/mongodb-org/8.3/multiverse/binary-${MONGO_ARCH}/mongodb-org-server_8.3.4_${MONGO_ARCH}.deb; \
+    dpkg -i mongodb.deb || true; \
+    apt-get update; \
+    apt-get install -y -f; \
+    rm -f mongodb.deb; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /data/db
+
+RUN mkdir -p /etc/services.d/mongodb && \
+    cat <<'EOF' > /etc/services.d/mongodb/run
+#!/bin/sh
+exec mongod --bind_ip_all --dbpath /data/db --quiet  > /dev/null 2>&1
+EOF
+
+RUN chmod +x /etc/services.d/mongodb/run
+
+# ------------------------------------------------------------
+# Redis
+# ------------------------------------------------------------
+
+RUN mkdir -p /etc/services.d/redis && \
+    cat <<'EOF' > /etc/services.d/redis/run
+#!/bin/sh
+exec redis-server --bind 0.0.0.0 --protected-mode yes
+EOF
+
+RUN chmod +x /etc/services.d/redis/run
+
+# ------------------------------------------------------------
+# Prosody
+# ------------------------------------------------------------
+
+ARG PROSODY_PACKAGE=prosody-0.12
+
+RUN extrepo enable prosody && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ${PROSODY_PACKAGE} && \
+    update-alternatives --set lua-interpreter /usr/bin/lua5.4 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /etc/prosody/conf.d /var/run/prosody && \
+    chown prosody:prosody /etc/prosody/conf.d /var/run/prosody
+
+WORKDIR /opt/prosody
+
+COPY selfdev-prosody/entrypoint.sh .
+COPY selfdev-prosody/commander.sh .
+COPY selfdev-prosody/prosody.cfg.lua /etc/prosody/
+
+RUN chmod 755 /opt/prosody/entrypoint.sh
+
+RUN prosodyctl install \
+      --server=https://modules.prosody.im/rocks/ \
+      mod_conversejs
+
+RUN set -eux; \
+    case "$TARGETARCH" in \
+        amd64) ARCH="amd64" ;; \
+        arm64) ARCH="arm64" ;; \
+        *) exit 1 ;; \
+    esac; \
+    wget -q -O shell2http.tar.gz \
+      https://github.com/msoap/shell2http/releases/download/v1.17.0/shell2http_1.17.0_linux_${ARCH}.tar.gz; \
+    tar -xzf shell2http.tar.gz -C /usr/local/bin/; \
+    rm -f shell2http.tar.gz
+
+RUN mkdir -p /etc/services.d/prosody && \
+    cat <<'EOF' > /etc/services.d/prosody/run
+#!/bin/bash -e
+set -e
+
+/opt/prosody/commander.sh &
+
+data_dir_owner="$(stat -c %u "/var/lib/prosody/")"
+
+if [[ "$(id -u prosody)" != "$data_dir_owner" ]]; then
+    usermod -u "$data_dir_owner" prosody
+fi
+
+if [[ "$(stat -c %u /var/run/prosody/)" != "$data_dir_owner" ]]; then
+    chown "$data_dir_owner" /var/run/prosody/
+fi
+
+if [[ "$1" != "prosody" ]]; then
+    exec prosodyctl "$@"  > /dev/null 2>&1
+fi
+
+if [[ "$LOCAL" && "$PASSWORD" && "$DOMAIN" ]]; then
+    prosodyctl register "$LOCAL" "$DOMAIN" "$PASSWORD"
+fi
+
+exec runuser -u prosody -- "$@"  > /dev/null 2>&1
+EOF
+
+RUN chmod +x /etc/services.d/prosody/run
+
+# ------------------------------------------------------------
+# Vault (binary install)
+# ------------------------------------------------------------
+
+RUN set -eux; \
+    case "$TARGETARCH" in \
+        amd64) VAULT_ARCH="amd64" ;; \
+        arm64) VAULT_ARCH="arm64" ;; \
+        *) exit 1 ;; \
+    esac; \
+    wget -q -O vault.zip \
+      https://releases.hashicorp.com/vault/1.20.3/vault_1.20.3_linux_${VAULT_ARCH}.zip; \
+    unzip vault.zip; \
+    mv vault /usr/local/bin/vault; \
+    chmod +x /usr/local/bin/vault; \
+    rm -f vault.zip
+
+RUN mkdir -p \
+      /etc/services.d/vault \
+      /vault/data \
+      /etc/vault
+
+COPY config/vault/config.hcl /etc/vault/
+
+RUN cat <<'EOF' > /etc/services.d/vault/run
+#!/bin/sh
+set -e
+exec vault server -config=/etc/vault/config.hcl
+# exec vault server -dev -dev-root-token-id=${VAULT_TOKEN}
+EOF
+
+RUN chmod +x /etc/services.d/vault/run
+
+# ------------------------------------------------------------
+# API
+# ------------------------------------------------------------
+
+WORKDIR /opt/api
+
+COPY --from=api-builder /build/api ./
+
+RUN mkdir -p /etc/services.d/api && \
+    cat <<'EOF' > /etc/services.d/api/run
+#!/bin/sh
+cd /opt/api
+# exec npm start
+exec npm run prod
+EOF
+
+RUN chmod +x /etc/services.d/api/run
+
+# ------------------------------------------------------------
+# SWARM
+# ------------------------------------------------------------
+
+RUN mkdir -p /etc/services.d/swarm && \
+    cat <<'EOF' > /etc/services.d/swarm/run
+#!/bin/sh
+cd /opt/api
+exec npm run swarm:prod
+EOF
+
+RUN chmod +x /etc/services.d/swarm/run
+
+# ------------------------------------------------------------
+# BRIDGE
+# ------------------------------------------------------------
+
+RUN mkdir -p /etc/services.d/bridge && \
+    cat <<'EOF' > /etc/services.d/bridge/run
+#!/bin/sh
+cd /opt/api
+exec npm run bridge:prod
+EOF
+
+RUN chmod +x /etc/services.d/bridge/run
+
+# ------------------------------------------------------------
+# APP
+# ------------------------------------------------------------
+
+WORKDIR /opt/app
+
+COPY --from=app-builder /build/app ./
+
+RUN mkdir -p /etc/services.d/app && \
+    cat <<'EOF' > /etc/services.d/app/run
+#!/bin/sh
+export PORT=3990
+cd /opt/app
+exec npm run serve
+EOF
+
+RUN chmod +x /etc/services.d/app/run
+
+# ------------------------------------------------------------
+# Startup
+# ------------------------------------------------------------
+
+ENTRYPOINT ["/init"]
