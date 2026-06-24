@@ -40,7 +40,7 @@ export default function Vault () {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true,
       })
-      // console.log('vault index res:', res)
+      console.log('vault index res:', res)
       setVault(res?.data || {})
     } catch (err) {
       console.error('getVault error:', err);
@@ -291,14 +291,25 @@ export default function Vault () {
         )}
       </Segment>
 
-      <Message info>
-        <Message.Header>
-          {t('Your keys are safely protected and securely stored.')}
-        </Message.Header>
-        <p>
-          {t('We use advanced encryption methods...')}
-        </p>
-      </Message>
+      { conf.vault.secure && (
+        <Message positive>
+          <Message.Header>
+            {t('Secure Secret Storage')}
+          </Message.Header>
+          <p>
+            {t('Your keys are safely protected...')}
+          </p>
+        </Message>
+      ) || (
+        <Message negative>
+          <Message.Header>
+            {t('Insecure Secret Storage')}
+          </Message.Header>
+          <p>
+            {t('Your keys are stored in your local database...')}
+          </p>
+        </Message>
+      )}
     </Container>
   </>)
 }

@@ -187,6 +187,7 @@ services:
       - VITE_XMPP_MUC_HOST=g.${DOMAIN}
       - VITE_XMPP_SHARE_HOST=f.${DOMAIN}
       - VITE_XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - VITE_VAULT_SECURE=true
       - VITE_O11Y_ENABLE=true
       - VITE_WALLET_ENABLE=true
     labels:

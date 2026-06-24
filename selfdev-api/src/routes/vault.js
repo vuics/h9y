@@ -1,12 +1,17 @@
 import { Router } from 'express'
+
 import { checkAuth, checkAPIAuth } from '../middleware/check-auth.js'
 import { Verbose, log, warn, error } from '../services.js'
 import conf from '../conf.js'
 import { vaultClient } from '../vault.js'
+import Secret from '../models/secret.js'
 
 const verbose = Verbose('sd:routes/vault'); verbose('')
 const router = Router()
 
+// process.nextTick(async () => {
+//   await Secret.collection.drop()
+// })
 
 function nullifyValues(data) {
   const onlyKeys = Object.fromEntries(
@@ -15,123 +20,178 @@ function nullifyValues(data) {
   return onlyKeys
 }
 
-const listSecrets = async (req, res, next) => {
-  try {
-    if (!vaultClient) {
-      throw new Error('Vault is disabled on backend')
-    }
-    const userId = req.user._id.toString()
+/**
+ * Normalize Vault + Mongo output into { key: value }
+ */
+function normalizeVaultData(data = {}) {
+  return data || {}
+}
 
-    let data = {}
-    let result;
+
+/**
+ * =========================
+ * Secret Providers
+ * =========================
+ */
+
+async function listSecretsFromMongo(userId) {
+  const secrets = await Secret.find({ userId }).lean()
+
+  const data = {}
+  for (const s of secrets) {
+    data[s.key] = s.value
+  }
+
+  return data
+}
+
+async function listSecretsUnified(userId) {
+  if (vaultClient) {
     try {
-      result = await vaultClient.read(`secret/data/user_${userId}`);
-      data = result.data.data; // KV v2 nests data under data.data
-      // console.log('Secret exists:', result.data);
+      const result = await vaultClient.read(
+        `secret/data/user_${userId}`
+      )
+
+      return normalizeVaultData(result?.data?.data)
     } catch (err) {
-      if (err.response && err.response.statusCode === 404) {
-        log(`Secret does not exists for user_${userId}.`);
-      } else {
-        // Unexpected error, rethrow or handle differently
-        console.error('Error reading secret:', err);
-        throw err;
+      if (err.response?.statusCode === 404) {
+        return {}
       }
+      throw err
     }
-
-    // verbose('data:', data)
-    const onlyKeys = nullifyValues(data)
-    // verbose('onlyKeys:', onlyKeys)
-    res.json(onlyKeys)
-  } catch (err) {
-    res.status(500).json({ result: 'error', message: err.toString()})
   }
+
+  return await listSecretsFromMongo(userId)
 }
 
-const exposeSecret = async (req, res, next) => {
+async function getSecret(userId, key) {
+  const data = await listSecretsUnified(userId)
+  return data[key]
+}
+
+async function setSecret(userId, key, value) {
+  if (vaultClient) {
+    const data = await listSecretsUnified(userId)
+
+    await vaultClient.write(
+      `secret/data/user_${userId}`,
+      {
+        data: {
+          ...data,
+          [key]: value,
+        },
+      }
+    )
+
+    return
+  }
+
+  await Secret.findOneAndUpdate(
+    { userId, key },
+    { value },
+    { upsert: true, new: true }
+  )
+}
+
+async function deleteSecret(userId, key) {
+  if (vaultClient) {
+    const data = await listSecretsUnified(userId)
+
+    delete data[key]
+
+    await vaultClient.write(
+      `secret/data/user_${userId}`,
+      {
+        data,
+      }
+    )
+
+    return
+  }
+
+  await Secret.deleteOne({ userId, key })
+}
+
+/**
+ * =========================
+ * Routes
+ * =========================
+ */
+
+const listSecrets = async (req, res) => {
   try {
-    if (!vaultClient) {
-      throw new Error('Vault is disabled on backend')
-    }
     const userId = req.user._id.toString()
-    const result = await vaultClient.read(`secret/data/user_${userId}`);
-    const data = result.data.data; // KV v2 nests data under data.data
-    const { key } = req.body
-    const expose = {
-      [key]: data[key],
-    }
-    // verbose('expose:', expose)
-    res.json(expose)
+
+    const data = await listSecretsUnified(userId)
+
+    res.json(nullifyValues(data))
   } catch (err) {
-    res.status(500).json({ result: 'error', message: err.toString()})
+    res.status(500).json({
+      result: 'error',
+      message: err.toString(),
+    })
   }
 }
 
-const addSecret = async (req, res, next) => {
+const exposeSecret = async (req, res) => {
   try {
-    if (!vaultClient) {
-      throw new Error('Vault is disabled on backend')
-    }
+    const userId = req.user._id.toString()
+    const { key } = req.body
+
+    const value = await getSecret(userId, key)
+
+    res.json({
+      [key]: value,
+    })
+  } catch (err) {
+    res.status(500).json({
+      result: 'error',
+      message: err.toString(),
+    })
+  }
+}
+
+const addSecret = async (req, res) => {
+  try {
     const userId = req.user._id.toString()
     const { key, value } = req.body
 
-    let data = {};
-    try {
-      const readResult = await vaultClient.read(`secret/data/user_${userId}`);
-      // verbose('vaultClient readResult:', readResult);
-      data = readResult.data.data; // KV v2: nested under data.data
-    } catch (err) {
-      if (err.response && err.response.statusCode === 404) {
-        log(`Secret not found for user_${userId}, will create new one.`);
-      } else {
-        throw err; // Unexpected error
-      }
-    }
+    await setSecret(userId, key, value)
 
-    const newData = {
-      ...data,
-      [key]: value,
-    }
-    const writeResult = await vaultClient.write(`secret/data/user_${userId}`, {
-      data: newData,
-    });
-    // verbose('vaultClient writeResult:', writeResult)
-    const onlyKeys = nullifyValues(newData)
-    // verbose('onlyKeys:', onlyKeys)
-    res.json(onlyKeys)
+    const data = await listSecretsUnified(userId)
+
+    res.json(nullifyValues(data))
   } catch (err) {
-    res.status(500).json({ result: 'error', message: err.toString()})
+    res.status(500).json({
+      result: 'error',
+      message: err.toString(),
+    })
   }
 }
 
-const deleteSecret = async (req, res, next) => {
+const deleteSecretRoute = async (req, res) => {
   try {
-    if (!vaultClient) {
-      throw new Error('Vault is disabled on backend')
-    }
     const userId = req.user._id.toString()
-    const readResult = await vaultClient.read(`secret/data/user_${userId}`);
-    // verbose('vaultClient readResult:', readResult)
-    const data = readResult.data.data; // KV v2 nests data under data.data
     const { key } = req.body
-    delete data[key]
-    const newData = {
-      ...data,
-    }
-    const writeResult = await vaultClient.write(`secret/data/user_${userId}`, {
-      data: newData,
-    });
-    // verbose('vaultClient writeResult:', writeResult)
-    const onlyKeys = nullifyValues(newData)
-    res.json(onlyKeys)
+
+    await deleteSecret(userId, key)
+
+    const data = await listSecretsUnified(userId)
+
+    res.json(nullifyValues(data))
   } catch (err) {
-    res.status(500).json({ result: 'error', message: err.toString()})
+    res.status(500).json({
+      result: 'error',
+      message: err.toString(),
+    })
   }
 }
 
 router.get('/', checkAuth, listSecrets)
 router.post('/expose', checkAuth, exposeSecret)
 router.post('/', checkAuth, addSecret)
-router.delete('/', checkAuth, deleteSecret)
+router.delete('/', checkAuth, deleteSecretRoute)
+
 // router.get('/api', checkAPIAuth, index)
 
 export default router

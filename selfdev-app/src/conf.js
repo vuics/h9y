@@ -116,6 +116,7 @@ const conf = {
 
   vault: {
     enable: bool(import.meta.env.VITE_VAULT_ENABLE || true),
+    secure: bool(import.meta.env.VITE_VAULT_SECURE || false),
   },
 
   wallet: {
