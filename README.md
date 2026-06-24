@@ -178,6 +178,99 @@ HyperAgency supports **secure peer-to-peer networks**:
 
 ---
 
+## 📊 Installation Feature Comparison
+
+This section helps you understand what capabilities are available depending on how you install HyperAgency.
+
+We support four deployment modes:
+
+* 🧩 **Standalone** — single all-in-one Docker container for quick start and local testing
+* 🐳 **Docker Cluster** — multi-service Docker Compose setup for personal or team deployments
+* ☸️ **Kubernetes Cluster** — scalable enterprise-grade infrastructure deployment
+* ☁️ **HyperAgency Cloud** — fully managed hosted platform at [https://h9y.ai](https://h9y.ai)
+
+---
+
+## 🚀 Feature Matrix (Capabilities by Installation Type)
+
+| Feature       | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
+| ------------- | ---------- | -------------- | ------------------ | ----------------- |
+| Web-Landing   | ❌          | ❌              | ✅                  | ✅                 |
+| Dashboard     | ✅          | ✅              | ✅                  | ✅                 |
+| Hive          | ✅          | ✅              | ✅                  | ✅                 |
+| Chat          | ✅          | ✅              | ✅                  | ✅                 |
+| Map           | ✅          | ✅              | ✅                  | ✅                 |
+| Data          | ✅          | ✅              | ✅                  | ✅                 |
+| Observability | ❌          | ✅              | ✅                  | ✅                 |
+| Omni-channel  | ✅          | ✅              | ✅                  | ✅                 |
+| Apps          | ✅          | ✅              | ✅                  | ✅                 |
+| Wallet        | ❌          | ❌              | ✅                  | ✅                 |
+| Vault         | ❌          | ✅              | ✅                  | ✅                 |
+| CLI           | ✅          | ✅              | ✅                  | ✅                 |
+| API & SDK     | ✅          | ✅              | ✅                  | ✅                 |
+| Mobile App    | ❌          | ❌              | ✅                  | ✅                 |
+
+---
+
+## 🤖 Agent Availability Matrix
+
+| Agent       | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
+| ----------- | ---------- | -------------- | ------------------ | ----------------- |
+| Chat        | ❌          | ✅              | ✅                  | ✅                 |
+| RAG         | ❌          | ✅              | ✅                  | ✅                 |
+| ImageGen    | ❌          | ✅              | ✅                  | ✅                 |
+| BrowserUse  | ❌          | ✅              | ✅                  | ✅                 |
+| STT         | ❌          | ✅              | ✅                  | ✅                 |
+| TTS         | ❌          | ✅              | ✅                  | ✅                 |
+| Avatar      | ❌          | ✅              | ✅                  | ✅                 |
+| Maptrix     | ✅          | ✅              | ✅                  | ✅                 |
+| Code        | ❌          | ✅              | ✅                  | ✅                 |
+| Command     | ❌          | ✅              | ✅                  | ✅                 |
+| Quantum     | ❌          | ✅              | ✅                  | ✅                 |
+| Storage     | ❌          | ✅              | ✅                  | ✅                 |
+| Transform   | ✅          | ✅              | ✅                  | ✅                 |
+| System      | ✅          | ✅              | ✅                  | ✅                 |
+| MCP         | ✅          | ✅              | ✅                  | ✅                 |
+| A2A         | ✅          | ✅              | ✅                  | ✅                 |
+| Curl        | ✅          | ✅              | ✅                  | ✅                 |
+| Langflow    | ❌          | ✅              | ✅                  | ✅                 |
+| Node-RED    | ❌          | ✅              | ✅                  | ✅                 |
+| N8n         | ❌          | ✅              | ✅                  | ✅                 |
+| Notebook    | ❌          | ✅              | ✅                  | ✅                 |
+| OpenClaw    | ❌          | ✅              | ✅                  | ✅                 |
+| Hermes      | ❌          | ✅              | ✅                  | ✅                 |
+| Codex       | ❌          | ✅              | ✅                  | ✅                 |
+| Claude Code | ❌          | ❌              | ❌                  | ✅                 |
+
+---
+
+## 🌉 Bridge Availability Matrix
+
+| Bridge            | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
+| ----------------- | ---------- | -------------- | ------------------ | ----------------- |
+| Messengers        | ❌          | ✅              | ✅                  | ✅                 |
+| Email             | ✅          | ✅              | ✅                  | ✅                 |
+| Phone             | ❌          | ❌              | ✅                  | ✅                 |
+| Scheduler         | ✅          | ✅              | ✅                  | ✅                 |
+| Webhooks Server   | ✅          | ✅              | ✅                  | ✅                 |
+| A2A Server        | ✅          | ✅              | ✅                  | ✅                 |
+| MCP Server        | ✅          | ✅              | ✅                  | ✅                 |
+| Web App (Lowdefy) | ❌          | ✅              | ✅                  | ✅                 |
+| XMPP Server       | ✅          | ✅              | ✅                  | ✅                 |
+
+---
+
+## ☁️ Fastest Start (No Self-Hosting)
+
+If you don’t want to manage infrastructure, just use the hosted version of HyperAgency Cloud (SaaS Self-Serve).
+
+👉 **HyperAgency Cloud (SaaS)**
+[https://h9y.ai](https://h9y.ai)
+
+> No Docker, no Kubernetes, no setup — just create an account and start using agents immediately.
+
+---
+
 ## 📦 Installation
 
 > You can **self-host HyperAgency locally** in just a few steps —
@@ -189,16 +282,6 @@ To run HyperAgency locally, install the following:
 
 * [Docker](https://www.docker.com/)
 * [mkcert](https://github.com/FiloSottile/mkcert)
-
----
-
-### ☁️ Prefer Not to Self-Host?
-
-If you don’t want to manage infrastructure yourself, you can request access to our hosted **HyperAgency Cloud**, where everything is pre-configured and ready to use.
-
-👉 [Get Cloud Access](https://h9y.ai/signup)
-
-> The cloud environment is perfect for early testing, team collaboration, or demoing agentic flows without running Docker or Vault locally.
 
 ---
 
@@ -245,7 +328,7 @@ Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using unt
 
 Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
 
-### Option C: Simple Cluster Install
+### Option C: Docker Cluster Install
 
 ```bash
 mkdir hyperagency
@@ -274,7 +357,7 @@ Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for 
 
 ---
 
-### Option D: Install Cluster from Repo
+### Option D: Install Docker Cluster from Repo
 
 
 #### 📦 1. Clone the Repository with Submodules
@@ -345,9 +428,7 @@ NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
   docker compose down
   docker compose up
   ```
----
-
-### 🛑 Stop the Stack
+#### 🛑 6. Stop the Stack
 
 ```bash
 docker-compose down
@@ -355,7 +436,89 @@ docker-compose down
 
 ---
 
-### 👥 Compose Profiles (for Cluster Only)
+### Option E: Kubernetes Cluster (Enterprise Self-Hosted)
+
+> Recommended for enterprise-grade deployments, high availability, and production-scale infrastructure.
+
+Deploy HyperAgency on your own Kubernetes infrastructure using our official Helm chart.
+
+#### What you get:
+
+* Full Kubernetes-native deployment
+* Horizontal scaling of agents and services
+* Production-grade observability integration
+* Secure secrets management (Vault / external KMS)
+* Multi-node distributed execution
+
+#### Installation
+
+> 📦 Helm chart and documentation provided upon request.
+
+```bash
+# Contact us to receive:
+# - Helm chart (private or enterprise repo)
+# - Cluster architecture guide
+# - Production deployment instructions
+```
+
+📩 Request access: [artem@h9y.ai](mailto:artem@h9y.ai)
+
+---
+
+### Option F: Managed Private Cloud (HyperAgency Deployed for You)
+
+> Best for teams who want HyperAgency in production without managing infrastructure.
+
+We deploy and operate a dedicated HyperAgency instance tailored to your environment.
+
+#### What you get:
+
+* Dedicated cloud or hybrid deployment
+* Custom configuration and integrations
+* Continuous updates and maintenance
+* Enterprise SLA (on request)
+* Private tenant isolation
+
+#### Includes:
+
+* Custom agents setup
+* API integrations
+* Observability dashboards
+* Optional custom development
+
+📩 Contact us for deployment: [artem@h9y.ai](mailto:artem@h9y.ai)
+
+---
+
+### Option G: HyperAgency Cloud (SaaS Self-Serve)
+
+> Fastest way to start using HyperAgency — no setup required.
+
+Access HyperAgency directly via our hosted platform:
+
+🌐 [https://h9y.ai](https://h9y.ai)
+
+#### What you get:
+
+* Fully managed SaaS version
+* Instant onboarding (no Docker / Kubernetes)
+* Preconfigured agent ecosystem
+* Web dashboard + chat interface
+* Regular updates and new features
+
+#### Ideal for:
+
+* Early experimentation
+* Product evaluation
+* Teams without DevOps resources
+* Fast prototyping of agent workflows
+
+👉 Create an account and choose a subscription plan:
+[https://h9y.ai/signup](https://h9y.ai/signup)
+
+---
+
+### 👥 Compose Profiles (Docker Cluster Only)
 
 HyperAgency ships with **predefined Docker Compose profiles** that let you start small, scale fast, and run *exactly* what you need—no more, no less. Profiles align the platform with your **intent**, from first exploration to a full, production-grade agentic stack.
 
