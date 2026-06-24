@@ -227,7 +227,7 @@ We support four deployment modes:
 | OpenClaw    | ❌          | ✅              | ✅                  | ✅                 |
 | Hermes      | ❌          | ✅              | ✅                  | ✅                 |
 | Codex       | ❌          | ✅              | ✅                  | ✅                 |
-| Claude Code (connector) | ❌          | ❌              | ❌                  | ✅                 |
+| Claude Code | ❌          | ❌              | ❌                  | ✅                 |
 | STT         | ❌          | ✅              | ✅                  | ✅                 |
 | TTS         | ❌          | ✅              | ✅                  | ✅                 |
 | Avatar      | ❌          | ✅              | ✅                  | ✅                 |
