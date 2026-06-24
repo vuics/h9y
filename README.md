@@ -62,29 +62,33 @@ HyperAgency is more than an AI platform — it's a **new operational layer**:
 
 HyperAgency comes with **20+ production-ready agents** you can deploy instantly:
 
-| Archetype        | Role / Function |
-|-----------------|----------------|
-| **Chat**         | Natural language communication |
-| **RAG**          | Research & document retrieval |
-| **ImageGen**     | Image generation from prompts |
-| **BrowserUse**   | Web navigation & task automation |
-| **STT**          | Speech-to-text transcription |
-| **TTS**          | Text-to-speech synthesis |
-| **Avatar**       | Talking faces with lip-sync |
-| **Maptrix**      | Nested workflow execution |
-| **Code**         | Python, JavaScript, Bash computation |
-| **Command**      | Linux command execution |
-| **Quantum**      | Quantum computing tasks |
-| **Storage**      | Key-value and file storage |
-| **Transform**    | Text transformation & templating |
-| **System**       | HyperAgency infrastructure management |
-| **MCP**          | Tool execution via Model Context Protocol |
-| **A2A**          | Agent-to-agent delegation |
-| **Curl**         | API / HTTP requests |
-| **Langflow**     | AI strategy & multi-agent orchestration |
-| **Node-RED**     | External API & IoT workflow integration |
-| **N8n**          | Flexible automation workflows |
-| **Notebook**     | Parameterized Jupyter notebooks |
+| Archetype                  | Role / Function |
+|--------------------------- | ---------------- |
+| **Chat**                   | Natural language communication |
+| **RAG**                    | Research & document retrieval |
+| **ImageGen**               | Image generation from prompts |
+| **BrowserUse**             | Web navigation & task automation |
+| **Hermes**                 | Autonomous general-purpose agent |
+| **OpenClaw**               | Personal AI assistant |
+| **Codex**                  | Software engineering agent |
+| **ClaudeCode** (connector) | Coding assistant connector |
+| **STT**                    | Speech-to-text transcription |
+| **TTS**                    | Text-to-speech synthesis |
+| **Avatar**                 | Talking faces with lip-sync |
+| **Maptrix**                | Nested workflow execution |
+| **Code**                   | Python, JavaScript, Bash computation |
+| **Command**                | Linux command execution |
+| **Quantum**                | Quantum computing tasks |
+| **Storage**                | Key-value and file storage |
+| **Transform**              | Text transformation & templating |
+| **System**                 | HyperAgency infrastructure management |
+| **MCP**                    | Tool execution via Model Context Protocol |
+| **A2A**                    | Agent-to-agent delegation |
+| **Curl**                   | API / HTTP requests |
+| **Langflow**               | AI strategy & multi-agent orchestration |
+| **Node-RED**               | External API & IoT workflow integration |
+| **N8n**                    | Flexible automation workflows |
+| **Notebook**               | Parameterized Jupyter notebooks |
 
 > All agents are **composable, versionable, portable (JSON), auditable, and reproducible**.
 
@@ -220,6 +224,10 @@ We support four deployment modes:
 | RAG         | ❌          | ✅              | ✅                  | ✅                 |
 | ImageGen    | ❌          | ✅              | ✅                  | ✅                 |
 | BrowserUse  | ❌          | ✅              | ✅                  | ✅                 |
+| OpenClaw    | ❌          | ✅              | ✅                  | ✅                 |
+| Hermes      | ❌          | ✅              | ✅                  | ✅                 |
+| Codex       | ❌          | ✅              | ✅                  | ✅                 |
+| Claude Code (connector) | ❌          | ❌              | ❌                  | ✅                 |
 | STT         | ❌          | ✅              | ✅                  | ✅                 |
 | TTS         | ❌          | ✅              | ✅                  | ✅                 |
 | Avatar      | ❌          | ✅              | ✅                  | ✅                 |
@@ -237,10 +245,6 @@ We support four deployment modes:
 | Node-RED    | ❌          | ✅              | ✅                  | ✅                 |
 | N8n         | ❌          | ✅              | ✅                  | ✅                 |
 | Notebook    | ❌          | ✅              | ✅                  | ✅                 |
-| OpenClaw    | ❌          | ✅              | ✅                  | ✅                 |
-| Hermes      | ❌          | ✅              | ✅                  | ✅                 |
-| Codex       | ❌          | ✅              | ✅                  | ✅                 |
-| Claude Code | ❌          | ❌              | ❌                  | ✅                 |
 
 ---
 
