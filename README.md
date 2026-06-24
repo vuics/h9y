@@ -293,39 +293,30 @@ To run HyperAgency locally, install the following:
 
 Quick start:
 ```bash
-docker run -d \
-  -p 6369:6369 \
-  -p 6370:6370 \
-  -p 3990:3990 \
-  -p 5281:5281 \
-  -p 8200:8200 \
-  -e VAULT_TOKEN=token \
-  -e VAULT_UNSEAL_KEYS=key \
+docker run \
+  --name h9y-standalone \
+  -p 3990:3990 -p 6369:6369 -p 6370:6370 -p 5281:5281 \
   -v h9y-api-volume:/opt/data \
   -v h9y-mongo-volume:/data/db \
   -v h9y-prosody-volume:/var/lib/prosody \
   -v h9y-vault-volume:/vault/file \
   ghcr.io/vuics/h9y:v1.39.0
 
-# Or
+# Or use latest image:
 #   ghcr.io/vuics/h9y:latest
 ```
 
 Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using untrusted certificate.
 
-Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below. Substitute the Vault token and key values in the command above and restart the command.
-```bash
-  -e VAULT_TOKEN=token \
-  -e VAULT_UNSEAL_KEYS=key \
-```
+Open [localhost:3990](https://localhost:3990/) in the browser and start using standalone h9y.
 
 ### Option B: Install Standalone from Repo
 
 ```bash
 git clone git@github.com:vuics/h9y.git
 cd h9y
-docker-compose -f h9y.yml build
-docker-compose -f h9y.yml up
+docker-compose -f standalone.yml build
+docker-compose -f standalone.yml up
 ```
 
 Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using untrusted certificate.

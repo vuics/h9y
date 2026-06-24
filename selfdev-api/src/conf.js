@@ -168,7 +168,7 @@ const conf = {
   },
 
   vault: {
-    enable: bool(process.env.VAULT_ENABLE || true),
+    enable: bool(process.env.VAULT_ENABLE || false),
     addr: process.env.VAULT_ADDR || 'http://127.0.0.1:8200',
     token: process.env.VAULT_TOKEN || '(TBS)',
     unseal: bool(process.env.VAULT_UNSEAL || true),

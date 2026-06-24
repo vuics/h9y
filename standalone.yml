@@ -1,7 +1,7 @@
 version: '3.9'
 services:
 
-  h9y:
+  h9y-standalone:
     platform: ${PLATFORM}
     image: ${REGISTRY}h9y:${VERSION}
     build:
@@ -9,14 +9,10 @@ services:
       args:
         - COMPOSE_PROFILES=standalone
     ports:
+      - 3990:3990    # app
       - 6369:6369    # api
       - 6370:6370    # bridge
-      - 3990:3990    # app
       - 5281:5281    # prosody wss, https
-      - 8200:8200    # vault
-    environment:
-      - VAULT_TOKEN
-      - VAULT_UNSEAL_KEYS
     volumes:
       - h9y-api-volume:/opt/data/
       - h9y-mongo-volume:/data/db

@@ -218,40 +218,6 @@ EOF
 RUN chmod +x /etc/services.d/prosody/run
 
 # ------------------------------------------------------------
-# Vault (binary install)
-# ------------------------------------------------------------
-
-# NOTE: Vault needs connecting to VPN to download
-RUN set -eux; \
-    case "$TARGETARCH" in \
-        amd64) VAULT_ARCH="amd64" ;; \
-        arm64) VAULT_ARCH="arm64" ;; \
-        *) exit 1 ;; \
-    esac; \
-    wget -q -O vault.zip \
-      https://releases.hashicorp.com/vault/1.20.3/vault_1.20.3_linux_${VAULT_ARCH}.zip; \
-    unzip vault.zip; \
-    mv vault /usr/local/bin/vault; \
-    chmod +x /usr/local/bin/vault; \
-    rm -f vault.zip
-
-RUN mkdir -p \
-      /etc/services.d/vault \
-      /vault/data \
-      /etc/vault
-
-COPY config/vault/config.hcl /etc/vault/
-
-RUN cat <<'EOF' > /etc/services.d/vault/run
-#!/bin/sh
-set -e
-exec vault server -config=/etc/vault/config.hcl
-# exec vault server -dev -dev-root-token-id=${VAULT_TOKEN}
-EOF
-
-RUN chmod +x /etc/services.d/vault/run
-
-# ------------------------------------------------------------
 # API
 # ------------------------------------------------------------
 
