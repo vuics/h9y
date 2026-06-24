@@ -55,7 +55,7 @@ const archetypes = {
   'maptrix-v1.0': {
     key: 'maptrix-v1.0',
     value: 'maptrix-v1.0',
-    enable: hasProfile(['all', 'h9y', 'swarm', 'singleton']),
+    enable: hasProfile(['all', 'h9y', 'swarm', 'standalone']),
     category: 'System',
     icon: 'sitemap',
     text: 'Maptrix v1.0',
@@ -111,7 +111,7 @@ const archetypes = {
   'mcp-v1.0': {
     key: 'mcp-v1.0',
     value: 'mcp-v1.0',
-    enable: hasProfile(['all', 'h9y', 'swarm', 'singleton']),
+    enable: hasProfile(['all', 'h9y', 'swarm', 'standalone']),
     category: 'Protocols',
     icon: 'dot circle outline',
     text: 'MCP Client v1.0',
@@ -141,7 +141,7 @@ const archetypes = {
   'a2a-v1.0': {
     key: 'a2a-v1.0',
     value: 'a2a-v1.0',
-    enable: hasProfile(['all', 'h9y', 'swarm', 'singleton']),
+    enable: hasProfile(['all', 'h9y', 'swarm', 'standalone']),
     category: 'Protocols',
     icon: 'chess pawn',
     text: 'A2A Client v1.0',
@@ -169,7 +169,7 @@ const archetypes = {
   'system-v1.0': {
     key: 'system-v1.0',
     value: 'system-v1.0',
-    enable: hasProfile(['all', 'h9y', 'swarm', 'singleton']),
+    enable: hasProfile(['all', 'h9y', 'swarm', 'standalone']),
     category: 'System',
     icon: 'cog',
     text: 'System v1.0',
@@ -197,7 +197,7 @@ const archetypes = {
   'transform-v1.0': {
     key: 'transform-v1.0',
     value: 'transform-v1.0',
-    enable: hasProfile(['all', 'h9y', 'swarm', 'singleton']),
+    enable: hasProfile(['all', 'h9y', 'swarm', 'standalone']),
     category: 'System',
     icon: 'edit',
     text: 'Transform v1.0',
@@ -295,7 +295,7 @@ const archetypes = {
   'proxy-v1.0': {
     key: 'proxy-v1.0',
     value: 'proxy-v1.0',
-    enable: hasProfile(['all', 'h9y', 'swarm', 'singleton']),
+    enable: hasProfile(['all', 'h9y', 'swarm', 'standalone']),
     category: 'System',
     icon: 'exchange',
     text: 'Proxy v1.0',
@@ -944,7 +944,7 @@ const archetypes = {
   'curl-v1.0': {
     key: 'curl-v1.0',
     value: 'curl-v1.0',
-    enable: hasProfile(['all', 'h9y', 'swarm', 'singleton']),
+    enable: hasProfile(['all', 'h9y', 'swarm', 'standalone']),
     category: 'Protocols',
     icon: 'external',
     text: 'Curl (HTTPs) v1.0',

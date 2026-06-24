@@ -24,7 +24,7 @@ const conf = {
 
   // NOTE: All defaults for env vars should be set for running
   //       all microservices in a single docker container
-  //       (COMPOSE_PROFILES=singleton)
+  //       (COMPOSE_PROFILES=standalone)
 
   node: {
     tlsRejectUnauthorized: process.env.NODE_TLS_REJECT || '',

@@ -7,7 +7,7 @@ services:
     build:
       context: ./
       args:
-        - COMPOSE_PROFILES=singleton
+        - COMPOSE_PROFILES=standalone
     ports:
       - 6369:6369    # api
       - 6370:6370    # bridge
