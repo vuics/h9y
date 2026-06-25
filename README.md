@@ -299,7 +299,6 @@ docker run \
   -v h9y-api-volume:/opt/data \
   -v h9y-mongo-volume:/data/db \
   -v h9y-prosody-volume:/var/lib/prosody \
-  -v h9y-vault-volume:/vault/file \
   ghcr.io/vuics/h9y:v1.39.0
 
 # Or use latest image:

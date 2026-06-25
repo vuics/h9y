@@ -17,7 +17,6 @@ services:
       - h9y-api-volume:/opt/data/
       - h9y-mongo-volume:/data/db
       - h9y-prosody-volume:/var/lib/prosody/
-      - h9y-vault-volume:/vault/file
       - ./selfdev-api/src:/opt/api/src
       - ./selfdev-app/src:/opt/app/src
       - ./selfdev-agency/src:/opt/agency/src
@@ -26,5 +25,4 @@ volumes:
   h9y-api-volume:
   h9y-mongo-volume:
   h9y-prosody-volume:
-  h9y-vault-volume:
 
