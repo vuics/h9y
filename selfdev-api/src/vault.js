@@ -2,6 +2,7 @@ import NodeVault from 'node-vault'
 
 import { Verbose, log, warn, error } from './services.js'
 import conf from './conf.js'
+import Secret from './models/secret.js'
 
 const verbose = Verbose('sd:vault'); verbose('')
 
@@ -58,19 +59,32 @@ if (conf.vault.enable) {
 }
 
 export async function getVaultValue({ vaultKey, userId }) {
-  if (!vaultClient) { return ''; }
+  // Vault mode
+  if (vaultClient) {
+    try {
+      const secret = await vaultClient.read(`secret/data/user_${userId}`)
+      // verbose('getVaultValue secret:', secret)
+      return secret?.data?.data?.[vaultKey] || ''
+    } catch (e) {
+      error(`Error reading secret ${vaultKey} from Vault for user_${userId}: ${e}`);
+      return null;
+    }
+  }
+
+  // Standalone mode (MongoDB)
   try {
-    const secret = await vaultClient.read(`secret/data/user_${userId}`);
-    // verbose('getVaultValue secret:', secret)
-    return secret?.data?.data?.[vaultKey] || '';
+    const secret = await Secret.findOne({
+      userId,
+      key: vaultKey,
+    }).select('value').lean()
+    return secret?.value || ''
   } catch (e) {
-    error(`Error reading secret ${vaultKey} from Vault for user_${userId}: ${e}`);
-    return null;
+    error(`Error reading secret ${vaultKey} from MongoDB for user_${userId}: ${e}`);
+    return null
   }
 }
 
 export async function replaceVaultValues({ obj, userId }) {
-  if (!vaultClient) { return; }
   try {
     if (typeof obj === 'object') {
       for (const [key, value] of Object.entries(obj)) {
