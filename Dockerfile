@@ -29,15 +29,16 @@ ENV VITE_COMPOSE_PROFILES=$COMPOSE_PROFILES
 WORKDIR /build/app
 
 COPY selfdev-app/package*.json ./
-RUN npm ci
+# RUN npm ci
+RUN npm i   # FIXME: use: `npm ci` to minimize image size
 
 COPY selfdev-app/ .
 RUN npm run build
 
-# Keep only runtime deps if serve requires them
-RUN npm prune --omit=dev \
- && npm cache clean --force
-
+# FIXME: uncomment to minimize image size:
+# # Keep only runtime deps if serve requires them
+# RUN npm prune --omit=dev \
+#  && npm cache clean --force
 
 # ============================================================
 # FINAL IMAGE
@@ -229,8 +230,8 @@ RUN mkdir -p /etc/services.d/api && \
     cat <<'EOF' > /etc/services.d/api/run
 #!/bin/sh
 cd /opt/api
-# exec npm start
-exec npm run prod
+# exec npm run prod
+exec npm start  # FIXME: use `npm run prod` for prod
 EOF
 
 RUN chmod +x /etc/services.d/api/run
@@ -243,7 +244,8 @@ RUN mkdir -p /etc/services.d/swarm && \
     cat <<'EOF' > /etc/services.d/swarm/run
 #!/bin/sh
 cd /opt/api
-exec npm run swarm:prod
+# exec npm run swarm:prod
+exec npm run swarm  # FIXME: use `npm run swarm:prod` for prod
 EOF
 
 RUN chmod +x /etc/services.d/swarm/run
@@ -256,7 +258,8 @@ RUN mkdir -p /etc/services.d/bridge && \
     cat <<'EOF' > /etc/services.d/bridge/run
 #!/bin/sh
 cd /opt/api
-exec npm run bridge:prod
+# exec npm run bridge:prod
+exec npm run bridge  # FIXME: use `npm run bridge:prod` for prod
 EOF
 
 RUN chmod +x /etc/services.d/bridge/run
@@ -274,7 +277,8 @@ RUN mkdir -p /etc/services.d/app && \
 #!/bin/sh
 export PORT=3990
 cd /opt/app
-exec npm run serve
+# exec npm run serve
+exec sh -c "rm -rf node_modules/.vite && npm start"  # FIXME: use `npm run serve` to minimize image size
 EOF
 
 RUN chmod +x /etc/services.d/app/run
