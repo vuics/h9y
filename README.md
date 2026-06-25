@@ -188,16 +188,16 @@ This section helps you understand what capabilities are available depending on h
 
 We support four deployment modes:
 
-* 🧩 **Standalone** — single all-in-one Docker container for quick start and local testing
-* 🐳 **Docker Cluster** — multi-service Docker Compose setup for personal or team deployments
-* ☸️ **Kubernetes Cluster** — scalable enterprise-grade infrastructure deployment
-* ☁️ **HyperAgency Cloud** — fully managed hosted platform at [https://h9y.ai](https://h9y.ai)
+* A. 🧩 **Standalone** (individual) — single all-in-one Docker container for quick start and local testing
+* B. 🐳 **Docker Cluster** (team) — multi-service Docker Compose setup for personal or team deployments
+* C/D. ☸️  **Kubernetes Cluster** (enterprise) — scalable enterprise-grade infrastructure deployment (on-prem or private-cloud)
+* E. ☁️  **HyperAgency Cloud** (all) — fully managed hosted platform at [https://h9y.ai](https://h9y.ai)
 
 ---
 
 ## 🚀 Feature Matrix (Capabilities by Installation Type)
 
-| Feature       | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
+| Feature       | Standalone | Docker Cluster | Kubernetes Cluster (on-prem/private-cloud) | HyperAgency Cloud |
 | ------------- | ---------- | -------------- | ------------------ | ----------------- |
 | Web-Landing   | ❌          | ❌              | ✅                  | ✅                 |
 | Dashboard     | ✅          | ✅              | ✅                  | ✅                 |
@@ -218,7 +218,7 @@ We support four deployment modes:
 
 ## 🤖 Agent Availability Matrix
 
-| Agent       | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
+| Agent       | Standalone | Docker Cluster | Kubernetes Cluster (on-prem/private-cloud) | HyperAgency Cloud |
 | ----------- | ---------- | -------------- | ------------------ | ----------------- |
 | Chat        | ❌          | ✅              | ✅                  | ✅                 |
 | RAG         | ❌          | ✅              | ✅                  | ✅                 |
@@ -250,7 +250,7 @@ We support four deployment modes:
 
 ## 🌉 Bridge Availability Matrix
 
-| Bridge            | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
+| Bridge            | Standalone | Docker Cluster | Kubernetes Cluster (on-prem/private-cloud) | HyperAgency Cloud |
 | ----------------- | ---------- | -------------- | ------------------ | ----------------- |
 | Messengers        | ❌          | ✅              | ✅                  | ✅                 |
 | Email             | ✅          | ✅              | ✅                  | ✅                 |
@@ -289,7 +289,7 @@ To run HyperAgency locally, install the following:
 
 ---
 
-### Option A: Quick Start (Standalone)
+### Option A: Quick Start (Install Standalone)
 
 Quick start:
 ```bash
@@ -310,20 +310,7 @@ Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using unt
 
 Open [localhost:3990](https://localhost:3990/) in the browser and start using standalone h9y.
 
-### Option B: Install Standalone from Repo
-
-```bash
-git clone git@github.com:vuics/h9y.git
-cd h9y
-docker-compose -f standalone.yml build
-docker-compose -f standalone.yml up
-```
-
-Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using untrusted certificate.
-
-Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
-
-### Option C: Docker Cluster Install
+### Option B: Install Docker Cluster
 
 ```bash
 mkdir hyperagency
@@ -344,56 +331,6 @@ Run:
 docker compose up
 ```
 
-Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
-
-#### 🎬 Watch Simple Install Video on YouTube
-
-[![Watch the Simple Install Video](https://img.youtube.com/vi/VslDuuoJ46c/0.jpg)](https://youtu.be/VslDuuoJ46c?t=136)
-
----
-
-### Option D: Install Docker Cluster from Repo
-
-
-#### 📦 1. Clone the Repository with Submodules
-
-```bash
-git clone git@github.com:vuics/h9y.git
-cd h9y
-```
-
-#### ⚙️ 2. Configure .Env Files
-
-Copy and customize `.env` files for the main platform and submodules:
-```bash
-cp env.example .env
-```
-
-#### 🔐 3. Generate TLS Certificates
-
-```bash
-./gen-certs.sh
-```
-
-On macOS, double-click each `.crt` file in `./certs/` to trust them in **Keychain Access**.
-
-#### 🌐 4. Configure Local DNS (Optionally)
-
-If your domain is `h9y.localhost` or anything on localhost, you may not need to configure the DNS, since the locahost often resolves to `127.0.0.1` automatically.
-
-If your domain name does not resolve, set up `/etc/hosts` entries:
-```bash
-sudo ./setup-hosts.sh
-```
-
-#### 🧱 5. Start the Stack
-
-Use Docker Compose to start all services:
-
-```bash
-docker-compose up
-```
-
 After you started the stack, you can open in the browser:
 
 | App Name | URL                                                      |
@@ -406,7 +343,7 @@ After you started the stack, you can open in the browser:
 
 NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
 
-### 🔑 Initialize Vault
+#### 🔑 Initialize Vault
 
 1. Open [Vault](https://vault.h9y.localhost) (replace `h9y.localhost` with your `${DOMAIN}`), and input:
   • Key shares: `1`
@@ -423,15 +360,14 @@ NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
   docker compose down
   docker compose up
   ```
-#### 🛑 6. Stop the Stack
 
-```bash
-docker-compose down
-```
+#### 🎬 Watch Simple Install Video on YouTube
+
+[![Watch the Simple Install Video](https://img.youtube.com/vi/VslDuuoJ46c/0.jpg)](https://youtu.be/VslDuuoJ46c?t=136)
 
 ---
 
-### Option E: Kubernetes Cluster (Enterprise Self-Hosted)
+### Option C: Kubernetes Cluster (Enterprise Self-Hosted)
 
 > Recommended for enterprise-grade deployments, high availability, and production-scale infrastructure.
 
@@ -460,7 +396,7 @@ Deploy HyperAgency on your own Kubernetes infrastructure using our official Helm
 
 ---
 
-### Option F: Managed Private Cloud (HyperAgency Deployed for You)
+### Option D: Managed Private Cloud (HyperAgency Deployed for You)
 
 > Best for teams who want HyperAgency in production without managing infrastructure.
 
@@ -485,7 +421,7 @@ We deploy and operate a dedicated HyperAgency instance tailored to your environm
 
 ---
 
-### Option G: HyperAgency Cloud (SaaS Self-Serve)
+### Option E: HyperAgency Cloud (SaaS Self-Serve)
 
 > Fastest way to start using HyperAgency — no setup required.
 
@@ -544,6 +480,74 @@ Then start HyperAgency using Docker Compose as usual. Docker will run **only** t
 #### 🎬 Watch Usage Video on YouTube
 
 [![Watch Usage Video](https://img.youtube.com/vi/96emBUqcJkY/0.jpg)](https://youtu.be/96emBUqcJkY?t=579)
+
+---
+
+## 🏗️ Build from Source
+
+### Option 1: Build Standalone from Repo
+
+```bash
+git clone git@github.com:vuics/h9y.git
+cd h9y
+docker-compose -f standalone.yml build
+docker-compose -f standalone.yml up
+```
+
+Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using untrusted certificate.
+
+Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
+
+---
+
+### Option 2: Build Docker Cluster from Repo
+
+#### 📦 1. Clone the Repository with Submodules
+
+```bash
+git clone git@github.com:vuics/h9y.git
+cd h9y
+```
+
+#### ⚙️ 2. Configure .Env Files
+
+Copy and customize `.env` files for the main platform and submodules:
+```bash
+cp env.example .env
+```
+
+#### 🔐 3. Generate TLS Certificates
+
+```bash
+./gen-certs.sh
+```
+
+On macOS, double-click each `.crt` file in `./certs/` to trust them in **Keychain Access**.
+
+#### 🌐 4. Configure Local DNS (Optionally)
+
+If your domain is `h9y.localhost` or anything on localhost, you may not need to configure the DNS, since the locahost often resolves to `127.0.0.1` automatically.
+
+If your domain name does not resolve, set up `/etc/hosts` entries:
+```bash
+sudo ./setup-hosts.sh
+```
+
+#### 🧱 5. Start the Stack
+
+Use Docker Compose to start all services:
+
+```bash
+docker-compose up
+```
+
+Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" above.
+
+#### 🛑 6. Stop the Stack
+
+```bash
+docker-compose down
+```
 
 ---
 
@@ -617,5 +621,4 @@ It already offers powerful capabilities for orchestrating agents, coordinating d
 * Email: [artem@h9y.ai](mailto:artem@h9y.ai)
 * LinkedIn: [Artem Arakcheev](https://linkedin.com/in/artem-arakcheev)
 * Paid Pilot / Early Access: [Apply here](https://forms.gle/bCACFoXj7so4paDg8)
-
 
