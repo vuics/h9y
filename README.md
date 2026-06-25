@@ -197,70 +197,70 @@ We support four deployment modes:
 
 ## 🚀 Feature Matrix (Capabilities by Installation Type)
 
-| Feature       | Standalone | Docker Cluster | Kubernetes Cluster (on-prem/private-cloud) | HyperAgency Cloud |
+| Feature       | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
 | ------------- | ---------- | -------------- | ------------------ | ----------------- |
-| Web-Landing   | ❌          | ❌              | ✅                  | ✅                 |
-| Dashboard     | ✅          | ✅              | ✅                  | ✅                 |
-| Hive          | ✅          | ✅              | ✅                  | ✅                 |
-| Chat          | ✅          | ✅              | ✅                  | ✅                 |
-| Map           | ✅          | ✅              | ✅                  | ✅                 |
-| Data          | ✅          | ✅              | ✅                  | ✅                 |
-| Observability | ❌          | ✅              | ✅                  | ✅                 |
-| Omni-channel  | ✅          | ✅              | ✅                  | ✅                 |
-| Apps          | ✅          | ✅              | ✅                  | ✅                 |
-| Wallet        | ❌          | ❌              | ✅                  | ✅                 |
-| Vault         | ❌          | ✅              | ✅                  | ✅                 |
-| CLI           | ✅          | ✅              | ✅                  | ✅                 |
-| API & SDK     | ✅          | ✅              | ✅                  | ✅                 |
-| Mobile App    | ❌          | ❌              | ✅                  | ✅                 |
+| Web-Landing   | ❌         | ❌             | ✅                 | ✅                |
+| Dashboard     | ✅         | ✅             | ✅                 | ✅                |
+| Hive          | ✅         | ✅             | ✅                 | ✅                |
+| Chat          | ✅         | ✅             | ✅                 | ✅                |
+| Map           | ✅         | ✅             | ✅                 | ✅                |
+| Data          | ✅         | ✅             | ✅                 | ✅                |
+| Observability | ❌         | ✅             | ✅                 | ✅                |
+| Omni-channel  | ✅         | ✅             | ✅                 | ✅                |
+| Apps          | ✅         | ✅             | ✅                 | ✅                |
+| Wallet        | ❌         | ❌             | ✅                 | ✅                |
+| Vault         | ❌         | ✅             | ✅                 | ✅                |
+| CLI           | ✅         | ✅             | ✅                 | ✅                |
+| API & SDK     | ✅         | ✅             | ✅                 | ✅                |
+| Mobile App    | ❌         | ❌             | ✅                 | ✅                |
 
 ---
 
 ## 🤖 Agent Availability Matrix
 
-| Agent       | Standalone | Docker Cluster | Kubernetes Cluster (on-prem/private-cloud) | HyperAgency Cloud |
+| Agent       | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
 | ----------- | ---------- | -------------- | ------------------ | ----------------- |
-| Chat        | ❌          | ✅              | ✅                  | ✅                 |
-| RAG         | ❌          | ✅              | ✅                  | ✅                 |
-| ImageGen    | ❌          | ✅              | ✅                  | ✅                 |
-| BrowserUse  | ❌          | ✅              | ✅                  | ✅                 |
-| OpenClaw    | ❌          | ✅              | ✅                  | ✅                 |
-| Hermes      | ❌          | ✅              | ✅                  | ✅                 |
-| Codex       | ❌          | ✅              | ✅                  | ✅                 |
-| Claude Code | ❌          | ❌              | ❌                  | ✅                 |
-| STT         | ❌          | ✅              | ✅                  | ✅                 |
-| TTS         | ❌          | ✅              | ✅                  | ✅                 |
-| Avatar      | ❌          | ✅              | ✅                  | ✅                 |
-| Maptrix     | ✅          | ✅              | ✅                  | ✅                 |
-| Code        | ❌          | ✅              | ✅                  | ✅                 |
-| Command     | ❌          | ✅              | ✅                  | ✅                 |
-| Quantum     | ❌          | ✅              | ✅                  | ✅                 |
-| Storage     | ❌          | ✅              | ✅                  | ✅                 |
-| Transform   | ✅          | ✅              | ✅                  | ✅                 |
-| System      | ✅          | ✅              | ✅                  | ✅                 |
-| MCP         | ✅          | ✅              | ✅                  | ✅                 |
-| A2A         | ✅          | ✅              | ✅                  | ✅                 |
-| Curl        | ✅          | ✅              | ✅                  | ✅                 |
-| Langflow    | ❌          | ✅              | ✅                  | ✅                 |
-| Node-RED    | ❌          | ✅              | ✅                  | ✅                 |
-| N8n         | ❌          | ✅              | ✅                  | ✅                 |
-| Notebook    | ❌          | ✅              | ✅                  | ✅                 |
+| Chat        | ❌         | ✅             | ✅                 | ✅                |
+| RAG         | ❌         | ✅             | ✅                 | ✅                |
+| ImageGen    | ❌         | ✅             | ✅                 | ✅                |
+| BrowserUse  | ❌         | ✅             | ✅                 | ✅                |
+| OpenClaw    | ❌         | ✅             | ✅                 | ✅                |
+| Hermes      | ❌         | ✅             | ✅                 | ✅                |
+| Codex       | ❌         | ✅             | ✅                 | ✅                |
+| Claude Code | ❌         | ❌             | ❌                 | ✅                |
+| STT         | ❌         | ✅             | ✅                 | ✅                |
+| TTS         | ❌         | ✅             | ✅                 | ✅                |
+| Avatar      | ❌         | ✅             | ✅                 | ✅                |
+| Maptrix     | ✅         | ✅             | ✅                 | ✅                |
+| Code        | ❌         | ✅             | ✅                 | ✅                |
+| Command     | ❌         | ✅             | ✅                 | ✅                |
+| Quantum     | ❌         | ✅             | ✅                 | ✅                |
+| Storage     | ❌         | ✅             | ✅                 | ✅                |
+| Transform   | ✅         | ✅             | ✅                 | ✅                |
+| System      | ✅         | ✅             | ✅                 | ✅                |
+| MCP         | ✅         | ✅             | ✅                 | ✅                |
+| A2A         | ✅         | ✅             | ✅                 | ✅                |
+| Curl        | ✅         | ✅             | ✅                 | ✅                |
+| Langflow    | ❌         | ✅             | ✅                 | ✅                |
+| Node-RED    | ❌         | ✅             | ✅                 | ✅                |
+| N8n         | ❌         | ✅             | ✅                 | ✅                |
+| Notebook    | ❌         | ✅             | ✅                 | ✅                |
 
 ---
 
 ## 🌉 Bridge Availability Matrix
 
-| Bridge            | Standalone | Docker Cluster | Kubernetes Cluster (on-prem/private-cloud) | HyperAgency Cloud |
+| Bridge            | Standalone | Docker Cluster | Kubernetes Cluster | HyperAgency Cloud |
 | ----------------- | ---------- | -------------- | ------------------ | ----------------- |
-| Messengers        | ❌          | ✅              | ✅                  | ✅                 |
-| Email             | ✅          | ✅              | ✅                  | ✅                 |
-| Phone             | ❌          | ❌              | ✅                  | ✅                 |
-| Scheduler         | ✅          | ✅              | ✅                  | ✅                 |
-| Webhooks Server   | ✅          | ✅              | ✅                  | ✅                 |
-| A2A Server        | ✅          | ✅              | ✅                  | ✅                 |
-| MCP Server        | ✅          | ✅              | ✅                  | ✅                 |
-| Web App (Lowdefy) | ❌          | ✅              | ✅                  | ✅                 |
-| XMPP Server       | ✅          | ✅              | ✅                  | ✅                 |
+| Messengers        | ❌         | ✅             | ✅                 | ✅                |
+| Email             | ✅         | ✅             | ✅                 | ✅                |
+| Phone             | ❌         | ❌             | ✅                 | ✅                |
+| Scheduler         | ✅         | ✅             | ✅                 | ✅                |
+| Webhooks Server   | ✅         | ✅             | ✅                 | ✅                |
+| A2A Server        | ✅         | ✅             | ✅                 | ✅                |
+| MCP Server        | ✅         | ✅             | ✅                 | ✅                |
+| Web App (Lowdefy) | ❌         | ✅             | ✅                 | ✅                |
+| XMPP Server       | ✅         | ✅             | ✅                 | ✅                |
 
 ---
 
