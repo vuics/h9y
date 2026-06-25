@@ -1,5 +1,5 @@
 # ============================================================
-# BUILD STAGE: API
+# BUILD STAGE: API (NODE.JS)
 # ============================================================
 
 FROM node:26.3.0-bookworm-slim AS api-builder
@@ -18,7 +18,7 @@ RUN npm prune --omit=dev \
 
 
 # ============================================================
-# BUILD STAGE: APP
+# BUILD STAGE: APP (NODE.JS)
 # ============================================================
 
 FROM node:26.3.0-bookworm-slim AS app-builder
@@ -41,65 +41,31 @@ RUN npm run build
 #  && npm cache clean --force
 
 # ============================================================
-# BUILD STAGE: PYTHON (CLEAN SELFDEV-AGENCY)
+# BUILD STAGE: AGENCY (PYTHON)
 # ============================================================
 
-# FROM python:3.11-slim-bookworm AS python-builder
+FROM node:26.3.0-bookworm-slim AS agency-builder
 
-# WORKDIR /build/python
+WORKDIR /build/agency
 
-# ENV PYTHONUNBUFFERED=1 \
-#     PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-# # Minimal build deps only (NO chromium, libreoffice, rust, etc.)
-# RUN apt-get update && \
-#     apt-get install -y --no-install-recommends \
-#         gcc \
-#         g++ \
-#         make \
-#         curl \
-#         ca-certificates \
-#         libmagic1 \
-#         libzmq3-dev \
-#     && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3 python3-pip python3-venv python3-dev \
+        git build-essential libmagic1 \
+        curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# # Upgrade pip tooling only
-# RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN python3 -m venv --copies /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# # Install python deps first (cached layer)
-# COPY selfdev-agency/requirements.txt ./
-# RUN pip install --no-cache-dir -r requirements.txt
+COPY selfdev-agency/requirements_standalone.txt ./
+RUN pip install --no-cache-dir -r requirements_standalone.txt
 
-# # Install package itself (your setup.py project)
-# COPY selfdev-agency/setup.py ./
-# COPY selfdev-agency/src ./src
-# COPY selfdev-agency/input ./input
-# COPY selfdev-agency/README.md ./
-
-# RUN pip install --no-cache-dir .
-
-
-
-
-
-
-
-
-# FROM python:3.11-slim-bookworm AS python-builder
-
-# WORKDIR /build/python
-
-# RUN python -m venv /opt/venv
-
-# ENV PATH="/opt/venv/bin:$PATH"
-
-# COPY selfdev-agency/requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
-
-# COPY selfdev-agency/ .
-# RUN pip install --no-cache-dir .
-
-
+COPY selfdev-agency/ ./
+RUN pip install --no-cache-dir .
 
 # ============================================================
 # FINAL IMAGE
@@ -133,8 +99,11 @@ RUN apt-get update && \
         luarocks liblua5.4-dev \
         redis libcap2-bin \
         python3 python3-pip python3-venv python3-dev \
+        libmagic1 \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/cache/apt/*
+
+RUN npm install -g nodemon
 
 # ------------------------------------------------------------
 # S6 Overlay
@@ -266,12 +235,6 @@ EOF
 RUN chmod +x /etc/services.d/prosody/run
 
 # ------------------------------------------------------------
-# Nodemon
-# ------------------------------------------------------------
-
-RUN npm install -g nodemon
-
-# ------------------------------------------------------------
 # API
 # ------------------------------------------------------------
 
@@ -342,33 +305,20 @@ RUN chmod +x /etc/services.d/app/run
 
 WORKDIR /opt/agency
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        git build-essential libmagic1 \
-        python3-venv python3-pip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY --from=agency-builder /opt/venv /opt/venv
+COPY --from=agency-builder /build/agency /opt/agency
 
-RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY selfdev-agency/requirements_standalone.txt ./
-RUN pip install --no-cache-dir -r requirements_standalone.txt
-
-COPY selfdev-agency/ .
-
-RUN pip install --no-cache-dir .
-
-RUN mkdir -p /etc/services.d/selfdev && \
-    cat <<'EOF' > /etc/services.d/selfdev/run
+RUN mkdir -p /etc/services.d/agency && \
+    cat <<'EOF' > /etc/services.d/agency/run
 #!/bin/sh
 cd /opt/agency
 # exec python src/swarm_standalone.py
-exec nodemon --exec python src/swarm_standalone.py
+exec nodemon --exec python src/swarm_standalone.py  # FIXME: use plain python, not nodemon in production
 EOF
-RUN chmod +x /etc/services.d/selfdev/run
 
-
-
+RUN chmod +x /etc/services.d/agency/run
 
 # ------------------------------------------------------------
 # Startup

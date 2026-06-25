@@ -34,6 +34,10 @@ from prometheus import prometheus_pusher
 # Load environment variables
 load_dotenv()
 
+# NOTE: All defaults for env vars should be set for running
+#       all microservices in a single docker container
+#       (COMPOSE_PROFILES=standalone)
+
 # MongoDB connection settings
 DB_URL = os.getenv("DB_URL", "mongodb://localhost:27017/selfdev")
 
