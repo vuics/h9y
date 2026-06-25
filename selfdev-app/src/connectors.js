@@ -812,24 +812,15 @@ const connectors = {
     value: 'client',
     enable: hasProfile(['all', 'h9y', 'try', 'prosody', 'standalone']),
     icon: 'user secret',
-    text: 'XMPP Client',
+    text: 'XMPP Gateway',
     description: t('client.description'),
     docUrl: getDocUrl('client'),
     schema: {
-      title: 'Client Configuration',
+      title: 'Gateway Configuration',
       type: 'object',
       properties: {
         name: { type: 'string', title: 'Name', default: faker.internet.username().toLowerCase() },
         description: { type: 'string', title: 'Description', default: '' },
-
-        client: {
-          title: 'Client Configuration',
-          type: 'object',
-          properties: {
-
-          },
-          required: []
-        },
       }
     },
   },
