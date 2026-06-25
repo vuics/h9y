@@ -1,7 +1,7 @@
 version: '3.9'
 services:
 
-  h9y-standalone:
+  standalone:
     platform: ${PLATFORM}
     image: ${REGISTRY}h9y:${VERSION}
     build:
@@ -20,6 +20,7 @@ services:
       - h9y-vault-volume:/vault/file
       - ./selfdev-api/src:/opt/api/src
       - ./selfdev-app/src:/opt/app/src
+      - ./selfdev-agency/src:/opt/agency/src
 
 volumes:
   h9y-api-volume:

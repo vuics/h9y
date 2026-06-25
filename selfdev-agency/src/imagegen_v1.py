@@ -19,6 +19,9 @@ class ImagegenV1(XmppAgent):
 
   async def start(self):
     await super().start()
+
+    # logger.debug(f"imagegen apiKey: {self.config.options.imagegen.model.apiKey}")
+
     try:
       if self.config.options.imagegen.model.provider == 'openai':
         self.client = OpenAI(

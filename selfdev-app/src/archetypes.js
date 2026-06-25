@@ -507,7 +507,7 @@ const archetypes = {
   'imagegen-v1.0': {
     key: 'imagegen-v1.0',
     value: 'imagegen-v1.0',
-    enable: hasProfile(['all', 'h9y', 'try', 'agency']),
+    enable: hasProfile(['all', 'h9y', 'try', 'agency', 'standalone']),
     category: 'Visual',
     icon: 'images',
     text: 'ImageGen v1.0',
@@ -659,7 +659,7 @@ const archetypes = {
   'storage-v1.0': {
     key: 'storage-v1.0',
     value: 'storage-v1.0',
-    enable: hasProfile(['all', 'h9y', 'try', 'agency']),
+    enable: hasProfile(['all', 'h9y', 'try', 'agency', 'standalone']),
     category: 'System',
     icon: 'database',
     text: 'Storage v1.0',
@@ -710,7 +710,7 @@ const archetypes = {
   'command-v1.0': {
     key: 'command-v1.0',
     value: 'command-v1.0',
-    enable: hasProfile(['all', 'h9y', 'try', 'agency']),
+    enable: hasProfile(['all', 'h9y', 'try', 'agency', 'standalone']),
     category: 'Code',
     icon: 'terminal',
     text: 'Command v1.0',

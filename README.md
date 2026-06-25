@@ -191,7 +191,7 @@ We support four deployment modes:
 * A. 🧩 **Standalone** (individual) — single all-in-one Docker container for quick start and local testing
 * B. 🐳 **Docker Cluster** (team) — multi-service Docker Compose setup for personal or team deployments
 * C/D. ☸️  **Kubernetes Cluster** (enterprise) — scalable enterprise-grade infrastructure deployment (on-prem or private-cloud)
-* E. ☁️  **HyperAgency Cloud** (all) — fully managed hosted platform at [https://h9y.ai](https://h9y.ai)
+* E. ☁️  **HyperAgency Cloud** (any) — fully managed hosted platform at [https://h9y.ai](https://h9y.ai)
 
 ---
 
@@ -222,7 +222,7 @@ We support four deployment modes:
 | ----------- | ---------- | -------------- | ------------------ | ----------------- |
 | Chat        | ❌         | ✅             | ✅                 | ✅                |
 | RAG         | ❌         | ✅             | ✅                 | ✅                |
-| ImageGen    | ❌         | ✅             | ✅                 | ✅                |
+| ImageGen    | ✅         | ✅             | ✅                 | ✅                |
 | BrowserUse  | ❌         | ✅             | ✅                 | ✅                |
 | OpenClaw    | ❌         | ✅             | ✅                 | ✅                |
 | Hermes      | ❌         | ✅             | ✅                 | ✅                |
@@ -233,9 +233,9 @@ We support four deployment modes:
 | Avatar      | ❌         | ✅             | ✅                 | ✅                |
 | Maptrix     | ✅         | ✅             | ✅                 | ✅                |
 | Code        | ❌         | ✅             | ✅                 | ✅                |
-| Command     | ❌         | ✅             | ✅                 | ✅                |
+| Command     | ✅         | ✅             | ✅                 | ✅                |
 | Quantum     | ❌         | ✅             | ✅                 | ✅                |
-| Storage     | ❌         | ✅             | ✅                 | ✅                |
+| Storage     | ✅         | ✅             | ✅                 | ✅                |
 | Transform   | ✅         | ✅             | ✅                 | ✅                |
 | System      | ✅         | ✅             | ✅                 | ✅                |
 | MCP         | ✅         | ✅             | ✅                 | ✅                |

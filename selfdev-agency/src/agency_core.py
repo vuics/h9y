@@ -35,18 +35,18 @@ from prometheus import prometheus_pusher
 load_dotenv()
 
 # MongoDB connection settings
-DB_URL = os.getenv("DB_URL", "mongodb://mongo.dev.local:27017/selfdev")
+DB_URL = os.getenv("DB_URL", "mongodb://localhost:27017/selfdev")
 
 # XMPP default settings
-XMPP_HOST = os.getenv("XMPP_HOST", "selfdev-prosody.dev.local")
+XMPP_HOST = os.getenv("XMPP_HOST", "localhost")
 XMPP_PASSWORD = os.getenv("XMPP_PASSWORD", "a-geNt-$sec-ret-10m_pp")
-XMPP_MUC_HOST = os.getenv("XMPP_MUC_HOST", f"conference.{XMPP_HOST}")
+XMPP_MUC_HOST = os.getenv("XMPP_MUC_HOST", f"g.{XMPP_HOST}")
 
 # Agent monitoring settings
 MONITOR_SECONDS = int(os.getenv("MONITOR_SECONDS", "60"))
 
 # Redis settings for distributed locks
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis.dev.local:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
 REDIS_SOCKET_TIMEOUT = int(os.getenv("REDIS_SOCKET_TIMEOUT", "10"))  # 10s
 REDIS_CONNECT_TIMEOUT = int(os.getenv("REDIS_CONNECT_TIMEOUT", "15"))  # 15s
 LOCK_TIMEOUT = int(os.getenv("LOCK_TIMEOUT", "120"))  # 2m
@@ -113,9 +113,11 @@ def offset_time(time_at, delta_symbol):
 
 class AgentConfig:
   """Python representation of the MongoDB agent schema"""
-  def __init__(self, doc: Dict[str, Any], user):
+  def __init__(self, doc: Dict[str, Any], user, db):
     self.doc = doc
     self.user = user
+    self.db = db
+
     self.id = str(doc.get('_id'))
     self.userId = str(doc.get('userId'))
 
@@ -128,7 +130,10 @@ class AgentConfig:
 
     self.name = self.options.name
     self.joinRooms = self.options.joinRooms
-    self.replace_vault_values(self.options)
+
+  async def init(self):
+    await self.replace_vault_values(self.options)
+    return self
 
   def is_valid(self, ARCHETYPE_CLASSES) -> bool:
     """Check if the agent configuration is valid and should be deployed"""
@@ -162,44 +167,58 @@ class AgentConfig:
   def __repr__(self) -> str:
     return self.__str__()
 
-  def get_vault_value(self, vault_key: str) -> str:
-    if not vault_client:
-      return ''
+  async def get_vault_value(self, vault_key: str) -> str:
+    if vault_client:
+      try:
+        read_response = vault_client.secrets.kv.read_secret_version(
+          path=f'user_{self.userId}',
+          raise_on_deleted_version=False
+        )
+
+        return read_response['data']['data'].get(vault_key, '')
+
+      except Exception as e:
+        logger.error(
+          f"Error reading secret {vault_key} from Vault for user_{self.userId}: {e}"
+        )
+        return None
+
     try:
-      read_response = vault_client.secrets.kv.read_secret_version(
-        path=f'user_{self.userId}',
-        raise_on_deleted_version=False
-      )
-      vault_value = read_response['data']['data'][vault_key]
-      return vault_value
+      secret_doc = await self.db.secrets.find_one({
+        "userId": ObjectId(self.userId),
+        "key": vault_key
+      })
+
+      if not secret_doc:
+        return ''
+
+      return secret_doc.get("value", '')
+
     except Exception as e:
-      logger.error(f"Error reading secret {vault_key} from Vault for user_{self.userId}: {e}")
+      logger.error(
+        f"Error reading secret {vault_key} from MongoDB for user_{self.userId}: {e}"
+      )
       return None
 
-  def replace_vault_values(self, obj: Any):
-    if not vault_client:
-      return ''
+  async def replace_vault_values(self, obj: Any):
+    if obj is None:
+      return
 
-    if isinstance(obj, Box):
-      for key in list(obj.keys()):
-        value = obj[key]
-        # Check for {'valueFromVault': 'vaultKey'} pattern
-        if isinstance(value, dict) and set(value.keys()) == {"valueFromVault"}:
-          vault_key = value["valueFromVault"]
-          obj[key] = self.get_vault_value(vault_key)
-        else:
-          self.replace_vault_values(value)
-    elif isinstance(obj, dict):
-      for key in list(obj.keys()):
-        value = obj[key]
-        if isinstance(value, dict) and set(value.keys()) == {"valueFromVault"}:
-          vault_key = value["valueFromVault"]
-          obj[key] = self.get_vault_value(vault_key)
-        else:
-          self.replace_vault_values(value)
-    elif isinstance(obj, list):
+    if isinstance(obj, list):
       for item in obj:
-        self.replace_vault_values(item)
+        await self.replace_vault_values(item)
+      return
+
+    if isinstance(obj, (Box, dict)):
+      for key in list(obj.keys()):
+        value = obj[key]
+        if (isinstance(value, dict) and set(value.keys()) == {"valueFromVault"}):
+          vault_key = value["valueFromVault"]
+          obj[key] = await self.get_vault_value(vault_key)
+          continue
+        await self.replace_vault_values(value)
+      return
+    return
 
 
 async def connect_to_redis():
@@ -298,7 +317,7 @@ async def get_agent_configs(db) -> List[AgentConfig]:
     async for doc in cursor:
       user = await db.users.find_one({"_id": doc.get('userId')})
       # logger.debug(f'user: {user}')
-      config = AgentConfig(doc, user)
+      config = await AgentConfig(doc, user, db).init()
       configs.append(config)
 
     logger.info(f"Retrieved {len(configs)} agent configurations")

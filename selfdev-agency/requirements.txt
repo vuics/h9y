@@ -98,3 +98,5 @@ hvac==2.3.0
 stripe==11.4.1
 opensearch-py==3.0.0
 prometheus-client==0.23.1
+
+python-dateutil==2.9.0.post0
