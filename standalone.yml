@@ -20,6 +20,8 @@ services:
       - ./selfdev-api/src:/opt/api/src
       - ./selfdev-app/src:/opt/app/src
       - ./selfdev-agency/src:/opt/agency/src
+      # - ./certs/localhost/tls.key:/etc/prosody/certs/localhost.key
+      # - ./certs/localhost/tls.crt:/etc/prosody/certs/localhost.crt
 
 volumes:
   h9y-api-volume:

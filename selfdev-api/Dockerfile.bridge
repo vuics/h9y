@@ -5,7 +5,7 @@ RUN apk add --no-cache bash curl wget git make gcc g++ python3 nodejs npm expect
 
 # Install and enable Corepack
 RUN npm install -g corepack@latest && corepack enable
-RUN corepack prepare pnpm@latest --activate
+RUN corepack prepare pnpm@10.34.4 --activate
 # 👇 Define PNPM_HOME and update PATH so global packages work
 ENV PNPM_HOME="/usr/local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
