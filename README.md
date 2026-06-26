@@ -489,8 +489,6 @@ docker-compose -f standalone.yml build
 docker-compose -f standalone.yml up
 ```
 
-Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" above.
-
 Open [localhost:3990](https://localhost:3990/) in the browser and start using standalone h9y.
 
 ---
@@ -535,6 +533,8 @@ Use Docker Compose to start all services:
 ```bash
 docker-compose up
 ```
+
+Open [vault.h9y.localhost](https://vault.h9y.localhost) in the browser to unlock Vault. Vault is used for secure storage of keys, see the section "Initialize Vault" abovefor more details.
 
 Open [h9y.localhost](https://h9y.localhost) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" above.
 
