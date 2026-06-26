@@ -4,10 +4,6 @@ services:
   standalone:
     platform: ${PLATFORM}
     image: ${REGISTRY}h9y-standalone:${VERSION}
-    build:
-      context: ./
-      args:
-        - COMPOSE_PROFILES=standalone
     ports:
       - 3990:3990    # app
       - 6369:6369    # api

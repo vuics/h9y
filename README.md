@@ -289,7 +289,7 @@ To run HyperAgency locally, install the following:
 
 ---
 
-### Option A: Quick Start (Install Standalone)
+### Install Option A: Quick Start (Install Standalone)
 
 Quick start:
 ```bash
@@ -307,7 +307,7 @@ docker run \
 
 Open [localhost:3990](https://localhost:3990/) in the browser and start using standalone h9y.
 
-### Option B: Install Docker Cluster
+### Install Option B: Install Docker Cluster
 
 ```bash
 mkdir hyperagency
@@ -358,13 +358,39 @@ NOTE: Replace `h9y.localhost` with your `${DOMAIN}`.
   docker compose up
   ```
 
+#### 👥 Compose Profiles (Docker Cluster Only)
+
+HyperAgency ships with **predefined Docker Compose profiles** that let you start small, scale fast, and run *exactly* what you need—no more, no less. Profiles align the platform with your **intent**, from first exploration to a full, production-grade agentic stack.
+
+| Profile Name | Description                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `try`        | **Minimal, zero‑friction setup** to explore HyperAgency (default). Ideal for first‑time users, quick demos, and experiments. |
+| `h9y`        | **Core HyperAgency services** included in the `h9y` repository. Best for active development and local iteration.             |
+| `all`        | **Complete HyperAgency Cloud stack**, mirroring the services available at [HyperAgency Cloud](https://h9y.ai).               |
+
+You can find the **exhaustive list of available profiles** in the [`docker-compose.yaml`](https://github.com/vuics/h9y/blob/main/docker-compose.yml).
+
+##### ⚙️ Selecting a Profile
+
+Choose the profile that matches your current goal by setting it in the [`.env`](https://github.com/vuics/h9y/blob/main/env.example) file:
+```bash
+COMPOSE_PROFILES=h9y
+```
+
+You can enable multiple profiles and Docker Compose will merge them into a single runtime configuration:
+```bash
+COMPOSE_PROFILES=try,logs,metrics
+```
+
+Then start HyperAgency using Docker Compose as usual. Docker will run **only** the services associated with the selected profiles.
+
 #### 🎬 Watch Simple Install Video on YouTube
 
 [![Watch the Simple Install Video](https://img.youtube.com/vi/VslDuuoJ46c/0.jpg)](https://youtu.be/VslDuuoJ46c?t=136)
 
 ---
 
-### Option C: Kubernetes Cluster (Enterprise Self-Hosted)
+### Install Option C: Kubernetes Cluster (Enterprise Self-Hosted)
 
 > Recommended for enterprise-grade deployments, high availability, and production-scale infrastructure.
 
@@ -393,7 +419,7 @@ Deploy HyperAgency on your own Kubernetes infrastructure using our official Helm
 
 ---
 
-### Option D: Managed Private Cloud (HyperAgency Deployed for You)
+### Install Option D: Managed Private Cloud (HyperAgency Deployed for You)
 
 > Best for teams who want HyperAgency in production without managing infrastructure.
 
@@ -418,7 +444,7 @@ We deploy and operate a dedicated HyperAgency instance tailored to your environm
 
 ---
 
-### Option E: HyperAgency Cloud (SaaS Self-Serve)
+### Install Option E: HyperAgency Cloud (SaaS Self-Serve)
 
 > Fastest way to start using HyperAgency — no setup required.
 
@@ -446,34 +472,6 @@ Access HyperAgency directly via our hosted platform:
 
 ---
 
-### 👥 Compose Profiles (Docker Cluster Only)
-
-HyperAgency ships with **predefined Docker Compose profiles** that let you start small, scale fast, and run *exactly* what you need—no more, no less. Profiles align the platform with your **intent**, from first exploration to a full, production-grade agentic stack.
-
-| Profile Name | Description                                                                                                                  |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `try`        | **Minimal, zero‑friction setup** to explore HyperAgency (default). Ideal for first‑time users, quick demos, and experiments. |
-| `h9y`        | **Core HyperAgency services** included in the `h9y` repository. Best for active development and local iteration.             |
-| `all`        | **Complete HyperAgency Cloud stack**, mirroring the services available at [HyperAgency Cloud](https://h9y.ai).               |
-
-You can find the **exhaustive list of available profiles** in the [`docker-compose.yaml`](https://github.com/vuics/h9y/blob/main/docker-compose.yml).
-
-#### ⚙️ Selecting a Profile
-
-Choose the profile that matches your current goal by setting it in the [`.env`](https://github.com/vuics/h9y/blob/main/env.example) file:
-```bash
-COMPOSE_PROFILES=h9y
-```
-
-You can enable multiple profiles and Docker Compose will merge them into a single runtime configuration:
-```bash
-COMPOSE_PROFILES=try,logs,metrics
-```
-
-Then start HyperAgency using Docker Compose as usual. Docker will run **only** the services associated with the selected profiles.
-
----
-
 #### 🎬 Watch Usage Video on YouTube
 
 [![Watch Usage Video](https://img.youtube.com/vi/96emBUqcJkY/0.jpg)](https://youtu.be/96emBUqcJkY?t=579)
@@ -482,7 +480,7 @@ Then start HyperAgency using Docker Compose as usual. Docker will run **only** t
 
 ## 🏗️ Build from Source
 
-### Option 1: Build Standalone from Repo
+### Build Option 1: Build Standalone from Repo
 
 ```bash
 git clone git@github.com:vuics/h9y.git
@@ -491,13 +489,13 @@ docker-compose -f standalone.yml build
 docker-compose -f standalone.yml up
 ```
 
-Open [localhost:5281](https://localhost:5281/) in the browser. Confirm using untrusted certificate.
+Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" above.
 
-Open [localhost:8200](https://localhost:8200) in the browser. To unlock Vault for secure storage of keys, see the section "Initialize Vault" below.
+Open [localhost:3990](https://localhost:3990/) in the browser and start using standalone h9y.
 
 ---
 
-### Option 2: Build Docker Cluster from Repo
+### Build Option 2: Build Docker Cluster from Repo
 
 #### 📦 1. Clone the Repository with Submodules
 
