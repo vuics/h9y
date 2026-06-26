@@ -182,8 +182,9 @@ services:
       - VITE_BRIDGE_URL=https://bridge.${DOMAIN}
       - VITE_DOCS_URL=https://docs.h9y.ai
       - VITE_COMPOSE_PROFILES=${COMPOSE_PROFILES}
-      - VITE_XMPP_HOST=x.${DOMAIN}
+      - VITE_XMPP_BOSH_SERVICE_URL=https://x.${DOMAIN}/http-bind/
       - VITE_XMPP_WEBSOCKET_URL=wss://x.${DOMAIN}/xmpp-websocket
+      - VITE_XMPP_HOST=x.${DOMAIN}
       - VITE_XMPP_MUC_HOST=g.${DOMAIN}
       - VITE_XMPP_SHARE_HOST=f.${DOMAIN}
       - VITE_XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
