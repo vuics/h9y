@@ -294,15 +294,12 @@ To run HyperAgency locally, install the following:
 Quick start:
 ```bash
 docker run \
-  --name h9y-standalone \
   -p 3990:3990 -p 6369:6369 -p 6370:6370 -p 5280:5280 \
-  -v h9y-api-volume:/opt/data \
-  -v h9y-mongo-volume:/data/db \
-  -v h9y-prosody-volume:/var/lib/prosody \
-  ghcr.io/vuics/h9y:v1.39.0
+  -v h9y-standalone-volume:/var/lib/ \
+  ghcr.io/vuics/h9y-standalone:v1.39.0
 
 # Or use latest image:
-#   ghcr.io/vuics/h9y:latest
+#   ghcr.io/vuics/h9y-standalone:latest
 ```
 
 Open [localhost:3990](https://localhost:3990/) in the browser and start using standalone h9y.

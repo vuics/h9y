@@ -625,7 +625,7 @@ const conf = {
     port: num(process.env.FILES_PORT || 6371),
     secure: bool(process.env.FILES_SECURE || true),
     uploadSecret: process.env.FILES_UPLOAD_SECRET || 'U2VjcmV0VG9rZW4wMzYz',
-    storageDir: process.env.FILES_STORAGE_DIR || '/opt/data',
+    storageDir: process.env.FILES_STORAGE_DIR || '/var/lib/data/api',
   },
 
   compose: {

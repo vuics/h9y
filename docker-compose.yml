@@ -279,10 +279,10 @@ services:
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
       - FILES_SECURE=true
       - FILES_UPLOAD_SECRET=U2VjcmV0VG9rZW4wMzYz
-      - FILES_STORAGE_DIR=/opt/data
+      - FILES_STORAGE_DIR=/var/lib/data/api
       - LIMITS_ENABLE=false
     volumes:
-      - selfdev-api-volume:/opt/data/
+      - selfdev-api-volume:/var/lib/data/api
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`api.${DOMAIN}`)"

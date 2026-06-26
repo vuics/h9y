@@ -4,22 +4,20 @@ services:
   standalone:
     platform: ${PLATFORM}
     image: ${REGISTRY}h9y-standalone:${VERSION}
+    build:
+      context: ./
     ports:
       - 3990:3990    # app
       - 6369:6369    # api
       - 6370:6370    # bridge
-      - 5280:5280    # prosody ws, http
+      - 5280:5280    # prosody http/ws
     volumes:
-      - h9y-api-volume:/opt/data/
-      - h9y-mongo-volume:/data/db
-      - h9y-prosody-volume:/var/lib/prosody/
+      - h9y-standalone-volume:/var/lib/
       - ./selfdev-api/src:/opt/api/src
       - ./selfdev-app/src:/opt/app/src
       - ./selfdev-agency/src:/opt/agency/src
       - ./selfdev-prosody/prosody.cfg.lua:/etc/prosody/prosody.cfg.lua
 
 volumes:
-  h9y-api-volume:
-  h9y-mongo-volume:
-  h9y-prosody-volume:
+  h9y-standalone-volume:
 

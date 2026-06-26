@@ -16,7 +16,6 @@ COPY selfdev-api/ .
 RUN npm prune --omit=dev \
  && npm cache clean --force
 
-
 # ============================================================
 # BUILD STAGE: APP (NODE.JS)
 # ============================================================
@@ -29,16 +28,10 @@ ENV VITE_COMPOSE_PROFILES=$COMPOSE_PROFILES
 WORKDIR /build/app
 
 COPY selfdev-app/package*.json ./
-# RUN npm ci
-RUN npm i   # FIXME: use: `npm ci` to minimize image size
+RUN npm i
 
 COPY selfdev-app/ .
 RUN npm run build
-
-# FIXME: uncomment to minimize image size:
-# # Keep only runtime deps if serve requires them
-# RUN npm prune --omit=dev \
-#  && npm cache clean --force
 
 # ============================================================
 # BUILD STAGE: AGENCY (PYTHON)
@@ -143,12 +136,11 @@ RUN set -eux; \
     rm -f mongodb.deb; \
     rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /data/db
-
 RUN mkdir -p /etc/services.d/mongodb && \
     cat <<'EOF' > /etc/services.d/mongodb/run
 #!/bin/sh
-exec mongod --bind_ip_all --dbpath /data/db --quiet  > /dev/null 2>&1
+mkdir -p /var/lib/data/db
+exec mongod --bind_ip_all --dbpath /var/lib/data/db --quiet  > /dev/null 2>&1
 EOF
 
 RUN chmod +x /etc/services.d/mongodb/run
@@ -229,8 +221,8 @@ if [[ "$LOCAL" && "$PASSWORD" && "$DOMAIN" ]]; then
     prosodyctl register "$LOCAL" "$DOMAIN" "$PASSWORD"
 fi
 
-exec runuser -u prosody -- "$@"
-# exec runuser -u prosody -- "$@"  > /dev/null 2>&1
+# exec runuser -u prosody -- "$@"
+exec runuser -u prosody -- "$@"  > /dev/null 2>&1
 EOF
 
 RUN chmod +x /etc/services.d/prosody/run
@@ -247,6 +239,7 @@ RUN mkdir -p /etc/services.d/api && \
     cat <<'EOF' > /etc/services.d/api/run
 #!/bin/sh
 cd /opt/api
+mkdir -p /var/lib/data/api
 # exec npm run prod
 exec npm start  # FIXME: use `npm run prod` for prod
 EOF
