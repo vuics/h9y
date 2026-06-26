@@ -83,9 +83,9 @@ modules_enabled = {
   "admin_shell"; -- Allow secure administration via 'prosodyctl shell'
 
   -- HTTP modules
-  --"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
+  "bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
   --"http_openmetrics"; -- for exposing metrics to stats collectors
-  --"websocket"; -- XMPP over WebSockets
+  "websocket"; -- XMPP over WebSockets
 
   -- Other specific functionality
   --"announce"; -- Send announcement to all online users
@@ -117,6 +117,18 @@ modules_disabled = {
   -- "mod_bosh";
   -- "mod_websocket";
 }
+
+
+-- HTTP LISTENERS
+-- Allow using http 5280 and https 5281 ports
+http_ports = { 5280 }
+http_interfaces = { "*" }
+https_ports = { 5281 }
+c2s_require_encryption = false
+allow_unencrypted_plain_auth = true
+
+-- Allow insecure HTTP: This tells Prosody that HTTP BOSH is acceptable.
+consider_bosh_secure = false
 
 
 -- Server-to-server authentication

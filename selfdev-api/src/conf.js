@@ -460,7 +460,7 @@ const conf = {
     host: process.env.XMPP_HOST || 'localhost',
     connectHost: process.env.XMPP_CONNECT_HOST || 'localhost',
 
-    websocketUrl: process.env.XMPP_WEBSOCKET_URL || 'wss://localhost:5281/xmpp-websocket',
+    websocketUrl: process.env.XMPP_WEBSOCKET_URL || 'ws://localhost:5280/xmpp-websocket',
     mucHost: process.env.XMPP_MUC_HOST || 'g.localhost',
     shareHost: process.env.XMPP_SHARE_HOST || 'f.localhost',
     shareUrlPrefix: process.env.XMPP_SHARE_URL_PREFIX || 'http://localhost:6369/v1/files/',

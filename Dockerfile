@@ -229,7 +229,8 @@ if [[ "$LOCAL" && "$PASSWORD" && "$DOMAIN" ]]; then
     prosodyctl register "$LOCAL" "$DOMAIN" "$PASSWORD"
 fi
 
-exec runuser -u prosody -- "$@"  > /dev/null 2>&1
+exec runuser -u prosody -- "$@"
+# exec runuser -u prosody -- "$@"  > /dev/null 2>&1
 EOF
 
 RUN chmod +x /etc/services.d/prosody/run

@@ -3,7 +3,7 @@ services:
 
   standalone:
     platform: ${PLATFORM}
-    image: ${REGISTRY}h9y:${VERSION}
+    image: ${REGISTRY}h9y-standalone:${VERSION}
     build:
       context: ./
       args:
@@ -12,7 +12,7 @@ services:
       - 3990:3990    # app
       - 6369:6369    # api
       - 6370:6370    # bridge
-      - 5281:5281    # prosody wss, https
+      - 5280:5280    # prosody ws, http
     volumes:
       - h9y-api-volume:/opt/data/
       - h9y-mongo-volume:/data/db
@@ -20,8 +20,7 @@ services:
       - ./selfdev-api/src:/opt/api/src
       - ./selfdev-app/src:/opt/app/src
       - ./selfdev-agency/src:/opt/agency/src
-      # - ./certs/localhost/tls.key:/etc/prosody/certs/localhost.key
-      # - ./certs/localhost/tls.crt:/etc/prosody/certs/localhost.crt
+      - ./selfdev-prosody/prosody.cfg.lua:/etc/prosody/prosody.cfg.lua
 
 volumes:
   h9y-api-volume:

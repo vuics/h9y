@@ -129,9 +129,9 @@ const conf = {
 
   xmpp: {
     host: import.meta.env.VITE_XMPP_HOST || 'localhost',
-    boshServiceUrl: import.meta.env.VITE_XMPP_BOSH_SERVICE_URL || '',  // 'https://localhost:5281/http-bind/',
+    boshServiceUrl: import.meta.env.VITE_XMPP_BOSH_SERVICE_URL || 'http://localhost:5280/http-bind/',
+    websocketUrl: import.meta.env.VITE_XMPP_WEBSOCKET_URL || 'ws://localhost:5280/xmpp-websocket',
     discoverConnectionMethods: bool(import.meta.env.VITE_XMPP_DISCOVER_CONNECTION_METHODS || false),
-    websocketUrl: import.meta.env.VITE_XMPP_WEBSOCKET_URL || 'wss://localhost:5281/xmpp-websocket',
     mucHost: import.meta.env.VITE_XMPP_MUC_HOST || 'conference.localhost',
     shareHost: import.meta.env.VITE_XMPP_SHARE_HOST || 'share.localhost',
     shareUrlPrefix: import.meta.env.VITE_XMPP_SHARE_URL_PREFIX || 'https://selfdev-api.dev.local:6369/v1/files/',
