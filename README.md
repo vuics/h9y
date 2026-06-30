@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-Multi%20License-lightgrey?style=flat)](https://github.com/vuics/h9y/blob/main/LICENSE)
 [![Pilot](https://img.shields.io/badge/Pilot-Early%20Access-orange?style=flat)](https://forms.gle/bCACFoXj7so4paDg8)
 
-[**HyperAgency**](https://h9y.ai/) is an **Agentic AI Operating System** that replaces brittle, fragile automations with **long-lived, self-improving systems**. HyperAgency allows organizations to deploy autonomous agents that **remember, adapt, and act on your behalf**, under **human governance and auditability**.  
+[**HyperAgency**](https://h9y.ai/) is an **Agentic AI Operating System** that replaces brittle, fragile automations with **long-lived, self-improving systems**. HyperAgency allows organizations to deploy persistent autonomous agents inside a multi-user operating system, where every user owns one or more agents that collaborate through secure messaging, shared workflows, and distributed memory.
 
 It is **open-source, model-agnostic, and cloud/self-hosted**, providing the infrastructure to build **fully autonomous AI-human organizations**.
 
@@ -30,16 +30,125 @@ It is **open-source, model-agnostic, and cloud/self-hosted**, providing the infr
 HyperAgency is more than an AI platform — it's a **new operational layer**:
 
 - **Persistent Agency** — agents maintain memory and context across time, adapting to real-world changes.  
-- **Coordinated Intelligence** — multiple agents work together to solve complex problems.  
+- **Multi-User Collaboration** — organizations can host many users, each owning multiple autonomous agents that collaborate securely across teams.
 - **Human Governance** — clear approval points, credential management, and auditable behavior.  
 - **Omni-Channel Connectivity** — integrate across messengers, web apps, email, and APIs.  
 - **Decentralized Architecture** — connect multiple HyperAgency instances for distributed collaboration.  
 - **Web3 Marketplace** — publish, buy, and monetize agentic workflows and HyperAgents.  
 - **MetaAgent** — self-developing AI that creates, evolves, and orchestrates agents autonomously.
+- **Federated OS Network** — multiple HyperAgency instances can interconnect via XMPP S2S, enabling secure cross-organization collaboration between users and agents while preserving data sovereignty.
 
 > HyperAgency turns AI from **fragile scripts and prompts** into **living, compound intelligence systems**.
 
 ![What Is](./images/what-is.png)
+
+---
+
+# 👥 Multi-User & Multi-Agent Operating System
+
+Unlike most AI frameworks that focus on a single assistant or isolated workflow, **HyperAgency is designed as a true operating system for organizations.**
+
+A single HyperAgency deployment supports multiple independent user accounts. Each user can own one or many autonomous agents that collaborate on their behalf.
+
+```
+Organization
+│
+├── User Alice
+│   ├── Research Agent
+│   ├── Sales Agent
+│   └── Browser Agent
+│   └── Omni-channel Bridges
+│
+├── User Bob
+│   ├── Coding Agent
+│   ├── Support Agent
+│   └── Finance Agent
+│   └── Omni-channel Bridges
+│
+└── Shared Organization Services
+    ├── Vault
+    ├── APIs
+    └── Shared Infrastructure
+```
+
+Agents are not isolated. They can securely communicate with:
+
+* their human owner
+* other agents belonging to the same user
+* agents owned by other users (subject to permissions)
+* external organizations through federated communication
+
+Communication is powered by the built-in **XMPP messaging infrastructure**, providing persistent messaging, presence, routing, and federation between humans and AI agents.
+
+This architecture enables **human-human**, **human-agent**, and **agent-agent** collaboration across organizational boundaries while preserving identity, permissions, and auditability.
+
+---
+
+# 🌐 Federated HyperAgency Network (Instance-to-Instance Communication)
+
+HyperAgency is not limited to a single deployment.
+
+Multiple HyperAgency instances can be connected together to form a **federated distributed AI operating system network**.
+
+Each instance may represent:
+
+* a team
+* an enterprise
+* a client environment
+* a personal deployment
+* a partner organization
+
+Instances communicate using **XMPP server-to-server (S2S) federation**, enabling secure and structured message exchange between:
+
+* users ↔ users across instances
+* agents ↔ agents across instances
+* users ↔ agents across instances
+
+This creates a **network of autonomous AI operating systems**, rather than isolated deployments.
+
+---
+
+## 🔁 Communication Model
+
+* Each instance runs independently
+* Communication is federated via XMPP S2S
+* Identity and permissions are scoped per instance
+* Cross-instance messaging is explicitly routed and authorized
+
+---
+
+## 🔒 Data Ownership & Privacy Model
+
+HyperAgency enforces strict data locality:
+
+* Message history is stored **only on the sender’s and receiver’s instances**
+* There is **no global shared conversation database**
+* The network does not replicate or synchronize historical messages
+
+This ensures:
+
+* privacy by design
+* organizational sovereignty
+* compliance-friendly deployment
+* zero central data dependency
+
+### “HyperAgency Federation Topology”
+
+```
+[Instance A] ---- XMPP S2S ---- [Instance B]
+     │                               │
+ Users + Agents                Users + Agents
+     │                               │
+ Local Memory Only          Local Memory Only
+```
+
+---
+
+## 🌍 Resulting System Property
+
+This architecture enables:
+
+> A **decentralized network of AI operating systems** where each node is autonomous, but interoperable.
 
 ---
 
@@ -49,12 +158,87 @@ HyperAgency is more than an AI platform — it's a **new operational layer**:
 - 💬 **Multi-Agent Communication** — human and AI interaction in one interface.  
 - 🗺️ **Map View** — visualize workflows and agent coordination.  
 - 🧩 **Composable Systems** — agents can orchestrate other agents, integrate APIs, run scripts, generate content, or process data.  
-- 🔀 **Persistent Memory** — knowledge, workflow state, and context are shared and versioned.  
+- 🔀 **Multi-Layer Memory** — structural, conversational, operational, artifact, observability, capability, and blockchain memory provide persistent long-term intelligence.  
 - 🔐 **Governance & Security** — Vault-secured credentials, audit logs, approvals.  
 - 🌍 **Distributed Nodes** — federated network for scalable collaboration.  
 - ⚡ **Rapid Deployment** — cloud or local containerized setup, production-ready.
+- 🌐 **Federated Instance Networking** — connect multiple HyperAgency deployments into a secure distributed AI OS network using XMPP server-to-server communication.
 
 ![Experience Components](./images/experience-components.png)
+
+---
+
+# 🧠 Multi-Layer Memory Architecture
+
+Traditional AI systems usually think of memory as a conversation history or a vector database.
+
+HyperAgency treats memory as a distributed operating system capability, where different types of information are stored in specialized persistence layers optimized for their purpose.
+
+| Memory Layer                 | Purpose                                                                 | Technology                                           |
+| ---------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------- |
+| Structural Memory            | Agent definitions, coordination maps, omni-channel bridges              | MongoDB (JSON)                                       |
+| Interaction Memory           | Human-agent and agent-agent conversations                               | XMPP + PostgreSQL                                    |
+| Knowledge & Artifact Memory  | Documents, generated files, datasets                                    | Filesystem + Docker/Kubernetes volumes               |
+| Operational Memory           | Workflow state, variables, runtime data                                 | MongoDB + Key/Value Storage Agent                    |
+| Runtime Coordination Memory  | Agent execution coordination: locks, heartbeats, container mapping      | Redis (distributed locks, TTLs, ephemeral state)     |
+| Observability Memory         | Logs, traces, metrics                                                   | OpenSearch + Prometheus                              |
+| Capability Memory            | Installable HyperAgents and reusable packages                           | Verdaccio / npm Registry                             |
+| Model & Capability Memory    | Runtime AI models and multimodal capabilities (LLM, VLM, STT, TTS, RAG) | Ollama, Speaches, Chroma (vector DB), Lipsync models |
+| Trust & Ownership Memory     | Identity, ownership, digital assets (Blockchain)                        | Hyperledger FireFly/Fabric + EdgeEVM                 |
+
+
+HyperAgency allows agents to seamlessly combine these memory layers while solving tasks.
+
+Rather than relying on a single database or vector store, agents continuously switch between specialized memories depending on whether they need architectural knowledge, conversations, runtime state, files, reusable capabilities, or verifiable blockchain records.
+
+Together these layers create a persistent operational memory that enables long-lived autonomous systems.
+
+---
+
+![Memory Architecture](./images/memory-architecture.png)
+
+````md
+<details>
+<summary>Memory Architecture Text Diagram</summary>
+
+```text
+                 * HyperAgency Memory
+
+                  +----------------+
+                  | Human Messages |
+                  +----------------+
+                           │
+                           ▼
++-----------------------------------------------------------+
+|                Interaction Memory                         |
+|        XMPP + PostgreSQL Conversation History             |
++-----------------------------------------------------------+
+
+               ▲               ▲
+               │               │
+
++--------------+---------------+-----------------------------+
+|             Structural Memory                              |
+| MongoDB JSON: Agents, Maps, Bridges, Organizations         |
++--------------+---------------+-----------------------------+
+|             Runtime Coordination Memory                    |
+| Redis: Locks, heartbeats, container mapping, timeouts      |
++------------------------------------------------------------+
+
+               ▲               ▲
+               │               │
+
++----------------------+----------------------+---------------+
+| Operational | Artifact | Capability | Trust | Observability |
+| KV Store    | Files    | Packages   | Chain | Logs/Metrics  |
++-------------+----------+------------+-------+---------------+
+| Model &     |
+| Capability  |
++-------------+
+```
+
+</details>
+````
 
 ---
 
@@ -161,7 +345,7 @@ Full visibility into **agent actions, memory, and evolution**:
 
 ---
 
-## 🌐 Distributed & Decentralized
+## 🌐 Distributed & Federated
 
 HyperAgency supports **secure peer-to-peer networks**:
 
