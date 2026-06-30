@@ -72,6 +72,7 @@ HyperAgency comes with **20+ production-ready agents** you can deploy instantly:
 | **OpenClaw**               | Personal AI assistant |
 | **Codex**                  | Software engineering agent |
 | **ClaudeCode** (connector) | Coding assistant connector |
+| **ComputerUse**            | Human-like desktop GUI navigation |
 | **STT**                    | Speech-to-text transcription |
 | **TTS**                    | Text-to-speech synthesis |
 | **Avatar**                 | Talking faces with lip-sync |
@@ -228,6 +229,7 @@ We support four deployment modes:
 | Hermes      | ❌         | ✅             | ✅                 | ✅                |
 | Codex       | ❌         | ✅             | ✅                 | ✅                |
 | Claude Code | ❌         | ❌             | ❌                 | ✅                |
+| ComputerUse | ❌         | ✅             | ✅                 | ✅                |
 | STT         | ❌         | ✅             | ✅                 | ✅                |
 | TTS         | ❌         | ✅             | ✅                 | ✅                |
 | Avatar      | ❌         | ✅             | ✅                 | ✅                |

@@ -577,6 +577,59 @@ services:
     volumes:
       - selfdev-hermes-volume:/opt/data
 
+  selfdev-computeruse:
+    profiles: [all, h9y, computeruse]
+    platform: ${PLATFORM}
+    image: ${REGISTRY}selfdev-computeruse:${VERSION}
+    build:
+      context: ./selfdev-agency/
+      dockerfile: Dockerfile.computeruse
+    ports:
+      - 8180:8180  # noVNC web interface: http://localhost:8180/vnc.html
+      - 5901:5901  # VNC: connect with tigerVNC Viewer)
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - CONTAINER_ID=selfdev-computeruse
+      - COMPOSE_PROFILES=${COMPOSE_PROFILES}
+      - ALLOW_INSECURE=True
+      - DB_URL=mongodb://mongo:27017/selfdev
+      - XMPP_HOST=x.${DOMAIN}
+      - XMPP_CONNECT_HOST=selfdev-prosody
+      - XMPP_MUC_HOST=g.${DOMAIN}
+      - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
+      - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
+      - REDIS_URL=redis://redis:6379/1
+      - OLLAMA_BASE_URL=http://ollama:11436
+      - VAULT_ENABLE=true
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_UNSEAL=true
+      - VAULT_TOKEN
+      - VAULT_UNSEAL_KEYS
+      - API_FILES_URL=http://selfdev-api:6369/v1/files/
+      - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - XMPP_SHARE_HOST=f.${DOMAIN}
+      - SSL_VERIFY=false
+      - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
+      - OPENSEARCH_HOST=opensearch
+      - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
+      # Computeruse X11+VNC+playwright settings
+      - SCREEN_DIMENSIONS=1650x1024x16
+      - VNC_PORT=5901
+      - NOVNC_PORT=8180
+      - VIEWPORT_SIZE=1280,900
+      - SLEEP_SEC=9
+      - OUTPUT_FILE=/opt/app/_codegen.mnt/observation.py
+      - OPEN_URL=https://h9y.ai
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.computeruse.rule=Host(`computeruse.${DOMAIN}`)"
+      - "traefik.http.routers.computeruse.entrypoints=websecure"
+      - "traefik.http.routers.computeruse.tls=true"
+      - "traefik.http.services.computeruse.loadbalancer.server.port=8180"
+
+
   selfdev-speech:
     profiles: [all, h9y, speech]
     platform: ${PLATFORM}
