@@ -90,9 +90,9 @@ This architecture enables **human-human**, **human-agent**, and **agent-agent** 
 
 # 🌐 Federated HyperAgency Network (Instance-to-Instance Communication)
 
-HyperAgency is not limited to a single deployment.
+HyperAgency is not limited to a single deployment. Multiple HyperAgency instances can be connected together to form a **federated distributed AI operating system network**.
 
-Multiple HyperAgency instances can be connected together to form a **federated distributed AI operating system network**.
+HyperAgency is a federated and distributed Agentic AI Operating System Network. Independent HyperAgency instances operate autonomously while securely collaborating through open protocols. Each organization retains full ownership of its users, agents, memory, and infrastructure, yet can seamlessly communicate with trusted instances across the network.
 
 Each instance may represent:
 
@@ -139,11 +139,13 @@ This ensures:
 ### “HyperAgency Federation Topology”
 
 ```
-[Instance A] ---- XMPP S2S ---- [Instance B]
-     │                               │
- Users + Agents                Users + Agents
-     │                               │
- Local Memory Only          Local Memory Only
+   [Instance A] ---- XMPP S2S ---- [Instance B] ---- XMPP S2S ---- [Instance C]
+        │                               │                               │
+  Users + Agents                  Users + Agents                  Users + Agents
+        │                               │                               │
+Omni-channel Bridges            Omni-channel Bridges            Omni-channel Bridges
+        │                               │                               │
+ Local Memory Only               Local Memory Only               Local Memory Only
 ```
 
 ---
@@ -242,9 +244,9 @@ This enables:
 
 ## 🔄 Key Property
 
-> Memory defines *what agents know*
-> Federation defines *who they can talk to*
-> Runtime defines *what they can do*
+> Memory defines *what agents know*.  
+> Federation defines *who they can talk to*.  
+> Runtime defines *what they can do*.  
 
 ---
 
