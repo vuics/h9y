@@ -957,6 +957,9 @@ const resources = {
       claudecode: {
         description: 'Agentic assistant that excels at coding and helps with writing docs, running builds, searching files, researching topics, and more.',
       },
+      computeruse: {
+        description: 'Driver controls software interfaces through visual actions like a human.',
+      },
     },
     connectors: {
       mcp: {
@@ -1931,6 +1934,9 @@ const resources = {
       },
       claudecode: {
         description: 'Агент-помощник, отлично справляющийся с написанием кода и помогающий в создании документации, запуске сборок, поиске файлов, изучении тем и многом другом.',
+      },
+      computeruse: {
+        description: 'Водитель управляет интерфейсами программ с помощью визуальных действий, подобно человеку.',
       },
     },
     connectors: {

@@ -1181,7 +1181,7 @@ const archetypes = {
     value: 'computeruse-v1.0',
     enable: hasProfile(['all', 'h9y', 'computeruse']),
     category: 'Proactive',
-    icon: 'compass',
+    icon: 'computer',
     text: 'Computer-Use v1.0',
     description: t('computeruse.description'),
     docUrl: getDocUrl('computeruse'),
@@ -1196,24 +1196,24 @@ const archetypes = {
           type: 'object',
           title: 'Computer-Use Configuration',
           properties: {
-            execute: { type: 'string', title: 'Execute', default: '', },
-            shell: { type: 'boolean', title: 'Run in Shell', default: false, },
+            // execute: { type: 'string', title: 'Execute', default: '', },
+            // shell: { type: 'boolean', title: 'Run in Shell', default: false, },
 
-            // model: {
-            //   type: 'object',
-            //   title: 'Large Language Model (LLM)',
-            //   properties: {
-            //     provider: { type: 'string', title: 'LLM Provider', default: 'openai' },
-            //     name: { type: 'string', title: 'LLM Name', default: 'gpt-5-nano' },
-            //     apiKey: {
-            //       type: 'object',
-            //       title: 'API Key',
-            //       properties: {
-            //         valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'OPENAI_API_KEY' },
-            //       },
-            //     },
-            //   }
-            // },
+            model: {
+              type: 'object',
+              title: 'Vision-Language Model (VLM)',
+              properties: {
+                provider: { type: 'string', title: 'VLM Provider', default: 'ollama' },
+                name: { type: 'string', title: 'VLM Name', default: 'gemma4' },
+                apiKey: {
+                  type: 'object',
+                  title: 'API Key',
+                  properties: {
+                    valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'OLLAMA_API_KEY' },
+                  },
+                },
+              }
+            },
           }
         },
       }

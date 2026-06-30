@@ -330,8 +330,16 @@ export default mongoose.model(
       },
 
       computeruse: {
-        execute: String,
-        shell: Boolean,
+        // execute: String,
+        // shell: Boolean,
+
+        model: {
+          provider: String,
+          name: String,
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
       },
 
     },

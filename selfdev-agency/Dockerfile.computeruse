@@ -5,42 +5,31 @@ FROM python:3.12-bookworm
 RUN apt-get update --yes \
     && apt-get upgrade --yes \
     && apt-get install --yes --no-install-recommends \
-        curl \
-        unzip \
-        git \
+        curl wget unzip git \
         build-essential \
-        libmagic1 \
         xvfb \
-        wget \
-        libgbm1 \
-        libxss1 \
-        libnss3 \
-        libnspr4 \
-        libasound2 \
-        libatk-bridge2.0-0 \
-        libgtk-3-0 \
-        libxcb1 \
-        libxcomposite1 \
-        libxdamage1 \
-        libxfixes3 \
-        libxrandr2 \
-        libpango-1.0-0 \
-        x11vnc \
-        novnc \
-        websockify \
-        fluxbox \
-        openbox \
+        # Libs
+        libmagic1 \
+        libgbm1 libxss1 libnss3 libnspr4 libasound2 libatk-bridge2.0-0 \
+        libgtk-3-0 libxcb1 libxcomposite1 libxdamage1 libxfixes3 \
+        libxrandr2 libpango-1.0-0 \
+        # VNC
+        x11vnc novnc websockify \
+        # GUI
+        fluxbox openbox xfce4 \
         dbus dbus-x11 \
         x11-xserver-utils x11-utils \
-        vim tmux \
+        # Terminal + Copy/Paste
         xfce4-terminal xclip xsel \
-        xfce4 \
         pm-utils at-spi2-core \
-        xauth
+        xauth \
         # Development tools
+        vim tmux \
         python3 python3-pip \
-        python3-tk python3-dev scrot \  # pyautogui dependencies
-        wmctrl \  # control your gui windows from the terminal or bash scripts
+        # pyautogui dependencies
+        python3-tk python3-dev scrot gnome-screenshot \
+        # control your gui windows from the terminal or bash scripts
+        wmctrl \
         # x11-apps sudo software-properties-common \
         # # Desktop environment
         # xfce4 xfce4-goodies \
@@ -55,10 +44,11 @@ RUN apt-get update --yes \
         # # Remove unneeded dependencies
         # && apt-get remove -y light-locker xfce4-screensaver xfce4-power-manager || true \
     # Clean up to reduce image size
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# RUN touch /root/.Xauthority
+# NOTE: Fixes the error:
+#   Xlib.error.XauthError: ~/.Xauthority: [Errno 2] No such file or directory: '/root/.Xauthority'
+RUN touch /root/.Xauthority
 
 # RUN mkdir -p /run/dbus && \
 #     # Generate a machine-id so dbus-daemon doesn't complain
@@ -66,12 +56,11 @@ RUN apt-get update --yes \
 
 RUN pip install --upgrade pip && \
     pip install playwright==1.61.0 && \
-    # playwright install --with-deps
     playwright install --with-deps chromium
 
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-    # && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN node -v && npm -v
 RUN npm i -g nodemon
 
