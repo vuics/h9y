@@ -29,3 +29,6 @@ openai==2.44.0
 # cua==0.1.6
 
 # open-interpreter[os]==0.4.3
+ollama==0.6.2
+PyAutoGUI==0.9.54
+pillow==12.2.0

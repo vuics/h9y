@@ -36,13 +36,16 @@ RUN apt-get update --yes \
         xfce4-terminal xclip xsel \
         xfce4 \
         pm-utils at-spi2-core \
-        # xauth x11-apps sudo software-properties-common \
+        xauth
+        # Development tools
+        python3 python3-pip \
+        python3-tk python3-dev scrot \  # pyautogui dependencies
+        wmctrl \  # control your gui windows from the terminal or bash scripts
+        # x11-apps sudo software-properties-common \
         # # Desktop environment
-        # xfce4 xfce4-goodies dbus wmctrl \
+        # xfce4 xfce4-goodies \
         # # Display manager with autologin capability
         # lightdm \
-        # # Development tools
-        # # python3 python3-pip \
         # # Utilities
         # supervisor netcat-openbsd \
         # # Applications
@@ -54,6 +57,8 @@ RUN apt-get update --yes \
     # Clean up to reduce image size
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# RUN touch /root/.Xauthority
 
 # RUN mkdir -p /run/dbus && \
 #     # Generate a machine-id so dbus-daemon doesn't complain
@@ -89,27 +94,5 @@ ENV DISPLAY=:99 \
     VIEWPORT_SIZE=1024,768 \
     SLEEP_SEC=3 \
     OUTPUT_FILE=/opt/app/output/test.py
-
-
-# trycua
-# RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/trycua/cua/main/libs/cua-driver/scripts/install.sh)"
-
-# openinterpreter
-# RUN curl -fsSL https://openinterpreter.com/install | sh
-
-# RUN pip install "open-interpreter==0.4.3" "open-interpreter[local]==0.4.3" "open-interpreter[safe]==0.4.3" "open-interpreter[server]==0.4.3"
-
-# THIS WORKED
-# RUN pip install "open-interpreter[os]==0.4.3"
-
-# TODO: Install Computer Use Agents:
-#
-# https://github.com/openinterpreter/openinterpreter
-# https://github.com/bytebot-ai/bytebot  - archived
-# https://github.com/OpenAdaptAI/OpenAdapt
-# https://github.com/trycua/cua
-#
-# https://github.com/bytedance/ui-tars
-# https://github.com/microsoft/omniparser
 
 CMD ["/bin/bash", "computeruse.sh"]
