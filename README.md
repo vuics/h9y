@@ -197,7 +197,6 @@ Together these layers create a persistent operational memory that enables long-l
 
 ![Memory Architecture](./images/memory-architecture.png)
 
-````md
 <details>
 <summary>Memory Architecture Text Diagram</summary>
 
@@ -236,9 +235,7 @@ Together these layers create a persistent operational memory that enables long-l
 | Capability  |
 +-------------+
 ```
-
 </details>
-````
 
 ---
 
