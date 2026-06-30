@@ -9,7 +9,11 @@
 [![License](https://img.shields.io/badge/License-Multi%20License-lightgrey?style=flat)](https://github.com/vuics/h9y/blob/main/LICENSE)
 [![Pilot](https://img.shields.io/badge/Pilot-Early%20Access-orange?style=flat)](https://forms.gle/bCACFoXj7so4paDg8)
 
-[**HyperAgency**](https://h9y.ai/) is an **Agentic AI Operating System** that replaces brittle, fragile automations with **long-lived, self-improving systems**. HyperAgency allows organizations to deploy persistent autonomous agents inside a multi-user operating system, where every user owns one or more agents that collaborate through secure messaging, shared workflows, and distributed memory.
+---
+
+> [**HyperAgency**](https://h9y.ai/) is a federated and distributed Agentic AI Operating System Network composed of three core layers — a multi-user operating system, a multi-layer memory architecture, and a distributed agent runtime — that transforms brittle automations into living systems: proactive, self-improving agent infrastructures that remember, adapt, and act across users and interconnected decentralized organizations.
+
+---
 
 It is **open-source, model-agnostic, and cloud/self-hosted**, providing the infrastructure to build **fully autonomous AI-human organizations**.
 
@@ -149,6 +153,98 @@ This ensures:
 This architecture enables:
 
 > A **decentralized network of AI operating systems** where each node is autonomous, but interoperable.
+
+---
+
+# ⚙️ Distributed Agent Runtime Layer
+
+HyperAgency is not only a messaging and memory system — it is a **distributed execution runtime for autonomous agents**.
+
+Agents are not passive objects. They are **schedulable, migratable, and stateful compute units** that can execute locally or across a federated network of HyperAgency instances.
+
+## 🧠 Core Idea
+
+> Agents are “living processes”, not API calls.
+
+They can:
+
+* be spawned dynamically
+* pause and resume execution
+* migrate between containers or nodes
+* coordinate via locks and heartbeats
+* delegate execution to other agents or remote instances
+
+---
+
+## 🔁 Execution Model
+
+The runtime layer orchestrates:
+
+* **Agent lifecycle management**
+
+  * creation
+  * activation
+  * suspension
+  * termination
+
+* **Task scheduling**
+
+  * event-driven execution
+  * message-triggered workflows
+  * cron / scheduled tasks
+
+* **State synchronization**
+
+  * Redis-based coordination memory
+  * distributed locks
+  * heartbeat tracking
+  * container ↔ agent mapping
+
+---
+
+## 🧬 Runtime Topology
+
+```
+         XMPP / Events / APIs
+                 │
+                 ▼
+         ┌───────────────────┐
+         │  Runtime Engine   │
+         │ (Agent Scheduler) │
+         └───────────────────┘
+          │        │        │
+          ▼        ▼        ▼
+       Agent A   Agent B  Agent C
+      (Docker / Kubernetes / Remote Node)
+          │        │        │
+          └────────┴────────┘
+                   │
+        Redis Coordination Layer
+        (locks, TTLs, heartbeats)
+```
+
+---
+
+## 🌍 Distributed Execution
+
+Agents can execute across:
+
+* local containers
+* Kubernetes clusters
+* remote HyperAgency instances (via federation)
+* external tool runtimes (MCP, CLI, APIs)
+
+This enables:
+
+> **A single logical agent system spanning multiple physical infrastructures**
+
+---
+
+## 🔄 Key Property
+
+> Memory defines *what agents know*
+> Federation defines *who they can talk to*
+> Runtime defines *what they can do*
 
 ---
 
