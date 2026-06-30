@@ -1,0 +1,115 @@
+FROM python:3.12-bookworm
+# FROM mcr.microsoft.com/playwright:v1.50.0-noble
+
+# Install additional required dependencies for running browsers in Docker
+RUN apt-get update --yes \
+    && apt-get upgrade --yes \
+    && apt-get install --yes --no-install-recommends \
+        curl \
+        unzip \
+        git \
+        build-essential \
+        libmagic1 \
+        xvfb \
+        wget \
+        libgbm1 \
+        libxss1 \
+        libnss3 \
+        libnspr4 \
+        libasound2 \
+        libatk-bridge2.0-0 \
+        libgtk-3-0 \
+        libxcb1 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxfixes3 \
+        libxrandr2 \
+        libpango-1.0-0 \
+        x11vnc \
+        novnc \
+        websockify \
+        fluxbox \
+        openbox \
+        dbus dbus-x11 \
+        x11-xserver-utils x11-utils \
+        vim tmux \
+        xfce4-terminal xclip xsel \
+        xfce4 \
+        pm-utils at-spi2-core \
+        # xauth x11-apps sudo software-properties-common \
+        # # Desktop environment
+        # xfce4 xfce4-goodies dbus wmctrl \
+        # # Display manager with autologin capability
+        # lightdm \
+        # # Development tools
+        # # python3 python3-pip \
+        # # Utilities
+        # supervisor netcat-openbsd \
+        # # Applications
+        # xpdf gedit xpaint \
+        # # Libraries
+        # libxtst-dev \
+        # # Remove unneeded dependencies
+        # && apt-get remove -y light-locker xfce4-screensaver xfce4-power-manager || true \
+    # Clean up to reduce image size
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# RUN mkdir -p /run/dbus && \
+#     # Generate a machine-id so dbus-daemon doesn't complain
+#     dbus-uuidgen --ensure=/etc/machine-id
+
+RUN pip install --upgrade pip && \
+    pip install playwright==1.61.0 && \
+    # playwright install --with-deps
+    playwright install --with-deps chromium
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+    # && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN node -v && npm -v
+RUN npm i -g nodemon
+
+# Optional: Set VNC password
+# RUN mkdir ~/.vnc && x11vnc -storepasswd your_password ~/.vnc/passwd
+
+WORKDIR /opt/app/
+COPY computeruse.sh .
+RUN mkdir -p output
+
+COPY requirements_computeruse.txt ./
+RUN pip install --no-cache-dir -r requirements_computeruse.txt
+COPY . ./
+RUN pip install --no-cache-dir .
+
+ENV DISPLAY=:99 \
+    SCREEN_DIMENSIONS=1024x768x16 \
+    VNC_PORT=5900 \
+    NOVNC_PORT=8180 \
+    VIEWPORT_SIZE=1024,768 \
+    SLEEP_SEC=3 \
+    OUTPUT_FILE=/opt/app/output/test.py
+
+
+# trycua
+# RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/trycua/cua/main/libs/cua-driver/scripts/install.sh)"
+
+# openinterpreter
+# RUN curl -fsSL https://openinterpreter.com/install | sh
+
+# RUN pip install "open-interpreter==0.4.3" "open-interpreter[local]==0.4.3" "open-interpreter[safe]==0.4.3" "open-interpreter[server]==0.4.3"
+
+# THIS WORKED
+# RUN pip install "open-interpreter[os]==0.4.3"
+
+# TODO: Install Computer Use Agents:
+#
+# https://github.com/openinterpreter/openinterpreter
+# https://github.com/bytebot-ai/bytebot  - archived
+# https://github.com/OpenAdaptAI/OpenAdapt
+# https://github.com/trycua/cua
+#
+# https://github.com/bytedance/ui-tars
+# https://github.com/microsoft/omniparser
+
+CMD ["/bin/bash", "computeruse.sh"]

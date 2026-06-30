@@ -1175,6 +1175,50 @@ const archetypes = {
       }
     },
   },
+
+  'computeruse-v1.0': {
+    key: 'computeruse-v1.0',
+    value: 'computeruse-v1.0',
+    enable: hasProfile(['all', 'h9y', 'computeruse']),
+    category: 'Proactive',
+    icon: 'compass',
+    text: 'Computer-Use v1.0',
+    description: t('computeruse.description'),
+    docUrl: getDocUrl('computeruse'),
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', title: 'Name', default: faker.internet.username().toLowerCase() },
+        description: { type: 'string', title: 'Description', format: 'textarea', default: '' },
+        joinRooms: { type: 'array', items: { type: 'string' }, title: 'Join Rooms', default: [], },
+        expire: { type: 'string', enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'], title: 'Expire Deployment', default: '' },
+        computeruse: {
+          type: 'object',
+          title: 'Computer-Use Configuration',
+          properties: {
+            execute: { type: 'string', title: 'Execute', default: '', },
+            shell: { type: 'boolean', title: 'Run in Shell', default: false, },
+
+            // model: {
+            //   type: 'object',
+            //   title: 'Large Language Model (LLM)',
+            //   properties: {
+            //     provider: { type: 'string', title: 'LLM Provider', default: 'openai' },
+            //     name: { type: 'string', title: 'LLM Name', default: 'gpt-5-nano' },
+            //     apiKey: {
+            //       type: 'object',
+            //       title: 'API Key',
+            //       properties: {
+            //         valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'OPENAI_API_KEY' },
+            //       },
+            //     },
+            //   }
+            // },
+          }
+        },
+      }
+    },
+  },
 }
 
 export default archetypes

@@ -329,6 +329,11 @@ export default mongoose.model(
         },
       },
 
+      computeruse: {
+        execute: String,
+        shell: Boolean,
+      },
+
     },
   })
     .plugin(mongooseTimestamp)
