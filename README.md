@@ -423,6 +423,245 @@ HyperAgency assumes:
 
 ---
 
+# 🧠 Extended Architectural Principles
+
+These sections formalize several core design decisions behind HyperAgency that distinguish it from traditional agent frameworks, workflow engines, and orchestration systems.
+
+Why these sections matter? Together, these principles define the deeper architecture:
+
+* Control vs Execution separation → scalability
+* Agent as computation unit → identity of intelligence
+* Message-driven cycles → living systems
+* Composable agents → ecosystem scalability
+* Sovereign instances → trustless federation
+* Execution economy → monetization of intelligence
+
+---
+
+## 🧭 Control Plane vs Execution Plane Separation
+
+HyperAgency explicitly separates the system into two independent layers:
+
+### 🔵 Control Plane (Coordination & Intent)
+
+Responsible for:
+
+* user intent interpretation
+* agent routing and assignment
+* permissions and governance
+* orchestration logic definition
+* message routing policies
+
+### 🟢 Execution Plane (Runtime & Computation)
+
+Responsible for:
+
+* agent execution inside containers
+* tool execution (browser, code, VLM, APIs)
+* state transitions and runtime memory updates
+* real-time task processing
+
+### 🧠 Key insight
+
+> Control defines *what should happen*. Execution defines *what is happening*.
+
+This separation enables:
+
+* horizontal scaling of execution without breaking coordination
+* independent evolution of orchestration logic
+* safe governance over autonomous agents
+
+---
+
+## 🤖 Agent as a Computation Unit (Not Tool, Not Service)
+
+In HyperAgency, an agent is neither a function nor a service.
+
+An agent is a **self-contained computation unit with state, memory, identity, and lifecycle**.
+
+### Traditional models:
+
+* Tool → stateless function call
+* Service → long-running API
+* Workflow step → ephemeral execution node
+
+### HyperAgency model:
+
+* Agent → **persistent computational entity**
+
+Each agent includes:
+
+* memory (short-term + long-term)
+* identity and permissions
+* execution context
+* communication channels
+* lifecycle (start → run → pause → evolve → terminate)
+
+### 🧠 Key insight
+
+> Agents are not called. Agents *exist* and compute continuously over time.
+
+---
+
+## 🔁 Message-Driven Dynamic Execution Graph (Cycles by Design)
+
+HyperAgency uses a **message-driven execution model** built on a **Dynamic Execution Graph (DEG)** that explicitly supports cycles, recursion, and runtime reconfiguration. Unlike traditional orchestration systems that rely on Directed Acyclic Graphs (DAGs), execution in HyperAgency is not a predefined path but a continuously evolving control system.
+
+In this model, **agents do not follow workflows — they participate in an evolving graph of messages**:
+
+* messages trigger actions
+* actions emit new messages
+* messages reshape execution topology
+* execution paths emerge at runtime rather than being pre-defined
+
+This makes cycles a **native property of the system**, not an exception. The graph is expected to loop, revisit states, and refine itself through repeated interaction between agents, memory, and observability signals.
+
+### 🧩 Key property
+
+HyperAgency is not a DAG-based workflow engine. It is a **Dynamic Execution Graph (DEG)** where structure is continuously rewritten by message flow.
+
+---
+
+### 🔄 Why cycles are fundamental
+
+Cycles enable system behaviors that static DAGs cannot express:
+
+* iterative reasoning loops (plan → execute → evaluate → refine)
+* self-correcting agent behavior through feedback
+* long-running autonomous processes with evolving goals
+* emergent multi-agent coordination patterns
+* continuous improvement of execution logic over time
+
+---
+
+### ⚙️ Execution mechanism (how it actually works)
+
+The execution graph is not explicitly stored as a static structure — it is **emergent from message flow** and governed through:
+
+* **Memory systems** (state persistence: MongoDB / Redis)
+* **Observability signals** (logs, metrics, traces)
+* **Governance layer** (Vault, approvals, permissions)
+* **Transport layer** (XMPP message-driven coordination)
+
+Together, these components define how execution evolves and stabilizes over time.
+
+---
+
+### 🧠 Paradigm shift
+
+Instead of:
+
+> “Define a workflow and execute it”
+
+HyperAgency enables:
+
+> “Define a goal and let the system continuously converge through recursive agent interaction”
+
+---
+
+## 📦 Composable HyperAgents as Execution Packages
+
+HyperAgents are designed as **portable, composable execution units**.
+
+Each HyperAgent can be:
+
+* deployed independently
+* versioned
+* composed into larger systems
+* published in a registry
+* reused across organizations
+
+### 🧩 Composition model
+
+HyperAgents can include:
+
+* sub-agents
+* tools
+* memory schemas
+* orchestration logic
+* communication bridges
+
+This enables:
+
+* hierarchical agent systems
+* recursive agent orchestration (agent → agent → agent)
+* reusable automation modules
+
+### 🧠 Key insight
+
+> A HyperAgent is not a workflow step — it is a deployable execution package.
+
+---
+
+## 🔐 Sovereign Data per Instance (No Global State)
+
+Each HyperAgency instance operates as a **fully sovereign system**.
+
+There is:
+
+* no global shared database
+* no central memory layer
+* no cross-instance state replication by default
+
+### 🏛 Data ownership model
+
+Each instance owns:
+
+* user data
+* agent memory
+* execution history
+* credentials and secrets
+* local orchestration state
+
+### 🌐 Federation without centralization
+
+Instances may communicate, but:
+
+* data is not synchronized globally
+* state is not merged
+* history remains local
+
+Only **explicit messages** traverse boundaries.
+
+### 🧠 Key insight
+
+> Federation enables collaboration without sacrificing sovereignty.
+
+---
+
+## ⚡ Execution as an Economic Primitive (Not a Web3 Add-on)
+
+In HyperAgency, execution is not just computation — it is a **first-class economic unit**.
+
+### 💰 Execution becomes measurable value:
+
+* agent runs = billable units
+* workflows = economic processes
+* capabilities = licensed modules
+* outcomes = verifiable results
+
+### 🧱 Economic model layers:
+
+* agents can be licensed (usage rights)
+* execution flows can be metered
+* capabilities can be traded or reused
+* organizations can monetize agentic systems
+
+### 🔗 Web3 integration is structural, not decorative:
+
+Blockchain is used for:
+
+* identity & ownership
+* licensing (agent packages)
+* permissioned execution rights
+* auditability of agent behavior
+
+### 🧠 Key insight
+
+> In HyperAgency, computation is not just technical — it is economically representable and transferable.
+
+---
+
 # 🧩 Agent Archetypes
 
 HyperAgency comes with **20+ production-ready agents** you can deploy instantly:
