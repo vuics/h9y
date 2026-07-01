@@ -136,10 +136,10 @@ This ensures:
 * compliance-friendly deployment
 * zero central data dependency
 
-### “HyperAgency Federation Topology”
+### HyperAgency Federation Topology
 
 ```
-   [Instance A] ---- XMPP S2S ---- [Instance B] ---- XMPP S2S ---- [Instance C]
+   [Instance A] ---- XMPP S2S ---- [Instance B] ---- XMPP S2S ---- [Instance C] ---- ...
         │                               │                               │
   Users + Agents                  Users + Agents                  Users + Agents
         │                               │                               │
@@ -337,7 +337,93 @@ Together these layers create a persistent operational memory that enables long-l
 
 ---
 
-## 🧩 Agent Archetypes
+
+# ⚙️ Execution Model (Core OS Primitive)
+
+HyperAgency is not only a system for managing agents — it defines a **runtime execution model for autonomous intelligence**.
+
+Instead of treating agents as long-running services or stateless tasks, HyperAgency introduces a **lease-based execution model** where computation is dynamically assigned, observed, and recovered.
+
+---
+
+## 🧠 Agents as Ephemeral Execution Units
+
+Each agent is executed as a **temporary runtime instance** inside a controlled environment (Docker / Kubernetes).
+
+Agents are not permanently bound to infrastructure — they are:
+
+* scheduled on demand
+* executed within isolated containers
+* continuously monitored during execution
+* automatically recoverable on failure
+
+---
+
+## 🔐 Execution Lease Model
+
+When an agent starts execution, it acquires a **runtime lease**:
+
+* the lease grants temporary ownership of compute resources
+* the lease is tracked via Redis (locks + TTL + heartbeats)
+* the agent must continuously renew its heartbeat
+* failure to renew triggers automatic lease revocation
+
+If a lease is lost:
+
+* execution is safely terminated or migrated
+* another node can immediately resume orchestration
+* no global state is lost (state is externalized in memory layers)
+
+---
+
+## 🔄 Lifecycle of an Agent Execution
+
+```
+Created → Scheduled → Leased → Running → Observed → Released / Migrated
+```
+
+Each stage is observable and controllable through the orchestration layer.
+
+---
+
+## 🧩 Runtime Coordination Layer
+
+The execution model is powered by:
+
+* **Redis** → ephemeral state, locks, heartbeats, lease tracking
+* **Docker** → isolated execution environments
+* **Kubernetes** → distributed scheduling and scaling
+* **XMPP control plane** → execution commands and coordination events
+
+---
+
+## 🌐 Key System Property
+
+> Execution in HyperAgency is not persistent — it is continuously negotiated.
+
+This enables:
+
+* elastic scaling of intelligence workloads
+* crash-resilient agent execution
+* distributed failover of running agents
+* dynamic migration across nodes and instances
+* deterministic orchestration of autonomous workflows
+
+---
+
+## 🧠 Conceptual Shift
+
+Traditional systems assume:
+
+> “processes run on machines”
+
+HyperAgency assumes:
+
+> “intelligence leases computation as needed”
+
+---
+
+# 🧩 Agent Archetypes
 
 HyperAgency comes with **20+ production-ready agents** you can deploy instantly:
 
