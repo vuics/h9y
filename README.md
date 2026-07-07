@@ -11,7 +11,7 @@
 
 ---
 
-> [**HyperAgency**](https://h9y.ai/) is a federated and distributed Agentic AI Operating System Network composed of three core layers — a multi-user operating system, a multi-layer memory architecture, and a distributed agent runtime — that transforms brittle automations into living systems: proactive, self-improving agent infrastructures that remember, adapt, and act across users and interconnected decentralized organizations.
+> [**HyperAgency**](https://h9y.ai/) is a sovereign, federated, and distributed Agentic AI Operating System Network composed of three core layers—a multi-user operating system, a multi-layer memory architecture, and a distributed agent runtime—that transforms brittle automations into living systems: proactive, self-improving agent infrastructures that remember, adapt, and act across users, organizations with sovereign deployments, and decentralized governance structures.
 
 ---
 
@@ -47,6 +47,21 @@ HyperAgency is more than an AI platform — it's a **new operational layer**:
 ![What Is](./images/what-is.png)
 
 ---
+
+# 🏛 Sovereign AI Operating System Architecture
+
+HyperAgency introduces the concept of a **sovereign AI operating system instance**: an autonomous intelligence infrastructure fully owned and governed by an organization, while remaining interoperable with a global federation of other instances.
+
+Unlike centralized AI platforms where users depend on shared infrastructure, external memory, and vendor-controlled agents, each HyperAgency deployment maintains sovereignty over:
+
+- **Identity** — users, organizations, agents, and permissions
+- **Memory** — conversations, knowledge, operational state, and artifacts
+- **Agents** — creation, deployment, ownership, and lifecycle
+- **Execution** — runtime environments and computational resources
+- **Governance** — approvals, policies, credentials, and auditability
+- **Data** — organizational information remains under local control
+
+A sovereign HyperAgency instance can operate independently while securely collaborating with other sovereign instances through federation.
 
 # 👥 Multi-User & Multi-Agent Operating System
 
