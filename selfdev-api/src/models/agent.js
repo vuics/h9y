@@ -342,6 +342,16 @@ export default mongoose.model(
         },
       },
 
+      procurement: {
+        model: {
+          provider: String,
+          name: String,
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
+      },
+
     },
   })
     .plugin(mongooseTimestamp)

@@ -955,10 +955,13 @@ const resources = {
         description: 'Proactive software engineering agent',
       },
       claudecode: {
-        description: 'Agentic assistant that excels at coding and helps with writing docs, running builds, searching files, researching topics, and more.',
+        description: 'Agentic assistant that excels at coding and helps with writing docs, running builds, searching files, researching topics, and more',
       },
       computeruse: {
-        description: 'Driver controls software interfaces through visual actions like a human.',
+        description: 'Driver controls software interfaces through visual actions like a human',
+      },
+      procurement: {
+        description: 'AI assistant for automating price quotation collection and supplier qualification for procurement',
       },
     },
     connectors: {
@@ -1933,10 +1936,13 @@ const resources = {
         description: 'Проактивный агент для разработки программного обеспечения',
       },
       claudecode: {
-        description: 'Агент-помощник, отлично справляющийся с написанием кода и помогающий в создании документации, запуске сборок, поиске файлов, изучении тем и многом другом.',
+        description: 'Агент-помощник, отлично справляющийся с написанием кода и помогающий в создании документации, запуске сборок, поиске файлов, изучении тем и многом другом',
       },
       computeruse: {
-        description: 'Водитель управляет интерфейсами программ с помощью визуальных действий, подобно человеку.',
+        description: 'Водитель управляет интерфейсами программ с помощью визуальных действий, подобно человеку',
+      },
+      procurement: {
+        description: 'Искусственный интеллект-помощник для автоматизации сбора ценовых предложений и квалификации поставщиков для закупки',
       },
     },
     connectors: {

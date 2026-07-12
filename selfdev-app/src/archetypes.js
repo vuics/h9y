@@ -1219,6 +1219,50 @@ const archetypes = {
       }
     },
   },
+
+  'procurement-v1.0': {
+    key: 'procurement-v1.0',
+    value: 'procurement-v1.0',
+    enable: hasProfile(['all', 'procurement']),
+    category: 'Procurement',
+    icon: 'cart',
+    text: 'Procurement v1.0',
+    description: t('procurement.description'),
+    docUrl: getDocUrl('procurement'),
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', title: 'Name', default: faker.internet.username().toLowerCase() },
+        description: { type: 'string', title: 'Description', format: 'textarea', default: '' },
+        joinRooms: { type: 'array', items: { type: 'string' }, title: 'Join Rooms', default: [], },
+        expire: { type: 'string', enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'], title: 'Expire Deployment', default: '' },
+        procurement: {
+          type: 'object',
+          title: 'Procurement Configuration',
+          properties: {
+            // execute: { type: 'string', title: 'Execute', default: '', },
+            // shell: { type: 'boolean', title: 'Run in Shell', default: false, },
+
+            model: {
+              type: 'object',
+              title: 'Large Language Model (LLM)',
+              properties: {
+                provider: { type: 'string', title: 'LLM Provider', default: 'ollama' },
+                name: { type: 'string', title: 'LLM Name', default: 'gemma4' },
+                apiKey: {
+                  type: 'object',
+                  title: 'API Key',
+                  properties: {
+                    valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'OLLAMA_API_KEY' },
+                  },
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+  },
 }
 
 export default archetypes
