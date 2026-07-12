@@ -665,7 +665,7 @@ services:
 
   langflow:
     profiles: [all, h9y, langflow]
-    image: langflowai/langflow:1.3.4
+    image: langflowai/langflow:1.10.2
     ports:
       - 7860:7860
     depends_on:
@@ -674,6 +674,7 @@ services:
       - LANGFLOW_DATABASE_URL=postgresql://langflow:langflow@langflowdb:5432/langflow
       - LANGFLOW_CONFIG_DIR=app/langflow
       - DO_NOT_TRACK=true
+      - LANGFLOW_AUTO_LOGIN=true
     volumes:
       - langflow-volume:/app/langflow
     labels:
