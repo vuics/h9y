@@ -844,11 +844,11 @@ We support four deployment modes:
 | RAG         | ❌         | ✅             | ✅                 | ✅                |
 | ImageGen    | ✅         | ✅             | ✅                 | ✅                |
 | BrowserUse  | ❌         | ✅             | ✅                 | ✅                |
-| OpenClaw    | ❌         | ✅             | ✅                 | ✅                |
-| Hermes      | ❌         | ✅             | ✅                 | ✅                |
-| Codex       | ❌         | ✅             | ✅                 | ✅                |
-| Claude Code | ❌         | ❌             | ❌                 | ✅                |
-| ComputerUse | ❌         | ✅             | ✅                 | ✅                |
+| OpenClaw    | ❌         | ✅             | 🔜                 | 🔜                |
+| Hermes      | ❌         | ✅             | 🔜                 | 🔜                |
+| Codex       | ❌         | ✅             | 🔜                 | 🔜                |
+| Claude Code | ❌         | ❌             | ❌                 | 🔜                |
+| ComputerUse | ❌         | ✅             | 🔜                 | 🔜                |
 | STT         | ❌         | ✅             | ✅                 | ✅                |
 | TTS         | ❌         | ✅             | ✅                 | ✅                |
 | Avatar      | ❌         | ✅             | ✅                 | ✅                |
