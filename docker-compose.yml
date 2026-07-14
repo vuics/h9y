@@ -359,7 +359,7 @@ services:
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
-      - OLLAMA_BASE_URL=http://ollama:11436
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11436}
       - MAX_AGENTS_RUN=1
     volumes:
       - selfdev-openclaw-volume:/home/node/.openclaw
@@ -398,7 +398,7 @@ services:
       - OPENSEARCH_PASSWORD=freeS0cketKeep-1iveTimeout
       - OPENSEARCH_HOST=opensearch
       - PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091
-      - OLLAMA_BASE_URL=http://ollama:11436
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11436}
       - MAX_AGENTS_RUN=1
     volumes:
       - selfdev-codex-volume:/root/.codex
@@ -474,7 +474,7 @@ services:
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
       - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - REDIS_URL=redis://redis:6379/1
-      - OLLAMA_BASE_URL=http://ollama:11436
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11436}
       - LANGFLOW_URL=http://langflow:7860
       - NODERED_URL=http://nodered:1880
       - VAULT_ENABLE=true
@@ -517,7 +517,7 @@ services:
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
       - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - REDIS_URL=redis://redis:6379/1
-      - OLLAMA_BASE_URL=http://ollama:11436
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11436}
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
@@ -559,7 +559,7 @@ services:
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
       - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - REDIS_URL=redis://redis:6379/1
-      - OLLAMA_BASE_URL=http://ollama:11436
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11436}
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
@@ -601,7 +601,7 @@ services:
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
       - XMPP_PASSWORD=a-geNt-$sec-ret-10m_pp
       - REDIS_URL=redis://redis:6379/1
-      - OLLAMA_BASE_URL=http://ollama:11436
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11436}
       - VAULT_ENABLE=true
       - VAULT_ADDR=http://vault:8200
       - VAULT_UNSEAL=true
