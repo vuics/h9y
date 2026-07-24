@@ -346,6 +346,8 @@ export default mongoose.model(
         model: {
           provider: String,
           name: String,
+          effort: String,
+          baseUrl: String,
           apiKey: {
             valueFromVault: String,
           },

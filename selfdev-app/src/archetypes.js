@@ -1240,15 +1240,14 @@ const archetypes = {
           type: 'object',
           title: 'Procurement Configuration',
           properties: {
-            // execute: { type: 'string', title: 'Execute', default: '', },
-            // shell: { type: 'boolean', title: 'Run in Shell', default: false, },
-
             model: {
               type: 'object',
               title: 'Large Language Model (LLM)',
               properties: {
                 provider: { type: 'string', title: 'LLM Provider', default: 'ollama' },
-                name: { type: 'string', title: 'LLM Name', default: 'gemma4' },
+                name: { type: 'string', title: 'LLM Name', default: 'gemma4:e4b-mlx' },
+                effort: { type: 'string', enum: ['low', 'medium', 'high'], title: 'LLM Effort', default: 'medium' },
+                baseUrl: { type: 'string', title: 'Base URL', default: '' },
                 apiKey: {
                   type: 'object',
                   title: 'API Key',
