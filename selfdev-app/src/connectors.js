@@ -225,8 +225,8 @@ const connectors = {
     key: 'baileys',
     value: 'baileys',
     enable: hasProfile(['all', 'h9y', 'bridge', 'standalone']),
-    icon: 'whatsapp',
-    text: 'WhatsApp (Baileys)',
+    icon: 'whatsapp square',
+    text: 'WhatsApp Baileys',
     description: t('baileys.description'),
     docUrl: getDocUrl('baileys'),
     schema: {
