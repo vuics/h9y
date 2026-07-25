@@ -176,13 +176,15 @@ const conf = {
   },
 
   smtp: {
-    // TODO: USE GCP MAILING
-    host: process.env.SMPT_HOST || 'smtp.mail.us-west-2.awsapps.com',
-    port: num(process.env.SMPT_PORT || 465),
-    secure: bool(process.env.SMPT_SECURE || true),
-    user: process.env.SMTP_USER || 'admin@vuics.awsapps.com',
+    host: process.env.SMTP_HOST || '<SMTP_HOST_PLACEHOLDER>',
+    port: num(process.env.SMTP_PORT || 465),
+    secure: bool(process.env.SMTP_SECURE || true),
+    // service: process.env.SMTP_SERVICE || '',
+    user: process.env.SMTP_USER || '<SMTP_USER_PLACEHOLDER>',
     pass: process.env.SMTP_PASS || '<SMTP_PASSWORD_PLACEHOLDER>',
-    from: process.env.SMTP_FROM || '"Self-developing" <admin@vuics.com>',
+    from: process.env.SMTP_FROM || '"Admin H9Y" <admin@h9y.ai>',
+    // ignoreTLS: bool(process.env.SMTP_IGNORE_TLS || false),
+    // requireTLS: bool(process.env.SMTP_REQUIRE_TLS || true),
   },
 
   reset: {

@@ -83,7 +83,7 @@
     "node-cron": "^4.2.1",
     "node-ssh": "^13.2.1",
     "node-vault": "^0.10.2",
-    "nodemailer": "^6.10.1",
+    "nodemailer": "^9.0.3",
     "nodemon": "^3.0.1",
     "nunjucks": "^3.2.4",
     "oauth2orize": "^1.11.1",
