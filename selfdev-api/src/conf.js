@@ -365,7 +365,7 @@ const conf = {
         imagegenProviders: [ 'openai' ],
         avatarProviders: [ ],
         deployedBridges: 3,
-        connectors: ['messengers', 'scheduler', 'webhook', 'email', 'mcp', 'a2a'],
+        connectors: ['messengers', 'scheduler', 'webhook', 'email', 'whatsapp', 'mcp', 'a2a'],
         bridgeExpires: ['1m', '1h', '12h', '1d', '1w', '1mo'],
         fileAttachments: true,
         audioRecordings: true,

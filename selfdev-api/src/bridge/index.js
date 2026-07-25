@@ -16,6 +16,7 @@ import Phone from './phone.js'
 import Scheduler from './scheduler.js'
 import Webhook from './webhook.js'
 import Email from './email.js'
+import WhatsApp from './whatsapp.js'
 import Mcp from './mcp.js'
 import Webapp from './webapp.js'
 import A2a from './a2a.js'
@@ -31,6 +32,7 @@ const connectorClasses = {
   "scheduler": Scheduler,
   "webhook": Webhook,
   "email": Email,
+  "whatsapp": WhatsApp,
   "mcp": Mcp,
   "webapp": Webapp,
   "a2a": A2a,

@@ -141,6 +141,23 @@ const EmailSchema = new mongoose.Schema({
   defaultSubject: String,
 }, { _id: false })
 
+const WhatsAppSchema = new mongoose.Schema({
+  accessToken: {
+    valueFromVault: String,
+  },
+  phoneNumberId: String,
+  verifyToken: {
+    valueFromVault: String,
+  },
+  appSecret: {
+    valueFromVault: String,
+  },
+  apiVersion: String,
+  endpoint: String,
+  defaultRecipient: String,
+  markAsRead: Boolean,
+}, { _id: false })
+
 const McpSchema = new mongoose.Schema({
   endpoint: String,
   timeoutSec: Number,
@@ -195,6 +212,7 @@ const BridgeSchema = new mongoose.Schema({
     scheduler: SchedulerSchema,
     webhook: WebhookSchema,
     email: EmailSchema,
+    whatsapp: WhatsAppSchema,
     mcp: McpSchema,
     webapp: WebappSchema,
     client: ClientSchema,

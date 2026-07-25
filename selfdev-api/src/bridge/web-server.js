@@ -28,7 +28,13 @@ class WebServer {
 
       this.app.use(compression());
       this.app.use(cookieParser()) // for parsing cookie
-      this.app.use(express.json({ limit: '1mb' })) // for parsing application/json
+      this.app.use(express.json({
+        limit: '1mb',
+        // Webhook providers such as Meta sign the exact request bytes.
+        verify: (req, res, buffer) => {
+          req.rawBody = Buffer.from(buffer)
+        },
+      })) // for parsing application/json
       this.app.use(express.urlencoded({ extended: true, limit: '1mb' })) // for parsing application/x-www-form-urlencoded
       this.app.use(express.text({ limit: '1mb' }))
       this.app.use(express.raw({ limit: '1mb' }))
@@ -136,4 +142,3 @@ class WebServer {
 //       to make all bridges use the same web server
 const webServer = new WebServer()
 export default webServer
-

@@ -158,6 +158,69 @@ const connectors = {
     },
   },
 
+  'whatsapp': {
+    key: 'whatsapp',
+    value: 'whatsapp',
+    enable: hasProfile(['all', 'h9y', 'bridge', 'standalone']),
+    icon: 'whatsapp',
+    text: 'WhatsApp',
+    description: t('whatsapp.description'),
+    docUrl: getDocUrl('whatsapp'),
+    schema: {
+      title: 'Email',
+      type: 'object',
+      properties: {
+        name: { type: 'string', title: 'Name', default: faker.internet.username().toLowerCase() },
+        description: { type: 'string', title: 'Description', default: '' },
+
+        enablePersonal: { type: 'boolean', title: 'Enable Personal Message', default: true },
+        recipient: { type: 'string', title: 'Recipient JID', default: 'artemarakcheev@selfdev-prosody.dev.local' },
+
+        enableRoom: { type: 'boolean', title: 'Enable Room Message', default: true },
+        joinRooms: { type: 'array', items: { type: 'string' }, title: 'Join Rooms', default: ['whatsapp'], },
+        recipientNickname: { type: 'string', title: 'Recipient Nickname in Room', default: 'artemarakcheev' },
+
+        expire: { type: 'string', enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'], title: 'Expire Deployment', default: '' },
+
+        whatsapp: {
+          title: 'WhatsApp Configuration',
+          type: 'object',
+          required: [ 'accessToken', 'phoneNumberId', 'verifyToken', ],
+          properties: {
+            accessToken: {
+              title: 'Access Token',
+              type: 'object',
+              required: ['valueFromVault'],
+              properties: {
+                valueFromVault: { type: 'string', title: 'Access Token Vault Key', },
+              },
+            },
+            phoneNumberId: { type: 'string', title: 'Phone Number ID', },
+            verifyToken: {
+              title: 'Webhook Verify Token',
+              type: 'object',
+              required: ['valueFromVault'],
+              properties: {
+                valueFromVault: { type: 'string', title: 'Verify Token Vault Key', },
+              },
+            },
+            appSecret: {
+              title: 'Meta App Secret',
+              type: 'object',
+              properties: {
+                valueFromVault: { type: 'string', title: 'App Secret Vault Key', },
+              },
+            },
+            apiVersion: { type: 'string', title: 'Graph API Version', default: 'v23.0', },
+            endpoint: { type: 'string', title: 'Webhook Endpoint', default: 'webhook', },
+            defaultRecipient: { type: 'string', title: 'Default WhatsApp Recipient', description: 'Phone number in international format without the + character.', default: '', },
+            markAsRead: { type: 'boolean', title: 'Mark Incoming Messages as Read', default: true, },
+          },
+        },
+      },
+    },
+  },
+
   'messengers': {
     key: 'messengers',
     value: 'messengers',
