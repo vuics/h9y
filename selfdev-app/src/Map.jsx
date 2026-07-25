@@ -3175,6 +3175,13 @@ function Map () {
                       <Dropdown.Item onClick={uploadMapInit}>
                         <Icon name='upload' />
                         {t('Upload')}
+                        <input
+                          type="file"
+                          accept="application/json"
+                          ref={fileInputRef}
+                          onChange={uploadMap}
+                          style={{ display: 'none' }} // hide input
+                        />
                       </Dropdown.Item>
                       <Dropdown.Divider />
                       <Dropdown.Item onClick={() => {
@@ -3426,13 +3433,6 @@ function Map () {
           <Popup content={t('Upload the map')} trigger={
             <Button icon onClick={uploadMapInit}>
               <Icon name="upload" />
-              <input
-                type="file"
-                accept="application/json"
-                ref={fileInputRef}
-                onChange={uploadMap}
-                style={{ display: 'none' }} // hide input
-              />
             </Button>
           } />
           <Popup content={t('Rename the map')} trigger={
