@@ -31,6 +31,7 @@ router.get('/', checkAuth, async (req, res, next) => {
     out.apps = await App.countDocuments({ userId: req.user._id });
 
     out.agentArchetypes = await Agent.aggregate([
+      { $match: { userId: req.user._id } },
       {
         $group: {
           _id: "$archetype",
@@ -46,6 +47,7 @@ router.get('/', checkAuth, async (req, res, next) => {
     ]);
 
     out.bridgeConnectors = await Bridge.aggregate([
+      { $match: { userId: req.user._id } },
       {
         $group: {
           _id: "$connector",
