@@ -158,6 +158,21 @@ const WhatsAppSchema = new mongoose.Schema({
   markAsRead: Boolean,
 }, { _id: false })
 
+const BaileysSchema = new mongoose.Schema({
+  authDir: String,
+  pairingNumber: String,
+  defaultRecipient: String,
+  browserName: String,
+  printQRInTerminal: Boolean,
+  markOnlineOnConnect: Boolean,
+  markAsRead: Boolean,
+  syncFullHistory: Boolean,
+  downloadMedia: Boolean,
+  ignoreGroups: Boolean,
+  reconnectDelayMs: Number,
+  sendTimeoutMs: Number,
+}, { _id: false })
+
 const McpSchema = new mongoose.Schema({
   endpoint: String,
   timeoutSec: Number,
@@ -213,6 +228,7 @@ const BridgeSchema = new mongoose.Schema({
     webhook: WebhookSchema,
     email: EmailSchema,
     whatsapp: WhatsAppSchema,
+    baileys: BaileysSchema,
     mcp: McpSchema,
     webapp: WebappSchema,
     client: ClientSchema,

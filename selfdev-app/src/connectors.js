@@ -221,6 +221,140 @@ const connectors = {
     },
   },
 
+  'baileys': {
+    key: 'baileys',
+    value: 'baileys',
+    enable: hasProfile(['all', 'h9y', 'bridge', 'standalone']),
+    icon: 'whatsapp',
+    text: 'WhatsApp (Baileys)',
+    description: t('baileys.description'),
+    docUrl: getDocUrl('baileys'),
+    schema: {
+      title: 'WhatsApp (Baileys)',
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          title: 'Name',
+          default: faker.internet.username().toLowerCase(),
+        },
+        description: {
+          type: 'string',
+          title: 'Description',
+          default: '',
+        },
+
+        enablePersonal: {
+          type: 'boolean',
+          title: 'Enable Personal Message',
+          default: true,
+        },
+        recipient: {
+          type: 'string',
+          title: 'Recipient JID',
+          default: 'artemarakcheev@selfdev-prosody.dev.local',
+        },
+
+        enableRoom: {
+          type: 'boolean',
+          title: 'Enable Room Message',
+          default: true,
+        },
+        joinRooms: {
+          type: 'array',
+          items: { type: 'string' },
+          title: 'Join Rooms',
+          default: ['baileys'],
+        },
+        recipientNickname: {
+          type: 'string',
+          title: 'Recipient Nickname in Room',
+          default: 'artemarakcheev',
+        },
+
+        expire: {
+          type: 'string',
+          enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'],
+          title: 'Expire Deployment',
+          default: '',
+        },
+
+        baileys: {
+          title: 'Baileys Configuration',
+          type: 'object',
+          properties: {
+            pairingNumber: {
+              type: 'string',
+              title: 'Pairing Phone Number',
+              description: 'WhatsApp number including country code, using digits only. Leave empty to pair using a QR code.',
+              default: '',
+            },
+            defaultRecipient: {
+              type: 'string',
+              title: 'Default WhatsApp Recipient',
+              description: 'Phone number in international format without the + character, or a complete WhatsApp JID.',
+              default: '',
+            },
+            authDir: {
+              type: 'string',
+              title: 'Authentication Directory',
+              description: 'Persistent directory used to store the linked WhatsApp session.',
+              default: '/tmp/recordings/baileys_sessions',
+            },
+            browserName: {
+              type: 'string',
+              title: 'Linked Device Name',
+              default: 'HyperAgency',
+            },
+            printQRInTerminal: {
+              type: 'boolean',
+              title: 'Print QR Code in Terminal',
+              description: 'Print a QR code when the WhatsApp account has not been paired and no pairing number is provided.',
+              default: true,
+            },
+            markOnlineOnConnect: {
+              type: 'boolean',
+              title: 'Show Online When Connected',
+              description: 'Showing online may prevent notifications from appearing on the linked mobile phone.',
+              default: false,
+            },
+            markAsRead: {
+              type: 'boolean',
+              title: 'Mark Incoming Messages as Read',
+              default: true,
+            },
+            syncFullHistory: {
+              type: 'boolean',
+              title: 'Synchronize Full Message History',
+              description: 'Enable synchronization of previous WhatsApp messages when connecting.',
+              default: false,
+            },
+            downloadMedia: {
+              type: 'boolean',
+              title: 'Forward Media to XMPP',
+              description: 'Download incoming WhatsApp media and upload it through the XMPP file-sharing service.',
+              default: true,
+            },
+            ignoreGroups: {
+              type: 'boolean',
+              title: 'Ignore WhatsApp Groups',
+              description: 'Process only direct WhatsApp conversations when enabled.',
+              default: false,
+            },
+            reconnectDelayMs: {
+              type: 'number',
+              title: 'Reconnect Delay',
+              description: 'Initial reconnection delay in milliseconds. Subsequent attempts use exponential backoff.',
+              default: 2000,
+              minimum: 500,
+            },
+          },
+        },
+      },
+    },
+  },
+
+
   'messengers': {
     key: 'messengers',
     value: 'messengers',

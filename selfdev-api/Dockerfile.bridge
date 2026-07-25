@@ -1,7 +1,9 @@
-FROM 42wim/matterbridge:1.26
-# FROM node:20-alpine AS base      # Use a lightweight Node base image (instead of matterbridge)
+FROM 42wim/matterbridge:1.26 AS matterbridge
+FROM node:22-alpine
 
-RUN apk add --no-cache bash curl wget git make gcc g++ python3 nodejs npm expect openssl
+COPY --from=matterbridge /bin/matterbridge /bin/matterbridge
+
+RUN apk add --no-cache bash curl wget git make gcc g++ python3 expect openssl
 
 # Install and enable Corepack
 RUN npm install -g corepack@latest && corepack enable
