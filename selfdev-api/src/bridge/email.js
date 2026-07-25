@@ -235,7 +235,7 @@ export default class Email extends Connector {
         pass: opts.imap.password,
       },
     }
-    verbose('imapOptions:', imapOptions)
+    // verbose('imapOptions:', imapOptions)
     this.mailClient = new ImapFlow(imapOptions)
     // verbose('mailClient:', this.mailClient)
     // log('mailClient connected (before):', this.mailClient.connected) // boolean
@@ -271,7 +271,7 @@ export default class Email extends Connector {
         pass: opts.smtp.password,
       },
     }
-    verbose('smtpOptions:', smtpOptions)
+    // verbose('smtpOptions:', smtpOptions)
     this.smtpTransporter = nodemailer.createTransport({
       host: opts.smtp.host,
       port: opts.smtp.port || 465,
@@ -281,7 +281,7 @@ export default class Email extends Connector {
         pass: opts.smtp.password,
       },
     })
-    verbose('smtpTransporter:', this.smtpTransporter)
+    // verbose('smtpTransporter:', this.smtpTransporter)
     log('SMTP ready:', opts.smtp.host)
     this.slog('info', 'SMPT client connected', {
       host: opts.smtp.host,
