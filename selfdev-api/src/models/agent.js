@@ -368,13 +368,12 @@ export default mongoose.model(
           email: String,
           whatsapp: String,
         },
-        supplier: {
-          name: String,
-          email: String,
-          whatsapp: String,
+        worker: {
+          enabled: Boolean,
+          pollIntervalSeconds: Number,
+          leaseSeconds: Number,
         },
         escalationJid: String,
-        authority: String,
       },
 
     },

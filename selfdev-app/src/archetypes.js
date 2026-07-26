@@ -1263,7 +1263,6 @@ const archetypes = {
     },
   },
 
-
   'negotiator-v1.0': {
     key: 'negotiator-v1.0',
     value: 'negotiator-v1.0',
@@ -1273,78 +1272,154 @@ const archetypes = {
     text: 'Negotiator v1.0',
     description: t('negotiator.description'),
     docUrl: getDocUrl('negotiator'),
+
     schema: {
       type: 'object',
+      required: ['name', 'negotiator'],
+
       properties: {
         name: {
           type: 'string',
           title: 'Name',
+          description:
+            'XMPP agent name. One worker can process multiple negotiation assignments.',
+          minLength: 1,
           default: faker.internet.username().toLowerCase(),
         },
+
         description: {
           type: 'string',
           title: 'Description',
           format: 'textarea',
           default: '',
         },
+
         joinRooms: {
           type: 'array',
-          items: { type: 'string' },
           title: 'Join Rooms',
+          items: {
+            type: 'string',
+            minLength: 1,
+          },
+          uniqueItems: true,
           default: [],
         },
+
         expire: {
           type: 'string',
-          enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'],
           title: 'Expire Deployment',
+          enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'],
           default: '',
         },
+
         negotiator: {
           type: 'object',
           title: 'Negotiator Configuration',
+          description:
+            'Configures a worker that processes negotiation assignments stored in database.',
+          required: ['model', 'worker', 'bridges'],
+
           properties: {
             model: {
               type: 'object',
               title: 'Large Language Model (LLM)',
+              required: ['provider', 'name', 'effort'],
+
               properties: {
                 provider: {
                   type: 'string',
                   title: 'LLM Provider',
+                  minLength: 1,
                   default: 'ollama',
                 },
+
                 name: {
                   type: 'string',
                   title: 'LLM Name',
+                  minLength: 1,
                   default: 'gemma4:e4b-mlx',
                 },
+
                 effort: {
                   type: 'string',
-                  enum: ['low', 'medium', 'high'],
                   title: 'LLM Effort',
+                  enum: ['low', 'medium', 'high'],
                   default: 'medium',
                 },
+
                 baseUrl: {
                   type: 'string',
                   title: 'Base URL',
+                  description:
+                    'Optional provider endpoint. Leave empty to use the provider default.',
                   default: '',
                 },
+
                 apiKey: {
                   type: 'object',
                   title: 'API Key',
+
                   properties: {
                     valueFromVault: {
                       type: 'string',
                       title: 'Value From Vault Key',
+                      description:
+                        'Name of the vault entry containing the provider API key.',
                       default: 'OLLAMA_API_KEY',
                     },
                   },
                 },
               },
             },
+
+            worker: {
+              type: 'object',
+              title: 'Assignment Worker',
+              description:
+                'Controls how the negotiator claims due assignments from database.',
+              required: [
+                'enabled',
+                'pollIntervalSeconds',
+                'leaseSeconds',
+              ],
+
+              properties: {
+                enabled: {
+                  type: 'boolean',
+                  title: 'Enable Worker Mode',
+                  description:
+                    'Process queued negotiation assignments automatically.',
+                  default: true,
+                },
+
+                pollIntervalSeconds: {
+                  type: 'integer',
+                  title: 'Queue Poll Interval',
+                  description:
+                    'How often the worker checks database for due assignments.',
+                  minimum: 1,
+                  maximum: 3600,
+                  default: 15,
+                },
+
+                leaseSeconds: {
+                  type: 'integer',
+                  title: 'Assignment Lease Duration',
+                  description:
+                    'How long an assignment remains reserved by this worker. Expired leases can be reclaimed after a worker failure.',
+                  minimum: 10,
+                  maximum: 3600,
+                  default: 120,
+                },
+              },
+            },
+
             bridges: {
               type: 'object',
               title: 'Omni-Channel Bridges',
-              description: 'XMPP addresses of existing HyperAgency bridges.',
+              description:
+                'XMPP addresses of existing HyperAgency email and messaging bridges.',
+
               properties: {
                 email: {
                   type: 'string',
@@ -1353,6 +1428,7 @@ const archetypes = {
                     'For example: procurement-email4@procurementassistant.x.h9y.localhost',
                   default: '',
                 },
+
                 whatsapp: {
                   type: 'string',
                   title: 'WhatsApp Bridge JID',
@@ -1362,47 +1438,13 @@ const archetypes = {
                 },
               },
             },
-            supplier: {
-              type: 'object',
-              title: 'Owned Supplier Conversation',
-              description:
-                'When configured, these addresses become enforced conversation boundaries.',
-              properties: {
-                name: {
-                  type: 'string',
-                  title: 'Supplier Name',
-                  default: '',
-                },
-                email: {
-                  type: 'string',
-                  title: 'Supplier Email',
-                  format: 'email',
-                  default: '',
-                },
-                whatsapp: {
-                  type: 'string',
-                  title: 'Supplier WhatsApp Number',
-                  description:
-                    'International format expected by the configured bridge, usually without “+”.',
-                  default: '',
-                },
-              },
-            },
+
             escalationJid: {
               type: 'string',
               title: 'Procurement Specialist / Agent JID',
               description:
-                'Receives cases outside the negotiator’s authority.',
+                'Receives negotiations that exceed assignment authority or require human review.',
               default: '',
-            },
-            authority: {
-              type: 'string',
-              title: 'Negotiation Authority',
-              format: 'textarea',
-              description:
-                'Explicitly define permitted concessions and mandatory escalation conditions.',
-              default:
-                'No commercial concessions are authorized unless a procurement specialist explicitly provides them.',
             },
           },
         },
