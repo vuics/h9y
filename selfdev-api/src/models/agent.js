@@ -354,6 +354,29 @@ export default mongoose.model(
         },
       },
 
+      negotiator: {
+        model: {
+          provider: String,
+          name: String,
+          effort: String,
+          baseUrl: String,
+          apiKey: {
+            valueFromVault: String,
+          },
+        },
+        bridges: {
+          email: String,
+          whatsapp: String,
+        },
+        supplier: {
+          name: String,
+          email: String,
+          whatsapp: String,
+        },
+        escalationJid: String,
+        authority: String,
+      },
+
     },
   })
     .plugin(mongooseTimestamp)

@@ -1262,6 +1262,154 @@ const archetypes = {
       }
     },
   },
+
+
+  'negotiator-v1.0': {
+    key: 'negotiator-v1.0',
+    value: 'negotiator-v1.0',
+    enable: hasProfile(['all', 'procurement']),
+    category: 'Procurement',
+    icon: 'handshake',
+    text: 'Negotiator v1.0',
+    description: t('negotiator.description'),
+    docUrl: getDocUrl('negotiator'),
+    schema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          title: 'Name',
+          default: faker.internet.username().toLowerCase(),
+        },
+        description: {
+          type: 'string',
+          title: 'Description',
+          format: 'textarea',
+          default: '',
+        },
+        joinRooms: {
+          type: 'array',
+          items: { type: 'string' },
+          title: 'Join Rooms',
+          default: [],
+        },
+        expire: {
+          type: 'string',
+          enum: ['', '1m', '1h', '12h', '1d', '1w', '1mo'],
+          title: 'Expire Deployment',
+          default: '',
+        },
+        negotiator: {
+          type: 'object',
+          title: 'Negotiator Configuration',
+          properties: {
+            model: {
+              type: 'object',
+              title: 'Large Language Model (LLM)',
+              properties: {
+                provider: {
+                  type: 'string',
+                  title: 'LLM Provider',
+                  default: 'ollama',
+                },
+                name: {
+                  type: 'string',
+                  title: 'LLM Name',
+                  default: 'gemma4:e4b-mlx',
+                },
+                effort: {
+                  type: 'string',
+                  enum: ['low', 'medium', 'high'],
+                  title: 'LLM Effort',
+                  default: 'medium',
+                },
+                baseUrl: {
+                  type: 'string',
+                  title: 'Base URL',
+                  default: '',
+                },
+                apiKey: {
+                  type: 'object',
+                  title: 'API Key',
+                  properties: {
+                    valueFromVault: {
+                      type: 'string',
+                      title: 'Value From Vault Key',
+                      default: 'OLLAMA_API_KEY',
+                    },
+                  },
+                },
+              },
+            },
+            bridges: {
+              type: 'object',
+              title: 'Omni-Channel Bridges',
+              description: 'XMPP addresses of existing HyperAgency bridges.',
+              properties: {
+                email: {
+                  type: 'string',
+                  title: 'Email Bridge JID',
+                  description:
+                    'For example: procurement-email4@procurementassistant.x.h9y.localhost',
+                  default: '',
+                },
+                whatsapp: {
+                  type: 'string',
+                  title: 'WhatsApp Bridge JID',
+                  description:
+                    'For example: procurement-whatsapp3@procurementassistant.x.h9y.localhost',
+                  default: '',
+                },
+              },
+            },
+            supplier: {
+              type: 'object',
+              title: 'Owned Supplier Conversation',
+              description:
+                'When configured, these addresses become enforced conversation boundaries.',
+              properties: {
+                name: {
+                  type: 'string',
+                  title: 'Supplier Name',
+                  default: '',
+                },
+                email: {
+                  type: 'string',
+                  title: 'Supplier Email',
+                  format: 'email',
+                  default: '',
+                },
+                whatsapp: {
+                  type: 'string',
+                  title: 'Supplier WhatsApp Number',
+                  description:
+                    'International format expected by the configured bridge, usually without “+”.',
+                  default: '',
+                },
+              },
+            },
+            escalationJid: {
+              type: 'string',
+              title: 'Procurement Specialist / Agent JID',
+              description:
+                'Receives cases outside the negotiator’s authority.',
+              default: '',
+            },
+            authority: {
+              type: 'string',
+              title: 'Negotiation Authority',
+              format: 'textarea',
+              description:
+                'Explicitly define permitted concessions and mandatory escalation conditions.',
+              default:
+                'No commercial concessions are authorized unless a procurement specialist explicitly provides them.',
+            },
+          },
+        },
+      },
+    },
+  },
+
 }
 
 export default archetypes
