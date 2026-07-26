@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { randomBytes } from 'crypto'
 
 import makeWASocket, {
   Browsers,
@@ -55,8 +56,19 @@ const silentLogger = {
   child() { return this },
 }
 
+function filesystemSlug(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64) || 'bridge'
+}
+
 function formatPairingCode(code) {
-  return String(code || '').match(/.{1,4}/g)?.join('-') || String(code || '')
+  const rawCode = String(code || '').replace(/[^a-z0-9]/gi, '')
+  return rawCode.match(/.{1,4}/g)?.join('-') || rawCode
 }
 
 function statusCode(errorValue) {
@@ -132,7 +144,8 @@ function contentText(content, contentType) {
  *   { "to": "15551234567", "content": { "image": { "url": "..." } } }
  *
  * The account is linked on first start by QR code or `pairingNumber`, and its
- * credentials are persisted below `authDir/<bridge-id>`.
+ * credentials are persisted below
+ * `authDir/<bridge-id>-<filesystem-safe-bridge-name>`.
  */
 export default class Baileys extends Connector {
   constructor(args) {
@@ -155,8 +168,13 @@ export default class Baileys extends Connector {
 
     // The bridge container already mounts /tmp/recordings as a persistent
     // volume. Keep sessions there by default so image rebuilds do not unpair.
-    const authRoot = this.options.authDir || '/tmp/recordings/baileys_sessions'
-    this.authDir = path.resolve(authRoot, this.bridge._id.toString())
+    this.authRoot = path.resolve(
+      this.options.authDir || '/tmp/recordings/baileys_sessions'
+    )
+    this.bridgeId = this.bridge._id.toString()
+    this.sessionDirectoryName =
+      `${this.bridgeId}-${filesystemSlug(this.bridge.options.name)}`
+    this.authDir = path.join(this.authRoot, this.sessionDirectoryName)
     this.socket = null
     this.connected = false
     this.connectionWaiters = new Set()
@@ -165,7 +183,9 @@ export default class Baileys extends Connector {
     this.reconnectAttempt = 0
     this.lastSender = null
     this.stopping = false
-    this.pairingCodeRequested = false
+    this.pairingCodeRequestSocket = null
+    this.pairingCodeDisplayedSocket = null
+    this.qrCodeDisplayedSocket = null
     this.processedMessageIds = new Set()
     this.sentMessageIds = new Set()
     this.messageStore = new Map()
@@ -175,13 +195,103 @@ export default class Baileys extends Connector {
     return this.bridge.options.baileys || {}
   }
 
+  async prepareAuthDirectory() {
+    fs.mkdirSync(this.authRoot, { recursive: true, mode: 0o700 })
+
+    if (!fs.existsSync(this.authDir)) {
+      const existingDirectories = fs.readdirSync(this.authRoot, {
+        withFileTypes: true,
+      }).filter(entry =>
+        entry.isDirectory() &&
+        !entry.name.includes('.logged-out-') &&
+        (entry.name === this.bridgeId || entry.name.startsWith(`${this.bridgeId}-`))
+      )
+
+      // Preserve an existing session when upgrading from ID-only directory
+      // names or when the bridge has been renamed. Only migrate an
+      // unambiguous source so we never select the wrong WhatsApp account.
+      if (existingDirectories.length === 1) {
+        const oldDirectoryName = existingDirectories[0].name
+        fs.renameSync(
+          path.join(this.authRoot, oldDirectoryName),
+          this.authDir
+        )
+        log(
+          `Renamed Baileys session directory for ${this.bridge.options.name}:`,
+          `${oldDirectoryName} -> ${this.sessionDirectoryName}`
+        )
+        await this.slog(
+          'info',
+          `Renamed Baileys session directory: ${oldDirectoryName} -> ` +
+          this.sessionDirectoryName,
+          {
+            previousDirectory: path.join(this.authRoot, oldDirectoryName),
+            authDir: this.authDir,
+          }
+        )
+      } else if (existingDirectories.length > 1) {
+        warn(
+          `Multiple Baileys session directories match bridge ${this.bridgeId}; ` +
+          `using ${this.sessionDirectoryName} without migrating them`
+        )
+        await this.slog(
+          'warn',
+          'Multiple Baileys session directories found; no session was migrated',
+          {
+            authDir: this.authDir,
+            matchingDirectories: existingDirectories.map(entry =>
+              path.join(this.authRoot, entry.name)
+            ),
+          }
+        )
+      }
+    }
+
+    fs.mkdirSync(this.authDir, { recursive: true, mode: 0o700 })
+    fs.chmodSync(this.authDir, 0o700)
+    log(`Baileys session directory for ${this.bridge.options.name}: ${this.authDir}`)
+    await this.slog('info', `Baileys session directory: ${this.authDir}`, {
+      authDir: this.authDir,
+    })
+  }
+
+  archiveLoggedOutAuthDirectory() {
+    if (!fs.existsSync(this.authDir)) {
+      fs.mkdirSync(this.authDir, { recursive: true, mode: 0o700 })
+      fs.chmodSync(this.authDir, 0o700)
+      return null
+    }
+
+    const timestamp = new Date().toISOString().replace(/[-:.]/g, '')
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const suffix = randomBytes(3).toString('hex')
+      const backupDirectory =
+        `${this.authDir}.logged-out-${timestamp}-${suffix}`
+
+      try {
+        // The backup is a sibling of the active directory, so this is an
+        // atomic rename on the same mounted filesystem.
+        fs.renameSync(this.authDir, backupDirectory)
+        fs.chmodSync(backupDirectory, 0o700)
+        fs.mkdirSync(this.authDir, { recursive: true, mode: 0o700 })
+        fs.chmodSync(this.authDir, 0o700)
+        return backupDirectory
+      } catch (err) {
+        if (!['EEXIST', 'ENOTEMPTY'].includes(err.code)) throw err
+      }
+    }
+
+    throw new Error(
+      `Could not create a unique backup name for Baileys session ${this.authDir}`
+    )
+  }
+
   async start() {
     await super.start()
     verbose('Baileys bridge starting')
 
     try {
-      fs.mkdirSync(this.authDir, { recursive: true, mode: 0o700 })
-      fs.chmodSync(this.authDir, 0o700)
+      await this.prepareAuthDirectory()
 
       this.xmppAgent.chat = async ({ prompt } = {}) => {
         try {
@@ -213,6 +323,10 @@ export default class Baileys extends Connector {
     if (this.stopping) return
     this.clearReconnectTimer()
     this.connected = false
+    await this.slog('info', 'Connecting Baileys to WhatsApp', {
+      authDir: this.authDir,
+      reconnectAttempt: this.reconnectAttempt,
+    })
 
     const { state, saveCreds } = await useMultiFileAuthState(this.authDir)
     this.saveCreds = saveCreds
@@ -240,35 +354,116 @@ export default class Baileys extends Connector {
       void this.handleMessages(socket, event)
     })
 
-    if (!state.creds.registered && this.options.pairingNumber && !this.pairingCodeRequested) {
+    if (!state.creds.registered && this.options.pairingNumber) {
       const number = String(this.options.pairingNumber).replace(/\D/g, '')
       if (!number) throw new Error('Baileys pairingNumber must contain a country code and digits')
-      this.pairingCodeRequested = true
+    }
+  }
+
+  async requestPairingCodeWhenReady(socket, number) {
+    if (this.pairingCodeRequestSocket === socket) return
+    this.pairingCodeRequestSocket = socket
+    try {
+      // makeWASocket returns before its underlying WebSocket is necessarily
+      // open. requestPairingCode sends an IQ immediately and fails with 428
+      // if invoked during that short interval.
+      await socket.waitForSocketOpen()
+      if (this.socket !== socket || this.stopping) return
+
       const code = await socket.requestPairingCode(number)
-      log(`Baileys pairing code for ${this.bridge.options.name}:`, formatPairingCode(code))
-      await this.slog('warn', 'Baileys account requires pairing; see bridge console')
+      // requestPairingCode can resolve after a concurrent close event. A code
+      // returned by that old socket is already invalid and must not be shown.
+      if (this.socket !== socket || this.stopping) {
+        warn(`Discarded stale Baileys pairing code for ${this.bridge.options.name}`)
+        await this.slog('warn', 'Discarded stale Baileys pairing code')
+        return
+      }
+
+      const pairingCode = formatPairingCode(code)
+      log(
+        `Baileys pairing code for ${this.bridge.options.name}: ${pairingCode} ` +
+        '(enter exactly as shown)'
+      )
+      this.pairingCodeDisplayedSocket = socket
+      await this.slog(
+        'warn',
+        `Baileys pairing code: ${pairingCode}`,
+        {
+          pairingCode,
+          pairingMethod: 'phone-number',
+          sensitive: true,
+          expiresWhenConnectionCloses: true,
+        }
+      )
+    } catch (err) {
+      if (this.pairingCodeRequestSocket === socket) {
+        this.pairingCodeRequestSocket = null
+      }
+      if (this.pairingCodeDisplayedSocket === socket) {
+        this.pairingCodeDisplayedSocket = null
+      }
+      if (this.socket !== socket || this.stopping) return
+
+      error(`Failed to request Baileys pairing code for ${this.bridge.options.name}:`, err)
+      await this.slog('error', 'Failed to request Baileys pairing code', {
+        error: err.toString(),
+      })
+      if (this.isTransientConnectionError(err)) {
+        this.reconnectAfterSendFailure(socket, err)
+      }
     }
   }
 
   async handleConnectionUpdate(socket, update) {
     if (this.socket !== socket || this.stopping) return
 
-    if (update.qr && !this.options.pairingNumber) {
+    if (update.qr) {
+      const renderedQrCode = await new Promise(resolve => {
+        qrcode.generate(update.qr, { small: true }, resolve)
+      })
+      const qrMessage =
+        `Scan this Baileys QR code for bridge ${this.bridge.options.name}:\n` +
+        renderedQrCode
+
+      await this.slog('warn', qrMessage, {
+        pairingMethod: 'qr',
+        qrCode: renderedQrCode,
+        qrData: update.qr,
+        sensitive: true,
+        expiresWhenConnectionCloses: true,
+      })
+      this.qrCodeDisplayedSocket = socket
+
       if (this.options.printQRInTerminal !== false) {
         log(`Scan the Baileys QR code for bridge ${this.bridge.options.name}:`)
-        qrcode.generate(update.qr, { small: true }, rendered => {
-          console.log(rendered)
-        })
-      } else {
-        warn(`Baileys QR pairing is required for ${this.bridge.options.name}, but terminal QR output is disabled`)
+        console.log(renderedQrCode)
       }
-      await this.slog('warn', 'Baileys account requires QR pairing; see bridge console')
+
+      if (this.options.pairingNumber) {
+        // A pairing code is only valid after WhatsApp has sent the QR
+        // handshake data for this socket. Requesting it merely when the raw
+        // WebSocket opens can produce codes the mobile app rejects.
+        const number = String(this.options.pairingNumber).replace(/\D/g, '')
+        await this.requestPairingCodeWhenReady(socket, number)
+      } else {
+        if (this.options.printQRInTerminal === false) {
+          warn(`Baileys QR pairing is required for ${this.bridge.options.name}, but terminal QR output is disabled`)
+        }
+      }
     }
 
     if (update.connection === 'open') {
       this.connected = true
       this.reconnectAttempt = 0
-      this.pairingCodeRequested = false
+      if (this.pairingCodeRequestSocket === socket) {
+        this.pairingCodeRequestSocket = null
+      }
+      if (this.pairingCodeDisplayedSocket === socket) {
+        this.pairingCodeDisplayedSocket = null
+      }
+      if (this.qrCodeDisplayedSocket === socket) {
+        this.qrCodeDisplayedSocket = null
+      }
       this.resolveConnectionWaiters(socket)
       log(`Baileys connected: ${socket.user?.name || socket.user?.id || this.bridge.options.name}`)
       await this.slog('info', 'Baileys connected', {
@@ -283,15 +478,73 @@ export default class Baileys extends Connector {
     const code = statusCode(update.lastDisconnect?.error)
     this.connected = false
     this.socket = null
-    this.pairingCodeRequested = false
+    if (this.pairingCodeRequestSocket === socket) {
+      this.pairingCodeRequestSocket = null
+    }
+    if (this.pairingCodeDisplayedSocket === socket) {
+      const message =
+        `The previous Baileys pairing code for ${this.bridge.options.name} ` +
+        'expired when its connection closed; wait for a new code'
+      warn(message)
+      await this.slog('warn', message)
+      this.pairingCodeDisplayedSocket = null
+    }
+    if (this.qrCodeDisplayedSocket === socket) {
+      const message =
+        `The previous Baileys QR code for ${this.bridge.options.name} ` +
+        'expired when its connection closed; wait for a new QR code'
+      warn(message)
+      await this.slog('warn', message)
+      this.qrCodeDisplayedSocket = null
+    }
     if (code === DisconnectReason.loggedOut) {
-      error(`Baileys session logged out for bridge ${this.bridge.options.name}; remove its auth directory before pairing again`)
       this.rejectConnectionWaiters(new Error('Baileys session is logged out'))
-      await this.slog('error', 'Baileys session logged out; clear its auth directory before pairing again')
+      // Prevent the old saveCreds callback from recreating or modifying the
+      // session directory after it has been archived.
+      socket.ev.removeAllListeners('creds.update')
+      socket.ev.removeAllListeners('messages.upsert')
+
+      try {
+        const backupDirectory = this.archiveLoggedOutAuthDirectory()
+        warn(
+          `Baileys session logged out for bridge ${this.bridge.options.name}; ` +
+          (backupDirectory
+            ? `archived it as ${backupDirectory}`
+            : `created a fresh session directory at ${this.authDir}`)
+        )
+        const sessionMessage = backupDirectory
+          ? `Baileys logged-out session archived as ${backupDirectory}; starting fresh pairing`
+          : `Baileys fresh session directory created at ${this.authDir}; starting pairing`
+        await this.slog(
+          'warn',
+          sessionMessage,
+          {
+            authDir: this.authDir,
+            backupDirectory,
+          }
+        )
+        this.scheduleReconnect()
+      } catch (err) {
+        error(
+          `Failed to archive logged-out Baileys session for ${this.bridge.options.name}:`,
+          err
+        )
+        await this.slog(
+          'error',
+          'Failed to archive logged-out Baileys session',
+          {
+            authDir: this.authDir,
+            error: err.toString(),
+          }
+        )
+      }
       return
     }
 
     warn(`Baileys connection closed for ${this.bridge.options.name}; scheduling reconnect`, code)
+    await this.slog('warn', 'Baileys connection closed; scheduling reconnect', {
+      disconnectCode: code,
+    })
     this.scheduleReconnect()
   }
 
@@ -300,10 +553,17 @@ export default class Baileys extends Connector {
     const base = Number(this.options.reconnectDelayMs) || 2000
     const delay = Math.min(base * (2 ** this.reconnectAttempt), 60_000)
     this.reconnectAttempt += 1
+    this.slog('info', 'Baileys reconnect scheduled', {
+      delayMs: delay,
+      reconnectAttempt: this.reconnectAttempt,
+    })
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
       this.connect().catch(err => {
         error('Baileys reconnect failed:', err)
+        this.slog('error', 'Baileys reconnect failed', {
+          error: err.toString(),
+        })
         this.scheduleReconnect()
       })
     }, delay)
