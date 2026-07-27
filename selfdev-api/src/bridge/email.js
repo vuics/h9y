@@ -10,8 +10,9 @@ import conf from '../conf.js'
 import {
   DurableOutbox,
   XmppAttachmentCollector,
+  createInboundXmppQueue,
   downloadAttachments,
-  forwardEnvelopeToXmpp,
+  enqueueEnvelopeForXmpp,
   isXmppFileUrl,
   makeInboundEnvelope,
   parseXmppPayload,
@@ -40,10 +41,13 @@ export default class Email extends Connector {
     })
 
     this.mailClient = null
+    this.imapOptions = null
     this.smtpTransporter = null
     this.pollInterval = null
+    this.checkingInbox = false
     this.attachmentCollector = new XmppAttachmentCollector()
     this.outbox = null
+    this.inboundQueue = null
     this.attachmentsDir = path.resolve('./email_attachments')
 
     if (!fs.existsSync(this.attachmentsDir)) {
@@ -51,31 +55,17 @@ export default class Email extends Connector {
     }
   }
 
-  async ensureConnected(client) {
-    if (!client.connected) {
-      console.log('Reconnecting IMAP...')
-      await client.connect()
-    } else if (!client.authenticated) {
-      console.log('Not authenticated, reconnecting...')
-      await client.logout().catch(() => {})
-      await client.connect()
-    }
-  }
+  async ensureConnected() {
+    if (this.mailClient?.connected && this.mailClient?.authenticated) return
+    if (!this.imapOptions) throw new Error('IMAP options are not configured')
 
-  async connectImap(client, maxRetries = 5) {
-    let attempt = 0
-    while (attempt < maxRetries) {
-      try {
-        await client.connect()
-        log('✅ IMAP connected')
-        return
-      } catch (err) {
-        attempt++
-        warn(`IMAP connection failed (attempt ${attempt}/${maxRetries}):`, err.code)
-        await new Promise(res => setTimeout(res, 5000 * attempt))
-      }
-    }
-    error('❌ IMAP connection failed after max retries')
+    await this.mailClient?.logout().catch(() => {})
+    this.mailClient = new ImapFlow(this.imapOptions)
+    log('Reconnecting IMAP with a new client...')
+    await this.mailClient.connect()
+    await this.slog('info', 'IMAP client reconnected', {
+      host: this.imapOptions.host,
+    })
   }
 
   async start() {
@@ -94,6 +84,7 @@ export default class Email extends Connector {
         pass: opts.imap.password,
       },
     }
+    this.imapOptions = imapOptions
     // verbose('imapOptions:', imapOptions)
     this.mailClient = new ImapFlow(imapOptions)
     // verbose('mailClient:', this.mailClient)
@@ -146,8 +137,6 @@ export default class Email extends Connector {
       host: opts.smtp.host,
     })
 
-    /* ---------- POLLING LOOP ---------- */
-    this.pollInterval = setInterval(() => this.checkInbox(), (opts.pollSec || 30) * 1000)
     await this.xmppAgent.start()
 
     /* ---------- XMPP → EMAIL ---------- */
@@ -158,6 +147,20 @@ export default class Email extends Connector {
       onState: (state, job) => this.logOutboxState(state, job),
     })
     this.outbox.start()
+    this.inboundQueue = createInboundXmppQueue({
+      bridge: this.bridge,
+      xmppAgent: this.xmppAgent,
+      options: opts,
+      config: conf.email,
+      onState: (state, job) => this.logInboundQueueState(state, job),
+    })
+    this.inboundQueue.start()
+
+    /* ---------- POLLING LOOP ---------- */
+    this.pollInterval = setInterval(
+      () => void this.checkInbox(),
+      (opts.pollSec || 30) * 1000
+    )
 
     this.xmppAgent.chat = async ({ prompt, from } = {}) => {
       if (isXmppFileUrl(prompt)) {
@@ -227,8 +230,20 @@ export default class Email extends Connector {
     })
   }
 
+  async logInboundQueueState(state, job) {
+    const level = state === 'failed' ? 'error' : state === 'retrying' ? 'warn' : 'info'
+    await this.slog(level, `Email inbound XMPP job ${state}`, {
+      inboundJobId: job.id,
+      attempts: job.attempts,
+      error: job.lastError,
+    })
+  }
+
   async checkInbox() {
+    if (this.checkingInbox) return
+    this.checkingInbox = true
     try {
+      await this.ensureConnected()
       // Lock the INBOX while processing
       const lock = await this.mailClient.getMailboxLock('INBOX');
       verbose('checkInbox lock acquired');
@@ -310,15 +325,17 @@ export default class Email extends Connector {
               references: parsed.references || [],
             },
           })
-          await forwardEnvelopeToXmpp({
-            bridge: this.bridge,
-            xmppAgent: this.xmppAgent,
-            options: this.bridge.options.email,
+          await enqueueEnvelopeForXmpp(this.inboundQueue, {
             envelope,
             humanText: emailText,
             attachments,
           })
-          log(`📤 Sent email UID ${uid} to XMPP.`);
+          for (const attachment of attachments) {
+            if (attachment.path) {
+              fs.rmSync(attachment.path, { force: true })
+            }
+          }
+          log(`📤 Queued email UID ${uid} for XMPP.`);
 
           // ✅ Mark as seen
           await this.mailClient.messageFlagsAdd(uid, ['\\Seen']);
@@ -330,6 +347,8 @@ export default class Email extends Connector {
       }
     } catch (err) {
       error('Error checking inbox:', err);
+    } finally {
+      this.checkingInbox = false
     }
   }
 
@@ -337,6 +356,7 @@ export default class Email extends Connector {
     super.stop()
     if (this.pollInterval) clearInterval(this.pollInterval)
     this.outbox?.stop()
+    this.inboundQueue?.stop()
     if (this.mailClient) await this.mailClient.logout().catch(() => {})
     if (this.xmppAgent) await this.xmppAgent.stop().catch(() => {})
     verbose('EmailBridge stopped')

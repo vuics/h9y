@@ -134,6 +134,61 @@ export function renderInboundPayload({ options, envelope, humanText }) {
     : humanText
 }
 
+export function serializeInboundAttachments(attachments = []) {
+  return attachments.map((attachment, index) => {
+    const buffer = attachment.buffer
+      ? Buffer.from(attachment.buffer)
+      : fs.readFileSync(attachment.path)
+    return {
+      filename: attachment.filename || `attachment-${index + 1}`,
+      contentType: attachment.contentType || 'application/octet-stream',
+      base64: buffer.toString('base64'),
+    }
+  })
+}
+
+export function deserializeInboundAttachments(attachments = []) {
+  return attachments.map((attachment, index) => ({
+    buffer: Buffer.from(attachment.base64 || '', 'base64'),
+    filename: attachment.filename || `attachment-${index + 1}`,
+    contentType: attachment.contentType || 'application/octet-stream',
+  }))
+}
+
+export function createInboundXmppQueue({
+  bridge,
+  xmppAgent,
+  options,
+  config,
+  onState,
+}) {
+  return new DurableOutbox({
+    bridgeId: `inbound-${bridge._id.toString()}`,
+    config,
+    onState,
+    deliver: payload => forwardEnvelopeToXmpp({
+      bridge,
+      xmppAgent,
+      options,
+      envelope: payload.envelope,
+      humanText: payload.humanText,
+      attachments: deserializeInboundAttachments(payload.attachments),
+    }),
+  })
+}
+
+export function enqueueEnvelopeForXmpp(queue, {
+  envelope,
+  humanText,
+  attachments = [],
+}) {
+  return queue.enqueue({
+    envelope,
+    humanText,
+    attachments: serializeInboundAttachments(attachments),
+  })
+}
+
 async function sendXmppMessage({ bridge, xmppAgent, prompt }) {
   if (bridge.options.enablePersonal) {
     await xmppAgent.xmppClient.sendPersonalMessage({
@@ -175,6 +230,8 @@ export async function forwardEnvelopeToXmpp({
       size: buffer.length,
       contentType,
       shareHost: conf.xmpp.shareHost,
+      shareUrlPrefix: conf.xmpp.shareUrlPrefix,
+      filesUrl: conf.xmpp.filesUrl,
     })
     const metadata = {
       filename,

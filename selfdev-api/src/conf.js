@@ -466,6 +466,9 @@ const conf = {
     mucHost: process.env.XMPP_MUC_HOST || 'g.localhost',
     shareHost: process.env.XMPP_SHARE_HOST || 'f.localhost',
     shareUrlPrefix: process.env.XMPP_SHARE_URL_PREFIX || 'http://localhost:6369/v1/files/',
+    filesUrl: process.env.API_FILES_URL ||
+      process.env.XMPP_SHARE_URL_PREFIX ||
+      'http://localhost:6369/v1/files/',
     commanderUrl: process.env.XMPP_COMMANDER_URL || 'http://localhost:8387',
 
     password: process.env.XMPP_PASSWORD || "a-geNt-$sec-ret-10m_pp",

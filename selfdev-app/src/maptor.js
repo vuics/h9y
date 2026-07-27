@@ -1,14 +1,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// NOTE: AVOID IMPORTING ANY LOCAL SOURCES IN THIS FILE.
-//       IMPORT ONLY NPM PACKAGES.
+// IMPORTANT: THIS FILE HAS TWO MIRRORED COPIES:
+//   * selfdev-api/src/maptor.js
+//   * selfdev-app/src/maptor.js
 //
-// This is because this file works in both:
-//  * selfdev-web (React.js frontend)
-//  * selfdev-api (Node.js backend)
+// Every change must be applied to both files in the same task. After editing,
+// verify that the files are byte-for-byte identical. Do not import local
+// project sources here; import only npm packages so this module continues to
+// work in both:
+//   * selfdev-app (React/Vite frontend)
+//   * selfdev-api (Node.js backend)
 //
-//  To overcome, an separate package can be created.
-//  For now, it is the easiest way to copy this file between the repos.
+// A shared npm package may replace these mirrored files in the future. Until
+// then, neither copy is authoritative on its own: they must remain identical.
 //
 ///////////////////////////////////////////////////////////////////////////////
 import { client, xml } from '@xmpp/client'
@@ -18,6 +22,14 @@ import axios from 'axios'
 import EventEmitter from 'eventemitter3';
 
 export function sleep (ms) { return new Promise(resolve => setTimeout(resolve, ms)) }
+
+export function replaceUrlPrefix(url, sourcePrefix, targetPrefix) {
+  const value = String(url || '')
+  const source = String(sourcePrefix || '')
+  const target = String(targetPrefix || '')
+  if (!source || !target || !value.startsWith(source)) return value
+  return `${target.replace(/\/+$/, '')}/${value.slice(source.length).replace(/^\/+/, '')}`
+}
 
 export const variableRegex = /(\[\[[A-Za-z0-9_-]+\]\])/g;
 export const unameRegex = /\[\[([A-Za-z0-9_-]+)\]\]/;
@@ -662,8 +674,16 @@ export class XmppClient {
   }
 
   async uploadFile ({
-    buffer, filename, size, contentType = 'application/octet-stream', shareHost } = {}
+    buffer,
+    filename,
+    size,
+    contentType = 'application/octet-stream',
+    shareHost,
+    shareUrlPrefix,
+    filesUrl,
+  } = {}
   ) {
+    let uploadUrl = ''
     try {
       // console.log('Content-Type:', contentType);
       const slotRequestIQ = xml(
@@ -684,13 +704,13 @@ export class XmppClient {
       const putEl = slot.getChild('put');
       const putUrl = putEl?.attrs?.url || '';
       const getUrl = slot.getChild('get')?.attrs?.url || '';
+      uploadUrl = replaceUrlPrefix(putUrl, shareUrlPrefix, filesUrl)
       // console.log('✅ Upload slot received:', slot)
       // console.log('PUT URL:', putUrl);
       // console.log('GET URL:', getUrl);
 
       let headers = {};
       const headerEls = putEl?.getChildren('header') || [];
-      console.log('headerEls:', headerEls)
       for (const headerEl of headerEls) {
         const name = headerEl.attrs.name;
         const value = headerEl.getText();
@@ -700,13 +720,20 @@ export class XmppClient {
       // console.log('headers:', headers)
 
       // const response1 =
-      await axios.put(putUrl, buffer, { headers });
+      await axios.put(uploadUrl, buffer, { headers });
       // console.log('response1:', response1);
       console.log('✅ File uploaded, link:', getUrl);
       return getUrl
     } catch (err) {
-      console.error('Error geting upload slot or uploading:', err);
-      throw err
+      console.error('Error getting upload slot or uploading:', {
+        message: err?.message || String(err),
+        code: err?.code,
+        uploadUrl,
+      });
+      throw new Error(
+        `XMPP file upload failed: ${err?.message || String(err)}`,
+        { cause: err }
+      )
     }
   }
 
@@ -751,4 +778,3 @@ export class XmppClient {
     console.log('Message with mention sent, body:', body, ', roomJid:', roomJid);
   }
 }
-

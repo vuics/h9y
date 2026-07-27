@@ -428,6 +428,7 @@ services:
       - XMPP_MUC_HOST=g.${DOMAIN}
       - XMPP_SHARE_HOST=f.${DOMAIN}
       - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/
+      - API_FILES_URL=http://selfdev-api:6369/v1/files/
       - XMPP_COMMANDER_URL=http://selfdev-prosody:8387
       - XMPP_PASSWORD=a-geNt--ret-10m_pp
       - VAULT_ENABLE=true
@@ -730,4 +731,3 @@ volumes:
   speech-volume:
   opensearch-volume:
   prometheus-volume:
-

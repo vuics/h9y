@@ -20,8 +20,9 @@ import conf from '../conf.js'
 import {
   DurableOutbox,
   XmppAttachmentCollector,
+  createInboundXmppQueue,
   downloadAttachments,
-  forwardEnvelopeToXmpp,
+  enqueueEnvelopeForXmpp,
   isXmppFileUrl,
   makeInboundEnvelope,
   parseXmppPayload,
@@ -200,6 +201,7 @@ export default class Baileys extends Connector {
     this.messageStore = new Map()
     this.attachmentCollector = new XmppAttachmentCollector()
     this.outbox = null
+    this.inboundQueue = null
   }
 
   get options() {
@@ -311,6 +313,14 @@ export default class Baileys extends Connector {
         onState: (state, job) => this.logOutboxState(state, job),
       })
       this.outbox.start()
+      this.inboundQueue = createInboundXmppQueue({
+        bridge: this.bridge,
+        xmppAgent: this.xmppAgent,
+        options: this.options,
+        config: conf.baileys,
+        onState: (state, job) => this.logInboundQueueState(state, job),
+      })
+      this.inboundQueue.start()
 
       this.xmppAgent.chat = async ({ prompt, from } = {}) => {
         if (isXmppFileUrl(prompt)) {
@@ -712,10 +722,7 @@ export default class Baileys extends Connector {
             groupJid: chatJid.endsWith('@g.us') ? chatJid : null,
           },
         })
-        await forwardEnvelopeToXmpp({
-          bridge: this.bridge,
-          xmppAgent: this.xmppAgent,
-          options: this.options,
+        await enqueueEnvelopeForXmpp(this.inboundQueue, {
           envelope,
           humanText: prompt,
           attachments,
@@ -862,6 +869,15 @@ export default class Baileys extends Connector {
     })
   }
 
+  async logInboundQueueState(state, job) {
+    const level = state === 'failed' ? 'error' : state === 'retrying' ? 'warn' : 'info'
+    await this.slog(level, `Baileys inbound XMPP job ${state}`, {
+      inboundJobId: job.id,
+      attempts: job.attempts,
+      error: job.lastError,
+    })
+  }
+
   async sendMessage(socket, recipient, content) {
     const messageId = generateMessageIDV2(socket.user.id)
     this.rememberSentMessageId(messageId)
@@ -921,6 +937,7 @@ export default class Baileys extends Connector {
     this.clearReconnectTimer()
     this.rejectConnectionWaiters(new Error('Baileys bridge stopped'))
     this.outbox?.stop()
+    this.inboundQueue?.stop()
     await super.stop()
 
     const socket = this.socket

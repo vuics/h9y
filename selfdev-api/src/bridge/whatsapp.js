@@ -22,8 +22,9 @@ import webServer from './web-server.js'
 import {
   DurableOutbox,
   XmppAttachmentCollector,
+  createInboundXmppQueue,
   downloadAttachments,
-  forwardEnvelopeToXmpp,
+  enqueueEnvelopeForXmpp,
   isXmppFileUrl,
   makeInboundEnvelope,
   parseXmppPayload,
@@ -116,6 +117,7 @@ export default class WhatsApp extends Connector {
     this.processedMessageIds = new Set()
     this.attachmentCollector = new XmppAttachmentCollector()
     this.outbox = null
+    this.inboundQueue = null
   }
 
   get options() {
@@ -174,6 +176,14 @@ export default class WhatsApp extends Connector {
         onState: (state, job) => this.logOutboxState(state, job),
       })
       this.outbox.start()
+      this.inboundQueue = createInboundXmppQueue({
+        bridge: this.bridge,
+        xmppAgent: this.xmppAgent,
+        options: this.options,
+        config: conf.whatsapp,
+        onState: (state, job) => this.logInboundQueueState(state, job),
+      })
+      this.inboundQueue.start()
 
       this.xmppAgent.chat = async ({ prompt, from } = {}) => {
         if (isXmppFileUrl(prompt)) {
@@ -304,10 +314,7 @@ export default class WhatsApp extends Connector {
               phoneNumberId: value.metadata?.phone_number_id || null,
             },
           })
-          await forwardEnvelopeToXmpp({
-            bridge: this.bridge,
-            xmppAgent: this.xmppAgent,
-            options: this.options,
+          await enqueueEnvelopeForXmpp(this.inboundQueue, {
             envelope,
             humanText: prompt,
             attachments: attachment ? [attachment] : [],
@@ -502,9 +509,19 @@ export default class WhatsApp extends Connector {
     })
   }
 
+  async logInboundQueueState(state, job) {
+    const level = state === 'failed' ? 'error' : state === 'retrying' ? 'warn' : 'info'
+    await this.slog(level, `WhatsApp inbound XMPP job ${state}`, {
+      inboundJobId: job.id,
+      attempts: job.attempts,
+      error: job.lastError,
+    })
+  }
+
   async stop() {
     await super.stop()
     this.outbox?.stop()
+    this.inboundQueue?.stop()
     if (this.path && webServer.app) {
       webServer.removeRoute({ path: this.path, method: 'get' })
       webServer.removeRoute({ path: this.path, method: 'post' })
