@@ -17,6 +17,15 @@ import { log, warn, error, Verbose } from '../services.js'
 import Connector from './connector.js'
 import XmppAgent from '../swarm/xmpp-agent.js'
 import conf from '../conf.js'
+import {
+  DurableOutbox,
+  XmppAttachmentCollector,
+  downloadAttachments,
+  forwardEnvelopeToXmpp,
+  isXmppFileUrl,
+  makeInboundEnvelope,
+  parseXmppPayload,
+} from './omnichannel.js'
 
 const verbose = Verbose('sd:bridge/baileys'); verbose('')
 
@@ -130,7 +139,7 @@ function contentText(content, contentType) {
     case 'pollCreationMessageV3':
       return `[poll: ${content[contentType]?.name || 'untitled'}]`
     case 'protocolMessage':
-      return '[WhatsApp protocol update]'
+      return ''
     default:
       return contentType ? `[${contentType}]` : '[unsupported WhatsApp message]'
   }
@@ -189,6 +198,8 @@ export default class Baileys extends Connector {
     this.processedMessageIds = new Set()
     this.sentMessageIds = new Set()
     this.messageStore = new Map()
+    this.attachmentCollector = new XmppAttachmentCollector()
+    this.outbox = null
   }
 
   get options() {
@@ -293,15 +304,25 @@ export default class Baileys extends Connector {
     try {
       await this.prepareAuthDirectory()
 
-      this.xmppAgent.chat = async ({ prompt } = {}) => {
-        try {
-          await this.sendFromXmpp(prompt)
-        } catch (err) {
-          error('Failed to send Baileys WhatsApp message:', err)
-          await this.slog('error', 'Failed to send Baileys WhatsApp message', {
-            error: err.toString(),
-          })
+      this.outbox = new DurableOutbox({
+        bridgeId: this.bridge._id.toString(),
+        config: conf.baileys,
+        deliver: payload => this.sendFromXmpp(payload.prompt, payload.attachmentUrls),
+        onState: (state, job) => this.logOutboxState(state, job),
+      })
+      this.outbox.start()
+
+      this.xmppAgent.chat = async ({ prompt, from } = {}) => {
+        if (isXmppFileUrl(prompt)) {
+          this.attachmentCollector.add(from, prompt)
+          return ''
         }
+        const attachmentUrls = this.attachmentCollector.take(from)
+        const job = await this.outbox.enqueue({ prompt, attachmentUrls })
+        await this.slog('info', 'Queued XMPP message for Baileys delivery', {
+          outboxJobId: job.id,
+          attachmentCount: attachmentUrls.length,
+        })
         return ''
       }
 
@@ -352,6 +373,15 @@ export default class Baileys extends Connector {
     })
     socket.ev.on('messages.upsert', event => {
       void this.handleMessages(socket, event)
+    })
+    socket.ev.on('messages.update', updates => {
+      for (const update of updates || []) {
+        void this.slog('info', 'Baileys WhatsApp message status updated', {
+          messageId: update.key?.id,
+          recipient: update.key?.remoteJid,
+          status: update.update?.status,
+        })
+      }
     })
 
     if (!state.creds.registered && this.options.pairingNumber) {
@@ -503,6 +533,7 @@ export default class Baileys extends Connector {
       // session directory after it has been archived.
       socket.ev.removeAllListeners('creds.update')
       socket.ev.removeAllListeners('messages.upsert')
+      socket.ev.removeAllListeners('messages.update')
 
       try {
         const backupDirectory = this.archiveLoggedOutAuthDirectory()
@@ -621,13 +652,14 @@ export default class Baileys extends Connector {
     if (this.socket !== socket || this.stopping || type !== 'notify') return
 
     for (const message of messages || []) {
+      const eventMessageId = message.key?.id
       try {
         this.storeMessage(message)
         if (!message.message || !message.key?.remoteJid) continue
         if (message.key.remoteJid === 'status@broadcast') continue
         if (this.options.ignoreGroups && message.key.remoteJid.endsWith('@g.us')) continue
 
-        const messageId = message.key.id
+        const messageId = eventMessageId
         // Messages authored on the linked phone also have fromMe=true. Ignore
         // only IDs sent by this bridge, otherwise mobile-originated messages
         // from the same WhatsApp account would never reach XMPP.
@@ -638,6 +670,7 @@ export default class Baileys extends Connector {
         const content = extractMessageContent(message.message)
         const contentType = getContentType(content)
         if (!content || !contentType) continue
+        if (contentType === 'protocolMessage') continue
 
         const chatJid = message.key.remoteJid
         const senderJid = message.key.participant ||
@@ -646,16 +679,47 @@ export default class Baileys extends Connector {
           chatJid
         this.lastSender = chatJid
 
+        const text = contentText(content, contentType)
         let prompt = `💬 WhatsApp from ${message.pushName || senderJid}`
         if (chatJid.endsWith('@g.us')) prompt += ` in ${chatJid}`
-        prompt += `\n${contentText(content, contentType)}`
-
+        prompt += `\n${text}`
+        const attachments = []
         if (MEDIA_TYPES.has(contentType) && this.options.downloadMedia !== false) {
-          const mediaUrl = await this.copyMediaToXmpp(socket, message, content, contentType)
-          if (mediaUrl) prompt += `\n${mediaUrl}`
+          const attachment = await this.downloadMedia(
+            socket, message, content, contentType
+          )
+          if (attachment) attachments.push(attachment)
         }
 
-        await this.forwardToXmpp(prompt)
+        const timestampValue = message.messageTimestamp?.toNumber?.() ||
+          Number(message.messageTimestamp) ||
+          Math.floor(Date.now() / 1000)
+        const from = String(senderJid).split('@')[0]
+        const to = String(socket.user?.id || '').split(':')[0]
+        const envelope = makeInboundEnvelope({
+          channel: 'whatsapp',
+          externalMessageId: messageId,
+          conversationId: chatJid,
+          from,
+          fromName: message.pushName || null,
+          to,
+          timestamp: new Date(timestampValue * 1000).toISOString(),
+          text,
+          fromMe: message.key.fromMe === true,
+          extra: {
+            provider: 'baileys',
+            whatsappJid: senderJid,
+            groupJid: chatJid.endsWith('@g.us') ? chatJid : null,
+          },
+        })
+        await forwardEnvelopeToXmpp({
+          bridge: this.bridge,
+          xmppAgent: this.xmppAgent,
+          options: this.options,
+          envelope,
+          humanText: prompt,
+          attachments,
+        })
         if (this.options.markAsRead !== false && !message.key.fromMe) {
           await socket.readMessages([message.key]).catch(err => {
             warn('Could not mark Baileys message as read:', err)
@@ -668,6 +732,8 @@ export default class Baileys extends Connector {
           type: contentType,
         })
       } catch (err) {
+        // Allow Baileys to redeliver the event when forwarding to XMPP failed.
+        if (eventMessageId) this.processedMessageIds.delete(eventMessageId)
         error('Failed to process Baileys WhatsApp message:', err)
         await this.slog('error', 'Failed to process Baileys WhatsApp message', {
           error: err.toString(),
@@ -677,24 +743,7 @@ export default class Baileys extends Connector {
     }
   }
 
-  async forwardToXmpp(prompt) {
-    if (this.bridge.options.enablePersonal) {
-      await this.xmppAgent.xmppClient.sendPersonalMessage({
-        recipient: this.bridge.options.recipient,
-        prompt,
-      })
-    }
-    if (this.bridge.options.enableRoom && this.bridge.options.joinRooms?.length > 0) {
-      await this.xmppAgent.xmppClient.sendRoomMessage({
-        room: this.bridge.options.joinRooms[0],
-        recipient: this.bridge.options.recipientNickname,
-        prompt,
-        mucHost: conf.xmpp.mucHost,
-      })
-    }
-  }
-
-  async copyMediaToXmpp(socket, message, content, contentType) {
+  async downloadMedia(socket, message, content, contentType) {
     try {
       const media = content[contentType]
       const buffer = await downloadMediaMessage(message, 'buffer', {}, {
@@ -705,16 +754,14 @@ export default class Baileys extends Connector {
       const extension = MIME_EXTENSIONS[mimeType] || 'bin'
       const kind = contentType.replace(/Message$/, '')
       const filename = media?.fileName || `${kind}-${message.key.id}.${extension}`
-      return await this.xmppAgent.xmppClient.uploadFile({
+      return {
         buffer,
         filename,
-        size: buffer.length,
         contentType: mimeType,
-        shareHost: conf.xmpp.shareHost,
-      })
+      }
     } catch (err) {
       warn('Could not copy Baileys media to XMPP:', err)
-      return null
+      throw err
     }
   }
 
@@ -726,17 +773,12 @@ export default class Baileys extends Connector {
     return number ? `${number}@s.whatsapp.net` : ''
   }
 
-  async sendFromXmpp(prompt) {
-    let parsed
-    try {
-      parsed = JSON.parse(prompt)
-    } catch {
-      parsed = null
-    }
+  async sendFromXmpp(prompt, attachmentUrls = []) {
+    const parsed = parseXmppPayload(prompt)
 
     let recipient
     let content
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    if (parsed) {
       recipient = parsed.to
       if (parsed.content && typeof parsed.content === 'object') {
         content = parsed.content
@@ -745,8 +787,6 @@ export default class Baileys extends Connector {
       } else {
         content = { text: String(parsed.text ?? '') }
       }
-    } else {
-      content = { text: String(prompt || '') }
     }
 
     recipient = this.normalizeRecipient(
@@ -759,8 +799,25 @@ export default class Baileys extends Connector {
       throw new Error('Baileys text message cannot be empty')
     }
 
+    const embeddedUrls = Array.isArray(parsed.attachments)
+      ? parsed.attachments
+        .map(item => typeof item === 'string' ? item : item?.url)
+        .filter(Boolean)
+      : []
+    const attachments = await downloadAttachments([
+      ...attachmentUrls,
+      ...embeddedUrls,
+    ])
+
     let socket = await this.waitForConnection()
     try {
+      for (const attachment of attachments) {
+        await this.sendMessage(
+          socket,
+          recipient,
+          this.baileysAttachmentContent(attachment)
+        )
+      }
       return await this.sendMessage(socket, recipient, content)
     } catch (err) {
       if (!this.isTransientConnectionError(err)) throw err
@@ -768,8 +825,41 @@ export default class Baileys extends Connector {
       warn('Baileys send interrupted by a reconnect; waiting to retry once')
       this.reconnectAfterSendFailure(socket, err)
       socket = await this.waitForConnection()
+      for (const attachment of attachments) {
+        await this.sendMessage(
+          socket,
+          recipient,
+          this.baileysAttachmentContent(attachment)
+        )
+      }
       return await this.sendMessage(socket, recipient, content)
     }
+  }
+
+  baileysAttachmentContent(attachment) {
+    if (attachment.contentType.startsWith('image/')) {
+      return { image: attachment.buffer, mimetype: attachment.contentType }
+    }
+    if (attachment.contentType.startsWith('video/')) {
+      return { video: attachment.buffer, mimetype: attachment.contentType }
+    }
+    if (attachment.contentType.startsWith('audio/')) {
+      return { audio: attachment.buffer, mimetype: attachment.contentType }
+    }
+    return {
+      document: attachment.buffer,
+      mimetype: attachment.contentType,
+      fileName: attachment.filename,
+    }
+  }
+
+  async logOutboxState(state, job) {
+    const level = state === 'failed' ? 'error' : state === 'retrying' ? 'warn' : 'info'
+    await this.slog(level, `Baileys outbox job ${state}`, {
+      outboxJobId: job.id,
+      attempts: job.attempts,
+      error: job.lastError,
+    })
   }
 
   async sendMessage(socket, recipient, content) {
@@ -830,6 +920,7 @@ export default class Baileys extends Connector {
     this.connected = false
     this.clearReconnectTimer()
     this.rejectConnectionWaiters(new Error('Baileys bridge stopped'))
+    this.outbox?.stop()
     await super.stop()
 
     const socket = this.socket

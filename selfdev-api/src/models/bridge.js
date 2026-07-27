@@ -139,6 +139,7 @@ const EmailSchema = new mongoose.Schema({
   pollSec: Number,
   defaultRecipient: String,
   defaultSubject: String,
+  messageFormat: String,
 }, { _id: false })
 
 const WhatsAppSchema = new mongoose.Schema({
@@ -156,6 +157,7 @@ const WhatsAppSchema = new mongoose.Schema({
   endpoint: String,
   defaultRecipient: String,
   markAsRead: Boolean,
+  messageFormat: String,
 }, { _id: false })
 
 const BaileysSchema = new mongoose.Schema({
@@ -171,6 +173,7 @@ const BaileysSchema = new mongoose.Schema({
   ignoreGroups: Boolean,
   reconnectDelayMs: Number,
   sendTimeoutMs: Number,
+  messageFormat: String,
 }, { _id: false })
 
 const McpSchema = new mongoose.Schema({

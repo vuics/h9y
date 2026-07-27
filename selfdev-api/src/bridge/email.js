@@ -7,161 +7,18 @@ import { log, warn, error, Verbose } from '../services.js'
 import Connector from './connector.js'
 import XmppAgent from '../swarm/xmpp-agent.js'
 import conf from '../conf.js'
+import {
+  DurableOutbox,
+  XmppAttachmentCollector,
+  downloadAttachments,
+  forwardEnvelopeToXmpp,
+  isXmppFileUrl,
+  makeInboundEnvelope,
+  parseXmppPayload,
+} from './omnichannel.js'
 
 const verbose = Verbose('sd:bridge/email')
 verbose('')
-
-
-
-// TODO: Implement email file attachments
-//       The following file_manager.js code was translated from file_manager.py
-
-// // file_manager.js
-// import path from 'path';
-// import axios from 'axios';
-// import FileType from 'file-type';
-// import { URL } from 'url';
-// import https from 'https';
-
-// const SSL_VERIFY = process.env.SSL_VERIFY !== 'false';
-// const SHARE_URL_PREFIX = process.env.SHARE_URL_PREFIX || "https://selfdev-prosody.dev.local:5281/file_share/";
-
-// export class FileManager {
-//   constructor() {
-//     this.fileUrls = [];
-//   }
-
-//   isSharedFileUrl(prompt) {
-//     try {
-//       return prompt.startsWith(SHARE_URL_PREFIX);
-//     } catch (err) {
-//       console.error(`Error checking prompt ${prompt}:`, err);
-//       return false;
-//     }
-//   }
-
-//   addFileUrl(url) {
-//     try {
-//       this.fileUrls.push(url);
-//       return "";
-//     } catch (err) {
-//       console.error(`Error adding file URL ${url}:`, err);
-//       return "";
-//     }
-//   }
-
-//   getFileUrls() {
-//     return this.fileUrls;
-//   }
-
-//   async fetchBytesFromUrl(url) {
-//     try {
-//       console.debug(`Downloading file from ${url}`);
-//       const response = await axios.get(url, {
-//         responseType: 'arraybuffer',
-//         httpsAgent: SSL_VERIFY ? undefined : new https.Agent({ rejectUnauthorized: false })
-//       });
-//       return Buffer.from(response.data);
-//     } catch (err) {
-//       console.error(`Error downloading file from ${url}:`, err);
-//     }
-//   }
-
-//   async getFilesBytes() {
-//     return await Promise.all(this.fileUrls.map(url => this.fetchBytesFromUrl(url)));
-//   }
-
-//   getFilenameFromUrl(url) {
-//     const parsedUrl = new URL(url);
-//     return path.basename(parsedUrl.pathname);
-//   }
-
-//   async getTypeFromBuffer(fileBuffer) {
-//     try {
-//       const typeInfo = await FileType.fromBuffer(fileBuffer);
-//       if (!typeInfo) return ['application/octet-stream', 'file'];
-//       const [typePart] = typeInfo.mime.split('/');
-//       return [typeInfo.mime, typePart];
-//     } catch (err) {
-//       console.error("Error getting file type from buffer:", err);
-//       return ['application/octet-stream', 'file'];
-//     }
-//   }
-
-//   async getFileInfoFromBuffer(fileBuffer) {
-//     const [mimeType, typePart] = await this.getTypeFromBuffer(fileBuffer);
-//     const type = ['image', 'audio', 'text'].includes(typePart) ? typePart : 'file';
-
-//     if (type === 'text') {
-//       return {
-//         type,
-//         mimeType,
-//         text: fileBuffer.toString('utf-8')
-//       };
-//     } else {
-//       const dataBase64 = fileBuffer.toString('base64');
-//       return {
-//         type,
-//         sourceType: 'base64',
-//         data: dataBase64,
-//         mimeType
-//       };
-//     }
-//   }
-
-//   async getFilesInfo() {
-//     const filesBytes = await this.getFilesBytes();
-//     return await Promise.all(filesBytes.map(buf => this.getFileInfoFromBuffer(buf)));
-//   }
-
-//   clear() {
-//     this.fileUrls = [];
-//   }
-
-//   /**
-//    * Uploads all stored files using the agent's uploadFile() method.
-//    * @param {XmppAgent} agent - The XMPP agent instance that implements uploadFile()
-//    * @param {string} shareHost - The XMPP upload share host JID
-//    * @returns {Promise<string[]>} - Array of uploaded file URLs
-//    */
-//   async uploadFiles(agent, shareHost) {
-//     try {
-//       const results = [];
-
-//       const fileUrls = this.getFileUrls();
-//       const files = await this.getFilesBytes();
-
-//       for (let i = 0; i < files.length; i++) {
-//         const buffer = files[i];
-//         const filename = this.getFilenameFromUrl(fileUrls[i]);
-//         const [mimeType] = await this.getTypeFromBuffer(buffer);
-//         const size = buffer.length;
-
-//         console.log(`⬆️ Uploading ${filename} (${mimeType}, ${size} bytes)...`);
-//         const getUrl = await agent.uploadFile({
-//           buffer,
-//           filename,
-//           size,
-//           contentType: mimeType,
-//           shareHost,
-//         });
-
-//         results.push(getUrl);
-//       }
-
-//       // Clear after upload
-//       this.clear();
-//       return results;
-//     } catch (err) {
-//       console.error('Error uploading files via FileManager:', err);
-//       throw err;
-//     }
-//   }
-// }
-
-
-
-
 
 export default class Email extends Connector {
   constructor(args) {
@@ -185,6 +42,8 @@ export default class Email extends Connector {
     this.mailClient = null
     this.smtpTransporter = null
     this.pollInterval = null
+    this.attachmentCollector = new XmppAttachmentCollector()
+    this.outbox = null
     this.attachmentsDir = path.resolve('./email_attachments')
 
     if (!fs.existsSync(this.attachmentsDir)) {
@@ -292,49 +151,80 @@ export default class Email extends Connector {
     await this.xmppAgent.start()
 
     /* ---------- XMPP → EMAIL ---------- */
-    // FIXME: attarchments arg does not pass
-    this.xmppAgent.chat = async ({ prompt, attachments } = {}) => {
-      try {
-        verbose('XMPP message received for email send:', prompt)
+    this.outbox = new DurableOutbox({
+      bridgeId: this.bridge._id.toString(),
+      config: conf.email,
+      deliver: payload => this.deliverEmail(payload),
+      onState: (state, job) => this.logOutboxState(state, job),
+    })
+    this.outbox.start()
 
-        let msg = null
-        try {
-          msg = JSON.parse(prompt)
-        } catch {
-          msg = { text: prompt }
-        }
-
-        const mailOptions = {
-          from: opts.smtp.user,
-          to: msg.to || opts.defaultRecipient,
-          subject: msg.subject || opts.defaultSubject,
-          text: msg.text || '',
-          attachments: [],
-        }
-
-        // Handle attachments sent via XMPP
-        if (attachments && attachments.length > 0) {
-          for (const a of attachments) {
-            const filePath = path.join(this.attachmentsDir, a.filename)
-            fs.writeFileSync(filePath, Buffer.from(a.content, 'base64'))
-            mailOptions.attachments.push({
-              filename: a.filename,
-              path: filePath,
-            })
-          }
-        }
-
-        verbose('mailOptions:', mailOptions)
-        await this.smtpTransporter.sendMail(mailOptions)
-        log('Email sent to:', mailOptions.to)
-        this.slog('debug', 'Email sent', {
-          to: mailOptions.to
-        })
-      } catch (err) {
-        error('Failed to send email from XMPP message:', err)
+    this.xmppAgent.chat = async ({ prompt, from } = {}) => {
+      if (isXmppFileUrl(prompt)) {
+        this.attachmentCollector.add(from, prompt)
+        return ''
       }
+      const attachmentUrls = this.attachmentCollector.take(from)
+      const job = await this.outbox.enqueue({ prompt, attachmentUrls })
+      await this.slog('info', 'Queued XMPP message for SMTP delivery', {
+        outboxJobId: job.id,
+        attachmentCount: attachmentUrls.length,
+      })
+      return ''
     }
     this.slog('debug', 'Bridge started')
+  }
+
+  async deliverEmail({ prompt, attachmentUrls = [] }) {
+    const opts = this.bridge.options.email
+    const msg = parseXmppPayload(prompt)
+    const attachments = await downloadAttachments([
+      ...attachmentUrls,
+      ...(Array.isArray(msg.attachments)
+        ? msg.attachments
+          .map(item => typeof item === 'string' ? item : item?.url)
+          .filter(Boolean)
+        : []),
+    ])
+    const mailOptions = {
+      from: msg.from || opts.smtp.user,
+      to: msg.to || opts.defaultRecipient,
+      subject: msg.subject || opts.defaultSubject,
+      text: typeof msg.text === 'string' ? msg.text : '',
+      attachments: attachments.map(attachment => ({
+        filename: attachment.filename,
+        content: attachment.buffer,
+        contentType: attachment.contentType,
+      })),
+    }
+    if (!mailOptions.to) throw new Error('Email recipient is required')
+    verbose('mailOptions:', {
+      ...mailOptions,
+      attachments: mailOptions.attachments.map(item => item.filename),
+    })
+    const result = await this.smtpTransporter.sendMail(mailOptions)
+    if ((!result.accepted || result.accepted.length === 0) &&
+        result.rejected?.length > 0) {
+      throw new Error(`SMTP rejected all recipients: ${result.rejected.join(', ')}`)
+    }
+    log('Email accepted by SMTP for:', mailOptions.to)
+    await this.slog('info', 'Email accepted by SMTP', {
+      to: mailOptions.to,
+      messageId: result.messageId,
+      accepted: result.accepted,
+      rejected: result.rejected,
+      attachmentCount: attachments.length,
+    })
+    return result
+  }
+
+  async logOutboxState(state, job) {
+    const level = state === 'failed' ? 'error' : state === 'retrying' ? 'warn' : 'info'
+    await this.slog(level, `Email outbox job ${state}`, {
+      outboxJobId: job.id,
+      attempts: job.attempts,
+      error: job.lastError,
+    })
   }
 
   async checkInbox() {
@@ -392,7 +282,7 @@ export default class Email extends Connector {
             `📧 New Email from ${parsed.from?.text || '(unknown sender)'}\n` +
             `Subject: ${parsed.subject || '(no subject)'}\n\n` +
             `${parsed.text || '(no text)'}\n\n` +
-            (attachments.length ? `[+${attachments.length} attachments saved]` : '');
+            (attachments.length ? `[${attachments.length} attachment(s)]` : '');
 
           verbose('Constructed emailText:', emailText);
           this.slog('info', 'Recieved email', {
@@ -401,31 +291,34 @@ export default class Email extends Connector {
             attachmentsNumber: attachments.length,
           })
 
-          // FIXME:
-          // const xmppAttachments = await this._convertAttachmentsToXmpp(attachments)
-
-          if (this.bridge.options.enablePersonal) {
-            await this.xmppAgent.xmppClient.sendPersonalMessage({
-              recipient: this.bridge.options.recipient,
-              prompt: emailText,
-
-              // FIXME:
-              // attachments: xmppAttachments.length ? xmppAttachments : undefined,
-            });
-            log(`📤 Sent email UID ${uid} to XMPP recipient ${this.bridge.options.recipient}.`);
-          }
-          if (this.bridge.options.enableRoom && this.bridge.options.joinRooms?.length > 0) {
-            await this.xmppAgent.xmppClient.sendRoomMessage({
-              room: this.bridge.options.joinRooms[0],
-              recipient: this.bridge.options.recipientNickname,
-              mucHost: conf.xmpp.mucHost,
-              prompt: emailText,
-
-              // FIXME:
-              // attachments: xmppAttachments.length ? xmppAttachments : undefined,
-            });
-            log(`📤 Sent email UID ${uid} to XMPP room.`);
-          }
+          const fromAddress = parsed.from?.value?.[0]?.address || null
+          const fromName = parsed.from?.value?.[0]?.name || null
+          const toAddresses = (parsed.to?.value || []).map(item => item.address)
+          const envelope = makeInboundEnvelope({
+            channel: 'email',
+            externalMessageId: parsed.messageId || `imap:${uid}`,
+            conversationId: parsed.inReplyTo || parsed.messageId || `imap:${uid}`,
+            from: fromAddress,
+            fromName,
+            to: toAddresses,
+            timestamp: parsed.date?.toISOString(),
+            text: parsed.text || '',
+            extra: {
+              subject: parsed.subject || '',
+              replyTo: (parsed.replyTo?.value || []).map(item => item.address),
+              inReplyTo: parsed.inReplyTo || null,
+              references: parsed.references || [],
+            },
+          })
+          await forwardEnvelopeToXmpp({
+            bridge: this.bridge,
+            xmppAgent: this.xmppAgent,
+            options: this.bridge.options.email,
+            envelope,
+            humanText: emailText,
+            attachments,
+          })
+          log(`📤 Sent email UID ${uid} to XMPP.`);
 
           // ✅ Mark as seen
           await this.mailClient.messageFlagsAdd(uid, ['\\Seen']);
@@ -440,23 +333,10 @@ export default class Email extends Connector {
     }
   }
 
-  async _convertAttachmentsToXmpp(attachments) {
-    if (!attachments || attachments.length === 0) { return [] }
-    const out = []
-    for (const att of attachments) {
-      const data = fs.readFileSync(att.path)
-      out.push({
-        filename: att.filename,
-        contentType: att.contentType,
-        content: data.toString('base64'),
-      })
-    }
-    return out
-  }
-
   async stop() {
     super.stop()
     if (this.pollInterval) clearInterval(this.pollInterval)
+    this.outbox?.stop()
     if (this.mailClient) await this.mailClient.logout().catch(() => {})
     if (this.xmppAgent) await this.xmppAgent.stop().catch(() => {})
     verbose('EmailBridge stopped')

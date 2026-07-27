@@ -12,12 +12,22 @@ import crypto from 'crypto'
 import path from 'path'
 
 import axios from 'axios'
+import FormData from 'form-data'
 
 import { log, warn, error, Verbose } from '../services.js'
 import Connector from './connector.js'
 import XmppAgent from '../swarm/xmpp-agent.js'
 import conf from '../conf.js'
 import webServer from './web-server.js'
+import {
+  DurableOutbox,
+  XmppAttachmentCollector,
+  downloadAttachments,
+  forwardEnvelopeToXmpp,
+  isXmppFileUrl,
+  makeInboundEnvelope,
+  parseXmppPayload,
+} from './omnichannel.js'
 
 const verbose = Verbose('sd:bridge/whatsapp'); verbose('')
 
@@ -104,6 +114,8 @@ export default class WhatsApp extends Connector {
     this.path = null
     this.lastSender = null
     this.processedMessageIds = new Set()
+    this.attachmentCollector = new XmppAttachmentCollector()
+    this.outbox = null
   }
 
   get options() {
@@ -155,15 +167,25 @@ export default class WhatsApp extends Connector {
 
       await this.xmppAgent.start()
 
-      this.xmppAgent.chat = async ({ prompt } = {}) => {
-        try {
-          await this.sendFromXmpp(prompt)
-        } catch (err) {
-          error('Failed to send WhatsApp message:', err.response?.data || err)
-          await this.slog('error', 'Failed to send WhatsApp message', {
-            error: err.response?.data || err.toString(),
-          })
+      this.outbox = new DurableOutbox({
+        bridgeId: this.bridge._id.toString(),
+        config: conf.whatsapp,
+        deliver: payload => this.sendFromXmpp(payload.prompt, payload.attachmentUrls),
+        onState: (state, job) => this.logOutboxState(state, job),
+      })
+      this.outbox.start()
+
+      this.xmppAgent.chat = async ({ prompt, from } = {}) => {
+        if (isXmppFileUrl(prompt)) {
+          this.attachmentCollector.add(from, prompt)
+          return ''
         }
+        const attachmentUrls = this.attachmentCollector.take(from)
+        const job = await this.outbox.enqueue({ prompt, attachmentUrls })
+        await this.slog('info', 'Queued XMPP message for WhatsApp delivery', {
+          outboxJobId: job.id,
+          attachmentCount: attachmentUrls.length,
+        })
         return ''
       }
 
@@ -236,6 +258,18 @@ export default class WhatsApp extends Connector {
       for (const change of entry.changes || []) {
         if (change.field !== 'messages') continue
         const value = change.value || {}
+        for (const status of value.statuses || []) {
+          await this.slog(
+            status.status === 'failed' ? 'error' : 'info',
+            `WhatsApp delivery status: ${status.status}`,
+            {
+              messageId: status.id,
+              recipient: status.recipient_id,
+              timestamp: status.timestamp,
+              errors: status.errors,
+            }
+          )
+        }
         const contactNames = new Map(
           (value.contacts || []).map(contact => [
             contact.wa_id,
@@ -245,19 +279,40 @@ export default class WhatsApp extends Connector {
 
         for (const message of value.messages || []) {
           if (!message.id || this.processedMessageIds.has(message.id)) continue
-          this.rememberMessageId(message.id)
           this.lastSender = message.from
 
           const senderName = contactNames.get(message.from)
-          const mediaUrl = MEDIA_TYPES.has(message.type)
-            ? await this.copyMediaToXmpp(message)
+          const attachment = MEDIA_TYPES.has(message.type)
+            ? await this.downloadMedia(message)
             : null
           let prompt = `💬 WhatsApp from ${senderName || message.from}`
           if (senderName) prompt += ` (${message.from})`
           prompt += `\n${messageText(message)}`
-          if (mediaUrl) prompt += `\n${mediaUrl}`
-
-          await this.forwardToXmpp(prompt)
+          const envelope = makeInboundEnvelope({
+            channel: 'whatsapp',
+            externalMessageId: message.id,
+            conversationId: message.from,
+            from: message.from,
+            fromName: senderName || null,
+            to: value.metadata?.display_phone_number || value.metadata?.phone_number_id,
+            timestamp: message.timestamp
+              ? new Date(Number(message.timestamp) * 1000).toISOString()
+              : undefined,
+            text: messageText(message),
+            extra: {
+              provider: 'whatsapp-cloud-api',
+              phoneNumberId: value.metadata?.phone_number_id || null,
+            },
+          })
+          await forwardEnvelopeToXmpp({
+            bridge: this.bridge,
+            xmppAgent: this.xmppAgent,
+            options: this.options,
+            envelope,
+            humanText: prompt,
+            attachments: attachment ? [attachment] : [],
+          })
+          this.rememberMessageId(message.id)
           await this.markAsRead(message.id)
           await this.slog('info', 'Received WhatsApp message', {
             from: message.from,
@@ -278,24 +333,7 @@ export default class WhatsApp extends Connector {
     }
   }
 
-  async forwardToXmpp(prompt) {
-    if (this.bridge.options.enablePersonal) {
-      await this.xmppAgent.xmppClient.sendPersonalMessage({
-        recipient: this.bridge.options.recipient,
-        prompt,
-      })
-    }
-    if (this.bridge.options.enableRoom && this.bridge.options.joinRooms?.length > 0) {
-      await this.xmppAgent.xmppClient.sendRoomMessage({
-        room: this.bridge.options.joinRooms[0],
-        recipient: this.bridge.options.recipientNickname,
-        prompt,
-        mucHost: conf.xmpp.mucHost,
-      })
-    }
-  }
-
-  async copyMediaToXmpp(message) {
+  async downloadMedia(message) {
     const media = message[message.type]
     if (!media?.id) return null
 
@@ -312,16 +350,14 @@ export default class WhatsApp extends Connector {
         'application/octet-stream'
       const extension = MIME_EXTENSIONS[contentType] || 'bin'
       const filename = media.filename || `${message.type}-${media.id}.${extension}`
-      return await this.xmppAgent.xmppClient.uploadFile({
+      return {
         buffer: Buffer.from(download.data),
         filename,
-        size: Buffer.byteLength(download.data),
         contentType,
-        shareHost: conf.xmpp.shareHost,
-      })
+      }
     } catch (err) {
       warn('Could not copy WhatsApp media to XMPP:', err.response?.data || err)
-      return null
+      throw err
     }
   }
 
@@ -342,38 +378,34 @@ export default class WhatsApp extends Connector {
     }
   }
 
-  async sendFromXmpp(prompt) {
-    let parsed
-    try {
-      parsed = JSON.parse(prompt)
-    } catch {
-      parsed = null
-    }
+  async sendFromXmpp(prompt, attachmentUrls = []) {
+    const parsed = parseXmppPayload(prompt)
 
     let payload
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const { to, text, ...cloudMessage } = parsed
+    if (parsed) {
+      const allowedFields = [
+        'audio', 'biz_opaque_callback_data', 'contacts', 'context', 'document',
+        'image', 'interactive', 'location', 'reaction', 'recipient_type',
+        'sticker', 'template', 'type', 'video',
+      ]
+      const cloudMessage = Object.fromEntries(
+        allowedFields
+          .filter(key => parsed[key] !== undefined)
+          .map(key => [key, parsed[key]])
+      )
       payload = {
         ...cloudMessage,
         messaging_product: 'whatsapp',
         recipient_type: cloudMessage.recipient_type || 'individual',
-        to: to || this.options.defaultRecipient || this.lastSender,
+        to: parsed.to || this.options.defaultRecipient || this.lastSender,
       }
       if (!payload.type) {
         payload.type = 'text'
-        payload.text = typeof text === 'object'
-          ? text
-          : { body: text == null ? '' : String(text) }
+        payload.text = typeof parsed.text === 'object'
+          ? parsed.text
+          : { body: parsed.text == null ? '' : String(parsed.text) }
       } else if (payload.type === 'text' && typeof payload.text === 'string') {
         payload.text = { body: payload.text }
-      }
-    } else {
-      payload = {
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: this.options.defaultRecipient || this.lastSender,
-        type: 'text',
-        text: { body: String(prompt || '') },
       }
     }
 
@@ -384,6 +416,34 @@ export default class WhatsApp extends Connector {
       throw new Error('WhatsApp text message body cannot be empty')
     }
 
+    const embeddedUrls = Array.isArray(parsed.attachments)
+      ? parsed.attachments
+        .map(item => typeof item === 'string' ? item : item?.url)
+        .filter(Boolean)
+      : []
+    const attachments = await downloadAttachments([
+      ...attachmentUrls,
+      ...embeddedUrls,
+    ])
+    for (const attachment of attachments) {
+      const mediaId = await this.uploadMedia(attachment)
+      await this.sendCloudPayload({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: payload.to,
+        type: this.cloudMediaType(attachment.contentType),
+        [this.cloudMediaType(attachment.contentType)]: {
+          id: mediaId,
+          ...(this.cloudMediaType(attachment.contentType) === 'document'
+            ? { filename: attachment.filename }
+            : {}),
+        },
+      })
+    }
+    return await this.sendCloudPayload(payload)
+  }
+
+  async sendCloudPayload(payload) {
     const response = await axios.post(
       `${this.graphBaseUrl}/${this.options.phoneNumberId}/messages`,
       payload,
@@ -403,8 +463,48 @@ export default class WhatsApp extends Connector {
     return response.data
   }
 
+  cloudMediaType(contentType) {
+    if (contentType.startsWith('image/')) return 'image'
+    if (contentType.startsWith('video/')) return 'video'
+    if (contentType.startsWith('audio/')) return 'audio'
+    return 'document'
+  }
+
+  async uploadMedia(attachment) {
+    const form = new FormData()
+    form.append('messaging_product', 'whatsapp')
+    form.append('file', attachment.buffer, {
+      filename: attachment.filename,
+      contentType: attachment.contentType,
+      knownLength: attachment.buffer.length,
+    })
+    const response = await axios.post(
+      `${this.graphBaseUrl}/${this.options.phoneNumberId}/media`,
+      form,
+      {
+        headers: {
+          ...this.authHeaders(),
+          ...form.getHeaders(),
+        },
+        maxBodyLength: Infinity,
+      }
+    )
+    if (!response.data?.id) throw new Error('WhatsApp media upload returned no media ID')
+    return response.data.id
+  }
+
+  async logOutboxState(state, job) {
+    const level = state === 'failed' ? 'error' : state === 'retrying' ? 'warn' : 'info'
+    await this.slog(level, `WhatsApp outbox job ${state}`, {
+      outboxJobId: job.id,
+      attempts: job.attempts,
+      error: job.lastError,
+    })
+  }
+
   async stop() {
     await super.stop()
+    this.outbox?.stop()
     if (this.path && webServer.app) {
       webServer.removeRoute({ path: this.path, method: 'get' })
       webServer.removeRoute({ path: this.path, method: 'post' })

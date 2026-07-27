@@ -592,6 +592,27 @@ const conf = {
     saveTts: bool(process.env.SAVE_TTS_FILE || false),
   },
 
+  email: {
+    outboxDir: process.env.EMAIL_OUTBOX_DIR || '/tmp/recordings/bridge_outbox',
+    retryBaseSeconds: num(process.env.EMAIL_RETRY_BASE_SEC || 10),
+    retryMaxSeconds: num(process.env.EMAIL_RETRY_MAX_SEC || 900),
+    maxDeliveryAttempts: num(process.env.EMAIL_MAX_ATTEMPTS || 20),
+  },
+
+  whatsapp: {
+    outboxDir: process.env.WHATSAPP_OUTBOX_DIR || '/tmp/recordings/bridge_outbox',
+    retryBaseSeconds: num(process.env.WHATSAPP_RETRY_BASE_SEC || 10),
+    retryMaxSeconds: num(process.env.WHATSAPP_RETRY_MAX_SEC || 900),
+    maxDeliveryAttempts: num(process.env.WHATSAPP_MAX_ATTEMPTS || 20),
+  },
+
+  baileys: {
+    outboxDir: process.env.BAILEYS_OUTBOX_DIR || '/tmp/recordings/bridge_outbox',
+    retryBaseSeconds: num(process.env.BAILEYS_RETRY_BASE_SEC || 10),
+    retryMaxSeconds: num(process.env.BAILEYS_RETRY_MAX_SEC || 900),
+    maxDeliveryAttempts: num(process.env.BAILEYS_MAX_ATTEMPTS || 20),
+  },
+
   webServer: {
     port: num(process.env.WEB_SERVER_PORT || 6370),
     origin: process.env.WEB_SERVER_ORIGIN || 'http://127.0.0.1:6370',
