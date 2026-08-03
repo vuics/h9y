@@ -24,7 +24,7 @@ async function request(path, { params, signal } = {}) {
 
 function matches(item, filters, keys) {
   const search = String(filters.search || '').trim().toLocaleLowerCase('ru')
-  if (search && !keys.some(key => String(item[key] || '').toLocaleLowerCase('ru').includes(search))) return false
+  if (search && !keys.some(key => JSON.stringify(item[key] ?? '').toLocaleLowerCase('ru').includes(search))) return false
   if (filters.status && ![item.status, item.stage, item.completeness, item.qualificationStatus].includes(filters.status)) return false
   if (filters.supplierId && item.supplierId !== filters.supplierId) return false
   if (filters.cardId && String(item.cardId ?? item.id) !== String(filters.cardId)) return false
@@ -49,7 +49,7 @@ export const procurementApi = {
     return request('/overview', { signal })
   },
   async cards(filters = {}, signal) {
-    if (useDevFixtures) return fixturePage((await fixtures()).cards.map(adaptCard), filters, ['title', 'casNumber', 'substanceName'])
+    if (useDevFixtures) return fixturePage((await fixtures()).cards.map(adaptCard), filters, ['id', 'title', 'casNumber', 'substanceName'])
     return adaptPage(await request('/cards', { params: filters, signal }), adaptCard)
   },
   async card(id, signal) {
@@ -57,7 +57,7 @@ export const procurementApi = {
     return adaptCard(await request(`/cards/${encodeURIComponent(id)}`, { signal }))
   },
   async suppliers(filters = {}, signal) {
-    if (useDevFixtures) return fixturePage((await fixtures()).suppliers.map(adaptSupplier), filters, ['name', 'country'])
+    if (useDevFixtures) return fixturePage((await fixtures()).suppliers.map(adaptSupplier), filters, ['id', 'name', 'country', 'contacts'])
     return adaptPage(await request('/suppliers', { params: filters, signal }), adaptSupplier)
   },
   async supplier(id, signal) {
@@ -70,7 +70,7 @@ export const procurementApi = {
     return request(`/suppliers/${encodeURIComponent(id)}`, { signal })
   },
   async negotiations(filters = {}, signal) {
-    if (useDevFixtures) return fixturePage((await fixtures()).negotiations, filters, ['id', 'cardTitle', 'supplierName', 'contactName', 'channel'])
+    if (useDevFixtures) return fixturePage((await fixtures()).negotiations, filters, ['id', 'cardId', 'cardTitle', 'supplierId', 'supplierName', 'contactId', 'contactName', 'channel'])
     return adaptPage(await request('/negotiations', { params: filters, signal }))
   },
   async negotiation(id, signal) {
@@ -95,11 +95,11 @@ export const procurementApi = {
     return request('/proposals/compare', { params: { cardId }, signal })
   },
   async escalations(filters = {}, signal) {
-    if (useDevFixtures) return fixturePage((await fixtures()).escalations, filters, ['id', 'title', 'cardTitle', 'supplierName', 'assignedTo'])
+    if (useDevFixtures) return fixturePage((await fixtures()).escalations, filters, ['id', 'title', 'cardId', 'cardTitle', 'supplierId', 'supplierName', 'negotiationId', 'proposalId', 'assignedTo'])
     return adaptPage(await request('/escalations', { params: filters, signal }))
   },
   async activity(filters = {}, signal) {
-    if (useDevFixtures) return fixturePage((await fixtures()).activity, filters, ['title', 'description', 'type'])
+    if (useDevFixtures) return fixturePage((await fixtures()).activity, filters, ['id', 'title', 'description', 'type', 'entityId', 'cardId'])
     return adaptPage(await request('/activity', { params: filters, signal }))
   },
 }

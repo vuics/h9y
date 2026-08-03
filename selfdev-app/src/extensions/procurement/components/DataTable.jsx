@@ -8,7 +8,7 @@ export function DataTable({ columns, rows, rowKey = 'id', onRowClick, emptyTitle
   return <div className="pr-table-wrap"><table className="pr-table"><thead><tr>{columns.map(column => <th key={column.id} className={column.className}>{column.header}</th>)}{onRowClick && <th aria-label="Открыть" />}</tr></thead>
     <tbody>{rows.map(row => <tr key={row[rowKey]} onClick={onRowClick ? () => onRowClick(row) : undefined} tabIndex={onRowClick ? 0 : undefined} onKeyDown={event => { if (onRowClick && (event.key === 'Enter' || event.key === ' ')) onRowClick(row) }}>
       {columns.map(column => <td key={column.id} className={column.className}>{column.cell ? column.cell(row) : row[column.id]}</td>)}
-      {onRowClick && <td className="pr-table__open"><Button variant="ghost" size="icon" aria-label={`Открыть ${row[rowKey]}`}><ChevronRight size={16} /></Button></td>}
+      {onRowClick && <td className="pr-table__open"><Button variant="ghost" size="icon" aria-label={`Открыть ${row[rowKey]}`} onPress={() => onRowClick(row)}><ChevronRight size={16} /></Button></td>}
     </tr>)}</tbody></table></div>
 }
 

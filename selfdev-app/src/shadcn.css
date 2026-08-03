@@ -1,6 +1,6 @@
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme) prefix(tw);
-@import "tailwindcss/utilities.css" layer(utilities) important prefix(tw) source(none);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(tw) source(none);
 @source "./components/**/*.{js,jsx}";
 @source "./extensions/**/*.{js,jsx}";
 @import "tw-animate-css";
