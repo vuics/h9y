@@ -191,6 +191,9 @@ services:
       - VITE_VAULT_SECURE=true
       - VITE_O11Y_ENABLE=true
       - VITE_WALLET_ENABLE=true
+      - VITE_BUILD_PROCUREMENT=true
+      - VITE_PROCUREMENT_DEV_FIXTURES=true
+      - NODE_OPTIONS=--max-old-space-size=8192
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
@@ -281,6 +284,8 @@ services:
       - FILES_UPLOAD_SECRET=U2VjcmV0VG9rZW4wMzYz
       - FILES_STORAGE_DIR=/var/lib/data/api
       - LIMITS_ENABLE=false
+      - PROCUREMENT_ENABLED=true
+      - PROCUREMENT_SERVICE_URL=http://h9y-procurement:7934
     volumes:
       - selfdev-api-volume:/var/lib/data/api
     labels:

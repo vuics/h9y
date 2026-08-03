@@ -1,0 +1,15 @@
+export const procurementKeys = {
+  all: ['procurement'],
+  overview: () => [...procurementKeys.all, 'overview'],
+  cards: filters => [...procurementKeys.all, 'cards', filters],
+  card: id => [...procurementKeys.all, 'card', String(id)],
+  suppliers: filters => [...procurementKeys.all, 'suppliers', filters],
+  supplier: id => [...procurementKeys.all, 'supplier', id],
+  negotiations: filters => [...procurementKeys.all, 'negotiations', filters],
+  negotiation: id => [...procurementKeys.all, 'negotiation', id],
+  proposals: filters => [...procurementKeys.all, 'proposals', filters],
+  proposal: id => [...procurementKeys.all, 'proposal', id],
+  comparison: cardId => [...procurementKeys.all, 'comparison', String(cardId)],
+  escalations: filters => [...procurementKeys.all, 'escalations', filters],
+  activity: filters => [...procurementKeys.all, 'activity', filters],
+}

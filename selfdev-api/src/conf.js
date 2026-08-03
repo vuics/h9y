@@ -161,6 +161,14 @@ const conf = {
     url: process.env.AGENCY_URL || 'http://127.0.0.1:6600/v1',
   },
 
+  procurement: {
+    enabled: bool(process.env.PROCUREMENT_ENABLED || false),
+    serviceUrl: (process.env.PROCUREMENT_SERVICE_URL || '').replace(/\/$/, ''),
+    serviceToken: process.env.PROCUREMENT_SERVICE_TOKEN || '',
+    extensionApiVersion: num(process.env.PROCUREMENT_EXTENSION_API_VERSION || 1),
+    timeoutMs: num(process.env.PROCUREMENT_SERVICE_TIMEOUT_MS || 15000),
+  },
+
   // TODO: deprecate
   snake: {
     enbale: bool(process.env.SNAKE_ENABLE || false),

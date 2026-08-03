@@ -26,6 +26,8 @@ import dashboard from './dashboard.js'
 import logs from './logs.js'
 import files from './files.js'
 import prometheus from './prometheus.js'
+import extensions from './extensions.js'
+import procurement from './procurement.js'
 
 const verbose = Verbose('sd:routes/index'); verbose('')
 
@@ -56,5 +58,7 @@ router.use('/v1/dashboard', dashboard)
 router.use('/v1/logs', logs)
 router.use('/v1/files', files)
 router.use('/v1/prometheus', prometheus)
+router.use('/v1/extensions', extensions)
+router.use('/v1/procurement', procurement)
 
 export default router

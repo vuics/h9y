@@ -13,6 +13,7 @@ import i18n from '../i18n'
 import conf, { hasProfile } from '../conf.js'
 import Logo from './Logo'
 import { useIndexContext } from './IndexContext'
+import { useExtensions } from '../extensions/registry/ExtensionContext'
 
 export default function Menubar ({ children }) {
   const { user } = useIndexContext()
@@ -21,6 +22,7 @@ export default function Menubar ({ children }) {
   const navigate = useNavigate()
   const name = `${user.firstName} ${user.lastName}`
   const [avatar, setAvatar] = useState(null);
+  const { navigation: extensionNavigation } = useExtensions()
 
   // console.log('avatar:', avatar)
 
@@ -98,6 +100,17 @@ export default function Menubar ({ children }) {
           {t('Apps')}
         </Menu.Item>
       ) }
+
+      {extensionNavigation.map(item => (
+        <Menu.Item
+          key={item.id}
+          onClick={() => navigate(item.path)}
+          active={pathname === item.path || pathname.startsWith(`${item.path}/`)}
+        >
+          <Icon name={item.icon || 'puzzle piece'} />
+          {item.label}
+        </Menu.Item>
+      ))}
 
       {children}
 

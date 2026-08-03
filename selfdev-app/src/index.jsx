@@ -11,6 +11,8 @@ import './i18n'
 import { IndexContext, usePersistentState, useIndexContext } from './components/IndexContext'
 import { ConditionalXmppProvider } from './components/XmppContext'
 import UmamiLoader from './components/UmamiLoader'
+import { ExtensionProvider } from './extensions/registry/ExtensionContext'
+import ExtensionRoute from './extensions/registry/ExtensionRoute'
 
 import Home from './Home'
 
@@ -38,6 +40,8 @@ import Settings from './Settings'
 import reportWebVitals from './reportWebVitals';
 
 const Test = () => (<div>Test</div>)
+const useProcurementVisualFixtures = import.meta.env.DEV &&
+  import.meta.env.VITE_PROCUREMENT_DEV_FIXTURES === 'true'
 
 export const fetchLoginStatus = async () => {
   const res = await axios.get(`${conf.api.url}/login/status`, {
@@ -131,6 +135,16 @@ function Index () {
   useEffect(() => {
     let mounted = true
     const bootstrapAuth = async () => {
+      if (useProcurementVisualFixtures) {
+        setUser({
+          email: 'procurement.visual-fixture@invalid',
+          firstName: 'Demo',
+          lastName: 'Specialist',
+          roles: ['user'],
+        })
+        setAuthChecked(true)
+        return
+      }
       try {
         const data = await fetchLoginStatus()
         if (mounted && data.isAuthenticated && data.user?.email) {
@@ -194,6 +208,7 @@ function Index () {
     country, setCountry, clearCountry,
     cookieConsent, setCookieConsent,
   }}>
+    <ExtensionProvider>
     <ConditionalXmppProvider user={user}>
       <Routes>
         <Route path="/" element={<Home />}/>
@@ -230,6 +245,8 @@ function Index () {
           <Route path="/apps" element={(<Private> <Apps/> </Private>)}/>
         )}
 
+        <Route path="/procurement/*" element={(<Private><ExtensionRoute id="procurement" /></Private>)}/>
+
         { conf.profile.enable && (
           <Route path='/profile' element={(<Private> <Profile /> </Private>)}/>
         )}
@@ -249,6 +266,7 @@ function Index () {
         <Route path="*" element={<Error />}/>
       </Routes>
     </ConditionalXmppProvider>
+    </ExtensionProvider>
 
     <UmamiLoader />
   </IndexContext.Provider>

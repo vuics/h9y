@@ -1,6 +1,6 @@
 # FROM node:18.17.1-slim
-FROM node:18.17.1
-# FROM node:24.16.0
+# FROM node:18.17.1
+FROM node:24.16.0
 
 WORKDIR /opt/app/
 COPY package*.json ./

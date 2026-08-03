@@ -110,6 +110,11 @@ export function XmppProvider({ children }) {
 }
 
 export function ConditionalXmppProvider({ children, user }) {
+  const procurementVisualDevelopment = import.meta.env.DEV &&
+    import.meta.env.VITE_PROCUREMENT_DEV_FIXTURES === 'true'
+  if (procurementVisualDevelopment) {
+    return children
+  }
   if (!user || isEmpty(user) || !user.email ) {
     return children;
   }
