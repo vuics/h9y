@@ -20,7 +20,7 @@ async function request(path, { method = 'get', params, data, signal } = {}) {
     data,
     withCredentials: true,
     signal,
-    timeout: 15000,
+    timeout: path.includes('/echemi') ? 90000 : 15000,
   })
   return response.data
 }
@@ -95,6 +95,30 @@ export const procurementApi = {
       method: 'post',
       data: { document_fingerprint: documentFingerprint },
     }))
+  },
+  async echemi(id, signal) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/echemi`, { signal })
+  },
+  async searchEchemi(id) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/echemi/search`, { method: 'post' })
+  },
+  async prepareEchemiInquiry(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/echemi/inquiries`, { method: 'post', data: payload })
+  },
+  async previewEchemiInquiry(id, inquiryId) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/echemi/inquiries/${encodeURIComponent(inquiryId)}/preview`, { method: 'post' })
+  },
+  async approveEchemiInquiry(id, inquiryId) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/echemi/inquiries/${encodeURIComponent(inquiryId)}/approve`, { method: 'post' })
+  },
+  async submitEchemiInquiry(id, inquiryId) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/echemi/inquiries/${encodeURIComponent(inquiryId)}/submit`, { method: 'post' })
   },
   async suppliers(filters = {}, signal) {
     if (useDevFixtures) return fixturePage((await fixtures()).suppliers.map(adaptSupplier), filters, ['id', 'name', 'country', 'contacts'])

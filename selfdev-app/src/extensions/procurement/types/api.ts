@@ -50,6 +50,52 @@ export interface RFQLanguageDto {
   emailText: string
 }
 
+export interface EchemiStateDto {
+  cardId: number
+  cardTitle: string
+  cardStatus: string
+  rfqStatus: string
+  casNumber: string
+  targetVolume?: string
+  submissionEnabled: boolean
+  noVncUrl: string
+  search: {
+    query?: string
+    status: 'NOT_STARTED' | 'COMPLETED' | 'FAILED' | 'HUMAN_ACTION_REQUIRED'
+    stage?: string
+    searchedAt?: string
+    errorCode?: string
+    results: EchemiCandidateDto[]
+  }
+  inquiries: EchemiInquiryDto[]
+}
+
+export interface EchemiCandidateDto {
+  product_id: string
+  product_name: string
+  cas_number: string
+  seller_name: string
+  product_url: string
+  eligible_for_inquiry: boolean
+  exact_cas_match: boolean
+  manufacturer_status: 'UNVERIFIED'
+}
+
+export interface EchemiInquiryDto {
+  inquiryId: string
+  status: string
+  staleReason?: string
+  sellerName?: string
+  productUrl?: string
+  payload: Record<string, string | number>
+  preparedAt?: string
+  previewedAt?: string
+  approvedAt?: string
+  submittedAt?: string
+  platformMessage?: string
+  lastError?: string
+}
+
 export interface SupplierDto {
   id: string
   name: string

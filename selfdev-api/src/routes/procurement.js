@@ -11,6 +11,7 @@ const readablePaths = [
   /^\/overview$/,
   /^\/cards(?:\/[^/]+)?$/,
   /^\/cards\/[^/]+\/rfq$/,
+  /^\/cards\/[^/]+\/echemi$/,
   /^\/suppliers(?:\/[^/]+)?$/,
   /^\/negotiations(?:\/[^/]+)?$/,
   /^\/proposals(?:\/[^/]+)?$/,
@@ -25,6 +26,9 @@ const writablePaths = {
     /^\/cards\/[^/]+\/normalize$/,
     /^\/cards\/[^/]+\/rfq\/prepare$/,
     /^\/cards\/[^/]+\/rfq\/approve$/,
+    /^\/cards\/[^/]+\/echemi\/search$/,
+    /^\/cards\/[^/]+\/echemi\/inquiries$/,
+    /^\/cards\/[^/]+\/echemi\/inquiries\/[^/]+\/(?:preview|approve|submit)$/,
     /^\/suppliers$/,
     /^\/suppliers\/[^/]+\/capabilities$/,
     /^\/suppliers\/[^/]+\/contacts$/,
@@ -51,6 +55,7 @@ export function normalizeProcurementResponse(status, data) {
     result: 'error',
     code: data.detail.code || 'UPSTREAM_ERROR',
     message: data.detail.message || 'Procurement request failed.',
+    ...(data.detail.details === undefined ? {} : { details: data.detail.details }),
   }
 }
 
@@ -74,7 +79,9 @@ router.all('*', checkAuth, async (req, res) => {
       params: req.query,
       data: req.method === 'GET' ? undefined : req.body,
       headers: identityHeaders(req.user),
-      timeout: conf.procurement.timeoutMs,
+      timeout: req.path.includes('/echemi')
+        ? conf.procurement.echemiTimeoutMs
+        : conf.procurement.timeoutMs,
       validateStatus: () => true,
     })
     return res.status(upstream.status).json(

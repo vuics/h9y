@@ -4,6 +4,7 @@ export const procurementKeys = {
   cards: filters => [...procurementKeys.all, 'cards', filters],
   card: id => [...procurementKeys.all, 'card', String(id)],
   rfq: id => [...procurementKeys.all, 'rfq', String(id)],
+  echemi: id => [...procurementKeys.all, 'echemi', String(id)],
   suppliers: filters => [...procurementKeys.all, 'suppliers', filters],
   supplier: id => [...procurementKeys.all, 'supplier', id],
   negotiations: filters => [...procurementKeys.all, 'negotiations', filters],

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertTriangle, Check, FileCheck, Refresh } from '../components/icons'
+import { RouterLinkButton } from '../../../components/RouterLinkButton'
 
 function message(error) {
   return error?.response?.data?.message || error?.message || 'Операция с RFQ не выполнена.'
@@ -78,9 +79,7 @@ export default function RFQPage() {
     setReviewed(current => new Set([...current, value]))
   }
 
-  const actions = hasRFQ && canWriteCards
-    ? <Button variant="outline" isDisabled={prepare.isPending || approve.isPending} onPress={() => setConfirmRegenerate(true)}><Refresh />Сформировать заново</Button>
-    : null
+  const actions = hasRFQ ? <>{canWriteCards && <Button variant="outline" isDisabled={prepare.isPending || approve.isPending} onPress={() => setConfirmRegenerate(true)}><Refresh />Сформировать заново</Button>}{isApproved && <RouterLinkButton to={`/procurement/requests/${requestId}/echemi`}>Перейти к Echemi</RouterLinkButton>}</> : null
 
   return <DetailLayout
     backTo={`/procurement/requests/${requestId}`}

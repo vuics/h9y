@@ -9,6 +9,8 @@ export function useProcurementPermissions() {
     canWriteCards: set.has('CARD_WRITE'),
     canWriteSuppliers: set.has('SUPPLIER_WRITE'),
     canQualifySuppliers: set.has('SUPPLIER_QUALIFY'),
+    canOperateEchemi: set.has('ECHEMI_OPERATE'),
+    canSubmitEchemi: set.has('ECHEMI_SUBMIT'),
     canReadCommunications: set.has('COMMUNICATION_READ'),
     canReadAudit: set.has('AUDIT_READ'),
   }
