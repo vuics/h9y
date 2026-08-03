@@ -6,7 +6,7 @@ import { procurementKeys } from '../api/queryKeys'
 import { DetailLayout } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ExternalLink } from '../components/icons'
 
 export default function SupplierDetailPage() {

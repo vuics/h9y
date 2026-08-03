@@ -6,8 +6,8 @@ import { procurementKeys } from '../api/queryKeys'
 import { DetailLayout } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
-import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert'
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle } from '../components/icons'
 
 const fields = [

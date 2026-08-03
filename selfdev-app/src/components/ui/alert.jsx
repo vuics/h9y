@@ -1,10 +1,10 @@
 import * as React from "react"
 import { cva } from "class-variance-authority";
 
-import { cn } from "@/extensions/procurement/lib/utils"
+import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
-  "tw:group/alert tw:relative tw:grid tw:w-full tw:gap-0.5 tw:rounded-lg tw:border tw:px-2.5 tw:py-2 tw:text-left tw:text-sm tw:has-data-[slot=alert-action]:relative tw:has-data-[slot=alert-action]:pr-18 tw:has-[>svg]:grid-cols-[auto_1fr] tw:has-[>svg]:gap-x-2 tw:*:[svg]:row-span-2 tw:*:[svg]:translate-y-0.5 tw:*:[svg]:text-current tw:*:[svg:not([class*=size-])]:size-4",
+  "tw:group/alert tw:relative tw:grid tw:w-full tw:gap-0.5 tw:rounded-lg tw:border tw:px-4 tw:py-3 tw:text-left tw:text-sm tw:has-data-[slot=alert-action]:relative tw:has-data-[slot=alert-action]:pr-18 tw:has-[>svg]:grid-cols-[auto_1fr] tw:has-[>svg]:gap-x-2.5 tw:*:[svg]:row-span-2 tw:*:[svg]:translate-y-0.5 tw:*:[svg]:text-current tw:*:[svg:not([class*=size-])]:size-4",
   {
     variants: {
       variant: {
@@ -70,7 +70,7 @@ function AlertAction({
   return (
     <div
       data-slot="alert-action"
-      className={cn("tw:absolute tw:top-2 tw:right-2", className)}
+      className={cn("tw:absolute tw:top-2.5 tw:right-3", className)}
       {...props} />
   );
 }

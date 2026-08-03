@@ -25,19 +25,19 @@ VITE_PROCUREMENT_DEV_FIXTURES=true
 
 ## Shadcn UI maintenance
 
-Procurement uses CLI-managed official Shadcn source components. The current
-configuration is recorded in `components.json`: the latest default Nova style,
-the current default Base UI foundation, JavaScript output, CSS variables, and
-the neutral base color. Generated components live only in
-`src/extensions/procurement/components/ui` and should not be edited for product
-styling. Procurement pages compose them through their public variants and
-slots.
+Procurement uses the application-wide CLI-managed official Shadcn source
+components. The current configuration is recorded in `components.json`: the
+Vega style, React Aria foundation, JavaScript output, CSS variables, and the
+neutral base color. Generated primitives live in `src/components/ui` and should
+not be edited for product styling. Shared compositions live outside that
+generated directory; Procurement pages consume the public component API.
 
-Tailwind uses the configured `tw` prefix and scans only the Procurement module.
-The prefix changes no Shadcn visual values; it prevents Tailwind utilities and
-Semantic UI's global selectors from overriding one another. Tailwind preflight
-is intentionally omitted so existing Semantic UI screens retain their current
-reset, typography, and component behavior.
+Tailwind uses the configured `tw` prefix and scans the shared component and
+extension directories. The prefix changes no Shadcn visual values; it prevents
+Tailwind utilities and Semantic UI's global selectors from overriding one
+another. Tailwind preflight is intentionally omitted, and the Shadcn base layer
+is still scoped to its host workspace, so existing Semantic UI screens retain
+their current reset, typography, and component behavior.
 
 To add or refresh components, keep `components.json` unchanged and use the
 official registry. For example:

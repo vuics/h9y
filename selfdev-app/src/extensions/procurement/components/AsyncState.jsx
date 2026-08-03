@@ -1,7 +1,7 @@
 import React from 'react'
-import { Alert, AlertAction, AlertDescription, AlertTitle } from './ui/alert'
-import { Button } from './ui/button'
-import { Skeleton } from './ui/skeleton'
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { AlertTriangle, Inbox, Refresh } from './icons'
 
 export function LoadingState({ rows = 6 }) {

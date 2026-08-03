@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { cn } from "@/extensions/procurement/lib/utils"
+import { cn } from "@/lib/utils"
 
 function Card({
   className,
@@ -12,7 +12,7 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "tw:group/card tw:flex tw:flex-col tw:gap-(--card-spacing) tw:overflow-hidden tw:rounded-xl tw:bg-card tw:py-(--card-spacing) tw:text-sm tw:text-card-foreground tw:ring-1 tw:ring-foreground/10 tw:[--card-spacing:--spacing(4)] tw:has-data-[slot=card-footer]:pb-0 tw:has-[>img:first-child]:pt-0 tw:data-[size=sm]:[--card-spacing:--spacing(3)] tw:data-[size=sm]:has-data-[slot=card-footer]:pb-0 tw:*:[img:first-child]:rounded-t-xl tw:*:[img:last-child]:rounded-b-xl",
+        "tw:group/card tw:flex tw:flex-col tw:gap-(--card-spacing) tw:overflow-hidden tw:rounded-xl tw:bg-card tw:py-(--card-spacing) tw:text-sm tw:text-card-foreground tw:shadow-xs tw:ring-1 tw:ring-foreground/10 tw:[--card-spacing:--spacing(6)] tw:has-[>img:first-child]:pt-0 tw:data-[size=sm]:[--card-spacing:--spacing(4)] tw:*:[img:first-child]:rounded-t-xl tw:*:[img:last-child]:rounded-b-xl",
         className
       )}
       {...props} />
@@ -42,7 +42,7 @@ function CardTitle({
     <div
       data-slot="card-title"
       className={cn(
-        "tw:font-heading tw:text-base tw:leading-snug tw:font-medium tw:group-data-[size=sm]/card:text-sm",
+        "tw:font-heading tw:text-base tw:leading-normal tw:font-medium tw:group-data-[size=sm]/card:text-sm",
         className
       )}
       {...props} />
@@ -96,7 +96,7 @@ function CardFooter({
     <div
       data-slot="card-footer"
       className={cn(
-        "tw:flex tw:items-center tw:rounded-b-xl tw:border-t tw:bg-muted/50 tw:p-(--card-spacing)",
+        "tw:flex tw:items-center tw:rounded-b-xl tw:px-(--card-spacing) tw:[.border-t]:pt-(--card-spacing)",
         className
       )}
       {...props} />

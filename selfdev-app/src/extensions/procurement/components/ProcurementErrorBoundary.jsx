@@ -1,6 +1,6 @@
 import React from 'react'
 import { AlertTriangle } from './icons'
-import { Button } from './ui/button'
+import { Button } from '@/components/ui/button'
 
 export class ProcurementErrorBoundary extends React.Component {
   constructor(props) {

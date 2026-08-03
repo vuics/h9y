@@ -1,11 +1,11 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "base-nova",
+  "style": "aria-vega",
   "rsc": false,
   "tsx": false,
   "tailwind": {
     "config": "",
-    "css": "src/extensions/procurement/shadcn.css",
+    "css": "src/shadcn.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": "tw"
@@ -13,11 +13,11 @@
   "iconLibrary": "lucide",
   "rtl": false,
   "aliases": {
-    "components": "@/extensions/procurement/components",
-    "utils": "@/extensions/procurement/lib/utils",
-    "ui": "@/extensions/procurement/components/ui",
-    "lib": "@/extensions/procurement/lib",
-    "hooks": "@/extensions/procurement/hooks"
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
   },
   "menuColor": "default",
   "menuAccent": "subtle",

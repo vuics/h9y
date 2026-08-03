@@ -8,7 +8,7 @@ import { ListFilters } from '../components/ListFilters'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
 import { AlertTriangle } from '../components/icons'
-import { Card, CardContent } from '../components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 
 export default function EscalationsPage() {
   const [filters, setFilters] = useUrlFilters({ page: '1', pageSize: '20' })
