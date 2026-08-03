@@ -21,10 +21,15 @@ test('backend snake case is isolated from presentation models', () => {
   })
 })
 
-test('supplier adapter preserves contacts and capabilities as navigable models', () => {
-  const supplier = adaptSupplier({ _id: 'SUP-1', canonical_name: 'Supplier', qualification_status: 'UNDER_REVIEW', contacts: [{ contact_id: 'C-1', verification_status: 'VERIFIED' }], capabilities: [{ cas_number: '71-43-2', verification_status: 'CLAIMED' }] })
+test('supplier adapter preserves contacts, capabilities and qualification audit as navigable models', () => {
+  const supplier = adaptSupplier({ _id: 'SUP-1', canonical_name: 'Supplier', qualification_status: 'UNDER_REVIEW', qualification_status_updated_at: '2026-08-04T00:00:00Z', qualification_status_history: [{ from_status: 'UNVERIFIED', to_status: 'UNDER_REVIEW', actor_principal_key: 'USER:1', changed_at: '2026-08-04T00:00:00Z' }], source_profiles: [{ source: 'MANUAL', profile_status: 'UNVERIFIED' }], contacts: [{ contact_id: 'C-1', verification_status: 'VERIFIED', updated_at: '2026-08-04T00:00:00Z' }], capabilities: [{ cas_number: '71-43-2', verification_status: 'CLAIMED', source_product_id: 'P-1' }] })
   assert.equal(supplier.contacts[0].id, 'C-1')
+  assert.equal(supplier.contacts[0].updatedAt, '2026-08-04T00:00:00Z')
   assert.equal(supplier.capabilities[0].casNumber, '71-43-2')
+  assert.equal(supplier.capabilities[0].sourceProductId, 'P-1')
+  assert.equal(supplier.qualificationHistory[0].toStatus, 'UNDER_REVIEW')
+  assert.equal(supplier.qualificationHistory[0].actorPrincipalKey, 'USER:1')
+  assert.equal(supplier.sourceProfiles[0].profileStatus, 'UNVERIFIED')
 })
 
 test('page adapter and detail states expose empty and error views', () => {

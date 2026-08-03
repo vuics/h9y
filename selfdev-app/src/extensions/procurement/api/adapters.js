@@ -66,10 +66,24 @@ export function adaptSupplier(raw = {}) {
     id: raw.id ?? raw.supplierId ?? raw.supplier_id ?? raw._id,
     name: raw.name || raw.canonicalName || raw.canonical_name,
     qualificationStatus: raw.qualificationStatus ?? raw.qualification_status,
+    qualificationUpdatedAt: raw.qualificationUpdatedAt ?? raw.qualification_status_updated_at,
+    qualificationHistory: safeArray(raw.qualificationHistory || raw.qualification_status_history).map(item => ({
+      ...item,
+      fromStatus: item.fromStatus ?? item.from_status,
+      toStatus: item.toStatus ?? item.to_status,
+      actorPrincipalKey: item.actorPrincipalKey ?? item.actor_principal_key,
+      changedAt: item.changedAt ?? item.changed_at,
+    })),
+    sourceProfiles: safeArray(raw.sourceProfiles || raw.source_profiles).map(item => ({
+      ...item,
+      profileStatus: item.profileStatus ?? item.profile_status,
+      observedAt: item.observedAt ?? item.observed_at,
+    })),
     contacts: safeArray(raw.contacts).map(contact => ({
       ...contact,
       id: contact.id ?? contact.contactId ?? contact.contact_id,
       verificationStatus: contact.verificationStatus ?? contact.verification_status,
+      updatedAt: contact.updatedAt ?? contact.updated_at,
     })),
     capabilities: safeArray(raw.capabilities).map(capability => ({
       ...capability,
@@ -77,8 +91,11 @@ export function adaptSupplier(raw = {}) {
       productName: capability.productName ?? capability.product_name,
       verificationStatus: capability.verificationStatus ?? capability.verification_status,
       sourceUrl: capability.sourceUrl ?? capability.source_url,
+      sourceProductId: capability.sourceProductId ?? capability.source_product_id,
+      observedAt: capability.observedAt ?? capability.observed_at,
     })),
     updatedAt: raw.updatedAt ?? raw.updated_at,
+    createdAt: raw.createdAt ?? raw.created_at,
   }
 }
 

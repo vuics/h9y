@@ -7,6 +7,8 @@ export function useProcurementPermissions() {
   return {
     canReadCards: set.has('CARD_READ'),
     canWriteCards: set.has('CARD_WRITE'),
+    canWriteSuppliers: set.has('SUPPLIER_WRITE'),
+    canQualifySuppliers: set.has('SUPPLIER_QUALIFY'),
     canReadCommunications: set.has('COMMUNICATION_READ'),
     canReadAudit: set.has('AUDIT_READ'),
   }

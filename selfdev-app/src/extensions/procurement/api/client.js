@@ -107,7 +107,28 @@ export const procurementApi = {
       if (!supplier) return null
       return { supplier, negotiations: fixture.negotiations.filter(item => item.supplierId === id), proposals: fixture.proposals.filter(item => item.supplierId === id), communications: fixture.messages }
     }
-    return request(`/suppliers/${encodeURIComponent(id)}`, { signal })
+    const response = await request(`/suppliers/${encodeURIComponent(id)}`, { signal })
+    return { ...response, supplier: adaptSupplier(response.supplier) }
+  },
+  async createSupplier(payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptSupplier(await request('/suppliers', { method: 'post', data: payload }))
+  },
+  async addSupplierCapability(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptSupplier(await request(`/suppliers/${encodeURIComponent(id)}/capabilities`, { method: 'post', data: payload }))
+  },
+  async addSupplierContact(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptSupplier(await request(`/suppliers/${encodeURIComponent(id)}/contacts`, { method: 'post', data: payload }))
+  },
+  async updateSupplierContact(id, contactId, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptSupplier(await request(`/suppliers/${encodeURIComponent(id)}/contacts/${encodeURIComponent(contactId)}`, { method: 'patch', data: payload }))
+  },
+  async updateSupplierQualification(id, qualificationStatus) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptSupplier(await request(`/suppliers/${encodeURIComponent(id)}/qualification`, { method: 'patch', data: { qualification_status: qualificationStatus } }))
   },
   async negotiations(filters = {}, signal) {
     if (useDevFixtures) return fixturePage((await fixtures()).negotiations, filters, ['id', 'cardId', 'cardTitle', 'supplierId', 'supplierName', 'contactId', 'contactName', 'channel'])

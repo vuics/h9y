@@ -55,9 +55,27 @@ export interface SupplierDto {
   name: string
   country?: string
   qualificationStatus: string
+  qualificationUpdatedAt?: string
+  qualificationHistory?: SupplierQualificationChangeDto[]
+  sourceProfiles?: SupplierSourceProfileDto[]
   contacts: SupplierContactDto[]
   capabilities: SupplierCapabilityDto[]
   updatedAt?: string
+}
+
+export interface SupplierQualificationChangeDto {
+  fromStatus?: string
+  toStatus: string
+  source: string
+  actorPrincipalKey?: string
+  changedAt: string
+}
+
+export interface SupplierSourceProfileDto {
+  source: string
+  identity?: string
+  profileStatus: string
+  observedAt?: string
 }
 
 export interface SupplierContactDto {
@@ -68,6 +86,10 @@ export interface SupplierContactDto {
   address: string
   verificationStatus: string
   active: boolean
+  language?: string
+  timezone?: string
+  source?: string
+  updatedAt?: string
 }
 
 export interface SupplierCapabilityDto {
@@ -76,6 +98,7 @@ export interface SupplierCapabilityDto {
   verificationStatus: string
   source: string
   sourceUrl?: string
+  sourceProductId?: string
 }
 
 export interface NegotiationDto {

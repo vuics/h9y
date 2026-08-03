@@ -25,8 +25,15 @@ const writablePaths = {
     /^\/cards\/[^/]+\/normalize$/,
     /^\/cards\/[^/]+\/rfq\/prepare$/,
     /^\/cards\/[^/]+\/rfq\/approve$/,
+    /^\/suppliers$/,
+    /^\/suppliers\/[^/]+\/capabilities$/,
+    /^\/suppliers\/[^/]+\/contacts$/,
   ],
-  PATCH: [/^\/cards\/[^/]+$/],
+  PATCH: [
+    /^\/cards\/[^/]+$/,
+    /^\/suppliers\/[^/]+\/contacts\/[^/]+$/,
+    /^\/suppliers\/[^/]+\/qualification$/,
+  ],
 }
 
 export function isReadableProcurementPath(path) {
