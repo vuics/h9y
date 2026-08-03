@@ -117,6 +117,21 @@ and return `{ items, page, pageSize, total?, hasMore? }`.
 - `/activity`: user-oriented audit/integration events with optional restricted
   diagnostics.
 
+## Deterministic actions
+
+Milestone 1 exposes the procurement-card intake lifecycle through the same BFF:
+
+- `POST /cards` creates a complete intake card;
+- `PATCH /cards/:cardId` edits the supported intake fields and returns explicit
+  RFQ/inquiry invalidation effects;
+- `POST /cards/:cardId/normalize` verifies CAS/name through the existing PubChem
+  normalizer and persists the traceable result.
+
+All three require `CARD_WRITE`. The BFF explicitly allow-lists these method/path
+pairs; no generic create/update/delete proxy exists. Development fixtures stay
+read-only, so a mutation can never look successful without reaching the real
+backend.
+
 The frontend adapter accepts presentation-friendly camelCase DTOs and isolates
 a limited set of current Python persistence names (`_id`, `card_id`,
 `canonical_name`, etc.). A production API should return explicit DTOs rather

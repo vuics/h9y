@@ -18,8 +18,21 @@ const readablePaths = [
   /^\/activity$/,
 ]
 
+const writablePaths = {
+  POST: [
+    /^\/cards$/,
+    /^\/cards\/[^/]+\/normalize$/,
+  ],
+  PATCH: [/^\/cards\/[^/]+$/],
+}
+
 export function isReadableProcurementPath(path) {
   return readablePaths.some(pattern => pattern.test(path))
+}
+
+export function isAllowedProcurementRequest(method, path) {
+  if (method === 'GET') return isReadableProcurementPath(path)
+  return (writablePaths[method] || []).some(pattern => pattern.test(path))
 }
 
 export function normalizeProcurementResponse(status, data) {
@@ -31,7 +44,7 @@ export function normalizeProcurementResponse(status, data) {
   }
 }
 
-router.get('*', checkAuth, async (req, res) => {
+router.all('*', checkAuth, async (req, res) => {
   if (!conf.procurement.enabled) {
     return res.status(404).json({ result: 'error', code: 'EXTENSION_DISABLED', message: 'Procurement is disabled for this installation.' })
   }
@@ -41,12 +54,15 @@ router.get('*', checkAuth, async (req, res) => {
   if (!conf.procurement.serviceToken) {
     return res.status(503).json({ result: 'error', code: 'SERVICE_AUTH_NOT_CONFIGURED', message: 'Procurement service authentication is not configured.' })
   }
-  if (!isReadableProcurementPath(req.path)) {
+  if (!isAllowedProcurementRequest(req.method, req.path)) {
     return res.status(404).json({ result: 'error', code: 'ENDPOINT_NOT_ALLOWED', message: 'Procurement endpoint is not allow-listed by the gateway.' })
   }
   try {
-    const upstream = await axios.get(`${conf.procurement.serviceUrl}${req.path}`, {
+    const upstream = await axios.request({
+      method: req.method,
+      url: `${conf.procurement.serviceUrl}${req.path}`,
       params: req.query,
+      data: req.method === 'GET' ? undefined : req.body,
       headers: identityHeaders(req.user),
       timeout: conf.procurement.timeoutMs,
       validateStatus: () => true,

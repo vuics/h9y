@@ -5,7 +5,7 @@ An API backend server for HyperAgency.
 ## Procurement gateway
 
 The optional Procurement workspace is exposed only through the authenticated
-`/v1/extensions` capability endpoint and `/v1/procurement/*` read proxy.
+`/v1/extensions` capability endpoint and `/v1/procurement/*` gateway.
 Configure the gateway with:
 
 ```text
@@ -18,7 +18,8 @@ PROCUREMENT_SERVICE_TIMEOUT_MS=15000
 
 The proxy replaces client-supplied identity with the authenticated Selfdev
 user ID/email and authenticates to `h9y-procurement` using the service token.
-Only explicitly allow-listed procurement GET routes can pass through it.
+Only explicitly allow-listed procurement reads and deterministic card
+mutations can pass through it; arbitrary CRUD and deletes remain blocked.
 
 ## Install
 

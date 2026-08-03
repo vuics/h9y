@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { identityHeaders } from './extensions.js'
-import { isReadableProcurementPath, normalizeProcurementResponse } from './procurement.js'
+import { isAllowedProcurementRequest, isReadableProcurementPath, normalizeProcurementResponse } from './procurement.js'
 
 test('gateway exposes only the explicitly allow-listed read API', () => {
   assert.equal(isReadableProcurementPath('/overview'), true)
@@ -9,6 +9,14 @@ test('gateway exposes only the explicitly allow-listed read API', () => {
   assert.equal(isReadableProcurementPath('/proposals/compare'), true)
   assert.equal(isReadableProcurementPath('/admin/raw-collections'), false)
   assert.equal(isReadableProcurementPath('/cards/1042/delete'), false)
+})
+
+test('gateway allow-lists only the deterministic card mutations', () => {
+  assert.equal(isAllowedProcurementRequest('POST', '/cards'), true)
+  assert.equal(isAllowedProcurementRequest('PATCH', '/cards/42'), true)
+  assert.equal(isAllowedProcurementRequest('POST', '/cards/42/normalize'), true)
+  assert.equal(isAllowedProcurementRequest('DELETE', '/cards/42'), false)
+  assert.equal(isAllowedProcurementRequest('POST', '/cards/42/approve-rfq'), false)
 })
 
 test('gateway replaces client identity with the authenticated Selfdev user', () => {

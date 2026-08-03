@@ -12,14 +12,23 @@ function compactParams(filters = {}) {
   ))
 }
 
-async function request(path, { params, signal } = {}) {
-  const response = await axios.get(`${conf.api.url}/procurement${path}`, {
+async function request(path, { method = 'get', params, data, signal } = {}) {
+  const response = await axios.request({
+    method,
+    url: `${conf.api.url}/procurement${path}`,
     params: compactParams(params),
+    data,
     withCredentials: true,
     signal,
     timeout: 15000,
   })
   return response.data
+}
+
+function fixturesAreReadOnly() {
+  const error = new Error('Изменения отключены в режиме демонстрационных данных.')
+  error.code = 'DEV_FIXTURES_READ_ONLY'
+  throw error
 }
 
 function matches(item, filters, keys) {
@@ -55,6 +64,19 @@ export const procurementApi = {
   async card(id, signal) {
     if (useDevFixtures) return (await fixtures()).cards.map(adaptCard).find(item => String(item.id) === String(id)) || null
     return adaptCard(await request(`/cards/${encodeURIComponent(id)}`, { signal }))
+  },
+  async createCard(payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptCard(await request('/cards', { method: 'post', data: payload }))
+  },
+  async updateCard(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    const response = await request(`/cards/${encodeURIComponent(id)}`, { method: 'patch', data: payload })
+    return { card: adaptCard(response.card), effects: response.effects }
+  },
+  async normalizeCard(id) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptCard(await request(`/cards/${encodeURIComponent(id)}/normalize`, { method: 'post' }))
   },
   async suppliers(filters = {}, signal) {
     if (useDevFixtures) return fixturePage((await fixtures()).suppliers.map(adaptSupplier), filters, ['id', 'name', 'country', 'contacts'])
