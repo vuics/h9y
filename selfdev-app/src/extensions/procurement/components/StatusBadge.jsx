@@ -33,7 +33,8 @@ export function statusTone(status) {
 export function StatusBadge({ status, label, compact = false }) {
   const tone = statusTone(status)
   const StatusIcon = tone === 'complete' ? Check : tone === 'danger' ? CircleAlert : tone === 'warning' ? AlertTriangle : Clock
-  return <Badge tone={tone} title={status}><StatusIcon size={compact ? 12 : 13} />{label || labels[status] || status || 'Неизвестно'}</Badge>
+  const variant = tone === 'danger' ? 'destructive' : tone === 'complete' ? 'default' : tone === 'muted' ? 'secondary' : 'outline'
+  return <Badge variant={variant} title={status}><StatusIcon size={compact ? 12 : 13} />{label || labels[status] || status || 'Неизвестно'}</Badge>
 }
 
 export const statusLabel = status => labels[status] || status || 'Неизвестно'

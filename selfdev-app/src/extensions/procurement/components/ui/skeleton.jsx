@@ -1,3 +1,15 @@
-import React from 'react'
-import { cn } from './utils'
-export const Skeleton = ({ className, ...props }) => <div className={cn('pr-skeleton', className)} {...props} />
+import { cn } from "@/extensions/procurement/lib/utils"
+
+function Skeleton({
+  className,
+  ...props
+}) {
+  return (
+    <div
+      data-slot="skeleton"
+      className={cn("tw:animate-pulse tw:rounded-md tw:bg-muted", className)}
+      {...props} />
+  );
+}
+
+export { Skeleton }

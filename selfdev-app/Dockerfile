@@ -8,7 +8,9 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
-RUN npm run build
+ARG BUILD_NODE_OPTIONS=--max-old-space-size=3072
+ARG BUILD_SOURCEMAP=false
+RUN NODE_OPTIONS="${BUILD_NODE_OPTIONS}" BUILD_SOURCEMAP="${BUILD_SOURCEMAP}" npm run build
 
 # RUN mkdir -p /opt/ssl/ && openssl req -x509 -newkey rsa:4096 -keyout /opt/ssl/tls.key -out /opt/ssl/tls.crt -days 9999 -nodes -subj "/CN=localhost"
 # RUN mkdir -p /opt/ssl/ && openssl req -x509 -newkey rsa:4096 -keyout /opt/ssl/tls.key -out /opt/ssl/tls.crt -days 9999 -nodes -subj "/CN=selfdev-web.dev.local"

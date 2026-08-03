@@ -1,4 +1,4 @@
-version: '3.9'
+# version: '3.9'
 services:
 
   ### INGRESS ###
@@ -171,6 +171,9 @@ services:
     image: ${REGISTRY}selfdev-app:${VERSION}
     build:
       context: ./selfdev-app/
+      args:
+        BUILD_NODE_OPTIONS: --max-old-space-size=3072
+        BUILD_SOURCEMAP: "false"
     command: sh -c "rm -rf node_modules/.vite && npm start"
     ports:
       - 3990:3990

@@ -23,6 +23,36 @@ VITE_BUILD_PROCUREMENT=true
 VITE_PROCUREMENT_DEV_FIXTURES=true
 ```
 
+## Shadcn UI maintenance
+
+Procurement uses CLI-managed official Shadcn source components. The current
+configuration is recorded in `components.json`: the latest default Nova style,
+the current default Base UI foundation, JavaScript output, CSS variables, and
+the neutral base color. Generated components live only in
+`src/extensions/procurement/components/ui` and should not be edited for product
+styling. Procurement pages compose them through their public variants and
+slots.
+
+Tailwind uses the configured `tw` prefix and scans only the Procurement module.
+The prefix changes no Shadcn visual values; it prevents Tailwind utilities and
+Semantic UI's global selectors from overriding one another. Tailwind preflight
+is intentionally omitted so existing Semantic UI screens retain their current
+reset, typography, and component behavior.
+
+To add or refresh components, keep `components.json` unchanged and use the
+official registry. For example:
+
+```text
+npx shadcn@latest add button card select --overwrite
+```
+
+The rest of `selfdev-app` remains on Semantic UI React. Procurement currently
+has no JSON-schema form, so `@rjsf/shadcn` is not installed yet. Existing RJSF
+v5 Semantic forms are left untouched. Introduce the Shadcn RJSF theme when the
+first Procurement schema form is implemented, together with a reviewed RJSF
+version upgrade; do not change legacy forms as part of that feature without
+their own regression coverage.
+
 ## Capabilities contract
 
 `selfdev-api` expects the procurement service to expose authenticated

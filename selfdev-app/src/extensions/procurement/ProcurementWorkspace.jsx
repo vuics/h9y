@@ -19,6 +19,7 @@ import ProposalDetailPage from './pages/ProposalDetailPage'
 import ProposalComparisonPage from './pages/ProposalComparisonPage'
 import EscalationsPage from './pages/EscalationsPage'
 import ActivityPage from './pages/ActivityPage'
+import './shadcn.css'
 import './procurement.css'
 
 const queryClient = new QueryClient({
@@ -49,7 +50,7 @@ function Workspace() {
   const { usingDevelopmentFixtures } = useExtensions()
   const tab = activeSection(location.pathname)
   return <div className="procurement-host"><div className="pr-host-menu"><Menubar /></div><main className="procurement-shell">
-    <header className="pr-workspace-header"><div><div className="pr-eyebrow">AI Sourcing Agent</div><h1>Procurement</h1><p>Операционный контур поиска, проверки поставщиков и сбора предложений.</p></div><Button asChild><Link to="/chat?context=procurement"><MessageSquare size={16} />Спросить Procurement Agent</Link></Button></header>
+    <header className="pr-workspace-header"><div><div className="pr-eyebrow">AI Sourcing Agent</div><h1>Procurement</h1><p>Операционный контур поиска, проверки поставщиков и сбора предложений.</p></div><Button render={<Link to="/chat?context=procurement" />}><MessageSquare size={16} />Спросить Procurement Agent</Button></header>
     {usingDevelopmentFixtures && <div className="pr-fixture-banner" role="status">Режим визуальной разработки: показаны явно включённые демонстрационные данные, не данные production.</div>}
     <Tabs value={tab} onValueChange={value => navigate(sections.find(item => item[0] === value)[2])}><TabsList aria-label="Разделы Procurement">{sections.map(([value, label]) => <TabsTrigger key={value} value={value}>{label}</TabsTrigger>)}</TabsList></Tabs>
     <div className="pr-page"><Routes><Route index element={<OverviewPage />} /><Route path="requests" element={<RequestsPage />} /><Route path="requests/:requestId" element={<RequestDetailPage />} /><Route path="suppliers" element={<SuppliersPage />} /><Route path="suppliers/:supplierId" element={<SupplierDetailPage />} /><Route path="negotiations" element={<NegotiationsPage />} /><Route path="negotiations/:negotiationId" element={<NegotiationDetailPage />} /><Route path="proposals" element={<ProposalsPage />} /><Route path="proposals/compare" element={<ProposalComparisonPage />} /><Route path="proposals/:proposalId" element={<ProposalDetailPage />} /><Route path="escalations" element={<EscalationsPage />} /><Route path="activity" element={<ActivityPage />} /><Route path="*" element={<Navigate to="/procurement" replace />} /></Routes></div>
