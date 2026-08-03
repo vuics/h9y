@@ -83,6 +83,24 @@
 .pr-form-actions { grid-column: 1/-1; display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
 .pr-normalization { border-top: 1px solid var(--pr-border); margin-top: 18px; padding-top: 16px; }
 .pr-normalization h3 { margin-bottom: 12px; }.pr-normalization ul { color: var(--pr-warning); margin: 12px 0 0; padding-left: 18px; }
+.pr-rfq-confirm-actions { display: flex; gap: 8px; margin-top: 12px; }
+.pr-rfq-document [data-slot="card-header"] { border-bottom: 1px solid var(--pr-border); }
+.pr-rfq-subject-label { color: var(--pr-muted); font-size: 11px; font-weight: 650; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .035em; }
+.pr-rfq-document [data-slot="card-title"] { font-size: 15px; line-height: 1.45; }
+.pr-rfq-markdown { max-width: 920px; color: var(--pr-text); line-height: 1.6; }
+.pr-rfq-markdown h2 { font-size: 17px; margin: 24px 0 8px; }
+.pr-rfq-markdown h3 { margin: 18px 0 7px; }
+.pr-rfq-markdown p { margin-bottom: 12px; }
+.pr-rfq-markdown table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; }
+.pr-rfq-markdown th, .pr-rfq-markdown td { border: 1px solid var(--pr-border); padding: 8px 10px; text-align: left; vertical-align: top; }
+.pr-rfq-markdown th { width: 34%; background: var(--muted); }
+.pr-rfq-markdown ul, .pr-rfq-markdown ol { padding-left: 22px; }
+.pr-rfq-approval p { color: var(--pr-muted); max-width: 760px; }
+.pr-rfq-review-state { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+.pr-rfq-review-state span { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--pr-border); border-radius: 999px; color: var(--pr-muted); padding: 5px 9px; font-size: 12px; }
+.pr-rfq-review-state span svg { opacity: .35; }
+.pr-rfq-review-state .is-reviewed { color: var(--pr-text); background: var(--pr-accent-soft); }
+.pr-rfq-review-state .is-reviewed svg { opacity: 1; color: var(--pr-accent); }
 
 @media (max-width: 1100px) { .pr-kpis { grid-template-columns: repeat(3,1fr); }.pr-stage-board { grid-template-columns: 1fr; }.pr-stage { min-height: auto; }.pr-stage__cards { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }.pr-field-grid { grid-template-columns: repeat(2,1fr); } }
-@media (max-width: 760px) { .procurement-shell { padding: 18px 14px 40px; }.pr-workspace-header, .pr-detail__header, .pr-section-heading { flex-direction: column; }.pr-workspace-header [data-slot="button"], .pr-detail__actions [data-slot="button"] { width: 100%; }.pr-kpis { grid-template-columns: repeat(2,1fr); }.pr-overview-grid, .pr-detail-grid { grid-template-columns: 1fr; }.pr-stage__cards { grid-template-columns: 1fr; }.pr-definitions, .pr-field-grid, .pr-documents, .pr-card-form { grid-template-columns: 1fr; }.pr-form-field--wide, .pr-form-actions { grid-column: auto; }.pr-form-actions { flex-direction: column-reverse; }.pr-form-actions [data-slot="button"] { width: 100%; }.pr-search { min-width: 100%; max-width: none; }.pr-filters [data-slot="select-trigger"] { flex: 1; }.pr-escalation [data-slot="card-content"] { grid-template-columns: 1fr; }.pr-escalation footer { flex-direction: column; gap: 3px; }.pr-message header { flex-direction: column; gap: 3px; } }
+@media (max-width: 760px) { .procurement-shell { padding: 18px 14px 40px; }.pr-workspace-header, .pr-detail__header, .pr-section-heading { flex-direction: column; }.pr-workspace-header [data-slot="button"], .pr-detail__actions [data-slot="button"] { width: 100%; }.pr-kpis { grid-template-columns: repeat(2,1fr); }.pr-overview-grid, .pr-detail-grid { grid-template-columns: 1fr; }.pr-stage__cards { grid-template-columns: 1fr; }.pr-definitions, .pr-field-grid, .pr-documents, .pr-card-form { grid-template-columns: 1fr; }.pr-form-field--wide, .pr-form-actions { grid-column: auto; }.pr-form-actions { flex-direction: column-reverse; }.pr-form-actions [data-slot="button"] { width: 100%; }.pr-search { min-width: 100%; max-width: none; }.pr-filters [data-slot="select-trigger"] { flex: 1; }.pr-escalation [data-slot="card-content"] { grid-template-columns: 1fr; }.pr-escalation footer { flex-direction: column; gap: 3px; }.pr-message header { flex-direction: column; gap: 3px; }.pr-rfq-confirm-actions { flex-direction: column-reverse; }.pr-rfq-markdown { overflow-x: auto; }.pr-rfq-markdown table { min-width: 620px; } }

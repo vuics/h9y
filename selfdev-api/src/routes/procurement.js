@@ -10,6 +10,7 @@ const router = Router()
 const readablePaths = [
   /^\/overview$/,
   /^\/cards(?:\/[^/]+)?$/,
+  /^\/cards\/[^/]+\/rfq$/,
   /^\/suppliers(?:\/[^/]+)?$/,
   /^\/negotiations(?:\/[^/]+)?$/,
   /^\/proposals(?:\/[^/]+)?$/,
@@ -22,6 +23,8 @@ const writablePaths = {
   POST: [
     /^\/cards$/,
     /^\/cards\/[^/]+\/normalize$/,
+    /^\/cards\/[^/]+\/rfq\/prepare$/,
+    /^\/cards\/[^/]+\/rfq\/approve$/,
   ],
   PATCH: [/^\/cards\/[^/]+$/],
 }

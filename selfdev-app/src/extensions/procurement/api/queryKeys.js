@@ -3,6 +3,7 @@ export const procurementKeys = {
   overview: () => [...procurementKeys.all, 'overview'],
   cards: filters => [...procurementKeys.all, 'cards', filters],
   card: id => [...procurementKeys.all, 'card', String(id)],
+  rfq: id => [...procurementKeys.all, 'rfq', String(id)],
   suppliers: filters => [...procurementKeys.all, 'suppliers', filters],
   supplier: id => [...procurementKeys.all, 'supplier', id],
   negotiations: filters => [...procurementKeys.all, 'negotiations', filters],

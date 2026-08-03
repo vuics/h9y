@@ -25,6 +25,31 @@ export interface ProcurementCardDto {
   updatedAt?: string
 }
 
+export interface RFQDocumentDto {
+  cardId: number
+  cardTitle: string
+  cardStatus: string
+  status: 'NOT_PREPARED' | 'AWAITING_APPROVAL' | 'APPROVED'
+  approvedAt?: string
+  approvedBy?: string
+  sentToSupplier: boolean
+  documentFingerprint?: string
+  rfq?: {
+    id: string
+    requestFingerprint: string
+    generatedAt: string
+    english: RFQLanguageDto
+    russian: RFQLanguageDto
+  }
+}
+
+export interface RFQLanguageDto {
+  language: 'en' | 'ru'
+  subject: string
+  bodyMarkdown: string
+  emailText: string
+}
+
 export interface SupplierDto {
   id: string
   name: string

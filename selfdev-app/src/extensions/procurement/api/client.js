@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 import conf from '../../../conf'
-import { adaptCard, adaptPage, adaptSupplier } from './adapters'
+import { adaptCard, adaptPage, adaptRFQ, adaptSupplier } from './adapters'
 
 const useDevFixtures = import.meta.env.DEV &&
   import.meta.env.VITE_PROCUREMENT_DEV_FIXTURES === 'true'
@@ -77,6 +77,24 @@ export const procurementApi = {
   async normalizeCard(id) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return adaptCard(await request(`/cards/${encodeURIComponent(id)}/normalize`, { method: 'post' }))
+  },
+  async rfq(id, signal) {
+    if (useDevFixtures) {
+      const card = (await fixtures()).cards.map(adaptCard).find(item => String(item.id) === String(id))
+      return card ? adaptRFQ({ cardId: card.id, cardTitle: card.title, cardStatus: card.status, status: card.rfqStatus || 'NOT_PREPARED', rfq: null }) : null
+    }
+    return adaptRFQ(await request(`/cards/${encodeURIComponent(id)}/rfq`, { signal }))
+  },
+  async prepareRFQ(id) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptRFQ(await request(`/cards/${encodeURIComponent(id)}/rfq/prepare`, { method: 'post' }))
+  },
+  async approveRFQ(id, documentFingerprint) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptRFQ(await request(`/cards/${encodeURIComponent(id)}/rfq/approve`, {
+      method: 'post',
+      data: { document_fingerprint: documentFingerprint },
+    }))
   },
   async suppliers(filters = {}, signal) {
     if (useDevFixtures) return fixturePage((await fixtures()).suppliers.map(adaptSupplier), filters, ['id', 'name', 'country', 'contacts'])

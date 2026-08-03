@@ -28,6 +28,38 @@ export function adaptCard(raw = {}) {
   }
 }
 
+export function adaptRFQ(raw = {}) {
+  const rfq = raw.rfq ? {
+    ...raw.rfq,
+    id: raw.rfq.id ?? raw.rfq.rfq_id,
+    requestFingerprint: raw.rfq.requestFingerprint ?? raw.rfq.request_fingerprint,
+    generatedAt: raw.rfq.generatedAt ?? raw.rfq.generated_at,
+    english: raw.rfq.english && {
+      ...raw.rfq.english,
+      bodyMarkdown: raw.rfq.english.bodyMarkdown ?? raw.rfq.english.body_markdown,
+      emailText: raw.rfq.english.emailText ?? raw.rfq.english.email_text,
+    },
+    russian: raw.rfq.russian && {
+      ...raw.rfq.russian,
+      bodyMarkdown: raw.rfq.russian.bodyMarkdown ?? raw.rfq.russian.body_markdown,
+      emailText: raw.rfq.russian.emailText ?? raw.rfq.russian.email_text,
+    },
+  } : null
+  return {
+    ...raw,
+    cardId: raw.cardId ?? raw.card_id,
+    cardTitle: raw.cardTitle ?? raw.card_title,
+    cardStatus: raw.cardStatus ?? raw.card_status,
+    status: raw.status ?? raw.rfq_status ?? 'NOT_PREPARED',
+    approvedAt: raw.approvedAt ?? raw.approved_at,
+    approvedBy: raw.approvedBy ?? raw.approved_by,
+    sentToSupplier: Boolean(raw.sentToSupplier ?? raw.sent_to_supplier),
+    documentFingerprint: raw.documentFingerprint ?? raw.document_fingerprint,
+    approvedNow: raw.approvedNow ?? raw.approved_now,
+    rfq,
+  }
+}
+
 export function adaptSupplier(raw = {}) {
   return {
     ...raw,
