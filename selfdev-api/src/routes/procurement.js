@@ -22,12 +22,24 @@ export function isReadableProcurementPath(path) {
   return readablePaths.some(pattern => pattern.test(path))
 }
 
+export function normalizeProcurementResponse(status, data) {
+  if (status < 400 || !data?.detail || typeof data.detail !== 'object') return data
+  return {
+    result: 'error',
+    code: data.detail.code || 'UPSTREAM_ERROR',
+    message: data.detail.message || 'Procurement request failed.',
+  }
+}
+
 router.get('*', checkAuth, async (req, res) => {
   if (!conf.procurement.enabled) {
     return res.status(404).json({ result: 'error', code: 'EXTENSION_DISABLED', message: 'Procurement is disabled for this installation.' })
   }
   if (!conf.procurement.serviceUrl) {
     return res.status(503).json({ result: 'error', code: 'SERVICE_UNAVAILABLE', message: 'Procurement service is not configured.' })
+  }
+  if (!conf.procurement.serviceToken) {
+    return res.status(503).json({ result: 'error', code: 'SERVICE_AUTH_NOT_CONFIGURED', message: 'Procurement service authentication is not configured.' })
   }
   if (!isReadableProcurementPath(req.path)) {
     return res.status(404).json({ result: 'error', code: 'ENDPOINT_NOT_ALLOWED', message: 'Procurement endpoint is not allow-listed by the gateway.' })
@@ -39,9 +51,9 @@ router.get('*', checkAuth, async (req, res) => {
       timeout: conf.procurement.timeoutMs,
       validateStatus: () => true,
     })
-    const contentType = upstream.headers['content-type']
-    if (contentType) res.set('content-type', contentType)
-    return res.status(upstream.status).send(upstream.data)
+    return res.status(upstream.status).json(
+      normalizeProcurementResponse(upstream.status, upstream.data),
+    )
   } catch (error) {
     return res.status(503).json({
       result: 'error',

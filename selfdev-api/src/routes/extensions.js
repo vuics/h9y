@@ -10,7 +10,7 @@ function identityHeaders(user) {
   return {
     'x-selfdev-subject-id': String(user?._id || ''),
     'x-selfdev-subject-email': String(user?.email || ''),
-    'x-selfdev-subject-roles': (user?.roles || []).join(','),
+    accept: 'application/json',
     ...(conf.procurement.serviceToken
       ? { authorization: `Bearer ${conf.procurement.serviceToken}` }
       : {}),
@@ -38,6 +38,15 @@ router.get('/', checkAuth, async (req, res) => {
       apiVersion: 1,
       extensions: [{
         ...disabledProcurementCapability('PROCUREMENT_SERVICE_URL is not configured'),
+        enabled: true,
+      }],
+    })
+  }
+  if (!conf.procurement.serviceToken) {
+    return res.json({
+      apiVersion: 1,
+      extensions: [{
+        ...disabledProcurementCapability('PROCUREMENT_SERVICE_TOKEN is not configured'),
         enabled: true,
       }],
     })

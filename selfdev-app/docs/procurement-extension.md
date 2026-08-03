@@ -65,9 +65,9 @@ the subject to its procurement principal/role bindings, authorize every
 request, and return only records in the caller's scope. Frontend route hiding is
 not authorization.
 
-## Required read API
+## Read API
 
-The BFF currently allow-lists these `GET` endpoints. Lists should accept
+The BFF allow-lists these implemented `GET` endpoints. Lists accept
 `page`, `pageSize`, `search`, `status`, and the relevant relationship filters,
 and return `{ items, page, pageSize, total?, hasMore? }`.
 
@@ -92,11 +92,12 @@ a limited set of current Python persistence names (`_id`, `card_id`,
 `canonical_name`, etc.). A production API should return explicit DTOs rather
 than raw Mongo documents.
 
-## Current blocker
+## Deployment activation
 
-`h9y-procurement` currently exposes these workflows only as agent tools backed
-by MongoDB. It does not expose the HTTP capabilities/read API above. Therefore
-production activation remains safely denied (no permissions are fabricated)
-until that service API and its authenticated principal resolution are added.
-The frontend displays request failures and never falls back to fixtures in a
-production build.
+`h9y-procurement` exposes the authenticated HTTP read API in
+`src.http_api:app`. Production activation remains opt-in: enable
+`PROCUREMENT_API_ENABLED` in the Python service, configure the same non-empty
+`PROCUREMENT_SERVICE_TOKEN` in both services, set `PROCUREMENT_ENABLED` and
+`PROCUREMENT_SERVICE_URL` in `selfdev-api`, and include the frontend extension
+at build time. Missing configuration or unavailable services fail closed; the
+frontend never falls back to fixtures in production.
