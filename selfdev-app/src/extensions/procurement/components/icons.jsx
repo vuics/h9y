@@ -4,6 +4,7 @@ const Icon = ({ children, size = 18, ...props }) => <svg width={size} height={si
 export const ChevronDown = props => <Icon {...props}><path d="m6 9 6 6 6-6" /></Icon>
 export const ChevronRight = props => <Icon {...props}><path d="m9 18 6-6-6-6" /></Icon>
 export const Check = props => <Icon {...props}><path d="m5 12 4 4L19 6" /></Icon>
+export const Copy = props => <Icon {...props}><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></Icon>
 export const AlertTriangle = props => <Icon {...props}><path d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></Icon>
 export const CircleAlert = props => <Icon {...props}><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></Icon>
 export const Clock = props => <Icon {...props}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></Icon>

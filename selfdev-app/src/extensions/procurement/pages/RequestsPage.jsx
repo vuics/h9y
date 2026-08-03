@@ -8,6 +8,7 @@ import { DataTable, Pagination } from '../components/DataTable'
 import { ListFilters } from '../components/ListFilters'
 import { LoadingState, ErrorState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
+import { CopyableId } from '../components/CopyableId'
 
 const statuses = [
   { value: 'SOURCING', label: 'Поиск' }, { value: 'NEGOTIATION', label: 'Переговоры' },
@@ -21,7 +22,7 @@ export default function RequestsPage() {
   const query = useQuery({ queryKey: procurementKeys.cards(filters), queryFn: ({ signal }) => procurementApi.cards(filters, signal), keepPreviousData: true })
   return <div className="pr-stack"><div className="pr-section-heading"><div><h2>Карточки закупок</h2><p>Запрос, нормализация вещества, RFQ и ход закупки в одном реестре.</p></div></div><ListFilters filters={filters} onChange={setFilters} statuses={statuses} placeholder="CAS, вещество или номер карточки" />
     {query.isLoading ? <LoadingState /> : query.isError ? <ErrorState error={query.error} onRetry={query.refetch} /> : <><DataTable rows={query.data.items} onRowClick={row => navigate(`/procurement/requests/${row.id}`)} emptyTitle="Карточек нет" emptyDescription="Создать карточку можно через Procurement Agent." columns={[
-      { id: 'title', header: 'Закупка', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><span>#{row.id} · CAS {row.casNumber || 'не указан'}</span></div> },
+      { id: 'title', header: 'Закупка', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><div className="pr-primary-meta"><CopyableId value={row.id} displayValue={`#${row.id}`} /><span>· CAS {row.casNumber || 'не указан'}</span></div></div> },
       { id: 'targetVolume', header: 'Объём' },
       { id: 'stage', header: 'Этап', cell: row => <StatusBadge status={row.stage} /> },
       { id: 'completeness', header: 'Качество данных', cell: row => <StatusBadge status={row.completeness || row.normalizationStatus} /> },

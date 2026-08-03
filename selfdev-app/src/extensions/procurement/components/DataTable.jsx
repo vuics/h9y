@@ -2,11 +2,14 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronRight } from './icons'
 import { EmptyState } from './AsyncState'
+import { shouldOpenTableRow } from './tableInteractions'
 
 export function DataTable({ columns, rows, rowKey = 'id', onRowClick, emptyTitle, emptyDescription }) {
   if (!rows?.length) return <EmptyState title={emptyTitle} description={emptyDescription} />
   return <div className="pr-table-wrap"><table className="pr-table"><thead><tr>{columns.map(column => <th key={column.id} className={column.className}>{column.header}</th>)}{onRowClick && <th aria-label="Открыть" />}</tr></thead>
-    <tbody>{rows.map(row => <tr key={row[rowKey]} onClick={onRowClick ? () => onRowClick(row) : undefined} tabIndex={onRowClick ? 0 : undefined} onKeyDown={event => { if (onRowClick && (event.key === 'Enter' || event.key === ' ')) onRowClick(row) }}>
+    <tbody>{rows.map(row => <tr key={row[rowKey]} onClick={onRowClick ? event => {
+      if (shouldOpenTableRow(event)) onRowClick(row)
+    } : undefined} tabIndex={onRowClick ? 0 : undefined} onKeyDown={event => { if (onRowClick && event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) onRowClick(row) }}>
       {columns.map(column => <td key={column.id} className={column.className}>{column.cell ? column.cell(row) : row[column.id]}</td>)}
       {onRowClick && <td className="pr-table__open"><Button variant="ghost" size="icon" aria-label={`Открыть ${row[rowKey]}`} onPress={() => onRowClick(row)}><ChevronRight size={16} /></Button></td>}
     </tr>)}</tbody></table></div>

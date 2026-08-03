@@ -49,7 +49,8 @@
 .pr-table td { padding: 11px 12px; border-bottom: 1px solid #e9edf0; vertical-align: middle; color: #344054; }.pr-table tbody tr:last-child td { border-bottom: 0; }
 .pr-table tbody tr[tabindex] { cursor: pointer; }.pr-table tbody tr[tabindex]:hover { background: #f8faf9; }
 .pr-table__open { width: 36px; padding-left: 0 !important; padding-right: 6px !important; }
-.pr-primary-cell strong, .pr-primary-cell span { display: block; }.pr-primary-cell strong { color: var(--pr-text); }.pr-primary-cell span { color: var(--pr-muted); font-size: 11px; margin-top: 2px; }
+.pr-primary-cell > strong, .pr-primary-cell > span { display: block; }.pr-primary-cell strong { color: var(--pr-text); }.pr-primary-cell > span, .pr-primary-meta { color: var(--pr-muted); font-size: 11px; margin-top: 2px; }
+.pr-primary-meta { display: flex; align-items: center; gap: 4px; }.pr-copyable-id, .pr-primary-cell > .pr-copyable-id { display: inline-flex; align-items: center; gap: 2px; color: var(--pr-muted); font-size: 11px; line-height: 24px; white-space: nowrap; }.pr-copyable-id [data-slot="button"] { color: #7b8794; margin: 0; }.pr-copyable-id [data-slot="button"]:hover { color: var(--pr-text); }
 .pr-inline-list, .pr-doc-status { display: flex; flex-direction: column; gap: 4px; }.pr-inline-list > span, .pr-doc-status > span { display: flex; align-items: center; gap: 5px; }
 .pr-pagination { display: flex; justify-content: space-between; align-items: center; color: var(--pr-muted); font-size: 12px; }.pr-pagination > div { display: flex; gap: 7px; }
 .pr-loading { display: flex; flex-direction: column; gap: 8px; }.pr-skeleton--row { height: 50px; }
