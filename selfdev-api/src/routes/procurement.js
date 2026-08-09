@@ -32,6 +32,8 @@ const writablePaths = {
     /^\/suppliers$/,
     /^\/suppliers\/[^/]+\/capabilities$/,
     /^\/suppliers\/[^/]+\/contacts$/,
+    /^\/negotiations$/,
+    /^\/negotiations\/[^/]+\/(?:queue|follow-up)$/,
   ],
   PATCH: [
     /^\/cards\/[^/]+$/,

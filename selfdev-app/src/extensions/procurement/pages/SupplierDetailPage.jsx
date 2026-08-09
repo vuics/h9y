@@ -20,7 +20,7 @@ const qualificationStatuses = ['UNVERIFIED', 'UNDER_REVIEW', 'QUALIFIED', 'SUSPE
 export default function SupplierDetailPage() {
   const { supplierId } = useParams()
   const queryClient = useQueryClient()
-  const { canWriteSuppliers, canQualifySuppliers } = useProcurementPermissions()
+  const { canWriteSuppliers, canQualifySuppliers, canManageNegotiations } = useProcurementPermissions()
   const [qualification, setQualification] = useState('UNVERIFIED')
   const query = useQuery({ queryKey: procurementKeys.supplier(supplierId), queryFn: ({ signal }) => procurementApi.supplier(supplierId, signal) })
   const supplier = query.data?.supplier
@@ -37,7 +37,7 @@ export default function SupplierDetailPage() {
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   if (!supplier) return <EmptyState title="Поставщик не найден" />
   const { negotiations = [], proposals = [] } = query.data
-  const actions = canWriteSuppliers ? <><RouterLinkButton variant="outline" to={`/procurement/suppliers/${supplier.id}/capabilities/new`}><Flask />Добавить capability</RouterLinkButton><RouterLinkButton to={`/procurement/suppliers/${supplier.id}/contacts/new`}><MessageSquare />Добавить контакт</RouterLinkButton></> : null
+  const actions = <>{canManageNegotiations && <RouterLinkButton variant="outline" to={`/procurement/negotiations/new?supplierId=${supplier.id}`}><MessageSquare />Создать переговоры</RouterLinkButton>}{canWriteSuppliers && <RouterLinkButton variant="outline" to={`/procurement/suppliers/${supplier.id}/capabilities/new`}><Flask />Добавить capability</RouterLinkButton>}{canWriteSuppliers && <RouterLinkButton to={`/procurement/suppliers/${supplier.id}/contacts/new`}><MessageSquare />Добавить контакт</RouterLinkButton>}</>
 
   return <DetailLayout backTo="/procurement/suppliers" backLabel="Все поставщики" eyebrow={supplier.id} title={supplier.name} status={<StatusBadge status={supplier.qualificationStatus} />} meta={supplier.country || 'Страна не указана'} actions={actions} warnings={qualify.isError && <Alert><AlertTriangle /><AlertTitle>Квалификация не изменена</AlertTitle><AlertDescription>{qualify.error?.response?.data?.message || qualify.error?.message}</AlertDescription></Alert>}>
     <div className="pr-detail-grid"><Card><CardHeader><CardTitle>Квалификация</CardTitle></CardHeader><CardContent>

@@ -155,14 +155,35 @@ export interface NegotiationDto {
   supplierName: string
   contactId: string
   contactName?: string
+  contactVerificationStatus?: string
+  contactActive: boolean
   channel: string
   status: string
+  rfqId?: string
+  authority?: string
+  priority: number
   nextAction?: string
   nextActionAt?: string
+  followUpAfterHours?: number
+  nextFollowUpAt?: string
+  attemptCount: number
   lastDispatchStatus?: string
+  lastDispatchAt?: string
   lastWorkerError?: string
+  escalationReason?: string
+  staleReason?: string
+  statusHistory: NegotiationStatusChangeDto[]
   requiresHuman: boolean
   updatedAt?: string
+}
+
+export interface NegotiationStatusChangeDto {
+  fromStatus?: string
+  toStatus: string
+  reason?: string
+  source: string
+  actorPrincipalKey?: string
+  changedAt: string
 }
 
 export interface ProposalDto {

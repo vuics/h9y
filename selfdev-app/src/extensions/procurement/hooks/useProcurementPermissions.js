@@ -12,6 +12,8 @@ export function useProcurementPermissions() {
     canOperateEchemi: set.has('ECHEMI_OPERATE'),
     canSubmitEchemi: set.has('ECHEMI_SUBMIT'),
     canReadCommunications: set.has('COMMUNICATION_READ'),
+    canManageNegotiations: set.has('NEGOTIATION_MANAGE'),
+    canQueueNegotiations: set.has('NEGOTIATION_QUEUE'),
     canReadAudit: set.has('AUDIT_READ'),
   }
 }

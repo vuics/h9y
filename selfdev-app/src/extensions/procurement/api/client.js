@@ -167,6 +167,18 @@ export const procurementApi = {
     }
     return request(`/negotiations/${encodeURIComponent(id)}`, { signal })
   },
+  async createNegotiation(payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request('/negotiations', { method: 'post', data: payload })
+  },
+  async queueNegotiation(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/negotiations/${encodeURIComponent(id)}/queue`, { method: 'post', data: payload })
+  },
+  async scheduleNegotiationFollowUp(id, when) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/negotiations/${encodeURIComponent(id)}/follow-up`, { method: 'post', data: { when } })
+  },
   async proposals(filters = {}, signal) {
     if (useDevFixtures) return fixturePage((await fixtures()).proposals, filters, ['id', 'supplierName', 'currency', 'incoterm'])
     return adaptPage(await request('/proposals', { params: filters, signal }))
