@@ -14,11 +14,17 @@ const labels = {
   PRESENT: 'Подтверждено', UNKNOWN: 'Нет данных', AMBIGUOUS: 'Неоднозначно', CONFLICT: 'Противоречие', INVALID: 'Некорректно',
   PROVIDED: 'Получен', CLAIMED_ATTACHED: 'Заявлен во вложении', CLAIMED_AVAILABLE: 'Доступен по запросу', NOT_AVAILABLE: 'Недоступен',
   DELIVERED: 'Доставлено', RECEIVED: 'Получено', PROCESSED: 'Обработано', RECORDED: 'Зафиксировано',
+  RUNNING: 'Поиск выполняется', COMPLETED: 'Поиск завершён',
+  GREEN: 'Высокая уверенность', YELLOW: 'Нужны доказательства', RED: 'Высокий риск',
+  UNREVIEWED: 'Не рассмотрен', VERIFIED_MANUFACTURER: 'Производитель подтверждён', VERIFIED_DISTRIBUTOR: 'Дистрибьютор подтверждён', NEEDS_MORE_EVIDENCE: 'Нужны доказательства',
+  MANUFACTURER: 'Производитель', DISTRIBUTOR: 'Дистрибьютор', BOTH: 'Производитель и дистрибьютор',
+  OFFICIAL_COMPANY: 'Сайт компании', GOVERNMENT_REGISTRY: 'Государственный реестр', REGULATOR: 'Регулятор', MARKETPLACE: 'B2B-площадка', TRADE_DIRECTORY: 'Отраслевой каталог', NEWS: 'Новости', SEARCH_SNIPPET: 'Поисковая выдача', OTHER: 'Другой источник',
+  POSITIVE: 'Подтверждает', NEGATIVE: 'Опровергает',
 }
 
-const complete = new Set(['NORMALIZED', 'APPROVED', 'COMPLETE', 'QUALIFIED', 'RESOLVED', 'MATCHED', 'PRESENT', 'PROVIDED', 'DELIVERED', 'PROCESSED'])
-const warning = new Set(['NEEDS_REVIEW', 'AWAITING_APPROVAL', 'NEEDS_CLARIFICATION', 'UNDER_REVIEW', 'CLAIMED_ATTACHED', 'CLAIMED_AVAILABLE', 'AMBIGUOUS'])
-const danger = new Set(['FAILED', 'ESCALATED', 'CONFLICTING', 'NEEDS_HUMAN_REVIEW', 'MISMATCH', 'CONFLICT', 'INVALID', 'REJECTED'])
+const complete = new Set(['NORMALIZED', 'APPROVED', 'COMPLETE', 'COMPLETED', 'QUALIFIED', 'RESOLVED', 'MATCHED', 'PRESENT', 'PROVIDED', 'DELIVERED', 'PROCESSED', 'GREEN', 'VERIFIED_MANUFACTURER', 'VERIFIED_DISTRIBUTOR', 'POSITIVE'])
+const warning = new Set(['NEEDS_REVIEW', 'AWAITING_APPROVAL', 'NEEDS_CLARIFICATION', 'UNDER_REVIEW', 'CLAIMED_ATTACHED', 'CLAIMED_AVAILABLE', 'AMBIGUOUS', 'YELLOW', 'NEEDS_MORE_EVIDENCE'])
+const danger = new Set(['FAILED', 'ESCALATED', 'CONFLICTING', 'NEEDS_HUMAN_REVIEW', 'MISMATCH', 'CONFLICT', 'INVALID', 'REJECTED', 'RED', 'NEGATIVE'])
 const waiting = new Set(['WAITING_SUPPLIER', 'QUEUED', 'OPEN', 'IN_REVIEW'])
 
 export function statusTone(status) {
@@ -26,7 +32,7 @@ export function statusTone(status) {
   if (danger.has(status)) return 'danger'
   if (warning.has(status)) return 'warning'
   if (waiting.has(status)) return 'waiting'
-  if (['STALE', 'CANCELLED', 'SUSPENDED', 'UNKNOWN', 'UNVERIFIED', 'NOT_AVAILABLE'].includes(status)) return 'muted'
+  if (['STALE', 'CANCELLED', 'SUSPENDED', 'UNKNOWN', 'UNVERIFIED', 'UNREVIEWED', 'NOT_AVAILABLE'].includes(status)) return 'muted'
   return 'progress'
 }
 

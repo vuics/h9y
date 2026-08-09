@@ -20,7 +20,7 @@ async function request(path, { method = 'get', params, data, signal } = {}) {
     data,
     withCredentials: true,
     signal,
-    timeout: path.includes('/responses') ? 180000 : path.includes('/echemi') ? 90000 : 15000,
+    timeout: path.includes('/responses') || path.includes('/sourcing') ? 180000 : path.includes('/echemi') ? 90000 : 15000,
   })
   return response.data
 }
@@ -123,6 +123,35 @@ export const procurementApi = {
   async submitEchemiInquiry(id, inquiryId) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/cards/${encodeURIComponent(id)}/echemi/inquiries/${encodeURIComponent(inquiryId)}/submit`, { method: 'post' })
+  },
+  async sourcing(id, signal) {
+    if (useDevFixtures) return (await fixtures()).sourcingFixtureForCard(id)
+    try {
+      return await request(`/cards/${encodeURIComponent(id)}/sourcing`, { signal })
+    } catch (error) {
+      if (error.response?.status === 404 && error.response?.data?.code === 'NOT_FOUND') return null
+      throw error
+    }
+  },
+  async sourcingRun(runId, signal) {
+    if (useDevFixtures) return (await fixtures()).sourcingFixtureById(runId)
+    return request(`/sourcing/${encodeURIComponent(runId)}`, { signal })
+  },
+  async startSourcing(id, maxResults = 28) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/sourcing/runs`, { method: 'post', data: { maxResults } })
+  },
+  async addSourcingSource(runId, url) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/sourcing/${encodeURIComponent(runId)}/sources`, { method: 'post', data: { url } })
+  },
+  async reviewSourcingCandidate(runId, candidateId, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/sourcing/${encodeURIComponent(runId)}/candidates/${encodeURIComponent(candidateId)}/review`, { method: 'post', data: payload })
+  },
+  async promoteSourcingCandidate(runId, candidateId) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptSupplier(await request(`/sourcing/${encodeURIComponent(runId)}/candidates/${encodeURIComponent(candidateId)}/promote`, { method: 'post' }))
   },
   async suppliers(filters = {}, signal) {
     if (useDevFixtures) return fixturePage((await fixtures()).suppliers.map(adaptSupplier), filters, ['id', 'name', 'country', 'contacts'])

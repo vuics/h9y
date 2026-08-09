@@ -1,11 +1,39 @@
 const ago = hours => new Date(Date.now() - hours * 3600000).toISOString()
 
 export const cards = [
-  { id: 1042, title: '1,3-бутадиен — промышленная партия', substanceName: '1,3-Butadiene', casNumber: '106-99-0', purity: '≥ 99.5%', targetVolume: '20 MT', stage: 'NEGOTIATION', rfqStatus: 'APPROVED', normalizationStatus: 'NORMALIZED', completeness: 'NEEDS_CLARIFICATION', supplierCount: 4, proposalCount: 3, updatedAt: ago(1) },
+  { id: 1042, title: '1,3-бутадиен — промышленная партия', substanceName: '1,3-Butadiene', casNumber: '106-99-0', purity: '≥ 99.5%', targetVolume: '20 MT', stage: 'NEGOTIATION', rfqStatus: 'APPROVED', normalizationStatus: 'NORMALIZED', completeness: 'NEEDS_CLARIFICATION', supplierCount: 4, proposalCount: 3, sourcing: { runId: 'SRC-1042-DEMO', status: 'COMPLETED', candidateCount: 2, greenCandidateCount: 1, verifiedCandidateCount: 1 }, updatedAt: ago(1) },
   { id: 1038, title: 'Силиконовый модификатор для косметики', substanceName: 'Silicone modifier', casNumber: '63148-62-9', purity: 'Cosmetic grade', targetVolume: '2 MT', stage: 'SOURCING', rfqStatus: 'AWAITING_APPROVAL', normalizationStatus: 'NEEDS_REVIEW', completeness: 'NEEDS_HUMAN_REVIEW', supplierCount: 7, proposalCount: 1, updatedAt: ago(4) },
   { id: 1031, title: 'Бензол, аналитический стандарт', substanceName: 'Benzene', casNumber: '71-43-2', purity: '≥ 99.9%', targetVolume: '25 KG', stage: 'COMPARISON', rfqStatus: 'APPROVED', normalizationStatus: 'NORMALIZED', completeness: 'COMPLETE', supplierCount: 3, proposalCount: 3, updatedAt: ago(9) },
   { id: 1024, title: 'Формальдегид 37%', substanceName: 'Formaldehyde solution', casNumber: '50-00-0', purity: '37%', targetVolume: '5 MT', stage: 'WAITING_SUPPLIER', rfqStatus: 'APPROVED', normalizationStatus: 'NORMALIZED', completeness: 'NEEDS_CLARIFICATION', supplierCount: 5, proposalCount: 2, updatedAt: ago(27) },
 ]
+
+const sourcingRun = {
+  id: 'SRC-1042-DEMO', cardId: 1042, requestedCas: '106-99-0', requestedProductName: '1,3-Butadiene', status: 'COMPLETED',
+  queryPlan: ['"106-99-0" manufacturer production capacity', '"1,3-Butadiene" environmental permit plant'],
+  sources: [
+    { id: 'SOURCE-1', url: 'https://example.invalid/company/butadiene', finalUrl: 'https://example.invalid/company/butadiene', domain: 'example.invalid', title: 'Jiangsu Meridian Materials — Butadiene', sourceType: 'OFFICIAL_COMPANY', query: '"106-99-0" manufacturer', retrievedAt: ago(3), fetchStatus: 'FETCHED', claimCount: 3, extractionWarnings: [] },
+    { id: 'SOURCE-2', url: 'https://regulator.example.invalid/permit/42', finalUrl: 'https://regulator.example.invalid/permit/42', domain: 'regulator.example.invalid', title: 'Environmental operating permit', sourceType: 'REGULATOR', query: 'butadiene environmental permit', retrievedAt: ago(2), fetchStatus: 'FETCHED', claimCount: 2, extractionWarnings: [] },
+    { id: 'SOURCE-3', url: 'https://market.example.invalid/listing/77', finalUrl: 'https://market.example.invalid/listing/77', domain: 'market.example.invalid', title: 'Butadiene supplier listing', sourceType: 'MARKETPLACE', query: '106-99-0 supplier', retrievedAt: ago(2), fetchStatus: 'FETCHED', claimCount: 1, extractionWarnings: ['Роль продавца не подтверждена независимым источником.'] },
+  ],
+  candidates: [
+    { id: 'CAND-MERIDIAN', name: 'Jiangsu Meridian Materials', aliases: ['Meridian Materials'], country: 'CN', website: 'https://example.invalid/company', role: 'MANUFACTURER', score: 86, preliminaryStatus: 'GREEN', reviewDecision: 'VERIFIED_MANUFACTURER', promotedSupplierId: 'SUP-B72D', reliabilitySignals: ['Точный CAS указан в официальном каталоге', 'Производственная площадка подтверждена разрешением регулятора', 'Заявлена мощность 120 000 тонн в год'], riskSignals: [], evidenceGaps: ['Экспортная лицензия требует актуализации'], sourceIds: ['SOURCE-1', 'SOURCE-2'], evidence: [
+      { id: 'CLAIM-1', category: 'PRODUCT_MATCH', polarity: 'POSITIVE', value: 'CAS 106-99-0 присутствует в каталоге', quote: '1,3-Butadiene, CAS No. 106-99-0, polymerization grade.', sourceId: 'SOURCE-1', sourceUrl: 'https://example.invalid/company/butadiene', sourceType: 'OFFICIAL_COMPANY', sourceRetrievedAt: ago(3) },
+      { id: 'CLAIM-2', category: 'PRODUCTION_CAPACITY', polarity: 'POSITIVE', value: '120 000 тонн в год', quote: 'The production unit has a nameplate capacity of 120,000 metric tonnes per year.', sourceId: 'SOURCE-1', sourceUrl: 'https://example.invalid/company/butadiene', sourceType: 'OFFICIAL_COMPANY', sourceRetrievedAt: ago(3) },
+      { id: 'CLAIM-3', category: 'ENVIRONMENTAL_PERMIT', polarity: 'POSITIVE', value: 'Разрешение на эксплуатацию установки', quote: 'Permit covers operation of the butadiene extraction unit at the listed facility.', sourceId: 'SOURCE-2', sourceUrl: 'https://regulator.example.invalid/permit/42', sourceType: 'REGULATOR', sourceRetrievedAt: ago(2), validUntil: '2028-12-31' },
+    ], reviewHistory: [{ decision: 'VERIFIED_MANUFACTURER', note: 'Сопоставлены официальный каталог и действующее разрешение регулятора. CAS и площадка совпадают.', actorPrincipalKey: 'USER:fixture-buyer', reviewedAt: ago(1) }] },
+    { id: 'CAND-TRADING', name: 'Fixture Industrial Trading', aliases: [], country: 'CN', website: 'https://market.example.invalid/listing/77', role: 'UNKNOWN', score: 34, preliminaryStatus: 'RED', reviewDecision: 'UNREVIEWED', reliabilitySignals: ['Найден листинг с точным CAS'], riskSignals: ['Найдена только B2B-площадка', 'Нет подтверждения собственного производства'], evidenceGaps: ['Производственная площадка', 'Мощности', 'Лицензии и разрешения'], sourceIds: ['SOURCE-3'], evidence: [{ id: 'CLAIM-4', category: 'PRODUCT_MATCH', polarity: 'POSITIVE', value: 'Листинг с CAS 106-99-0', quote: 'High purity 1,3-butadiene, CAS 106-99-0 available for export.', sourceId: 'SOURCE-3', sourceUrl: 'https://market.example.invalid/listing/77', sourceType: 'MARKETPLACE', sourceRetrievedAt: ago(2) }], reviewHistory: [] },
+  ],
+  errors: [], initiatedByPrincipalKey: 'USER:fixture-buyer', createdAt: ago(4), updatedAt: ago(1), completedAt: ago(1), automaticVerification: false,
+  decisionNote: 'Traffic-light status is preliminary and evidence-based. Only an authorized human review may verify a manufacturer or distributor.',
+}
+
+export function sourcingFixtureForCard(cardId) {
+  return String(cardId) === String(sourcingRun.cardId) ? sourcingRun : null
+}
+
+export function sourcingFixtureById(runId) {
+  return String(runId) === sourcingRun.id ? sourcingRun : null
+}
 
 export const suppliers = [
   { id: 'SUP-A19F', name: 'Qingdao Nova Chemical Co.', country: 'CN', qualificationStatus: 'UNDER_REVIEW', contacts: [{ id: 'CONTACT-91', name: 'Lin Wei', role: 'Export manager', channel: 'email', address: 'lin.wei@fixture.invalid', verificationStatus: 'VERIFIED', active: true }], capabilities: [{ casNumber: '106-99-0', productName: '1,3-Butadiene', verificationStatus: 'CLAIMED', source: 'ECHEMI_MARKETPLACE_LISTING', sourceUrl: 'https://example.invalid/source/1' }], updatedAt: ago(1) },

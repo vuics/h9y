@@ -167,6 +167,7 @@ const conf = {
     serviceToken: process.env.PROCUREMENT_SERVICE_TOKEN || '',
     extensionApiVersion: num(process.env.PROCUREMENT_EXTENSION_API_VERSION || 1),
     timeoutMs: num(process.env.PROCUREMENT_SERVICE_TIMEOUT_MS || 15000),
+    sourcingTimeoutMs: num(process.env.PROCUREMENT_SOURCING_TIMEOUT_MS || 180000),
     echemiTimeoutMs: num(process.env.PROCUREMENT_ECHEMI_TIMEOUT_MS || 90000),
     responseTimeoutMs: num(process.env.PROCUREMENT_RESPONSE_TIMEOUT_MS || 180000),
   },

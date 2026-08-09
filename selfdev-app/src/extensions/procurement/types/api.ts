@@ -22,7 +22,85 @@ export interface ProcurementCardDto {
   completeness?: CompletenessState
   supplierCount?: number
   proposalCount?: number
+  sourcing?: {
+    runId: string
+    status: string
+    candidateCount: number
+    greenCandidateCount: number
+    verifiedCandidateCount: number
+  }
   updatedAt?: string
+}
+
+export interface SourcingRunDto {
+  id: string
+  cardId: number
+  requestedCas: string
+  requestedProductName: string
+  status: 'RUNNING' | 'COMPLETED' | 'FAILED'
+  queryPlan: string[]
+  sources: SourcingSourceDto[]
+  candidates: SourcingCandidateDto[]
+  errors: string[]
+  initiatedByPrincipalKey: string
+  createdAt: string
+  updatedAt: string
+  completedAt?: string
+  automaticVerification: false
+  decisionNote: string
+}
+
+export interface SourcingSourceDto {
+  id: string
+  url: string
+  finalUrl: string
+  domain: string
+  title: string
+  sourceType: 'OFFICIAL_COMPANY' | 'GOVERNMENT_REGISTRY' | 'REGULATOR' | 'MARKETPLACE' | 'TRADE_DIRECTORY' | 'NEWS' | 'SEARCH_SNIPPET' | 'OTHER'
+  query?: string
+  retrievedAt: string
+  fetchStatus: string
+  claimCount: number
+  extractionWarnings: string[]
+}
+
+export interface SourcingCandidateDto {
+  id: string
+  name: string
+  aliases: string[]
+  country?: string
+  website?: string
+  role: 'MANUFACTURER' | 'DISTRIBUTOR' | 'BOTH' | 'UNKNOWN'
+  score: number
+  preliminaryStatus: 'GREEN' | 'YELLOW' | 'RED'
+  reviewDecision: 'UNREVIEWED' | 'UNDER_REVIEW' | 'VERIFIED_MANUFACTURER' | 'VERIFIED_DISTRIBUTOR' | 'NEEDS_MORE_EVIDENCE' | 'REJECTED'
+  promotedSupplierId?: string
+  reliabilitySignals: string[]
+  riskSignals: string[]
+  evidenceGaps: string[]
+  sourceIds: string[]
+  evidence: SourcingEvidenceDto[]
+  reviewHistory: SourcingReviewDto[]
+}
+
+export interface SourcingEvidenceDto {
+  id: string
+  category: string
+  polarity: 'POSITIVE' | 'NEGATIVE' | 'CONFLICT'
+  value: string
+  quote: string
+  validUntil?: string
+  sourceId: string
+  sourceUrl?: string
+  sourceType?: string
+  sourceRetrievedAt?: string
+}
+
+export interface SourcingReviewDto {
+  decision: SourcingCandidateDto['reviewDecision']
+  note: string
+  actorPrincipalKey: string
+  reviewedAt: string
 }
 
 export interface RFQDocumentDto {

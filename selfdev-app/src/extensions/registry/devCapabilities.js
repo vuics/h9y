@@ -10,6 +10,8 @@ export const developmentCapabilities = {
       'COMMUNICATION_READ',
       'ESCALATION_READ',
       'AUDIT_READ',
+      'SOURCING_RESEARCH',
+      'SOURCING_REVIEW',
     ],
     serviceAvailable: true,
     reason: 'Explicit local development fixture mode',

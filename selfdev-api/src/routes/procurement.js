@@ -13,6 +13,8 @@ const readablePaths = [
   /^\/cards\/[^/]+\/rfq$/,
   /^\/cards\/[^/]+\/echemi$/,
   /^\/cards\/[^/]+\/echemi\/browser-access$/,
+  /^\/cards\/[^/]+\/sourcing$/,
+  /^\/sourcing\/[^/]+$/,
   /^\/suppliers(?:\/[^/]+)?$/,
   /^\/negotiations(?:\/[^/]+)?$/,
   /^\/supplier-response-attachments\/[^/]+$/,
@@ -32,6 +34,9 @@ const writablePaths = {
     /^\/cards\/[^/]+\/echemi\/search$/,
     /^\/cards\/[^/]+\/echemi\/inquiries$/,
     /^\/cards\/[^/]+\/echemi\/inquiries\/[^/]+\/(?:preview|approve|submit)$/,
+    /^\/cards\/[^/]+\/sourcing\/runs$/,
+    /^\/sourcing\/[^/]+\/sources$/,
+    /^\/sourcing\/[^/]+\/candidates\/[^/]+\/(?:review|promote)$/,
     /^\/suppliers$/,
     /^\/suppliers\/[^/]+\/capabilities$/,
     /^\/suppliers\/[^/]+\/contacts$/,
@@ -93,6 +98,8 @@ router.all('*', checkAuth, async (req, res) => {
       headers: identityHeaders(req.user),
       timeout: req.path.endsWith('/responses')
         ? conf.procurement.responseTimeoutMs
+        : req.path.includes('/sourcing')
+          ? conf.procurement.sourcingTimeoutMs
         : req.path.includes('/echemi')
           ? conf.procurement.echemiTimeoutMs
           : conf.procurement.timeoutMs,

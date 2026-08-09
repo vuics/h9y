@@ -11,6 +11,8 @@ export function useProcurementPermissions() {
     canQualifySuppliers: set.has('SUPPLIER_QUALIFY'),
     canOperateEchemi: set.has('ECHEMI_OPERATE'),
     canSubmitEchemi: set.has('ECHEMI_SUBMIT'),
+    canResearchSourcing: set.has('SOURCING_RESEARCH'),
+    canReviewSourcing: set.has('SOURCING_REVIEW'),
     canReadCommunications: set.has('COMMUNICATION_READ'),
     canManageNegotiations: set.has('NEGOTIATION_MANAGE'),
     canQueueNegotiations: set.has('NEGOTIATION_QUEUE'),

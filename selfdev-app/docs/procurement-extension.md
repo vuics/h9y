@@ -75,7 +75,8 @@ their own regression coverage.
 ```
 
 Permissions use the identifiers already defined by `h9y-procurement`:
-`CARD_READ`, `CARD_WRITE`, `COMMUNICATION_READ`, `ESCALATION_READ`,
+`CARD_READ`, `CARD_WRITE`, `SOURCING_RESEARCH`, `SOURCING_REVIEW`,
+`COMMUNICATION_READ`, `ESCALATION_READ`,
 `ESCALATION_ASSIGN`, `ESCALATION_CLAIM`, `ESCALATION_RECOMMEND`,
 `ESCALATION_RESOLVE`, `EXPERT_REGISTRY_MANAGE`, and `AUDIT_READ`.
 
@@ -87,6 +88,7 @@ PROCUREMENT_SERVICE_URL=http://h9y-procurement:8080/v1
 PROCUREMENT_SERVICE_TOKEN=<service-to-service bearer token>
 PROCUREMENT_EXTENSION_API_VERSION=1
 PROCUREMENT_SERVICE_TIMEOUT_MS=15000
+PROCUREMENT_SOURCING_TIMEOUT_MS=180000
 ```
 
 The gateway replaces inbound identity headers with authenticated Selfdev user
@@ -105,6 +107,8 @@ and return `{ items, page, pageSize, total?, hasMore? }`.
   activity. Counts must be calculated by the procurement backend.
 - `/cards` and `/cards/:cardId`: procurement cards, normalization and RFQ state,
   relationship counts and completeness.
+- `/cards/:cardId/sourcing` and `/sourcing/:runId`: open-source search snapshot,
+  candidates, evidence, human review history and traceable sources.
 - `/suppliers` and `/suppliers/:supplierId`: supplier directory, contacts,
   capabilities/evidence, assignments, current offers and paged communication.
 - `/negotiations` and `/negotiations/:negotiationId`: assignments, delivery and
@@ -131,6 +135,12 @@ All three require `CARD_WRITE`. The BFF explicitly allow-lists these method/path
 pairs; no generic create/update/delete proxy exists. Development fixtures stay
 read-only, so a mutation can never look successful without reaching the real
 backend.
+
+The sourcing workspace adds four explicit actions: start a new run, add a
+public URL, record a human review, and promote a verified candidate into the
+supplier directory. Promotion remains impossible until a reviewer records
+`VERIFIED_MANUFACTURER` or `VERIFIED_DISTRIBUTOR`; the traffic-light score is
+always presented as preliminary rather than automatic verification.
 
 The frontend adapter accepts presentation-friendly camelCase DTOs and isolates
 a limited set of current Python persistence names (`_id`, `card_id`,
