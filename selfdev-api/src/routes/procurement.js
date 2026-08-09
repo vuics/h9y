@@ -12,6 +12,7 @@ const readablePaths = [
   /^\/cards(?:\/[^/]+)?$/,
   /^\/cards\/[^/]+\/rfq$/,
   /^\/cards\/[^/]+\/echemi$/,
+  /^\/cards\/[^/]+\/echemi\/browser-access$/,
   /^\/suppliers(?:\/[^/]+)?$/,
   /^\/negotiations(?:\/[^/]+)?$/,
   /^\/supplier-response-attachments\/[^/]+$/,
@@ -111,6 +112,9 @@ router.all('*', checkAuth, async (req, res) => {
       } catch {
         upstreamData = { detail: { code: 'UPSTREAM_ERROR', message: 'Procurement file request failed.' } }
       }
+    }
+    if (req.path.endsWith('/echemi/browser-access')) {
+      res.set('Cache-Control', 'no-store')
     }
     return res.status(upstream.status).json(
       normalizeProcurementResponse(upstream.status, upstreamData),

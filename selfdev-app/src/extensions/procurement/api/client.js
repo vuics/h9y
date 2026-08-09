@@ -100,6 +100,10 @@ export const procurementApi = {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/cards/${encodeURIComponent(id)}/echemi`, { signal })
   },
+  async echemiBrowserAccess(id, signal) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/echemi/browser-access`, { signal })
+  },
   async searchEchemi(id) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/cards/${encodeURIComponent(id)}/echemi/search`, { method: 'post' })

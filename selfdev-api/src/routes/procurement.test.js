@@ -19,6 +19,7 @@ test('gateway allow-lists only the deterministic card mutations', () => {
   assert.equal(isAllowedProcurementRequest('POST', '/cards/42/rfq/prepare'), true)
   assert.equal(isAllowedProcurementRequest('POST', '/cards/42/rfq/approve'), true)
   assert.equal(isAllowedProcurementRequest('GET', '/cards/42/echemi'), true)
+  assert.equal(isAllowedProcurementRequest('GET', '/cards/42/echemi/browser-access'), true)
   assert.equal(isAllowedProcurementRequest('POST', '/cards/42/echemi/search'), true)
   assert.equal(isAllowedProcurementRequest('POST', '/cards/42/echemi/inquiries'), true)
   assert.equal(isAllowedProcurementRequest('POST', '/cards/42/echemi/inquiries/ECHEMI-42-A1B2/preview'), true)

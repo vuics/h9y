@@ -8,6 +8,7 @@ import { echemiOperationIsError, echemiOperationLabel, echemiReadiness, echemiTe
 import { DetailLayout, DefinitionGrid } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
+import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +28,12 @@ export default function EchemiPage() {
   const [approveConfirmed, setApproveConfirmed] = useState('')
   const [submitConfirmed, setSubmitConfirmed] = useState('')
   const query = useQuery({ queryKey: procurementKeys.echemi(requestId), queryFn: ({ signal }) => procurementApi.echemi(requestId, signal) })
+  const browserAccess = useQuery({
+    queryKey: procurementKeys.echemiBrowserAccess(requestId),
+    queryFn: ({ signal }) => procurementApi.echemiBrowserAccess(requestId, signal),
+    enabled: canOperateEchemi,
+    staleTime: 5 * 60 * 1000,
+  })
 
   const accept = response => {
     queryClient.setQueryData(procurementKeys.echemi(requestId), response.state)
@@ -80,6 +87,7 @@ export default function EchemiPage() {
     {operation && <Alert><AlertTriangle /><AlertTitle>{echemiOperationIsError(operation) ? 'Операция остановлена' : operation.humanActionRequired ? 'Требуется ручная проверка' : 'Готово'}</AlertTitle><AlertDescription>{echemiOperationLabel(operation)}{operation.humanActionRequired && <div className="pr-echemi-alert-actions"><a href={state.noVncUrl} target="_blank" rel="noreferrer"><ExternalLink />Открыть проверку Echemi</a></div>}</AlertDescription></Alert>}
   </>}>
     <div className="pr-stack">
+      {canOperateEchemi && <EchemiBrowserAccess access={browserAccess.data} error={browserAccess.error} loading={browserAccess.isLoading} />}
       <Card><CardHeader><CardTitle>1. Поиск продуктов</CardTitle></CardHeader><CardContent>
         <p className="pr-note">Поиск выполняется по CAS из нормализованной карточки. Листинги остаются непроверенными кандидатами и не становятся квалифицированными поставщиками автоматически.</p>
         <div className="pr-echemi-toolbar"><DefinitionGrid items={[{ label: 'CAS запроса', value: state.casNumber }, { label: 'Последний поиск', value: state.search.searchedAt ? new Date(state.search.searchedAt).toLocaleString('ru-RU') : 'Не запускался' }]} /><Button isDisabled={!searchReady || !canOperateEchemi || search.isPending} onPress={() => { setOperation(null); search.mutate() }}><Search />{search.isPending ? 'Поиск…' : state.search.status === 'HUMAN_ACTION_REQUIRED' ? 'Повторить после проверки' : 'Найти на Echemi'}</Button></div>

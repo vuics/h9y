@@ -70,6 +70,13 @@ export interface EchemiStateDto {
   inquiries: EchemiInquiryDto[]
 }
 
+export interface EchemiBrowserAccessDto {
+  cardId: number
+  url: string
+  passwordRequired: boolean
+  password?: string | null
+}
+
 export interface EchemiCandidateDto {
   product_id: string
   product_name: string
