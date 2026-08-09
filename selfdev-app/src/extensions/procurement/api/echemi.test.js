@@ -1,7 +1,19 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { echemiOperationIsError, echemiOperationLabel, initialEchemiDelivery } from './echemi.js'
+import { echemiOperationIsError, echemiOperationLabel, echemiReadiness, initialEchemiDelivery } from './echemi.js'
+
+test('normalized cards may search before RFQ approval, but inquiry preparation may not', () => {
+  assert.deepEqual(echemiReadiness('NORMALIZED', 'AWAITING_APPROVAL'), {
+    searchReady: true, inquiryReady: false,
+  })
+  assert.deepEqual(echemiReadiness('NORMALIZED', 'APPROVED'), {
+    searchReady: true, inquiryReady: true,
+  })
+  assert.deepEqual(echemiReadiness('NEW', 'APPROVED'), {
+    searchReady: false, inquiryReady: false,
+  })
+})
 
 test('Echemi form defaults only parse an explicit supported card quantity', () => {
   assert.deepEqual(initialEchemiDelivery('21 кг'), {

@@ -94,6 +94,8 @@ export interface EchemiInquiryDto {
   submittedAt?: string
   platformMessage?: string
   lastError?: string
+  verificationStage?: string
+  verificationResumeStatus?: string
 }
 
 export interface SupplierDto {

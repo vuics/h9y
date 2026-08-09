@@ -1,6 +1,11 @@
 export const echemiUnits = ['KG', 'G', 'MG', 'MT', 'L', 'PCS', '20FCL', '40FCL', 'BOU']
 export const echemiTerms = ['EXW', 'FCA', 'FAS', 'FOB', 'CFR', 'CIF', 'CPT', 'CIP', 'DDP', 'DAP', 'DPU']
 
+export function echemiReadiness(cardStatus, rfqStatus) {
+  const searchReady = cardStatus === 'NORMALIZED'
+  return { searchReady, inquiryReady: searchReady && rfqStatus === 'APPROVED' }
+}
+
 export function initialEchemiDelivery(targetVolume) {
   const match = String(targetVolume || '').trim().match(/^(\d+(?:[.,]\d+)?)\s*([A-Za-z]+)$/)
   return {

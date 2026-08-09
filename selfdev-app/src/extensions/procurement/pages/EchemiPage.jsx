@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
-import { echemiOperationIsError, echemiOperationLabel, echemiTerms, echemiUnits, initialEchemiDelivery } from '../api/echemi'
+import { echemiOperationIsError, echemiOperationLabel, echemiReadiness, echemiTerms, echemiUnits, initialEchemiDelivery } from '../api/echemi'
 import { DetailLayout, DefinitionGrid } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
@@ -68,12 +68,13 @@ export default function EchemiPage() {
   if (!query.data) return <EmptyState title="Карточка не найдена" />
 
   const state = query.data
-  const ready = state.cardStatus === 'NORMALIZED' && state.rfqStatus === 'APPROVED'
+  const { searchReady, inquiryReady } = echemiReadiness(state.cardStatus, state.rfqStatus)
   const pendingError = search.error || prepare.error || lifecycle.error
   const formValid = selectedProductId && Number(delivery.quantity) > 0 && delivery.destination.trim() && /^[A-Za-z]{2}$/.test(delivery.country.trim())
 
   return <DetailLayout backTo={`/procurement/requests/${requestId}`} backLabel="К карточке" eyebrow={`Карточка #${state.cardId}`} title="Поиск и RFQ на Echemi" status={<StatusBadge status={state.search.status} />} meta={`CAS ${state.casNumber || '—'} · ${state.targetVolume || 'объём не указан'}`} warnings={<>
-    {!ready && <Alert><AlertTriangle /><AlertTitle>Процесс ещё не готов</AlertTitle><AlertDescription>Для поиска требуется нормализованная карточка, а для подготовки формы — явно согласованный RFQ.</AlertDescription></Alert>}
+    {!searchReady && <Alert><AlertTriangle /><AlertTitle>Поиск ещё недоступен</AlertTitle><AlertDescription>Сначала нормализуйте карточку: поиск Echemi выполняется по подтверждённому CAS.</AlertDescription></Alert>}
+    {searchReady && !inquiryReady && <Alert><AlertTriangle /><AlertTitle>Можно искать, но нельзя готовить inquiry</AlertTitle><AlertDescription>Поиск кандидатов уже доступен. Для подготовки формы требуется отдельно сформировать и явно согласовать RFQ.</AlertDescription></Alert>}
     {!canOperateEchemi && <Alert><AlertTriangle /><AlertTitle>Недостаточно прав</AlertTitle><AlertDescription>Для операций Echemi требуется разрешение ECHEMI_OPERATE.</AlertDescription></Alert>}
     {pendingError && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{pendingError.response?.data?.message || pendingError.message}</AlertDescription></Alert>}
     {operation && <Alert><AlertTriangle /><AlertTitle>{echemiOperationIsError(operation) ? 'Операция остановлена' : operation.humanActionRequired ? 'Требуется ручная проверка' : 'Готово'}</AlertTitle><AlertDescription>{echemiOperationLabel(operation)}{operation.humanActionRequired && <div className="pr-echemi-alert-actions"><a href={state.noVncUrl} target="_blank" rel="noreferrer"><ExternalLink />Открыть проверку Echemi</a></div>}</AlertDescription></Alert>}
@@ -81,7 +82,7 @@ export default function EchemiPage() {
     <div className="pr-stack">
       <Card><CardHeader><CardTitle>1. Поиск продуктов</CardTitle></CardHeader><CardContent>
         <p className="pr-note">Поиск выполняется по CAS из нормализованной карточки. Листинги остаются непроверенными кандидатами и не становятся квалифицированными поставщиками автоматически.</p>
-        <div className="pr-echemi-toolbar"><DefinitionGrid items={[{ label: 'CAS запроса', value: state.casNumber }, { label: 'Последний поиск', value: state.search.searchedAt ? new Date(state.search.searchedAt).toLocaleString('ru-RU') : 'Не запускался' }]} /><Button isDisabled={!ready || !canOperateEchemi || search.isPending} onPress={() => { setOperation(null); search.mutate() }}><Search />{search.isPending ? 'Поиск…' : state.search.status === 'HUMAN_ACTION_REQUIRED' ? 'Повторить после проверки' : 'Найти на Echemi'}</Button></div>
+        <div className="pr-echemi-toolbar"><DefinitionGrid items={[{ label: 'CAS запроса', value: state.casNumber }, { label: 'Последний поиск', value: state.search.searchedAt ? new Date(state.search.searchedAt).toLocaleString('ru-RU') : 'Не запускался' }]} /><Button isDisabled={!searchReady || !canOperateEchemi || search.isPending} onPress={() => { setOperation(null); search.mutate() }}><Search />{search.isPending ? 'Поиск…' : state.search.status === 'HUMAN_ACTION_REQUIRED' ? 'Повторить после проверки' : 'Найти на Echemi'}</Button></div>
         {state.search.status === 'HUMAN_ACTION_REQUIRED' && <div className="pr-echemi-human"><span>Браузер оставлен открытым на странице проверки.</span><a href={state.noVncUrl} target="_blank" rel="noreferrer"><ExternalLink />Пройти проверку вручную</a></div>}
       </CardContent></Card>
 
@@ -97,10 +98,11 @@ export default function EchemiPage() {
         <label className="pr-form-field"><span>Incoterm <b>*</b></span><Select selectedKey={delivery.shipmentTerm} onSelectionChange={value => setDelivery(current => ({ ...current, shipmentTerm: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{echemiTerms.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></Select></label>
         <label className="pr-form-field"><span>Страна, ISO alpha-2 <b>*</b></span><Input maxLength={2} value={delivery.country} onChange={event => setDelivery(value => ({ ...value, country: event.target.value.toUpperCase() }))} required /></label>
         <label className="pr-form-field pr-form-field--wide"><span>Пункт назначения <b>*</b></span><Input value={delivery.destination} onChange={event => setDelivery(value => ({ ...value, destination: event.target.value }))} placeholder="Moscow" required /></label>
-        <div className="pr-form-actions"><Button type="submit" isDisabled={!formValid || !canOperateEchemi || prepare.isPending}><FileCheck />{prepare.isPending ? 'Подготовка…' : 'Подготовить форму без отправки'}</Button></div>
+        <div className="pr-form-actions"><Button type="submit" isDisabled={!formValid || !inquiryReady || !canOperateEchemi || prepare.isPending}><FileCheck />{prepare.isPending ? 'Подготовка…' : 'Подготовить форму без отправки'}</Button></div>
       </form></CardContent></Card>}
 
       {state.inquiries.length > 0 && <section className="pr-stack"><div className="pr-section-heading"><div><h2>Подготовленные inquiry</h2><p>Каждая форма имеет стабильный ID, сохранённый payload и отдельные стадии preview, approval и submit.</p></div></div>{state.inquiries.map(inquiry => <Card key={inquiry.inquiryId} className="pr-echemi-inquiry"><CardHeader><div><CardTitle>{inquiry.inquiryId}</CardTitle><span>{inquiry.sellerName || 'Продавец не указан'}</span></div><StatusBadge status={inquiry.status} /></CardHeader><CardContent>
+        {inquiry.status === 'HUMAN_ACTION_REQUIRED' && <Alert><AlertTriangle /><AlertTitle>Требуется проверка на Echemi</AlertTitle><AlertDescription>Браузерная сессия сохранена{inquiry.verificationStage ? ` · этап ${inquiry.verificationStage}` : ''}. Пройдите проверку вручную и повторите preview или отправку.<div className="pr-echemi-alert-actions"><a href={state.noVncUrl} target="_blank" rel="noreferrer"><ExternalLink />Открыть браузер Echemi</a></div></AlertDescription></Alert>}
         {inquiry.staleReason && <Alert><AlertTriangle /><AlertTitle>Черновик устарел</AlertTitle><AlertDescription>{inquiry.staleReason}</AlertDescription></Alert>}
         <DefinitionGrid items={[{ label: 'Продукт', value: inquiry.payload?.product_name }, { label: 'Количество', value: `${inquiry.payload?.quantity} ${inquiry.payload?.unit}` }, { label: 'Доставка', value: `${inquiry.payload?.shipment_term} — ${inquiry.payload?.destination}, ${inquiry.payload?.country}` }, { label: 'Preview', value: inquiry.previewedAt ? new Date(inquiry.previewedAt).toLocaleString('ru-RU') : 'Не выполнен' }]} />
         <details className="pr-echemi-payload"><summary>Точный payload формы</summary><DefinitionGrid items={[{ label: 'Компания', value: inquiry.payload?.company_name }, { label: 'Контакт', value: inquiry.payload?.contact_name }, { label: 'Email', value: inquiry.payload?.email }, { label: 'Телефон', value: `${inquiry.payload?.phone_country} ${inquiry.payload?.phone_number}` }]} /><pre>{inquiry.payload?.description}</pre></details>
