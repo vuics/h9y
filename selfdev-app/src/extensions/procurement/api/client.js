@@ -215,6 +215,22 @@ export const procurementApi = {
     if (useDevFixtures) return fixturePage((await fixtures()).escalations, filters, ['id', 'title', 'cardId', 'cardTitle', 'supplierId', 'supplierName', 'negotiationId', 'proposalId', 'assignedTo'])
     return adaptPage(await request('/escalations', { params: filters, signal }))
   },
+  async escalation(id, signal) {
+    if (useDevFixtures) return (await fixtures()).escalations.find(item => item.id === id) || null
+    return request(`/escalations/${encodeURIComponent(id)}`, { signal })
+  },
+  async claimEscalation(id) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/escalations/${encodeURIComponent(id)}/claim`, { method: 'post' })
+  },
+  async recommendEscalation(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/escalations/${encodeURIComponent(id)}/recommendations`, { method: 'post', data: payload })
+  },
+  async resolveEscalation(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/escalations/${encodeURIComponent(id)}/resolution`, { method: 'post', data: payload })
+  },
   async activity(filters = {}, signal) {
     if (useDevFixtures) return fixturePage((await fixtures()).activity, filters, ['id', 'title', 'description', 'type', 'entityId', 'cardId'])
     return adaptPage(await request('/activity', { params: filters, signal }))

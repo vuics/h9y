@@ -13,5 +13,6 @@ export const procurementKeys = {
   proposal: id => [...procurementKeys.all, 'proposal', id],
   comparison: cardId => [...procurementKeys.all, 'comparison', String(cardId)],
   escalations: filters => [...procurementKeys.all, 'escalations', filters],
+  escalation: id => [...procurementKeys.all, 'escalation', id],
   activity: filters => [...procurementKeys.all, 'activity', filters],
 }

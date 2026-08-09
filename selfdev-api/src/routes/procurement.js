@@ -38,6 +38,7 @@ const writablePaths = {
     /^\/negotiations\/[^/]+\/(?:queue|follow-up)$/,
     /^\/negotiations\/[^/]+\/responses$/,
     /^\/proposals\/[^/]+\/clarification$/,
+    /^\/escalations\/[^/]+\/(?:claim|recommendations|resolution)$/,
   ],
   PATCH: [
     /^\/cards\/[^/]+$/,

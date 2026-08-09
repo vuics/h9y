@@ -15,6 +15,9 @@ export function useProcurementPermissions() {
     canManageNegotiations: set.has('NEGOTIATION_MANAGE'),
     canQueueNegotiations: set.has('NEGOTIATION_QUEUE'),
     canWriteSupplierResponses: set.has('SUPPLIER_RESPONSE_WRITE'),
+    canClaimEscalations: set.has('ESCALATION_CLAIM'),
+    canRecommendEscalations: set.has('ESCALATION_RECOMMEND'),
+    canResolveEscalations: set.has('ESCALATION_RESOLVE'),
     canReadAudit: set.has('AUDIT_READ'),
   }
 }
