@@ -14,7 +14,9 @@ const readablePaths = [
   /^\/cards\/[^/]+\/echemi$/,
   /^\/suppliers(?:\/[^/]+)?$/,
   /^\/negotiations(?:\/[^/]+)?$/,
+  /^\/supplier-response-attachments\/[^/]+$/,
   /^\/proposals(?:\/[^/]+)?$/,
+  /^\/proposals\/export$/,
   /^\/proposals\/compare$/,
   /^\/escalations(?:\/[^/]+)?$/,
   /^\/activity$/,
@@ -34,6 +36,8 @@ const writablePaths = {
     /^\/suppliers\/[^/]+\/contacts$/,
     /^\/negotiations$/,
     /^\/negotiations\/[^/]+\/(?:queue|follow-up)$/,
+    /^\/negotiations\/[^/]+\/responses$/,
+    /^\/proposals\/[^/]+\/clarification$/,
   ],
   PATCH: [
     /^\/cards\/[^/]+$/,
@@ -75,19 +79,40 @@ router.all('*', checkAuth, async (req, res) => {
     return res.status(404).json({ result: 'error', code: 'ENDPOINT_NOT_ALLOWED', message: 'Procurement endpoint is not allow-listed by the gateway.' })
   }
   try {
+    const binaryResponse = req.method === 'GET' && (
+      /^\/supplier-response-attachments\/[^/]+$/.test(req.path) ||
+      req.path === '/proposals/export'
+    )
     const upstream = await axios.request({
       method: req.method,
       url: `${conf.procurement.serviceUrl}${req.path}`,
       params: req.query,
       data: req.method === 'GET' ? undefined : req.body,
       headers: identityHeaders(req.user),
-      timeout: req.path.includes('/echemi')
-        ? conf.procurement.echemiTimeoutMs
-        : conf.procurement.timeoutMs,
+      timeout: req.path.endsWith('/responses')
+        ? conf.procurement.responseTimeoutMs
+        : req.path.includes('/echemi')
+          ? conf.procurement.echemiTimeoutMs
+          : conf.procurement.timeoutMs,
       validateStatus: () => true,
+      ...(binaryResponse ? { responseType: 'arraybuffer' } : {}),
     })
+    if (binaryResponse && upstream.status < 400) {
+      for (const header of ['content-type', 'content-disposition', 'content-length']) {
+        if (upstream.headers[header]) res.set(header, upstream.headers[header])
+      }
+      return res.status(upstream.status).send(upstream.data)
+    }
+    let upstreamData = upstream.data
+    if (binaryResponse && Buffer.isBuffer(upstream.data)) {
+      try {
+        upstreamData = JSON.parse(upstream.data.toString('utf8'))
+      } catch {
+        upstreamData = { detail: { code: 'UPSTREAM_ERROR', message: 'Procurement file request failed.' } }
+      }
+    }
     return res.status(upstream.status).json(
-      normalizeProcurementResponse(upstream.status, upstream.data),
+      normalizeProcurementResponse(upstream.status, upstreamData),
     )
   } catch (error) {
     return res.status(503).json({

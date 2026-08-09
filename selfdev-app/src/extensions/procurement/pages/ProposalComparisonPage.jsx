@@ -1,5 +1,5 @@
 import React from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -7,7 +7,9 @@ import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { StatusBadge } from '../components/StatusBadge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { ArrowLeft, CircleAlert } from '../components/icons'
+import { Button } from '@/components/ui/button'
+import { downloadBlob } from '../api/responses'
+import { ArrowLeft, CircleAlert, FileCheck } from '../components/icons'
 
 const comparisonFields = [
   ['price', 'Цена', row => row.price ? `${row.price} ${row.currency}/${row.priceUnit}` : null],
@@ -23,12 +25,16 @@ export default function ProposalComparisonPage() {
   const [params] = useSearchParams()
   const cardId = params.get('cardId')
   const query = useQuery({ queryKey: procurementKeys.comparison(cardId), queryFn: ({ signal }) => procurementApi.comparison(cardId, signal), enabled: Boolean(cardId) })
+  const exportCsv = useMutation({
+    mutationFn: language => procurementApi.exportSupplierComparison(cardId, language),
+    onSuccess: downloadBlob,
+  })
   if (!cardId) return <EmptyState title="Выберите карточку закупки" description="Откройте предложения нужной карточки и запустите сравнение оттуда." action={<RouterLinkButton to="/procurement/proposals">К предложениям</RouterLinkButton>} />
   if (query.isLoading) return <LoadingState />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   if (!query.data?.rows?.length) return <EmptyState title="Нет предложений для сравнения" />
   const rows = query.data.rows
-  return <div className="pr-stack"><RouterLinkButton to={`/procurement/proposals?cardId=${cardId}`} variant="ghost" size="sm"><ArrowLeft size={15} />Предложения карточки #{cardId}</RouterLinkButton><div className="pr-section-heading"><div><h2>Сравнение предложений</h2><p>Только нормализованные backend-данные; интерфейс не пересчитывает валюты и не ранжирует поставщиков.</p></div></div><Alert><CircleAlert /><AlertTitle>Решение остаётся за специалистом</AlertTitle><AlertDescription>{query.data.decisionNote}</AlertDescription></Alert>
+  return <div className="pr-stack"><RouterLinkButton to={`/procurement/proposals?cardId=${cardId}`} variant="ghost" size="sm"><ArrowLeft size={15} />Предложения карточки #{cardId}</RouterLinkButton><div className="pr-section-heading"><div><h2>Сравнение предложений</h2><p>Только нормализованные backend-данные; интерфейс не пересчитывает валюты и не ранжирует поставщиков.</p></div><div className="pr-inline-actions"><Button variant="outline" isDisabled={exportCsv.isPending} onPress={() => exportCsv.mutate('ru')}><FileCheck />CSV RU</Button><Button variant="outline" isDisabled={exportCsv.isPending} onPress={() => exportCsv.mutate('en')}><FileCheck />CSV EN</Button></div></div>{exportCsv.isError && <Alert><CircleAlert /><AlertTitle>Экспорт не выполнен</AlertTitle><AlertDescription>{exportCsv.error?.response?.data?.message || exportCsv.error?.message}</AlertDescription></Alert>}<Alert><CircleAlert /><AlertTitle>Решение остаётся за специалистом</AlertTitle><AlertDescription>{query.data.decisionNote}</AlertDescription></Alert>
     <div className="pr-comparison-wrap"><table className="pr-comparison"><thead><tr><th>Параметр</th>{rows.map(row => <th key={row.rowKey || row.id}><Link to={`/procurement/proposals/${row.proposalId || row.id}`}>{row.supplierName}</Link><StatusBadge status={row.completeness} compact /></th>)}</tr></thead><tbody>{comparisonFields.map(([key, label, format]) => <tr key={key}><th>{label}</th>{rows.map(row => { const value = format(row); const fieldState = row.fieldStates?.[key] || (value ? 'PRESENT' : 'UNKNOWN'); return <td key={row.rowKey || row.id} className={`pr-comparison__${fieldState.toLowerCase()}`}>{React.isValidElement(value) ? value : <><strong>{value || 'Нет данных'}</strong><StatusBadge status={fieldState} compact />{row.originalValues?.[key] && <small>Исходно: {row.originalValues[key]}</small>}</>}</td>})}</tr>)}</tbody></table></div>
   </div>
 }

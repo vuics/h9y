@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { AlertTriangle, Clock, MessageSquare } from '../components/icons'
+import { AlertTriangle, Clock, FileCheck, MessageSquare } from '../components/icons'
 
 const kindLabels = { system_outbound: 'Сообщение системы', supplier: 'Ответ поставщика', interpretation: 'Интерпретация агента', human: 'Действие специалиста', error: 'Ошибка' }
 const formatDate = value => value ? new Date(value).toLocaleString('ru-RU') : '—'
@@ -26,7 +26,7 @@ function mutationMessage(mutation) {
 export default function NegotiationDetailPage() {
   const { negotiationId } = useParams()
   const queryClient = useQueryClient()
-  const { canQueueNegotiations } = useProcurementPermissions()
+  const { canQueueNegotiations, canWriteSupplierResponses } = useProcurementPermissions()
   const [priority, setPriority] = useState('50')
   const [queueAt, setQueueAt] = useState('')
   const [queueConfirmed, setQueueConfirmed] = useState(false)
@@ -62,7 +62,7 @@ export default function NegotiationDetailPage() {
     {(queue.isError || followUp.isError) && <Alert><AlertTriangle /><AlertTitle>Действие не выполнено</AlertTitle><AlertDescription>{mutationMessage(queue.isError ? queue : followUp)}</AlertDescription></Alert>}
   </>
 
-  return <DetailLayout backTo="/procurement/negotiations" backLabel="Все переговоры" eyebrow={negotiation.id} title={negotiation.supplierName} status={<StatusBadge status={negotiation.status} />} meta={<><Link to={`/procurement/requests/${negotiation.cardId}`}>{negotiation.cardTitle}</Link> · <Link to={`/procurement/suppliers/${negotiation.supplierId}`}>{negotiation.contactName || negotiation.contactId}</Link></>} actions={<RouterLinkButton to={`/chat?context=procurement-negotiation:${negotiation.id}`}><MessageSquare size={16} />Открыть разговор с агентом</RouterLinkButton>} warnings={warnings}>
+  return <DetailLayout backTo="/procurement/negotiations" backLabel="Все переговоры" eyebrow={negotiation.id} title={negotiation.supplierName} status={<StatusBadge status={negotiation.status} />} meta={<><Link to={`/procurement/requests/${negotiation.cardId}`}>{negotiation.cardTitle}</Link> · <Link to={`/procurement/suppliers/${negotiation.supplierId}`}>{negotiation.contactName || negotiation.contactId}</Link></>} actions={<>{canWriteSupplierResponses && <RouterLinkButton variant="outline" to={`/procurement/negotiations/${negotiation.id}/responses/new`}><FileCheck />Обработать ответ</RouterLinkButton>}<RouterLinkButton to={`/chat?context=procurement-negotiation:${negotiation.id}`}><MessageSquare size={16} />Открыть разговор с агентом</RouterLinkButton></>} warnings={warnings}>
     <div className="pr-detail-grid"><Card><CardHeader><CardTitle>Текущее состояние</CardTitle></CardHeader><CardContent><DefinitionGrid items={[{ label: 'Канал', value: negotiation.channel }, { label: 'Контакт', value: negotiation.contactName || negotiation.contactId }, { label: 'Проверка контакта', value: <StatusBadge status={negotiation.contactVerificationStatus || 'UNKNOWN'} /> }, { label: 'Доставка', value: <StatusBadge status={negotiation.lastDispatchStatus || 'UNKNOWN'} /> }, { label: 'Следующее действие', value: nextActionLabel }, { label: 'Время действия', value: formatDate(negotiation.nextActionAt) }, { label: 'Приоритет очереди', value: negotiation.priority ?? '—' }, { label: 'Попыток обработки', value: negotiation.attemptCount ?? 0 }]} /></CardContent></Card>
       <Card><CardHeader><CardTitle>Основание задания</CardTitle></CardHeader><CardContent><DefinitionGrid items={[{ label: 'RFQ', value: negotiation.rfqId || '—' }, { label: 'Полномочия', value: negotiation.authority || 'Безопасные полномочия по умолчанию' }, { label: 'Интервал follow-up', value: negotiation.followUpAfterHours ? `${negotiation.followUpAfterHours} ч` : 'Не задан' }, { label: 'Последняя отправка', value: formatDate(negotiation.lastDispatchAt) }, { label: 'Следующий follow-up', value: formatDate(negotiation.nextFollowUpAt) }]} /></CardContent></Card>
     </div>

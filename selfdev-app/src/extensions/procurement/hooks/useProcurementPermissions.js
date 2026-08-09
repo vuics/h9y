@@ -14,6 +14,7 @@ export function useProcurementPermissions() {
     canReadCommunications: set.has('COMMUNICATION_READ'),
     canManageNegotiations: set.has('NEGOTIATION_MANAGE'),
     canQueueNegotiations: set.has('NEGOTIATION_QUEUE'),
+    canWriteSupplierResponses: set.has('SUPPLIER_RESPONSE_WRITE'),
     canReadAudit: set.has('AUDIT_READ'),
   }
 }

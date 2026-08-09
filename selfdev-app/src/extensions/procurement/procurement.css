@@ -134,6 +134,17 @@
 .pr-negotiation-history > div:first-child { border-top: 0; }
 .pr-negotiation-history strong, .pr-negotiation-history span { display: block; }
 .pr-negotiation-history span, .pr-negotiation-history time { color: var(--pr-muted); font-size: 11px; }
+.pr-upload-list, .pr-attachment-list, .pr-source-references { display: flex; flex-direction: column; gap: 8px; }
+.pr-upload-list > div, .pr-source-references > div { border: 1px solid var(--pr-border); border-radius: 7px; padding: 9px 10px; }
+.pr-upload-list strong, .pr-upload-list span, .pr-source-references strong, .pr-source-references span { display: block; }
+.pr-upload-list span, .pr-source-references span { color: var(--pr-muted); font-size: 11px; margin-top: 2px; }
+.pr-form-error { color: var(--pr-danger); margin: 0; font-size: 12px; }
+.pr-attachment-list { margin-top: 14px; }
+.pr-attachment-list > a { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 10px; border: 1px solid var(--pr-border); border-radius: 7px; padding: 10px; color: inherit; }
+.pr-attachment-list > a:hover { text-decoration: none; border-color: var(--pr-accent); }
+.pr-attachment-list strong, .pr-attachment-list span { display: block; }.pr-attachment-list span { color: var(--pr-muted); font-size: 11px; }
+.pr-inline-actions { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+.pr-source-references code { display: block; color: var(--pr-muted); font-size: 10px; overflow-wrap: anywhere; margin-top: 5px; }
 
 @media (max-width: 1100px) { .pr-kpis { grid-template-columns: repeat(3,1fr); }.pr-stage-board { grid-template-columns: 1fr; }.pr-stage { min-height: auto; }.pr-stage__cards { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }.pr-field-grid { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 760px) { .procurement-shell { padding: 18px 14px 40px; }.pr-workspace-header, .pr-detail__header, .pr-section-heading { flex-direction: column; }.pr-workspace-header [data-slot="button"], .pr-detail__actions [data-slot="button"] { width: 100%; }.pr-kpis { grid-template-columns: repeat(2,1fr); }.pr-overview-grid, .pr-detail-grid { grid-template-columns: 1fr; }.pr-stage__cards { grid-template-columns: 1fr; }.pr-definitions, .pr-field-grid, .pr-documents, .pr-card-form, .pr-operation-fields { grid-template-columns: 1fr; }.pr-form-field--wide, .pr-form-actions { grid-column: auto; }.pr-form-actions { flex-direction: column-reverse; }.pr-form-actions [data-slot="button"] { width: 100%; }.pr-search { min-width: 100%; max-width: none; }.pr-filters [data-slot="select-trigger"] { flex: 1; }.pr-escalation [data-slot="card-content"] { grid-template-columns: 1fr; }.pr-escalation footer { flex-direction: column; gap: 3px; }.pr-message header { flex-direction: column; gap: 3px; }.pr-rfq-confirm-actions, .pr-qualification-control, .pr-echemi-human, .pr-echemi-actions { flex-direction: column; align-items: stretch; }.pr-rfq-markdown { overflow-x: auto; }.pr-rfq-markdown table { min-width: 620px; }.pr-qualification-history > div, .pr-negotiation-history > div { grid-template-columns: 1fr; gap: 4px; }.pr-echemi-toolbar { grid-template-columns: 1fr; }.pr-echemi-candidates > button { grid-template-columns: 26px minmax(0,1fr); }.pr-echemi-candidates [data-slot="badge"] { grid-column: 2; justify-self: start; } }

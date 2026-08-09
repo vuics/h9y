@@ -213,6 +213,19 @@ export interface ProposalDto {
   originalValues?: Record<string, string>
   warnings: string[]
   updatedAt?: string
+  negotiationId?: string
+  attachments?: SupplierResponseAttachmentDto[]
+  sourceReferences?: { sourceId: string; channel: string; receivedAt?: string; sha256: string }[]
+}
+
+export interface SupplierResponseAttachmentDto {
+  id: string
+  filename: string
+  contentType?: string
+  size: number
+  sha256: string
+  status: string
+  recognizedAt?: string
 }
 
 export interface EscalationDto {

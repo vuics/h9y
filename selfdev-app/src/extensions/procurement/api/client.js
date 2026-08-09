@@ -20,7 +20,7 @@ async function request(path, { method = 'get', params, data, signal } = {}) {
     data,
     withCredentials: true,
     signal,
-    timeout: path.includes('/echemi') ? 90000 : 15000,
+    timeout: path.includes('/responses') ? 180000 : path.includes('/echemi') ? 90000 : 15000,
   })
   return response.data
 }
@@ -178,6 +178,26 @@ export const procurementApi = {
   async scheduleNegotiationFollowUp(id, when) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/negotiations/${encodeURIComponent(id)}/follow-up`, { method: 'post', data: { when } })
+  },
+  async ingestSupplierResponse(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/negotiations/${encodeURIComponent(id)}/responses`, { method: 'post', data: payload })
+  },
+  async prepareSupplierClarification(id, language) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/proposals/${encodeURIComponent(id)}/clarification`, { method: 'post', data: { language } })
+  },
+  supplierAttachmentUrl(id) {
+    return `${conf.api.url}/procurement/supplier-response-attachments/${encodeURIComponent(id)}`
+  },
+  async exportSupplierComparison(cardId, language = 'ru') {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    const response = await axios.get(`${conf.api.url}/procurement/proposals/export`, {
+      params: { cardId, language }, withCredentials: true, responseType: 'blob', timeout: 30000,
+    })
+    const disposition = response.headers['content-disposition'] || ''
+    const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] || `supplier-comparison-card-${cardId}-${language}.csv`
+    return { blob: response.data, filename }
   },
   async proposals(filters = {}, signal) {
     if (useDevFixtures) return fixturePage((await fixtures()).proposals, filters, ['id', 'supplierName', 'currency', 'incoterm'])
