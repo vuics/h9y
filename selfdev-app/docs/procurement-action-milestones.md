@@ -22,3 +22,8 @@ services and permissions.
 7. **Echemi assisted workflow.** Search candidates, prepare an inquiry, preview
    the exact browser payload, approve it, and submit only where deployment policy
    explicitly enables submission.
+8. **Bulk card intake.** Upload a substance list in Excel, CSV, Word, PDF or an
+   image, review the detected column mapping and the per-row classification,
+   correct the mapping, then confirm creation with live progress. Rows missing
+   required fields become drafts that cannot produce an RFQ until completed, and
+   PubChem resolution runs as a separate cancellable pass.

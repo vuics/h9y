@@ -17,8 +17,28 @@ test('backend snake case is isolated from presentation models', () => {
     normalizationStatus: undefined,
     supplierCount: undefined,
     proposalCount: undefined,
+    isDraft: false,
+    incompleteFields: [],
+    importId: undefined,
+    importSourceRow: undefined,
     updatedAt: undefined,
   })
+})
+
+test('a bulk-imported draft card exposes its missing fields and provenance', () => {
+  const card = adaptCard({
+    _id: 12,
+    substance_name: 'Zinc ricinoleate',
+    cas_number: null,
+    is_draft: true,
+    incomplete_fields: ['cas_number', 'purity', 'application_area', 'target_volume'],
+    import_id: 'IMP-A1B2C3',
+    import_source_row: { 'Нужен поиск аналога?': 'Да' },
+  })
+  assert.equal(card.isDraft, true)
+  assert.equal(card.incompleteFields.length, 4)
+  assert.equal(card.importId, 'IMP-A1B2C3')
+  assert.equal(card.importSourceRow['Нужен поиск аналога?'], 'Да')
 })
 
 test('supplier adapter preserves contacts, capabilities and qualification audit as navigable models', () => {

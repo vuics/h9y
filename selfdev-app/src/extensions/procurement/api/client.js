@@ -20,7 +20,7 @@ async function request(path, { method = 'get', params, data, signal } = {}) {
     data,
     withCredentials: true,
     signal,
-    timeout: path.includes('/responses') || path.includes('/sourcing') ? 180000 : path.includes('/echemi') ? 90000 : 15000,
+    timeout: path.includes('/responses') || path.includes('/sourcing') ? 180000 : path.startsWith('/card-imports') ? 120000 : path.includes('/echemi') ? 90000 : 15000,
   })
   return response.data
 }
@@ -77,6 +77,34 @@ export const procurementApi = {
   async normalizeCard(id) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return adaptCard(await request(`/cards/${encodeURIComponent(id)}/normalize`, { method: 'post' }))
+  },
+  async cardImports(signal) {
+    if (useDevFixtures) return { items: [] }
+    return request('/card-imports', { signal })
+  },
+  async cardImport(id, signal) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/card-imports/${encodeURIComponent(id)}`, { signal })
+  },
+  async createCardImport(payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request('/card-imports', { method: 'post', data: payload })
+  },
+  async updateCardImportMapping(id, columns) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/card-imports/${encodeURIComponent(id)}/mapping`, { method: 'patch', data: { columns } })
+  },
+  async confirmCardImport(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/card-imports/${encodeURIComponent(id)}/confirm`, { method: 'post', data: payload })
+  },
+  async normalizeCardImport(id) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/card-imports/${encodeURIComponent(id)}/normalize`, { method: 'post' })
+  },
+  async cancelCardImport(id) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/card-imports/${encodeURIComponent(id)}/cancel`, { method: 'post' })
   },
   async rfq(id, signal) {
     if (useDevFixtures) {

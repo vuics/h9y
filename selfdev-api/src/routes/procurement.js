@@ -10,6 +10,7 @@ const router = Router()
 const readablePaths = [
   /^\/overview$/,
   /^\/cards(?:\/[^/]+)?$/,
+  /^\/card-imports(?:\/[^/]+)?$/,
   /^\/cards\/[^/]+\/rfq$/,
   /^\/cards\/[^/]+\/echemi$/,
   /^\/cards\/[^/]+\/echemi\/browser-access$/,
@@ -28,6 +29,8 @@ const readablePaths = [
 const writablePaths = {
   POST: [
     /^\/cards$/,
+    /^\/card-imports$/,
+    /^\/card-imports\/[^/]+\/(?:confirm|normalize|cancel)$/,
     /^\/cards\/[^/]+\/normalize$/,
     /^\/cards\/[^/]+\/rfq\/prepare$/,
     /^\/cards\/[^/]+\/rfq\/approve$/,
@@ -49,6 +52,7 @@ const writablePaths = {
   ],
   PATCH: [
     /^\/cards\/[^/]+$/,
+    /^\/card-imports\/[^/]+\/mapping$/,
     /^\/suppliers\/[^/]+\/contacts\/[^/]+$/,
     /^\/suppliers\/[^/]+\/qualification$/,
   ],
@@ -102,6 +106,8 @@ router.all('*', checkAuth, async (req, res) => {
       headers: identityHeaders(req.user),
       timeout: req.path.endsWith('/responses')
         ? conf.procurement.responseTimeoutMs
+        : req.path.startsWith('/card-imports')
+          ? conf.procurement.importTimeoutMs
         : req.path.includes('/sourcing')
           ? conf.procurement.sourcingTimeoutMs
         : req.path.includes('/echemi')

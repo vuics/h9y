@@ -24,6 +24,10 @@ export function adaptCard(raw = {}) {
     normalizationStatus: raw.normalizationStatus ?? raw.normalization_status,
     supplierCount: raw.supplierCount ?? raw.supplier_count,
     proposalCount: raw.proposalCount ?? raw.proposal_count,
+    isDraft: Boolean(raw.isDraft ?? raw.is_draft),
+    incompleteFields: safeArray(raw.incompleteFields || raw.incomplete_fields),
+    importId: raw.importId ?? raw.import_id,
+    importSourceRow: raw.importSourceRow ?? raw.import_source_row,
     updatedAt: raw.updatedAt ?? raw.updated_at,
   }
 }

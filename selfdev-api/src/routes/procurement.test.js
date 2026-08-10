@@ -52,6 +52,21 @@ test('gateway allow-lists only the deterministic card mutations', () => {
   assert.equal(isAllowedProcurementRequest('POST', '/cards/42/approve-rfq'), false)
 })
 
+test('gateway allow-lists the bulk card import lifecycle', () => {
+  assert.equal(isReadableProcurementPath('/card-imports'), true)
+  assert.equal(isReadableProcurementPath('/card-imports/IMP-A1B2C3D4E5'), true)
+  assert.equal(isAllowedProcurementRequest('POST', '/card-imports'), true)
+  assert.equal(isAllowedProcurementRequest('PATCH', '/card-imports/IMP-1/mapping'), true)
+  assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/confirm'), true)
+  assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/normalize'), true)
+  assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/cancel'), true)
+  // Not exposed: the gateway must not invent an import endpoint.
+  assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/delete'), false)
+  assert.equal(isAllowedProcurementRequest('DELETE', '/card-imports/IMP-1'), false)
+  assert.equal(isAllowedProcurementRequest('PATCH', '/card-imports/IMP-1'), false)
+  assert.equal(isReadableProcurementPath('/card-imports/IMP-1/rows/1/raw'), false)
+})
+
 test('gateway replaces client identity with the authenticated Selfdev user', () => {
   const headers = identityHeaders({
     _id: 'user-42',

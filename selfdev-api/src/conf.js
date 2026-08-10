@@ -170,6 +170,9 @@ const conf = {
     sourcingTimeoutMs: num(process.env.PROCUREMENT_SOURCING_TIMEOUT_MS || 180000),
     echemiTimeoutMs: num(process.env.PROCUREMENT_ECHEMI_TIMEOUT_MS || 90000),
     responseTimeoutMs: num(process.env.PROCUREMENT_RESPONSE_TIMEOUT_MS || 180000),
+    // A bulk import uploads a whole spreadsheet; analysis and card creation run
+    // in the background, so this covers only the upload itself.
+    importTimeoutMs: num(process.env.PROCUREMENT_IMPORT_TIMEOUT_MS || 120000),
   },
 
   // TODO: deprecate
