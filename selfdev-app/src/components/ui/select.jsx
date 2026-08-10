@@ -114,6 +114,12 @@ function SelectPopover({
   placement = "bottom start",
   offset = 4,
   crossOffset = 0,
+  // Non-modal on purpose. A modal popover scroll-locks the page by setting
+  // `overflow: hidden` on <html>, but this app also makes <body> a scroll
+  // container (`body, html { height: 100% }`). The scroll offset is then
+  // counted on both, so opening a select while scrolled down pushed the whole
+  // app twice the scroll distance off-screen and the page went blank.
+  isNonModal = true,
   ...props
 }) {
   return (
@@ -122,8 +128,11 @@ function SelectPopover({
       placement={placement}
       offset={offset}
       crossOffset={crossOffset}
+      isNonModal={isNonModal}
+      // min-w rather than a fixed w: locking the popover to the trigger width
+      // clipped every option label longer than the trigger.
       className={cn(
-        "tw: tw: tw:relative tw:isolate tw:z-50 tw:w-(--trigger-width) tw:min-w-36 tw:origin-(--trigger-anchor-point) tw:overflow-hidden tw:rounded-md tw:bg-popover tw:text-popover-foreground tw:shadow-md tw:ring-1 tw:ring-foreground/10 tw:duration-100 tw:data-entering:animate-in tw:data-entering:fade-in-0 tw:data-entering:zoom-in-95 tw:data-exiting:animate-out tw:data-exiting:fade-out-0 tw:data-exiting:zoom-out-95 tw:data-[placement=bottom]:slide-in-from-top-2 tw:data-[placement=left]:slide-in-from-right-2 tw:data-[placement=right]:slide-in-from-left-2 tw:data-[placement=top]:slide-in-from-bottom-2 tw:**:data-[slot$=-item]:data-focused:bg-foreground/10",
+        "tw: tw: tw:relative tw:isolate tw:z-50 tw:min-w-(--trigger-width) tw:max-w-[min(28rem,calc(100vw-1rem))] tw:origin-(--trigger-anchor-point) tw:overflow-hidden tw:rounded-md tw:bg-popover tw:text-popover-foreground tw:shadow-md tw:ring-1 tw:ring-foreground/10 tw:duration-100 tw:data-entering:animate-in tw:data-entering:fade-in-0 tw:data-entering:zoom-in-95 tw:data-exiting:animate-out tw:data-exiting:fade-out-0 tw:data-exiting:zoom-out-95 tw:data-[placement=bottom]:slide-in-from-top-2 tw:data-[placement=left]:slide-in-from-right-2 tw:data-[placement=right]:slide-in-from-left-2 tw:data-[placement=top]:slide-in-from-bottom-2 tw:**:data-[slot$=-item]:data-focused:bg-foreground/10",
         className
       )}
       {...props}>

@@ -9,8 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertTriangle, ArrowLeft, Flask } from '../components/icons'
+import { SelectField } from '../components/SelectField'
 
 const initial = { casNumber: '', productName: '', source: 'MANUAL', sourceProductId: '', sourceUrl: '', verificationStatus: 'UNVERIFIED' }
 
@@ -46,7 +47,7 @@ export default function SupplierCapabilityFormPage() {
       <label className="pr-form-field"><span>Источник <b>*</b></span><Input value={values.source} onChange={set('source')} placeholder="MANUAL, OFFICIAL_CATALOGUE" required /></label>
       <label className="pr-form-field"><span>ID продукта в источнике</span><Input value={values.sourceProductId} onChange={set('sourceProductId')} /></label>
       <label className="pr-form-field pr-form-field--wide"><span>Ссылка на источник</span><Input value={values.sourceUrl} onChange={set('sourceUrl')} placeholder="https://…" /></label>
-      <label className="pr-form-field"><span>Статус подтверждения</span><Select selectedKey={values.verificationStatus} onSelectionChange={value => setValues(current => ({ ...current, verificationStatus: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{statuses.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></Select></label>
+      <SelectField label="Статус подтверждения" selectedKey={values.verificationStatus} onSelectionChange={value => setValues(current => ({ ...current, verificationStatus: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{statuses.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
       <div className="pr-form-actions"><Button type="button" variant="outline" onPress={() => navigate(`/procurement/suppliers/${supplierId}`)}>Отмена</Button><Button type="submit" isDisabled={!valid || mutation.isPending}><Flask />{mutation.isPending ? 'Сохранение…' : 'Добавить capability'}</Button></div>
     </form></CardContent></Card>
   </div>

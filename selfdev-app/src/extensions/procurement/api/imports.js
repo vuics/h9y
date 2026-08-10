@@ -24,6 +24,18 @@ export const importRowStatusLabels = {
   FAILED: 'Ошибка',
 }
 
+// StatusBadge's shared labels read COMPLETED as "Поиск завершён", which is
+// sourcing wording; an import needs its own.
+export const importStatusLabels = {
+  ANALYZING: 'Разбираем файл',
+  AWAITING_CONFIRMATION: 'Ждёт подтверждения',
+  CREATING: 'Создаём карточки',
+  NORMALIZING: 'Сверяем с PubChem',
+  COMPLETED: 'Импорт завершён',
+  FAILED: 'Импорт не выполнен',
+  CANCELLED: 'Импорт остановлен',
+}
+
 export const importStageLabels = {
   RECOGNIZING: 'Распознаём файл',
   MAPPING: 'Определяем столбцы',

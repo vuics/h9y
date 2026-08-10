@@ -15,8 +15,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertTriangle, Check, ExternalLink, FileCheck, Search } from '../components/icons'
+import { SelectField } from '../components/SelectField'
 
 export default function EchemiPage() {
   const { requestId } = useParams()
@@ -102,8 +103,8 @@ export default function EchemiPage() {
 
       {eligible.length > 0 && <Card><CardHeader><CardTitle>3. Параметры формы Echemi</CardTitle></CardHeader><CardContent><form className="pr-card-form" onSubmit={event => { event.preventDefault(); if (formValid) prepare.mutate() }}>
         <label className="pr-form-field"><span>Количество <b>*</b></span><Input type="number" min="0.000001" step="any" value={delivery.quantity} onChange={event => setDelivery(value => ({ ...value, quantity: event.target.value }))} required /></label>
-        <label className="pr-form-field"><span>Единица <b>*</b></span><Select selectedKey={delivery.unit} onSelectionChange={value => setDelivery(current => ({ ...current, unit: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{echemiUnits.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></Select></label>
-        <label className="pr-form-field"><span>Incoterm <b>*</b></span><Select selectedKey={delivery.shipmentTerm} onSelectionChange={value => setDelivery(current => ({ ...current, shipmentTerm: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{echemiTerms.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></Select></label>
+        <SelectField label="Единица" required selectedKey={delivery.unit} onSelectionChange={value => setDelivery(current => ({ ...current, unit: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{echemiUnits.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
+        <SelectField label="Incoterm" required selectedKey={delivery.shipmentTerm} onSelectionChange={value => setDelivery(current => ({ ...current, shipmentTerm: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{echemiTerms.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
         <label className="pr-form-field"><span>Страна, ISO alpha-2 <b>*</b></span><Input maxLength={2} value={delivery.country} onChange={event => setDelivery(value => ({ ...value, country: event.target.value.toUpperCase() }))} required /></label>
         <label className="pr-form-field pr-form-field--wide"><span>Пункт назначения <b>*</b></span><Input value={delivery.destination} onChange={event => setDelivery(value => ({ ...value, destination: event.target.value }))} placeholder="Moscow" required /></label>
         <div className="pr-form-actions"><Button type="submit" isDisabled={!formValid || !inquiryReady || !canOperateEchemi || prepare.isPending}><FileCheck />{prepare.isPending ? 'Подготовка…' : 'Подготовить форму без отправки'}</Button></div>

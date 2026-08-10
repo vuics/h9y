@@ -8,6 +8,7 @@ import {
   importFieldLabels,
   importFilePayload,
   importRowStatusLabels,
+  importStatusLabels,
   isImportEditable,
   isImportRunning,
   pendingNormalizationCount,
@@ -17,6 +18,7 @@ import {
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { ImportProgress } from '../components/ImportProgress'
 import { ImportMappingEditor } from '../components/ImportMappingEditor'
+import { SelectField } from '../components/SelectField'
 import { StatusBadge } from '../components/StatusBadge'
 import { CopyableId } from '../components/CopyableId'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
@@ -152,7 +154,7 @@ function RecentImports() {
               <Link to={`/procurement/requests/import/${item.id}`}>
                 <strong>{item.filename}</strong>
               </Link>
-              <StatusBadge status={item.status} compact />
+              <StatusBadge status={item.status} label={importStatusLabels[item.status]} compact />
               <span>
                 строк: {item.totalRows} · создано: {item.createdCards}
                 {item.failedRows ? ` · ошибок: ${item.failedRows}` : ''}
@@ -285,7 +287,7 @@ export default function CardImportPage() {
           </p>
         </div>
         <div className="pr-inline-actions">
-          <StatusBadge status={run.status} />
+          <StatusBadge status={run.status} label={importStatusLabels[run.status]} />
           {running && (
             <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}>
               Остановить
@@ -495,24 +497,23 @@ export default function CardImportPage() {
           <CardHeader><CardTitle>Создание карточек</CardTitle></CardHeader>
           <CardContent>
             <div className="pr-card-form">
-              <label className="pr-form-field">
-                <span>Если вещество уже есть в карточке</span>
-                <Select
-                  selectedKey={duplicatePolicy}
-                  onSelectionChange={setDuplicatePolicy}
-                  aria-label="Что делать с дублями"
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem id="SKIP">Пропустить существующие</SelectItem>
-                    <SelectItem id="CREATE">Создать карточку всё равно</SelectItem>
-                  </SelectContent>
-                </Select>
-                <small>
-                  Совпадение определяется по каноническому CAS-номеру, а при его
-                  отсутствии — по нормализованному наименованию.
-                </small>
-              </label>
+              <SelectField
+                label="Если вещество уже есть в карточке"
+                selectedKey={duplicatePolicy}
+                onSelectionChange={setDuplicatePolicy}
+                hint={(
+                  <small>
+                    Совпадение определяется по каноническому CAS-номеру, а при его
+                    отсутствии — по нормализованному наименованию.
+                  </small>
+                )}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem id="SKIP">Пропустить существующие</SelectItem>
+                  <SelectItem id="CREATE">Создать карточку всё равно</SelectItem>
+                </SelectContent>
+              </SelectField>
 
               <Alert className="pr-form-field--wide">
                 <AlertTriangle />

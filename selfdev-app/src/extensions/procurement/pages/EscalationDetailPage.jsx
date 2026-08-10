@@ -12,16 +12,17 @@ import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { AlertTriangle, Check, MessageSquare } from '../components/icons'
+import { SelectField } from '../components/SelectField'
 
 const formatDate = value => value ? new Date(value).toLocaleString('ru-RU') : '—'
 const errorMessage = error => error?.response?.data?.message || error?.message || 'Действие не выполнено.'
 const principalName = principal => principal?.display_name || principal?.principal_key || 'Неизвестный специалист'
 
 function OutcomeSelect({ value, onChange, label }) {
-  return <label className="pr-form-field"><span>{label}</span><Select selectedKey={value} onSelectionChange={onChange}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{escalationOutcomes.map(item => <SelectItem key={item.value} id={item.value}>{item.label}</SelectItem>)}</SelectContent></Select></label>
+  return <SelectField label={label} selectedKey={value} onSelectionChange={onChange}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{escalationOutcomes.map(item => <SelectItem key={item.value} id={item.value}>{item.label}</SelectItem>)}</SelectContent></SelectField>
 }
 
 export default function EscalationDetailPage() {

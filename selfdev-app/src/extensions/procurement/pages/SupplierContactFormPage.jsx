@@ -10,8 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertTriangle, ArrowLeft, MessageSquare } from '../components/icons'
+import { SelectField } from '../components/SelectField'
 
 const initial = { channel: 'email', address: '', name: '', role: '', language: '', timezone: '', source: 'MANUAL', verificationStatus: 'UNVERIFIED', active: 'ACTIVE' }
 const channels = ['email', 'whatsapp', 'xmpp', 'wechat', 'telegram', 'phone']
@@ -66,15 +67,15 @@ export default function SupplierContactFormPage() {
     <div className="pr-section-heading"><div><h2>{editing ? 'Изменение контакта' : 'Новый контакт'}</h2><p>Адрес нормализуется и проверяется сервером. Дубликат канала и адреса не создаёт новую запись.</p></div></div>
     {mutation.isError && <Alert><AlertTriangle /><AlertTitle>Контакт не сохранён</AlertTitle><AlertDescription>{mutation.error?.response?.data?.message || mutation.error?.message}</AlertDescription></Alert>}
     <Card><CardHeader><CardTitle>Контактные данные</CardTitle></CardHeader><CardContent><form className="pr-card-form" onSubmit={event => { event.preventDefault(); if (valid) mutation.mutate() }}>
-      <label className="pr-form-field"><span>Канал <b>*</b></span><Select selectedKey={values.channel} isDisabled={editing} onSelectionChange={value => setValues(current => ({ ...current, channel: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{channels.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></Select></label>
+      <SelectField label="Канал" required selectedKey={values.channel} isDisabled={editing} onSelectionChange={value => setValues(current => ({ ...current, channel: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{channels.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
       <label className="pr-form-field"><span>Адрес / номер <b>*</b></span><Input value={values.address} onChange={set('address')} placeholder={values.channel === 'email' ? 'sales@example.com' : values.channel === 'xmpp' ? 'user@domain' : '+86…'} required /></label>
       <label className="pr-form-field"><span>Имя</span><Input value={values.name} onChange={set('name')} /></label>
       <label className="pr-form-field"><span>Роль</span><Input value={values.role} onChange={set('role')} placeholder="Export manager" /></label>
       <label className="pr-form-field"><span>Язык</span><Input value={values.language} onChange={set('language')} placeholder="ru, en, zh" /></label>
       <label className="pr-form-field"><span>Часовой пояс</span><Input value={values.timezone} onChange={set('timezone')} placeholder="Asia/Shanghai" /></label>
       {!editing && <label className="pr-form-field"><span>Источник</span><Input value={values.source} onChange={set('source')} /></label>}
-      <label className="pr-form-field"><span>Проверка</span><Select selectedKey={values.verificationStatus} isDisabled={!canQualifySuppliers} onSelectionChange={value => setValues(current => ({ ...current, verificationStatus: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{verificationStatuses.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></Select></label>
-      {editing && <label className="pr-form-field"><span>Активность</span><Select selectedKey={values.active} onSelectionChange={value => setValues(current => ({ ...current, active: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem id="ACTIVE">ACTIVE</SelectItem><SelectItem id="INACTIVE">INACTIVE</SelectItem></SelectContent></Select></label>}
+      <SelectField label="Проверка" selectedKey={values.verificationStatus} isDisabled={!canQualifySuppliers} onSelectionChange={value => setValues(current => ({ ...current, verificationStatus: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{verificationStatuses.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
+      {editing && <SelectField label="Активность" selectedKey={values.active} onSelectionChange={value => setValues(current => ({ ...current, active: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem id="ACTIVE">ACTIVE</SelectItem><SelectItem id="INACTIVE">INACTIVE</SelectItem></SelectContent></SelectField>}
       <div className="pr-form-actions"><Button type="button" variant="outline" onPress={() => navigate(`/procurement/suppliers/${supplierId}`)}>Отмена</Button><Button type="submit" isDisabled={!valid || mutation.isPending}><MessageSquare />{mutation.isPending ? 'Сохранение…' : editing ? 'Сохранить контакт' : 'Добавить контакт'}</Button></div>
     </form></CardContent></Card>
   </div>

@@ -18,6 +18,6 @@ export class ProcurementErrorBoundary extends React.Component {
 
   render() {
     if (!this.state.error) return this.props.children
-    return <main className="procurement-shell pr-boundary"><AlertTriangle size={32} /><h1>Procurement временно недоступен</h1><p>Ошибка изолирована внутри рабочего пространства. Остальные разделы приложения продолжают работать.</p><Button onClick={() => { this.setState({ error: null }); window.location.assign('/procurement') }}>Перезагрузить Procurement</Button></main>
+    return <main className="procurement-shell pr-boundary"><AlertTriangle size={32} /><h1>Procurement временно недоступен</h1><p>Ошибка изолирована внутри рабочего пространства. Остальные разделы приложения продолжают работать.</p><Button onPress={() => { this.setState({ error: null }); window.location.assign('/procurement') }}>Перезагрузить Procurement</Button></main>
   }
 }
