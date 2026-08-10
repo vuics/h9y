@@ -314,3 +314,37 @@
 .pr-import-history li:first-child { border-top: 0; padding-top: 0; }
 .pr-import-history li span { color: var(--pr-muted); }
 .pr-import-history li small { margin-left: auto; color: var(--pr-muted); font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------ PubChem verification pass */
+
+.pr-normalization.is-running { border-color: var(--pr-signal-yellow); }
+.pr-normalization [data-slot="card-title"] { display: flex; align-items: center; gap: 8px; }
+
+.pr-normalization__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.pr-normalization__head strong, .pr-normalization__head span { display: block; }
+.pr-normalization__head span { margin-top: 2px; color: var(--pr-muted); font-size: 11px; }
+.pr-normalization__head b { font-size: 20px; font-variant-numeric: tabular-nums; }
+
+.pr-normalization__track { height: 8px; overflow: hidden; border-radius: 999px; background: var(--pr-surface-muted, #eef1f4); margin-top: 11px; }
+.pr-normalization__stack { display: flex; height: 100%; }
+.pr-normalization__stack span { height: 100%; transition: width .4s ease; }
+.pr-normalization__stack .is-good { background: var(--pr-signal-green); }
+.pr-normalization__stack .is-warn { background: var(--pr-signal-yellow); }
+.pr-normalization__stack .is-bad { background: var(--pr-danger); }
+.pr-normalization__stack .is-muted { background: #c3ccd6; }
+.pr-normalization__stack .is-pending { background: repeating-linear-gradient(135deg, #dde3ea 0 6px, #eef1f4 6px 12px); }
+
+.pr-normalization__legend { display: flex; flex-wrap: wrap; gap: 4px 14px; list-style: none; margin: 10px 0 0; padding: 0; }
+.pr-normalization__legend button { display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 999px; background: none; color: var(--pr-muted); padding: 3px 7px; font: inherit; font-size: 11px; cursor: pointer; }
+.pr-normalization__legend button:hover { background: var(--pr-surface-muted, #eef1f4); color: var(--pr-text); }
+.pr-normalization__legend b { color: var(--pr-text); font-variant-numeric: tabular-nums; }
+.pr-normalization__legend li.is-good button { color: var(--pr-signal-green); }
+.pr-normalization__legend li.is-warn button { color: var(--pr-signal-yellow); }
+.pr-normalization__legend li.is-bad button { color: var(--pr-danger); }
+
+.pr-normalization__attention { display: flex; align-items: flex-start; gap: 6px; margin: 11px 0 0; }
+.pr-normalization__attention svg { flex: none; margin-top: 2px; color: var(--pr-signal-yellow); }
+
+.pr-normalization__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 13px; }
+.pr-normalization__actions .pr-note { margin: 0; flex: 1 1 260px; }
+.pr-import-checking { display: inline-flex; align-items: center; gap: 4px; color: var(--pr-muted); font-size: 11px; }

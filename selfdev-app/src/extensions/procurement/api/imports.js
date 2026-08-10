@@ -36,6 +36,14 @@ export const importStatusLabels = {
   CANCELLED: 'Импорт остановлен',
 }
 
+// Mirrors NORMALIZATION_OUTCOMES in card_import/projection.py.
+export const normalizationOutcomeLabels = {
+  NORMALIZED: 'подтверждено',
+  NEEDS_REVIEW: 'расхождение',
+  NOT_FOUND: 'не найдено',
+  FAILED: 'ошибка',
+}
+
 export const importStageLabels = {
   RECOGNIZING: 'Распознаём файл',
   MAPPING: 'Определяем столбцы',

@@ -9,15 +9,16 @@ import {
   importFilePayload,
   importRowStatusLabels,
   importStatusLabels,
+  normalizationOutcomeLabels,
   isImportEditable,
   isImportRunning,
-  pendingNormalizationCount,
   selectableRows,
   validateImportFile,
 } from '../api/imports'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { ImportProgress } from '../components/ImportProgress'
 import { ImportMappingEditor } from '../components/ImportMappingEditor'
+import { NormalizationPanel } from '../components/NormalizationPanel'
 import { SelectField } from '../components/SelectField'
 import { StatusBadge } from '../components/StatusBadge'
 import { CopyableId } from '../components/CopyableId'
@@ -223,7 +224,12 @@ export default function CardImportPage() {
 
   const rows = useMemo(() => {
     const all = run?.rows || []
-    return statusFilter === 'all' ? all : all.filter(row => row.status === statusFilter)
+    if (statusFilter === 'all') return all
+    if (statusFilter.startsWith('NORMALIZATION:')) {
+      const outcome = statusFilter.slice('NORMALIZATION:'.length)
+      return all.filter(row => row.normalizationStatus === outcome)
+    }
+    return all.filter(row => row.status === statusFilter)
   }, [run, statusFilter])
 
   const statusCounts = useMemo(() => {
@@ -232,7 +238,12 @@ export default function CardImportPage() {
     return counts
   }, [run])
 
+  const normalizationCounts = run?.normalization?.counts || {}
+  const normalizationFilters = (run?.normalization?.outcomeOrder || [])
+    .filter(outcome => normalizationCounts[outcome] > 0)
+
   const selectable = selectableRows(run, duplicatePolicy)
+  const normalizationRunning = run?.normalization?.state === 'RUNNING'
   const selectedCount = selectable.filter(row => !deselected.has(row.rowNumber)).length
 
   if (!importId) {
@@ -268,7 +279,6 @@ export default function CardImportPage() {
 
   const editable = isImportEditable(run) && canWriteCards
   const running = isImportRunning(run)
-  const pendingNormalization = pendingNormalizationCount(run)
   const operationError = remap.error || confirm.error || normalize.error || cancel.error
 
   return (
@@ -340,25 +350,15 @@ export default function CardImportPage() {
         </Card>
       )}
 
-      {run.status === 'COMPLETED' && pendingNormalization > 0 && (
-        <Alert>
-          <FileCheck />
-          <AlertTitle>Можно сверить вещества с PubChem</AlertTitle>
-          <AlertDescription>
-            Карточек без сверки: {pendingNormalization}. Проход выполняется в фоне с
-            ограничением частоты запросов и его можно остановить.
-            <div className="pr-inline-actions">
-              <Button
-                variant="outline"
-                isDisabled={normalize.isPending || !canWriteCards}
-                onPress={() => normalize.mutate()}
-              >
-                <Refresh size={15} />Сверить {pendingNormalization} карточек
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+      <NormalizationPanel
+        run={run}
+        canWrite={canWriteCards}
+        isStarting={normalize.isPending}
+        isCancelling={cancel.isPending}
+        onStart={() => normalize.mutate()}
+        onCancel={() => cancel.mutate()}
+        onFilterOutcome={outcome => setStatusFilter(`NORMALIZATION:${outcome}`)}
+      />
 
       {run.summary.created > 0 && (
         <div className="pr-inline-actions">
@@ -385,6 +385,12 @@ export default function CardImportPage() {
                 {Object.entries(statusCounts).map(([status, count]) => (
                   <SelectItem key={status} id={status}>
                     {importRowStatusLabels[status] || status} ({count})
+                  </SelectItem>
+                ))}
+                {normalizationFilters.map(outcome => (
+                  <SelectItem key={outcome} id={`NORMALIZATION:${outcome}`}>
+                    PubChem: {normalizationOutcomeLabels[outcome] || outcome}{' '}
+                    ({normalizationCounts[outcome]})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -459,9 +465,14 @@ export default function CardImportPage() {
                             дубль #{row.duplicateCardId}
                           </Link>
                         )}
-                        {row.normalizationStatus && (
-                          <StatusBadge status={row.normalizationStatus} compact />
-                        )}
+                        {row.normalizationStatus
+                          ? <StatusBadge status={row.normalizationStatus} compact />
+                          : row.createdCardId && normalizationRunning
+                            ? <span className="pr-import-checking">
+                                <Refresh size={12} className="pr-spin" />
+                                сверяем…
+                              </span>
+                            : null}
                         <RowIssues row={row} />
                       </td>
                       {(run.availableFields || []).map(field => (
