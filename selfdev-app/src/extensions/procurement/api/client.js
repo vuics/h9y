@@ -78,6 +78,10 @@ export const procurementApi = {
     if (useDevFixtures) return fixturesAreReadOnly()
     return adaptCard(await request(`/cards/${encodeURIComponent(id)}/normalize`, { method: 'post' }))
   },
+  async overviewBoard({ stage, page, pageSize } = {}, signal) {
+    if (useDevFixtures) return { stages: [], truncated: false }
+    return request('/overview/board', { params: { stage, page, pageSize }, signal })
+  },
   async cardImports(signal) {
     if (useDevFixtures) return { items: [] }
     return request('/card-imports', { signal })

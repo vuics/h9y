@@ -9,6 +9,7 @@ const router = Router()
 
 const readablePaths = [
   /^\/overview$/,
+  /^\/overview\/board$/,
   /^\/cards(?:\/[^/]+)?$/,
   /^\/card-imports(?:\/[^/]+)?$/,
   /^\/cards\/[^/]+\/rfq$/,

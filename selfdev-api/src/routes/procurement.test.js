@@ -52,6 +52,13 @@ test('gateway allow-lists only the deterministic card mutations', () => {
   assert.equal(isAllowedProcurementRequest('POST', '/cards/42/approve-rfq'), false)
 })
 
+test('gateway allow-lists the paged stage board', () => {
+  assert.equal(isReadableProcurementPath('/overview/board'), true)
+  assert.equal(isAllowedProcurementRequest('GET', '/overview/board'), true)
+  assert.equal(isAllowedProcurementRequest('POST', '/overview/board'), false)
+  assert.equal(isReadableProcurementPath('/overview/board/raw'), false)
+})
+
 test('gateway allow-lists the bulk card import lifecycle', () => {
   assert.equal(isReadableProcurementPath('/card-imports'), true)
   assert.equal(isReadableProcurementPath('/card-imports/IMP-A1B2C3D4E5'), true)
