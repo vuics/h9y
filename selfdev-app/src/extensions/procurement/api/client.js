@@ -137,9 +137,24 @@ export const procurementApi = {
     if (useDevFixtures) return (await fixtures()).sourcingFixtureById(runId)
     return request(`/sourcing/${encodeURIComponent(runId)}`, { signal })
   },
-  async startSourcing(id, maxResults = 28) {
+  async startSourcing(id, maxResults = 28, queryTemplateIds) {
     if (useDevFixtures) return fixturesAreReadOnly()
-    return request(`/cards/${encodeURIComponent(id)}/sourcing/runs`, { method: 'post', data: { maxResults } })
+    return request(`/cards/${encodeURIComponent(id)}/sourcing/runs`, {
+      method: 'post',
+      data: queryTemplateIds ? { maxResults, queryTemplateIds } : { maxResults },
+    })
+  },
+  async retrySourcingSource(runId, sourceId) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/sourcing/${encodeURIComponent(runId)}/sources/${encodeURIComponent(sourceId)}/retry`, { method: 'post' })
+  },
+  async sourcingQueryTemplates(signal) {
+    if (useDevFixtures) return (await fixtures()).sourcingQueryTemplates
+    return request('/sourcing/query-templates', { signal })
+  },
+  async saveSourcingQueryTemplates(templates) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request('/sourcing/query-templates', { method: 'put', data: { templates } })
   },
   async addSourcingSource(runId, url) {
     if (useDevFixtures) return fixturesAreReadOnly()

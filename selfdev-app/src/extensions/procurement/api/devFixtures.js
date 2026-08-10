@@ -11,9 +11,9 @@ const sourcingRun = {
   id: 'SRC-1042-DEMO', cardId: 1042, requestedCas: '106-99-0', requestedProductName: '1,3-Butadiene', status: 'COMPLETED',
   queryPlan: ['"106-99-0" manufacturer production capacity', '"1,3-Butadiene" environmental permit plant'],
   sources: [
-    { id: 'SOURCE-1', url: 'https://example.invalid/company/butadiene', finalUrl: 'https://example.invalid/company/butadiene', domain: 'example.invalid', title: 'Jiangsu Meridian Materials — Butadiene', sourceType: 'OFFICIAL_COMPANY', query: '"106-99-0" manufacturer', retrievedAt: ago(3), fetchStatus: 'FETCHED', claimCount: 3, extractionWarnings: [] },
-    { id: 'SOURCE-2', url: 'https://regulator.example.invalid/permit/42', finalUrl: 'https://regulator.example.invalid/permit/42', domain: 'regulator.example.invalid', title: 'Environmental operating permit', sourceType: 'REGULATOR', query: 'butadiene environmental permit', retrievedAt: ago(2), fetchStatus: 'FETCHED', claimCount: 2, extractionWarnings: [] },
-    { id: 'SOURCE-3', url: 'https://market.example.invalid/listing/77', finalUrl: 'https://market.example.invalid/listing/77', domain: 'market.example.invalid', title: 'Butadiene supplier listing', sourceType: 'MARKETPLACE', query: '106-99-0 supplier', retrievedAt: ago(2), fetchStatus: 'FETCHED', claimCount: 1, extractionWarnings: ['Роль продавца не подтверждена независимым источником.'] },
+    { id: 'SOURCE-1', url: 'https://example.invalid/company/butadiene', finalUrl: 'https://example.invalid/company/butadiene', domain: 'example.invalid', title: 'Jiangsu Meridian Materials — Butadiene', sourceType: 'OFFICIAL_COMPANY', query: '"106-99-0" manufacturer', retrievedAt: ago(3), fetchStatus: 'FETCHED', claimCount: 3, extractionWarnings: [], status: 'ANALYZED', retryable: false },
+    { id: 'SOURCE-2', url: 'https://regulator.example.invalid/permit/42', finalUrl: 'https://regulator.example.invalid/permit/42', domain: 'regulator.example.invalid', title: 'Environmental operating permit', sourceType: 'REGULATOR', query: 'butadiene environmental permit', retrievedAt: ago(2), fetchStatus: 'FETCHED', claimCount: 2, extractionWarnings: [], status: 'ANALYZED', retryable: false },
+    { id: 'SOURCE-3', url: 'https://market.example.invalid/listing/77', finalUrl: 'https://market.example.invalid/listing/77', domain: 'market.example.invalid', title: 'Butadiene supplier listing', sourceType: 'MARKETPLACE', query: '106-99-0 supplier', retrievedAt: ago(2), fetchStatus: 'FETCHED', claimCount: 1, extractionWarnings: [], status: 'ANALYZED', retryable: false },
   ],
   candidates: [
     { id: 'CAND-MERIDIAN', name: 'Jiangsu Meridian Materials', aliases: ['Meridian Materials'], country: 'CN', website: 'https://example.invalid/company', role: 'MANUFACTURER', score: 86, preliminaryStatus: 'GREEN', reviewDecision: 'VERIFIED_MANUFACTURER', promotedSupplierId: 'SUP-B72D', reliabilitySignals: ['Точный CAS указан в официальном каталоге', 'Производственная площадка подтверждена разрешением регулятора', 'Заявлена мощность 120 000 тонн в год'], riskSignals: [], evidenceGaps: ['Экспортная лицензия требует актуализации'], sourceIds: ['SOURCE-1', 'SOURCE-2'], evidence: [
@@ -24,7 +24,25 @@ const sourcingRun = {
     { id: 'CAND-TRADING', name: 'Fixture Industrial Trading', aliases: [], country: 'CN', website: 'https://market.example.invalid/listing/77', role: 'UNKNOWN', score: 34, preliminaryStatus: 'RED', reviewDecision: 'UNREVIEWED', reliabilitySignals: ['Найден листинг с точным CAS'], riskSignals: ['Найдена только B2B-площадка', 'Нет подтверждения собственного производства'], evidenceGaps: ['Производственная площадка', 'Мощности', 'Лицензии и разрешения'], sourceIds: ['SOURCE-3'], evidence: [{ id: 'CLAIM-4', category: 'PRODUCT_MATCH', polarity: 'POSITIVE', value: 'Листинг с CAS 106-99-0', quote: 'High purity 1,3-butadiene, CAS 106-99-0 available for export.', sourceId: 'SOURCE-3', sourceUrl: 'https://market.example.invalid/listing/77', sourceType: 'MARKETPLACE', sourceRetrievedAt: ago(2) }], reviewHistory: [] },
   ],
   errors: [], initiatedByPrincipalKey: 'USER:fixture-buyer', createdAt: ago(4), updatedAt: ago(1), completedAt: ago(1), automaticVerification: false,
+  progress: { stage: 'COMPLETED', discoveredSources: 3, processedSources: 3, percent: 100, sourceStatusCounts: { ANALYZED: 3 }, evidenceSources: 3, retryableSources: 0 },
   decisionNote: 'Traffic-light status is preliminary and evidence-based. Only an authorized human review may verify a manufacturer or distributor.',
+}
+
+const defaultQueryTemplates = [
+  '"{cas}" manufacturer producer',
+  '"{name}" manufacturer production plant',
+  '"{cas}" "production capacity"',
+  '"{name}" environmental permit regulator',
+]
+
+export const sourcingQueryTemplates = {
+  templates: defaultQueryTemplates.map((template, index) => ({ id: `QT-FIXTURE-${index}`, template, enabled: true })),
+  variables: ['cas', 'name'],
+  defaultTemplates: defaultQueryTemplates,
+  isDefault: true,
+  updatedAt: null,
+  updatedByPrincipalKey: null,
+  scopeNote: 'The search plan is shared by every procurement card in this installation.',
 }
 
 export function sourcingFixtureForCard(cardId) {

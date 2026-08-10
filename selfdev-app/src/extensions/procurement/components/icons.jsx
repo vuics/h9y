@@ -18,3 +18,6 @@ export const Refresh = props => <Icon {...props}><path d="M20 7v5h-5M4 17v-5h5"/
 export const ExternalLink = props => <Icon {...props}><path d="M14 4h6v6M20 4l-9 9M18 13v7H4V6h7"/></Icon>
 export const ArrowLeft = props => <Icon {...props}><path d="m15 18-6-6 6-6M9 12h11"/></Icon>
 export const Sliders = props => <Icon {...props}><path d="M4 6h16M7 12h10M10 18h4"/></Icon>
+export const Plus = props => <Icon {...props}><path d="M12 5v14M5 12h14" /></Icon>
+export const Trash = props => <Icon {...props}><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"/></Icon>
+export const RotateBack = props => <Icon {...props}><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></Icon>

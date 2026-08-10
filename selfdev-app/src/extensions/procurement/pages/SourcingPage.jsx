@@ -7,6 +7,9 @@ import { procurementKeys } from '../api/queryKeys'
 import { DetailLayout } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge, statusLabel } from '../components/StatusBadge'
+import { SourcingProgress } from '../components/SourcingProgress'
+import { SourcingSourceTable } from '../components/SourcingSourceTable'
+import { QueryPlanPanel } from '../components/QueryPlanPanel'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -70,6 +73,8 @@ export default function SourcingPage() {
   const [reviewDecision, setReviewDecision] = useState('UNDER_REVIEW')
   const [reviewNote, setReviewNote] = useState('')
   const [promotionCandidateId, setPromotionCandidateId] = useState('')
+  const [selectedQueryIds, setSelectedQueryIds] = useState(null)
+  const [retryingSourceId, setRetryingSourceId] = useState('')
 
   const card = useQuery({ queryKey: procurementKeys.card(requestId), queryFn: ({ signal }) => procurementApi.card(requestId, signal) })
   const query = useQuery({
@@ -82,7 +87,28 @@ export default function SourcingPage() {
     if (run?.id) queryClient.setQueryData(procurementKeys.sourcingRun(run.id), run)
     queryClient.invalidateQueries({ queryKey: procurementKeys.card(requestId) })
   }
-  const start = useMutation({ mutationFn: () => procurementApi.startSourcing(requestId, Number(maxResults)), onSuccess: accept })
+  const queryTemplates = useQuery({
+    queryKey: procurementKeys.sourcingQueryTemplates(),
+    queryFn: ({ signal }) => procurementApi.sourcingQueryTemplates(signal),
+  })
+  const templates = queryTemplates.data?.templates || []
+  const effectiveQueryIds = selectedQueryIds ?? templates.filter(item => item.enabled).map(item => item.id)
+  const saveTemplates = useMutation({
+    mutationFn: payload => procurementApi.saveSourcingQueryTemplates(payload),
+    onSuccess: data => {
+      queryClient.setQueryData(procurementKeys.sourcingQueryTemplates(), data)
+      setSelectedQueryIds(null)
+    },
+  })
+  const start = useMutation({
+    mutationFn: () => procurementApi.startSourcing(requestId, Number(maxResults), effectiveQueryIds),
+    onSuccess: accept,
+  })
+  const retrySource = useMutation({
+    mutationFn: sourceId => procurementApi.retrySourcingSource(query.data.id, sourceId),
+    onSuccess: run => { accept(run); setRetryingSourceId('') },
+    onError: () => setRetryingSourceId(''),
+  })
   const addSource = useMutation({
     mutationFn: () => procurementApi.addSourcingSource(query.data.id, sourceUrl.trim()),
     onSuccess: run => { accept(run); setSourceUrl('') },
@@ -110,12 +136,10 @@ export default function SourcingPage() {
   const candidate = useMemo(() => run?.candidates?.find(item => item.id === selectedId), [run, selectedId])
   const sourceMap = useMemo(() => new Map((run?.sources || []).map(item => [item.id, item])), [run])
   const counts = useMemo(() => (run?.candidates || []).reduce((result, item) => ({ ...result, [item.preliminaryStatus]: (result[item.preliminaryStatus] || 0) + 1 }), {}), [run])
-  const operationError = start.error || addSource.error || review.error || promote.error
+  const operationError = start.error || addSource.error || review.error || promote.error || retrySource.error
   const normalized = card.data?.normalizationStatus === 'NORMALIZED'
   const isRunning = run?.status === 'RUNNING'
-  const progress = run?.progress || {}
-  const progressTotal = progress.discoveredSources || 0
-  const progressDone = progress.processedSources || 0
+  const isBusy = isRunning || start.isPending
 
   if (card.isLoading || query.isLoading) return <LoadingState />
   if (card.isError) return <ErrorState error={card.error} onRetry={card.refetch} />
@@ -129,19 +153,18 @@ export default function SourcingPage() {
   </>}>
     <div className="pr-stack">
       <Card className="pr-sourcing-launch"><CardHeader><div><CardTitle>Открытый поиск</CardTitle><p>Сайты производителей, регуляторы, разрешения, мощности, инвестпроекты, новости, каталоги и B2B-площадки.</p></div></CardHeader><CardContent>
-        <div className="pr-sourcing-launch__controls"><label className="pr-form-field"><span>Лимит результатов</span><Select selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['14', '28', '42', '70'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></Select></label><Button isDisabled={!normalized || !canResearchSourcing || start.isPending || run?.status === 'RUNNING'} onPress={() => start.mutate()}>{run ? <Refresh /> : <Search />}{start.isPending ? 'Идёт поиск…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button></div>
+        <div className="pr-sourcing-launch__controls"><label className="pr-form-field"><span>Лимит результатов</span><Select selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))} isDisabled={isBusy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['14', '28', '42', '70'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></Select></label><Button isDisabled={!normalized || !canResearchSourcing || isBusy || !effectiveQueryIds.length} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button></div>
+        <QueryPlanPanel templates={templates} isDefault={queryTemplates.data?.isDefault} selectedIds={effectiveQueryIds} onSelectionChange={(id, checked) => setSelectedQueryIds(current => { const base = current ?? templates.filter(item => item.enabled).map(item => item.id); return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} onSave={async payload => { try { await saveTemplates.mutateAsync(payload); return true } catch { return false } }} onReset={() => saveTemplates.mutate((queryTemplates.data?.defaultTemplates || []).map(template => ({ template, enabled: true })))} isSaving={saveTemplates.isPending} saveError={saveTemplates.error} canEdit={canReviewSourcing} disabled={isBusy} cas={card.data?.casNumber} substanceName={card.data?.substanceName} />
         <p className="pr-note">Новый запуск создаёт отдельный снимок результатов. Система не присваивает статус производителя автоматически.</p>
       </CardContent></Card>
 
       {!run && <EmptyState title="Поиск ещё не запускался" description="После запуска здесь появятся источники, предварительный светофор и подтверждающие цитаты по каждому кандидату." />}
 
       {run && <>
-        {isRunning && <Alert><Search /><AlertTitle>Поиск и анализ выполняются</AlertTitle><AlertDescription>{progress.stage === 'DISCOVERY' ? 'Ищем релевантные открытые источники…' : progress.stage === 'MANUAL_SOURCE' ? 'Загружаем и анализируем добавленный источник…' : `Обработано источников: ${progressDone} из ${progressTotal || '…'}. Результаты появляются по мере готовности.`}</AlertDescription></Alert>}
-        <div className="pr-sourcing-kpis"><div><span>Кандидаты</span><strong>{run.candidates?.length || 0}</strong></div><div className="is-green"><span>Высокая уверенность</span><strong>{counts.GREEN || 0}</strong></div><div className="is-yellow"><span>Нужны доказательства</span><strong>{counts.YELLOW || 0}</strong></div><div className="is-red"><span>Высокий риск</span><strong>{counts.RED || 0}</strong></div><div><span>Источники</span><strong>{run.sources?.length || 0}</strong></div></div>
+        <SourcingProgress run={run} isRunning={isRunning} />
+        <div className="pr-sourcing-kpis"><div className="is-neutral"><span>Кандидаты</span><strong>{run.candidates?.length || 0}</strong></div><div className="is-green"><span>Высокая уверенность</span><strong>{counts.GREEN || 0}</strong></div><div className="is-yellow"><span>Нужны доказательства</span><strong>{counts.YELLOW || 0}</strong></div><div className="is-red"><span>Высокий риск</span><strong>{counts.RED || 0}</strong></div><div className="is-ink"><span>Источники</span><strong>{run.sources?.length || 0}</strong></div></div>
 
         <Alert><AlertTriangle /><AlertTitle>Светофор — предварительная оценка</AlertTitle><AlertDescription>Рейтинг объясняет найденные сигналы, но не является верификацией. Подтвердить роль компании может только уполномоченный специалист после изучения доказательств.</AlertDescription></Alert>
-
-        {run.errors?.length > 0 && <Alert><AlertTriangle /><AlertTitle>Часть источников не обработана</AlertTitle><AlertDescription><ul>{run.errors.map((error, index) => <li key={`${error}-${index}`}>{error}</li>)}</ul></AlertDescription></Alert>}
 
         <div className="pr-sourcing-workbench">
           <Card><CardHeader><CardTitle>Кандидаты</CardTitle><span>{run.candidates?.length || 0} найдено</span></CardHeader><CardContent>{!run.candidates?.length ? <EmptyState title={isRunning ? 'Анализируем источники' : 'Кандидаты не найдены'} description={isRunning ? 'Первые кандидаты появятся здесь сразу после обработки подтверждающего источника.' : 'Добавьте релевантный источник вручную или запустите новый поиск с большим лимитом.'} /> : <div className="pr-sourcing-candidates">{run.candidates.map(item => <button type="button" key={item.id} className={selectedId === item.id ? 'is-selected' : ''} onClick={() => { setSelectedId(item.id); setPromotionCandidateId('') }}><Score candidate={item} /><span><strong>{item.name}</strong><small>{item.country || 'Страна не определена'} · {statusLabel(item.role)}</small><span className="pr-sourcing-badges"><StatusBadge status={item.preliminaryStatus} compact /><StatusBadge status={item.reviewDecision} compact /></span></span></button>)}</div>}</CardContent></Card>
@@ -164,8 +187,8 @@ export default function SourcingPage() {
 
         <Card><CardHeader><div><CardTitle>Источники поиска</CardTitle><p>Сохранённые URL и время получения обеспечивают трассируемость оценки.</p></div><span>{run.sources?.length || 0}</span></CardHeader><CardContent>
           {canResearchSourcing && <form className="pr-sourcing-add-source" onSubmit={event => { event.preventDefault(); if (sourceUrl.trim() && !isRunning) addSource.mutate() }}><label className="pr-form-field"><span>Добавить официальный документ или страницу</span><Input type="url" value={sourceUrl} onChange={event => setSourceUrl(event.target.value)} placeholder="https://company.example/permits/..." isDisabled={isRunning} required /></label><Button type="submit" variant="outline" isDisabled={!sourceUrl.trim() || addSource.isPending || isRunning}>{addSource.isPending ? 'Добавление…' : isRunning ? 'Дождитесь завершения поиска' : 'Добавить и проанализировать'}</Button>{isRunning && <p className="pr-note">Ручной источник можно добавить после текущего запуска, чтобы результаты не перезаписали друг друга.</p>}</form>}
-          {!run.sources?.length ? <EmptyState title={isRunning ? 'Источники обрабатываются' : 'Источники не сохранены'} /> : <div className="pr-sourcing-sources">{run.sources.map(source => <article key={source.id}><div><StatusBadge status={source.sourceType} compact /><strong>{source.title || source.domain}</strong><span>{source.query || 'Добавлен вручную'}</span></div><div><span>{source.claimCount || 0} утверждений · {source.fetchStatus}</span><SourceLink source={source} /></div>{source.extractionWarnings?.length > 0 && <small>{source.extractionWarnings.join(' · ')}</small>}</article>)}</div>}
-          {run.queryPlan?.length > 0 && <details className="pr-sourcing-query-plan"><summary>Показать поисковые запросы ({run.queryPlan.length})</summary><ol>{run.queryPlan.map(queryText => <li key={queryText}>{queryText}</li>)}</ol></details>}
+          <SourcingSourceTable sources={run.sources} onRetry={sourceId => { setRetryingSourceId(sourceId); retrySource.mutate(sourceId) }} retryingId={retryingSourceId} canRetry={canResearchSourcing} isRunning={isRunning} />
+          {run.queryPlan?.length > 0 && <details className="pr-sourcing-query-plan"><summary>Запросы, использованные в этом прогоне ({run.queryPlan.length})</summary><ol>{run.queryPlan.map(queryText => <li key={queryText}><code>{queryText}</code></li>)}</ol></details>}
         </CardContent></Card>
       </>}
     </div>

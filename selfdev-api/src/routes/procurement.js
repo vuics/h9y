@@ -36,6 +36,7 @@ const writablePaths = {
     /^\/cards\/[^/]+\/echemi\/inquiries\/[^/]+\/(?:preview|approve|submit)$/,
     /^\/cards\/[^/]+\/sourcing\/runs$/,
     /^\/sourcing\/[^/]+\/sources$/,
+    /^\/sourcing\/[^/]+\/sources\/[^/]+\/retry$/,
     /^\/sourcing\/[^/]+\/candidates\/[^/]+\/(?:review|promote)$/,
     /^\/suppliers$/,
     /^\/suppliers\/[^/]+\/capabilities$/,
@@ -50,6 +51,9 @@ const writablePaths = {
     /^\/cards\/[^/]+$/,
     /^\/suppliers\/[^/]+\/contacts\/[^/]+$/,
     /^\/suppliers\/[^/]+\/qualification$/,
+  ],
+  PUT: [
+    /^\/sourcing\/query-templates$/,
   ],
 }
 

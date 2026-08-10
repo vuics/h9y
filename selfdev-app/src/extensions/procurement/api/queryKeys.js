@@ -8,6 +8,7 @@ export const procurementKeys = {
   echemiBrowserAccess: id => [...procurementKeys.all, 'echemi-browser-access', String(id)],
   sourcing: id => [...procurementKeys.all, 'sourcing', String(id)],
   sourcingRun: runId => [...procurementKeys.all, 'sourcing-run', String(runId)],
+  sourcingQueryTemplates: () => [...procurementKeys.all, 'sourcing-query-templates'],
   suppliers: filters => [...procurementKeys.all, 'suppliers', filters],
   supplier: id => [...procurementKeys.all, 'supplier', id],
   negotiations: filters => [...procurementKeys.all, 'negotiations', filters],
