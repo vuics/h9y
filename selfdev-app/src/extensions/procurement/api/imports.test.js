@@ -56,6 +56,26 @@ test('the CREATE duplicate policy makes duplicates selectable', () => {
   assert.deepEqual(excludedRows(run(rows, 'CREATE')), [])
 })
 
+test('the policy being chosen wins over the one stored on the run', () => {
+  // Regression: during review the run still carries SKIP, because CREATE is only
+  // stored at confirmation. Reading the stored value meant picking CREATE never
+  // included the duplicates, and they were silently skipped.
+  const rows = [
+    { rowNumber: 2, status: 'READY' },
+    { rowNumber: 4, status: 'DUPLICATE' },
+    { rowNumber: 5, status: 'DUPLICATE' },
+  ]
+  const stored = run(rows, 'SKIP')
+
+  assert.deepEqual(selectableRows(stored).map(row => row.rowNumber), [2])
+  assert.deepEqual(
+    selectableRows(stored, 'CREATE').map(row => row.rowNumber),
+    [2, 4, 5],
+  )
+  assert.deepEqual(excludedRows(stored, 'CREATE'), [])
+  assert.deepEqual(excludedRows(stored, 'SKIP').map(row => row.rowNumber), [4, 5])
+})
+
 test('mapping is editable only while awaiting confirmation', () => {
   assert.equal(isImportEditable({ status: 'AWAITING_CONFIRMATION' }), true)
   for (const status of ['ANALYZING', 'CREATING', 'NORMALIZING', 'COMPLETED', 'FAILED', 'CANCELLED']) {

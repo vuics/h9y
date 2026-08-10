@@ -199,7 +199,7 @@ export default function CardImportPage() {
   })
   const confirm = useMutation({
     mutationFn: () => {
-      const selected = selectableRows(run)
+      const selected = selectableRows(run, duplicatePolicy)
         .filter(row => !deselected.has(row.rowNumber))
         .map(row => row.rowNumber)
       return procurementApi.confirmCardImport(importId, {
@@ -232,7 +232,7 @@ export default function CardImportPage() {
     return counts
   }, [run])
 
-  const selectable = selectableRows(run)
+  const selectable = selectableRows(run, duplicatePolicy)
   const selectedCount = selectable.filter(row => !deselected.has(row.rowNumber)).length
 
   if (!importId) {

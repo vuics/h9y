@@ -63,18 +63,25 @@ export async function importFilePayload(file) {
   return { filename: file.name, data_base64: await fileToBase64(file) }
 }
 
-/** Rows the specialist can choose to import, given the duplicate policy. */
-export function selectableRows(run) {
+/**
+ * Rows the specialist can choose to import.
+ *
+ * `policy` is the duplicate policy about to be applied, which during review is
+ * the specialist's current choice — not `run.duplicatePolicy`, which only holds
+ * what was stored at confirmation time. Reading the stored value here meant
+ * choosing CREATE never actually included the duplicates.
+ */
+export function selectableRows(run, policy = run?.duplicatePolicy) {
   const creatable = new Set(['READY', 'DRAFT'])
   return (run?.rows || []).filter(row =>
     creatable.has(row.status) ||
-    (row.status === 'DUPLICATE' && run?.duplicatePolicy === 'CREATE'),
+    (row.status === 'DUPLICATE' && policy === 'CREATE'),
   )
 }
 
 /** Rows that will not produce a card, with the reason already computed. */
-export function excludedRows(run) {
-  const selectable = new Set(selectableRows(run).map(row => row.rowNumber))
+export function excludedRows(run, policy = run?.duplicatePolicy) {
+  const selectable = new Set(selectableRows(run, policy).map(row => row.rowNumber))
   return (run?.rows || []).filter(row => !selectable.has(row.rowNumber))
 }
 
