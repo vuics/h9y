@@ -40,8 +40,19 @@ const filters = [
 // "Требуют внимания" means the analysis broke, not that the page was irrelevant.
 const isProblem = source => ['EXTRACTION_TIMEOUT', 'EXTRACTION_FAILED', 'BUDGET_EXHAUSTED'].includes(source.status)
 
-export function SourcingSourceTable({ sources = [], onRetry, retryingId, canRetry, isRunning }) {
+export function SourcingSourceTable({ sources = [], engines = [], onRetry, retryingId, canRetry, isRunning }) {
   const [filter, setFilter] = useState('ALL')
+
+  // "openserp:bing" keeps the upstream engine, so match on the prefix too.
+  const engineLabel = useMemo(() => {
+    const byId = new Map(engines.map(engine => [engine.id, engine.label]))
+    return value => {
+      if (!value) return null
+      if (byId.has(value)) return byId.get(value)
+      const [base, upstream] = value.split(':')
+      return byId.has(base) ? `${byId.get(base)} · ${upstream}` : value
+    }
+  }, [engines])
 
   const visible = useMemo(() => sources.filter(source => {
     if (filter === 'ALL') return true
@@ -101,7 +112,7 @@ export function SourcingSourceTable({ sources = [], onRetry, retryingId, canRetr
                       </a>
                       <span title={source.title}>{source.title || 'Без заголовка'}</span>
                       {source.query && <code title="Запрос, который нашёл источник">{source.query}</code>}
-                      {source.engine && <em>Найден движком: {source.engine}</em>}
+                      <em>{source.engine ? `Найден: ${engineLabel(source.engine)}` : 'Движок не записан (прогон до появления учёта)'}</em>
                     </th>
                     <td><StatusBadge status={source.sourceType} compact /></td>
                     <td>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -80,7 +80,7 @@ export default function EchemiPage() {
   const pendingError = search.error || prepare.error || lifecycle.error
   const formValid = selectedProductId && Number(delivery.quantity) > 0 && delivery.destination.trim() && /^[A-Za-z]{2}$/.test(delivery.country.trim())
 
-  return <DetailLayout backTo={`/procurement/requests/${requestId}`} backLabel="К карточке" eyebrow={`Карточка #${state.cardId}`} title="Поиск и RFQ на Echemi" status={<StatusBadge status={state.search.status} />} meta={`CAS ${state.casNumber || '—'} · ${state.targetVolume || 'объём не указан'}`} warnings={<>
+  return <DetailLayout backTo={`/procurement/requests/${requestId}`} backLabel="К карточке" eyebrow={`Карточка #${state.cardId}`} title="Отправка RFQ через Echemi" status={<StatusBadge status={state.search.status} />} meta={`CAS ${state.casNumber || '—'} · ${state.targetVolume || 'объём не указан'}`} warnings={<>
     {!searchReady && <Alert><AlertTriangle /><AlertTitle>Поиск ещё недоступен</AlertTitle><AlertDescription>Сначала нормализуйте карточку: поиск Echemi выполняется по подтверждённому CAS.</AlertDescription></Alert>}
     {searchReady && !inquiryReady && <Alert><AlertTriangle /><AlertTitle>Можно искать, но нельзя готовить inquiry</AlertTitle><AlertDescription>Поиск кандидатов уже доступен. Для подготовки формы требуется отдельно сформировать и явно согласовать RFQ.</AlertDescription></Alert>}
     {!canOperateEchemi && <Alert><AlertTriangle /><AlertTitle>Недостаточно прав</AlertTitle><AlertDescription>Для операций Echemi требуется разрешение ECHEMI_OPERATE.</AlertDescription></Alert>}
@@ -89,8 +89,8 @@ export default function EchemiPage() {
   </>}>
     <div className="pr-stack">
       {canOperateEchemi && <EchemiBrowserAccess access={browserAccess.data} error={browserAccess.error} loading={browserAccess.isLoading} />}
-      <Card><CardHeader><CardTitle>1. Поиск продуктов</CardTitle></CardHeader><CardContent>
-        <p className="pr-note">Поиск выполняется по CAS из нормализованной карточки. Листинги остаются непроверенными кандидатами и не становятся квалифицированными поставщиками автоматически.</p>
+      <Card><CardHeader><CardTitle>1. Выбор листинга для запроса</CardTitle></CardHeader><CardContent>
+        <p className="pr-note">Здесь листинг выбирается только для того, чтобы отправить в него inquiry: площадке нужен конкретный product ID. Поиск и квалификация поставщиков — на <Link to={`/procurement/requests/${requestId}/sourcing`}>единой странице поиска</Link>, где Echemi работает как один из движков наравне с Brave, DDGS и OpenSERP.</p>
         <div className="pr-echemi-toolbar"><DefinitionGrid items={[{ label: 'CAS запроса', value: state.casNumber }, { label: 'Последний поиск', value: state.search.searchedAt ? new Date(state.search.searchedAt).toLocaleString('ru-RU') : 'Не запускался' }]} /><Button isDisabled={!searchReady || !canOperateEchemi || search.isPending} onPress={() => { setOperation(null); search.mutate() }}><Search />{search.isPending ? 'Поиск…' : state.search.status === 'HUMAN_ACTION_REQUIRED' ? 'Повторить после проверки' : 'Найти на Echemi'}</Button></div>
         {state.search.status === 'HUMAN_ACTION_REQUIRED' && <div className="pr-echemi-human"><span>Браузер оставлен открытым на странице проверки.</span><a href={state.noVncUrl} target="_blank" rel="noreferrer"><ExternalLink />Пройти проверку вручную</a></div>}
       </CardContent></Card>
