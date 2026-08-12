@@ -10,6 +10,7 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
+import { WebFormRfq } from '../components/WebFormRfq'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,7 +27,7 @@ function mutationMessage(mutation) {
 export default function NegotiationDetailPage() {
   const { negotiationId } = useParams()
   const queryClient = useQueryClient()
-  const { canQueueNegotiations, canWriteSupplierResponses } = useProcurementPermissions()
+  const { canQueueNegotiations, canWriteSupplierResponses, canManageNegotiations, canOperateEchemi } = useProcurementPermissions()
   const [priority, setPriority] = useState('50')
   const [queueAt, setQueueAt] = useState('')
   const [queueConfirmed, setQueueConfirmed] = useState(false)
@@ -66,6 +67,8 @@ export default function NegotiationDetailPage() {
     <div className="pr-detail-grid"><Card><CardHeader><CardTitle>Текущее состояние</CardTitle></CardHeader><CardContent><DefinitionGrid items={[{ label: 'Канал', value: negotiation.channel }, { label: 'Контакт', value: negotiation.contactName || negotiation.contactId }, { label: 'Проверка контакта', value: <StatusBadge status={negotiation.contactVerificationStatus || 'UNKNOWN'} /> }, { label: 'Доставка', value: <StatusBadge status={negotiation.lastDispatchStatus || 'UNKNOWN'} /> }, { label: 'Следующее действие', value: nextActionLabel }, { label: 'Время действия', value: formatDate(negotiation.nextActionAt) }, { label: 'Приоритет очереди', value: negotiation.priority ?? '—' }, { label: 'Попыток обработки', value: negotiation.attemptCount ?? 0 }]} /></CardContent></Card>
       <Card><CardHeader><CardTitle>Основание задания</CardTitle></CardHeader><CardContent><DefinitionGrid items={[{ label: 'RFQ', value: negotiation.rfqId || '—' }, { label: 'Полномочия', value: negotiation.authority || 'Безопасные полномочия по умолчанию' }, { label: 'Интервал follow-up', value: negotiation.followUpAfterHours ? `${negotiation.followUpAfterHours} ч` : 'Не задан' }, { label: 'Последняя отправка', value: formatDate(negotiation.lastDispatchAt) }, { label: 'Следующий follow-up', value: formatDate(negotiation.nextFollowUpAt) }]} /></CardContent></Card>
     </div>
+
+    <WebFormRfq negotiationId={negotiation.id} canManage={canManageNegotiations} canQueue={canQueueNegotiations} canOperateBrowser={canOperateEchemi} />
 
     {canQueueNegotiations && <div className="pr-detail-grid pr-negotiation-operations"><Card><CardHeader><CardTitle>Очередь отправки</CardTitle></CardHeader><CardContent>
       <p className="pr-note">После постановки в очередь worker сможет отправить согласованный RFQ или выполнить назначенный follow-up. Это отдельное действие с явным подтверждением.</p>

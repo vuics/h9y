@@ -208,6 +208,22 @@ export const procurementApi = {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/sourcing/${encodeURIComponent(runId)}/sources`, { method: 'post', data: { url } })
   },
+  async negotiationWebForm(id, signal) {
+    if (useDevFixtures) return { negotiationId: id, channel: null, request: null }
+    return request(`/negotiations/${encodeURIComponent(id)}/web-form`, { signal })
+  },
+  async prepareNegotiationWebForm(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/negotiations/${encodeURIComponent(id)}/web-form/prepare`, { method: 'post', data: payload })
+  },
+  async previewNegotiationWebForm(id) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/negotiations/${encodeURIComponent(id)}/web-form/preview`, { method: 'post' })
+  },
+  async approveNegotiationWebForm(id, fingerprint) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/negotiations/${encodeURIComponent(id)}/web-form/approve`, { method: 'post', data: { fingerprint } })
+  },
   async reviewSourcingCandidate(runId, candidateId, payload) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/sourcing/${encodeURIComponent(runId)}/candidates/${encodeURIComponent(candidateId)}/review`, { method: 'post', data: payload })

@@ -16,6 +16,7 @@ export const procurementKeys = {
   supplier: id => [...procurementKeys.all, 'supplier', id],
   negotiations: filters => [...procurementKeys.all, 'negotiations', filters],
   negotiation: id => [...procurementKeys.all, 'negotiation', id],
+  negotiationWebForm: id => [...procurementKeys.all, 'negotiation-web-form', String(id)],
   proposals: filters => [...procurementKeys.all, 'proposals', filters],
   proposal: id => [...procurementKeys.all, 'proposal', id],
   comparison: cardId => [...procurementKeys.all, 'comparison', String(cardId)],
