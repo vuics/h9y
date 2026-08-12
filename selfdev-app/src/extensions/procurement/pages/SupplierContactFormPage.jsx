@@ -16,9 +16,7 @@ import { SelectField } from '../components/SelectField'
 
 const initial = { channel: 'email', address: '', name: '', role: '', language: '', timezone: '', source: 'MANUAL', verificationStatus: 'UNVERIFIED', active: 'ACTIVE' }
 const channels = ['email', 'whatsapp', 'xmpp', 'wechat', 'telegram', 'phone', 'web_form']
-const channelHints = {
-  web_form: 'Адрес — ссылка на форму запроса на сайте поставщика. Сохранить можно только сайт, для которого есть проверенный адаптер (например, chemicalbook.com). Запрос по такому контакту готовится и подтверждается в браузерном контуре, а не рассылается воркером.',
-}
+
 
 export default function SupplierContactFormPage() {
   const { supplierId, contactId } = useParams()
@@ -39,6 +37,12 @@ export default function SupplierContactFormPage() {
     })
   }, [contact])
 
+  const adapters = useQuery({
+    queryKey: procurementKeys.webFormAdapters(),
+    queryFn: ({ signal }) => procurementApi.webFormAdapters(signal),
+    enabled: values.channel === 'web_form',
+  })
+  const adapterNames = (adapters.data?.adapters || []).flatMap(item => item.domains).join(' / ')
   const valid = useMemo(() => values.address.trim() && values.channel, [values])
   const mutation = useMutation({
     mutationFn: () => {
@@ -71,8 +75,8 @@ export default function SupplierContactFormPage() {
     {mutation.isError && <Alert><AlertTriangle /><AlertTitle>Контакт не сохранён</AlertTitle><AlertDescription>{mutation.error?.response?.data?.message || mutation.error?.message}</AlertDescription></Alert>}
     <Card><CardHeader><CardTitle>Контактные данные</CardTitle></CardHeader><CardContent><form className="pr-card-form" onSubmit={event => { event.preventDefault(); if (valid) mutation.mutate() }}>
       <SelectField label="Канал" required selectedKey={values.channel} isDisabled={editing} onSelectionChange={value => setValues(current => ({ ...current, channel: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{channels.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
-      {channelHints[values.channel] && <p className="pr-note pr-form-field--wide">{channelHints[values.channel]}</p>}
-      <label className="pr-form-field"><span>Адрес / номер <b>*</b></span><Input value={values.address} onChange={set('address')} placeholder={values.channel === 'email' ? 'sales@example.com' : values.channel === 'xmpp' ? 'user@domain' : '+86…'} required /></label>
+      {values.channel === 'web_form' && <p className="pr-note pr-form-field--wide">URL — ссылка на страницу товара или форму запроса на сайте поставщика. Сохранить можно только сайт, для которого есть проверенный адаптер{adapterNames ? ` (${adapterNames})` : ''}. Запрос по такому контакту готовится и подтверждается в браузерном контуре, а не рассылается воркером.</p>}
+      <label className="pr-form-field"><span>{values.channel === 'web_form' ? 'URL / номер' : 'Адрес / номер'} <b>*</b></span><Input value={values.address} onChange={set('address')} placeholder={values.channel === 'email' ? 'sales@example.com' : values.channel === 'xmpp' ? 'user@domain' : values.channel === 'web_form' ? 'https://www.echemi.com/produce/…' : '+86…'} required /></label>
       <label className="pr-form-field"><span>Имя</span><Input value={values.name} onChange={set('name')} /></label>
       <label className="pr-form-field"><span>Роль</span><Input value={values.role} onChange={set('role')} placeholder="Export manager" /></label>
       <label className="pr-form-field"><span>Язык</span><Input value={values.language} onChange={set('language')} placeholder="ru, en, zh" /></label>

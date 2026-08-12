@@ -20,7 +20,7 @@ async function request(path, { method = 'get', params, data, signal } = {}) {
     data,
     withCredentials: true,
     signal,
-    timeout: path.includes('/responses') || path.includes('/sourcing') ? 180000 : path.startsWith('/card-imports') ? 120000 : path.includes('/echemi') ? 90000 : 15000,
+    timeout: path.includes('/responses') || path.includes('/sourcing') ? 180000 : path.startsWith('/card-imports') ? 120000 : path.includes('/echemi') || path.includes('/web-form/') ? 90000 : 15000,
   })
   return response.data
 }
@@ -207,6 +207,10 @@ export const procurementApi = {
   async addSourcingSource(runId, url) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/sourcing/${encodeURIComponent(runId)}/sources`, { method: 'post', data: { url } })
+  },
+  async webFormAdapters(signal) {
+    if (useDevFixtures) return { adapters: [] }
+    return request('/web-form/adapters', { signal })
   },
   async negotiationWebForm(id, signal) {
     if (useDevFixtures) return { negotiationId: id, channel: null, request: null }

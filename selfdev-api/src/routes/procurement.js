@@ -20,6 +20,7 @@ const readablePaths = [
   /^\/suppliers(?:\/[^/]+)?$/,
   /^\/negotiations(?:\/[^/]+)?$/,
   /^\/negotiations\/[^/]+\/web-form$/,
+  /^\/web-form\/adapters$/,
   /^\/supplier-response-attachments\/[^/]+$/,
   /^\/proposals(?:\/[^/]+)?$/,
   /^\/proposals\/export$/,
@@ -116,7 +117,7 @@ router.all('*', checkAuth, async (req, res) => {
           ? conf.procurement.importTimeoutMs
         : req.path.includes('/sourcing')
           ? conf.procurement.sourcingTimeoutMs
-        : req.path.includes('/echemi')
+        : req.path.includes('/echemi') || req.path.includes('/web-form/')
           ? conf.procurement.echemiTimeoutMs
           : conf.procurement.timeoutMs,
       validateStatus: () => true,

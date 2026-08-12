@@ -68,7 +68,7 @@ export default function NegotiationDetailPage() {
       <Card><CardHeader><CardTitle>Основание задания</CardTitle></CardHeader><CardContent><DefinitionGrid items={[{ label: 'RFQ', value: negotiation.rfqId || '—' }, { label: 'Полномочия', value: negotiation.authority || 'Безопасные полномочия по умолчанию' }, { label: 'Интервал follow-up', value: negotiation.followUpAfterHours ? `${negotiation.followUpAfterHours} ч` : 'Не задан' }, { label: 'Последняя отправка', value: formatDate(negotiation.lastDispatchAt) }, { label: 'Следующий follow-up', value: formatDate(negotiation.nextFollowUpAt) }]} /></CardContent></Card>
     </div>
 
-    <WebFormRfq negotiationId={negotiation.id} canManage={canManageNegotiations} canQueue={canQueueNegotiations} canOperateBrowser={canOperateEchemi} canSubmit={canSubmitEchemi} />
+    <WebFormRfq negotiationId={negotiation.id} cardId={negotiation.cardId} canManage={canManageNegotiations} canQueue={canQueueNegotiations} canOperateBrowser={canOperateEchemi} canSubmit={canSubmitEchemi} />
 
     {canQueueNegotiations && <div className="pr-detail-grid pr-negotiation-operations"><Card><CardHeader><CardTitle>Очередь отправки</CardTitle></CardHeader><CardContent>
       <p className="pr-note">После постановки в очередь worker сможет отправить согласованный RFQ или выполнить назначенный follow-up. Это отдельное действие с явным подтверждением.</p>

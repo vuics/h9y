@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { procurementApi } from '../api/client'
@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { SelectField } from './SelectField'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertTriangle, Check, CircleAlert, ExternalLink, FileCheck, Search } from './icons'
+import { EchemiBrowserAccess } from './EchemiBrowserAccess'
 
 const units = ['G', 'KG', 'MG', 'ML', 'L', 'T', 'MT', '20FCL', '40FCL', 'BOU', 'PCS', 'EA', 'GAL', 'KIT']
 const incoterms = ['EXW', 'FCA', 'FOB', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DDP']
@@ -30,7 +31,7 @@ const capabilityLabels = {
 
 const message = mutation => mutation.error?.response?.data?.message || mutation.error?.message
 
-export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrowser, canSubmit }) {
+export function WebFormRfq({ negotiationId, cardId, canManage, canQueue, canOperateBrowser, canSubmit }) {
   const queryClient = useQueryClient()
   const [form, setForm] = useState({ quantity: '', unit: 'KG', incoterm: 'CIP', destination: 'Moscow', destinationCountry: 'RU', message: '' })
   const [noVncUrl, setNoVncUrl] = useState('')
@@ -40,6 +41,32 @@ export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrows
     queryKey: procurementKeys.negotiationWebForm(negotiationId),
     queryFn: ({ signal }) => procurementApi.negotiationWebForm(negotiationId, signal),
   })
+  // The card and its approved RFQ are what this request must restate, so both
+  // are used as the starting point instead of an empty form.
+  const card = useQuery({ queryKey: procurementKeys.card(cardId), queryFn: ({ signal }) => procurementApi.card(cardId, signal), enabled: Boolean(cardId) })
+  const rfq = useQuery({ queryKey: procurementKeys.rfq(cardId), queryFn: ({ signal }) => procurementApi.rfq(cardId, signal), enabled: Boolean(cardId) })
+  const browserAccess = useQuery({
+    queryKey: procurementKeys.echemiBrowserAccess(cardId),
+    queryFn: ({ signal }) => procurementApi.echemiBrowserAccess(cardId, signal),
+    enabled: Boolean(cardId) && canOperateBrowser,
+    retry: false,
+  })
+
+  const target = card.data?.target
+  // The English body is what a marketplace form expects; its email wrapper is not.
+  const rfqText = rfq.data?.rfq?.english?.bodyMarkdown || rfq.data?.rfq?.english?.emailText || ''
+  useEffect(() => {
+    setForm(current => {
+      if (current.touched) return current
+      const next = { ...current }
+      if (target?.parsed && !current.quantity) {
+        next.quantity = String(target.quantity)
+        if (units.includes(target.unit)) next.unit = target.unit
+      }
+      if (rfqText && !current.message) next.message = rfqText
+      return next
+    })
+  }, [target, rfqText])
   const accept = data => {
     queryClient.setQueryData(procurementKeys.negotiationWebForm(negotiationId), current => ({ ...(current || {}), request: data.request }))
     if (data.noVncUrl) setNoVncUrl(data.noVncUrl)
@@ -68,6 +95,8 @@ export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrows
         {request && <StatusBadge status={request.status} />}
       </CardHeader>
       <CardContent>
+        {canOperateBrowser && <EchemiBrowserAccess access={browserAccess.data} error={browserAccess.error} loading={browserAccess.isLoading} />}
+
         {operationError && (
           <Alert><CircleAlert /><AlertTitle>Операция не выполнена</AlertTitle>
             <AlertDescription>{message(prepare.error ? prepare : preview.error ? preview : approve.error ? approve : submit)}</AlertDescription></Alert>
@@ -85,8 +114,8 @@ export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrows
         {canManage && (
           <form className="pr-card-form" onSubmit={event => { event.preventDefault(); if (formValid) prepare.mutate() }}>
             <label className="pr-form-field"><span>Количество <b>*</b></span>
-              <Input type="number" min="0.000001" step="any" value={form.quantity} onChange={event => setForm(v => ({ ...v, quantity: event.target.value }))} required /></label>
-            <SelectField label="Единица" selectedKey={form.unit} onSelectionChange={value => setForm(v => ({ ...v, unit: value }))}>
+              <Input type="number" min="0.000001" step="any" value={form.quantity} onChange={event => setForm(v => ({ ...v, quantity: event.target.value, touched: true }))} required /></label>
+            <SelectField label="Единица" selectedKey={form.unit} onSelectionChange={value => setForm(v => ({ ...v, unit: value, touched: true }))}>
               <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{units.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
             <SelectField label="Базис" selectedKey={form.incoterm} onSelectionChange={value => setForm(v => ({ ...v, incoterm: value }))}>
               <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{incoterms.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
@@ -95,7 +124,7 @@ export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrows
             <label className="pr-form-field"><span>Страна <b>*</b></span>
               <Input value={form.destinationCountry} maxLength={2} onChange={event => setForm(v => ({ ...v, destinationCountry: event.target.value.toUpperCase() }))} required /></label>
             <label className="pr-form-field pr-form-field--wide"><span>Сообщение <b>*</b></span>
-              <Textarea value={form.message} onChange={event => setForm(v => ({ ...v, message: event.target.value }))} placeholder="Что нужно уточнить: чистота, упаковка, документы, условия оплаты." required /></label>
+              <Textarea value={form.message} onChange={event => setForm(v => ({ ...v, message: event.target.value, touched: true }))} placeholder="Что нужно уточнить: чистота, упаковка, документы, условия оплаты." required /></label>
             <div className="pr-form-actions">
               <Button type="submit" isDisabled={!formValid || prepare.isPending}>
                 <FileCheck />{prepare.isPending ? 'Готовим…' : request ? 'Подготовить заново' : 'Подготовить запрос'}</Button>
