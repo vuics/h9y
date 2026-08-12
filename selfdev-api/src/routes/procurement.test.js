@@ -96,3 +96,26 @@ test('gateway exposes safe user-facing FastAPI errors', () => {
   })
   assert.deepEqual(normalizeProcurementResponse(200, { items: [] }), { items: [] })
 })
+
+test('a FastAPI validation error names the offending field instead of a generic failure', () => {
+  const normalized = normalizeProcurementResponse(422, {
+    detail: [
+      { type: 'extra_forbidden', loc: ['body', 'touched'], msg: 'Extra inputs are not permitted' },
+      { type: 'missing', loc: ['body', 'message'], msg: 'Field required' },
+    ],
+  })
+
+  assert.equal(normalized.code, 'REQUEST_INVALID')
+  assert.match(normalized.message, /touched: Extra inputs are not permitted/)
+  assert.match(normalized.message, /message: Field required/)
+  assert.equal(normalized.details.length, 2)
+})
+
+test('a domain error keeps its own code and message', () => {
+  const normalized = normalizeProcurementResponse(409, {
+    detail: { code: 'RFQ_NOT_PREVIEWED', message: 'Preview the filled form before approving it.' },
+  })
+
+  assert.equal(normalized.code, 'RFQ_NOT_PREVIEWED')
+  assert.equal(normalized.message, 'Preview the filled form before approving it.')
+})

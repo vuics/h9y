@@ -79,6 +79,21 @@ export function isAllowedProcurementRequest(method, path) {
 
 export function normalizeProcurementResponse(status, data) {
   if (status < 400 || !data?.detail || typeof data.detail !== 'object') return data
+  // FastAPI reports request-validation problems as a list. Collapsing that to a
+  // generic message hides which field was wrong, which is exactly what a caller
+  // needs in order to fix the request.
+  if (Array.isArray(data.detail)) {
+    const fields = data.detail.map(item => {
+      const path = (item.loc || []).filter(part => part !== 'body').join('.')
+      return path ? `${path}: ${item.msg}` : item.msg
+    }).filter(Boolean)
+    return {
+      result: 'error',
+      code: 'REQUEST_INVALID',
+      message: fields.length ? `Некорректный запрос — ${fields.join('; ')}` : 'Procurement request failed.',
+      details: data.detail,
+    }
+  }
   return {
     result: 'error',
     code: data.detail.code || 'UPSTREAM_ERROR',

@@ -71,7 +71,19 @@ export function WebFormRfq({ negotiationId, cardId, canManage, canQueue, canOper
     queryClient.setQueryData(procurementKeys.negotiationWebForm(negotiationId), current => ({ ...(current || {}), request: data.request }))
     if (data.noVncUrl) setNoVncUrl(data.noVncUrl)
   }
-  const prepare = useMutation({ mutationFn: () => procurementApi.prepareNegotiationWebForm(negotiationId, { ...form, quantity: Number(form.quantity) }), onSuccess: accept })
+  // `touched` is workspace state, not part of the request: the API forbids
+  // unknown fields, and sending it turned every preparation into a 422.
+  const prepare = useMutation({
+    mutationFn: () => procurementApi.prepareNegotiationWebForm(negotiationId, {
+      quantity: Number(form.quantity),
+      unit: form.unit,
+      incoterm: form.incoterm,
+      destination: form.destination.trim(),
+      destinationCountry: form.destinationCountry.trim().toUpperCase(),
+      message: form.message.trim(),
+    }),
+    onSuccess: accept,
+  })
   const preview = useMutation({ mutationFn: () => procurementApi.previewNegotiationWebForm(negotiationId), onSuccess: accept })
   const approve = useMutation({ mutationFn: () => procurementApi.approveNegotiationWebForm(negotiationId, request.fingerprint), onSuccess: accept })
   const submit = useMutation({
