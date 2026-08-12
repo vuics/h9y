@@ -434,3 +434,7 @@
 
 .pr-web-form__send { border-top: 1px solid var(--pr-border); margin-top: 14px; padding-top: 13px; }
 .pr-web-form__send .pr-inline-actions { justify-content: flex-end; margin-top: 10px; }
+
+.pr-rfq-document [data-slot="card-header"] { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pr-rfq-editor { min-height: 320px; font-family: var(--font-mono, ui-monospace, monospace); font-size: 12.5px; }
+.pr-rfq-short { margin: 0; padding: 12px 14px; border: 1px solid var(--pr-border); border-radius: 8px; background: var(--pr-surface-muted); white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: 13px; }

@@ -43,6 +43,16 @@ export function adaptRFQ(raw = {}) {
       bodyMarkdown: raw.rfq.english.bodyMarkdown ?? raw.rfq.english.body_markdown,
       emailText: raw.rfq.english.emailText ?? raw.rfq.english.email_text,
     },
+    englishShort: raw.rfq.englishShort && {
+      ...raw.rfq.englishShort,
+      bodyMarkdown: raw.rfq.englishShort.bodyMarkdown ?? raw.rfq.englishShort.body_markdown,
+      emailText: raw.rfq.englishShort.emailText ?? raw.rfq.englishShort.email_text,
+    },
+    russianShort: raw.rfq.russianShort && {
+      ...raw.rfq.russianShort,
+      bodyMarkdown: raw.rfq.russianShort.bodyMarkdown ?? raw.rfq.russianShort.body_markdown,
+      emailText: raw.rfq.russianShort.emailText ?? raw.rfq.russianShort.email_text,
+    },
     russian: raw.rfq.russian && {
       ...raw.rfq.russian,
       bodyMarkdown: raw.rfq.russian.bodyMarkdown ?? raw.rfq.russian.body_markdown,

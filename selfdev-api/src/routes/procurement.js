@@ -58,6 +58,7 @@ const writablePaths = {
   ],
   PATCH: [
     /^\/cards\/[^/]+$/,
+    /^\/cards\/[^/]+\/rfq$/,
     /^\/card-imports\/[^/]+\/mapping$/,
     /^\/suppliers\/[^/]+\/contacts\/[^/]+$/,
     /^\/suppliers\/[^/]+$/,

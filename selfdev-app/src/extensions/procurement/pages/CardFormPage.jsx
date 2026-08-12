@@ -91,9 +91,17 @@ export default function CardFormPage() {
         return
       }
       const effects = result.effects || {}
-      setServerNotice(effects.rfqInvalidated
-        ? 'Карточка сохранена. Предыдущий RFQ аннулирован, потому что изменились данные для поставщика.'
-        : 'Карточка сохранена.')
+      // Close the form, but carry the consequence with it: an invalidated RFQ
+      // is exactly what the specialist must not miss.
+      navigate(`/procurement/requests/${card.id}`, {
+        replace: true,
+        state: {
+          notice: effects.rfqInvalidated
+            ? 'Карточка сохранена. Предыдущий RFQ аннулирован, потому что изменились данные для поставщика.'
+            : 'Карточка сохранена.',
+          noticeTone: effects.rfqInvalidated ? 'warning' : 'success',
+        },
+      })
     },
   })
 

@@ -121,6 +121,10 @@ export const procurementApi = {
     if (useDevFixtures) return fixturesAreReadOnly()
     return adaptRFQ(await request(`/cards/${encodeURIComponent(id)}/rfq/prepare`, { method: 'post' }))
   },
+  async editRFQ(id, versions) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptRFQ(await request(`/cards/${encodeURIComponent(id)}/rfq`, { method: 'patch', data: versions }))
+  },
   async approveRFQ(id, documentFingerprint) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return adaptRFQ(await request(`/cards/${encodeURIComponent(id)}/rfq/approve`, {
