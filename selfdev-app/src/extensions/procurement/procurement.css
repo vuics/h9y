@@ -382,3 +382,12 @@
 .pr-engine-picker li:has(input:checked) { border-color: var(--pr-signal-ink); background: var(--pr-surface-muted, #f6f8fa); }
 .pr-engine-picker .pr-note { display: flex; align-items: center; gap: 5px; margin: 10px 0 0; }
 .pr-source-table tbody th em { display: block; margin-top: 2px; color: var(--pr-muted); font-size: 10px; font-style: normal; }
+
+/* Echemi: directory state of each listed seller. */
+.pr-echemi-directory { border-top: 1px solid var(--pr-border); margin-top: 14px; padding-top: 13px; }
+.pr-echemi-directory h4 { margin: 0 0 4px; font-size: 13px; }
+.pr-echemi-directory ul { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pr-echemi-directory li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--pr-border); border-radius: 7px; padding: 7px 11px; }
+.pr-echemi-directory li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-echemi-directory a { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.pr-echemi-directory small { color: var(--pr-muted); white-space: nowrap; }

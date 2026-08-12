@@ -140,6 +140,10 @@ export const procurementApi = {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/cards/${encodeURIComponent(id)}/echemi/search`, { method: 'post' })
   },
+  async registerEchemiSeller(id, productId) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/cards/${encodeURIComponent(id)}/echemi/listings/${encodeURIComponent(productId)}/supplier`, { method: 'post' })
+  },
   async prepareEchemiInquiry(id, payload) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/cards/${encodeURIComponent(id)}/echemi/inquiries`, { method: 'post', data: payload })

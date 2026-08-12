@@ -16,13 +16,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertTriangle, Check, ExternalLink, FileCheck, Search } from '../components/icons'
+import { AlertTriangle, Building, Check, ExternalLink, FileCheck, Search } from '../components/icons'
 import { SelectField } from '../components/SelectField'
 
 export default function EchemiPage() {
   const { requestId } = useParams()
   const queryClient = useQueryClient()
-  const { canOperateEchemi, canSubmitEchemi } = useProcurementPermissions()
+  const { canOperateEchemi, canSubmitEchemi, canWriteSuppliers } = useProcurementPermissions()
   const [selectedProductId, setSelectedProductId] = useState('')
   const [delivery, setDelivery] = useState(initialEchemiDelivery())
   const [operation, setOperation] = useState(null)
@@ -42,6 +42,13 @@ export default function EchemiPage() {
     setOperation(response.operation)
   }
   const search = useMutation({ mutationFn: () => procurementApi.searchEchemi(requestId), onSuccess: accept })
+  const registerSeller = useMutation({
+    mutationFn: productId => procurementApi.registerEchemiSeller(requestId, productId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: procurementKeys.echemi(requestId) })
+      queryClient.invalidateQueries({ queryKey: [...procurementKeys.all, 'suppliers'] })
+    },
+  })
   const prepare = useMutation({
     mutationFn: () => procurementApi.prepareEchemiInquiry(requestId, {
       product_id: selectedProductId, quantity: Number(delivery.quantity), unit: delivery.unit,
@@ -77,7 +84,7 @@ export default function EchemiPage() {
 
   const state = query.data
   const { searchReady, inquiryReady } = echemiReadiness(state.cardStatus, state.rfqStatus)
-  const pendingError = search.error || prepare.error || lifecycle.error
+  const pendingError = search.error || prepare.error || lifecycle.error || registerSeller.error
   const formValid = selectedProductId && Number(delivery.quantity) > 0 && delivery.destination.trim() && /^[A-Za-z]{2}$/.test(delivery.country.trim())
 
   return <DetailLayout backTo={`/procurement/requests/${requestId}`} backLabel="К карточке" eyebrow={`Карточка #${state.cardId}`} title="Отправка RFQ через Echemi" status={<StatusBadge status={state.search.status} />} meta={`CAS ${state.casNumber || '—'} · ${state.targetVolume || 'объём не указан'}`} warnings={<>
@@ -99,6 +106,7 @@ export default function EchemiPage() {
         {eligible.length === 0 ? <EmptyState title="Безопасных кандидатов не найдено" description="Нельзя подготовить inquiry без точного CAS и однозначных product ID, продавца и URL." /> : <div className="pr-echemi-candidates">{eligible.map(item => <button type="button" className={selectedProductId === item.product_id ? 'is-selected' : ''} key={`${item.product_id}-${item.product_url}`} onClick={() => setSelectedProductId(item.product_id)}>
           <span className="pr-echemi-radio">{selectedProductId === item.product_id && <Check />}</span><span><strong>{item.product_name}</strong><small>{item.seller_name || 'Продавец не указан'} · product_id {item.product_id}</small><small>CAS {item.cas_number} · производитель не проверен</small></span><Badge variant="outline">UNVERIFIED</Badge>
         </button>)}</div>}
+        {eligible.length > 0 && <div className="pr-echemi-directory"><h4>Справочник поставщиков</h4><p className="pr-note">Отправка запроса заводит продавца автоматически. До отправки его можно добавить вручную — тогда ответ попадёт в готовую карточку.</p><ul>{eligible.map(item => <li key={`dir-${item.product_id}`}><span>{item.seller_name || 'Продавец не указан'}</span>{item.supplier ? <Link to={`/procurement/suppliers/${item.supplier.id}`}><Building size={13} />{item.supplier.id} · <StatusBadge status={item.supplier.qualificationStatus} compact /></Link> : canWriteSuppliers ? <Button variant="outline" size="sm" isDisabled={registerSeller.isPending} onPress={() => registerSeller.mutate(item.product_id)}><Building size={13} />{registerSeller.isPending && registerSeller.variables === item.product_id ? 'Добавляем…' : 'Добавить в справочник'}</Button> : <small>Нет в справочнике</small>}</li>)}</ul></div>}
       </CardContent></Card>}
 
       {eligible.length > 0 && <Card><CardHeader><CardTitle>3. Параметры формы Echemi</CardTitle></CardHeader><CardContent><form className="pr-card-form" onSubmit={event => { event.preventDefault(); if (formValid) prepare.mutate() }}>
