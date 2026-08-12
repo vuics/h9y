@@ -39,6 +39,7 @@ const writablePaths = {
     /^\/cards\/[^/]+\/echemi\/inquiries$/,
     /^\/cards\/[^/]+\/echemi\/inquiries\/[^/]+\/(?:preview|approve|submit)$/,
     /^\/cards\/[^/]+\/sourcing\/runs$/,
+    /^\/sourcing\/[^/]+\/cancel$/,
     /^\/sourcing\/[^/]+\/sources$/,
     /^\/sourcing\/[^/]+\/sources\/[^/]+\/retry$/,
     /^\/sourcing\/[^/]+\/candidates\/[^/]+\/(?:review|promote)$/,

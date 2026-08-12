@@ -10,7 +10,7 @@ const labels = {
   CREATED: 'Создана', SKIPPED: 'Пропущена', NOT_FOUND: 'Не найдено в PubChem',
   AWAITING_APPROVAL: 'Ждёт согласования', APPROVED: 'Согласовано',
   SOURCING: 'Поиск', NEGOTIATION: 'Переговоры', WAITING_SUPPLIER: 'Ждём поставщика', COMPARISON: 'Сравнение',
-  READY: 'Готово', QUEUED: 'В очереди', IN_PROGRESS: 'В работе', COMPLETE: 'Завершено', FAILED: 'Ошибка', ESCALATED: 'Эскалация', STALE: 'Устарело', CANCELLED: 'Отменено',
+  READY: 'Готово', QUEUED: 'В очереди', IN_PROGRESS: 'В работе', COMPLETE: 'Завершено', FAILED: 'Ошибка', ESCALATED: 'Эскалация', STALE: 'Устарело', CANCELLED: 'Остановлено',
   UNVERIFIED: 'Не проверен', UNDER_REVIEW: 'На проверке', QUALIFIED: 'Квалифицирован', SUSPENDED: 'Приостановлен', REJECTED: 'Отклонён',
   NEEDS_CLARIFICATION: 'Нужно уточнение', CONFLICTING: 'Противоречия', NEEDS_HUMAN_REVIEW: 'Нужен специалист',
   OPEN: 'Открыта', IN_REVIEW: 'На рассмотрении', RECOMMENDED: 'Есть рекомендация', RESOLVED: 'Решена',

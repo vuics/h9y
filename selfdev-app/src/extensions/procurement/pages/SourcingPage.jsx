@@ -10,6 +10,7 @@ import { StatusBadge, statusLabel } from '../components/StatusBadge'
 import { SourcingProgress } from '../components/SourcingProgress'
 import { SourcingSourceTable } from '../components/SourcingSourceTable'
 import { QueryPlanPanel } from '../components/QueryPlanPanel'
+import { EnginePicker } from '../components/EnginePicker'
 import { SelectField } from '../components/SelectField'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -19,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { AlertTriangle, Building, Check, ExternalLink, Refresh, Search } from '../components/icons'
+import { AlertTriangle, Building, Check, CircleAlert, ExternalLink, Refresh, Search } from '../components/icons'
 
 const reviewOptions = [
   ['UNDER_REVIEW', 'Взять на проверку'],
@@ -68,7 +69,7 @@ export default function SourcingPage() {
   const { requestId } = useParams()
   const queryClient = useQueryClient()
   const { canResearchSourcing, canReviewSourcing } = useProcurementPermissions()
-  const [maxResults, setMaxResults] = useState('28')
+  const [maxResults, setMaxResults] = useState('20')
   const [sourceUrl, setSourceUrl] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [reviewDecision, setReviewDecision] = useState('UNDER_REVIEW')
@@ -76,6 +77,7 @@ export default function SourcingPage() {
   const [promotionCandidateId, setPromotionCandidateId] = useState('')
   const [selectedQueryIds, setSelectedQueryIds] = useState(null)
   const [retryingSourceId, setRetryingSourceId] = useState('')
+  const [selectedEngineIds, setSelectedEngineIds] = useState(null)
 
   const card = useQuery({ queryKey: procurementKeys.card(requestId), queryFn: ({ signal }) => procurementApi.card(requestId, signal) })
   const query = useQuery({
@@ -101,8 +103,19 @@ export default function SourcingPage() {
       setSelectedQueryIds(null)
     },
   })
+  const engines = useQuery({
+    queryKey: procurementKeys.sourcingEngines(),
+    queryFn: ({ signal }) => procurementApi.sourcingEngines(signal),
+  })
+  const engineList = engines.data?.engines || []
+  const availableEngineIds = engineList.filter(item => item.available).map(item => item.id)
+  const effectiveEngineIds = (selectedEngineIds ?? availableEngineIds).filter(id => availableEngineIds.includes(id))
   const start = useMutation({
-    mutationFn: () => procurementApi.startSourcing(requestId, Number(maxResults), effectiveQueryIds),
+    mutationFn: () => procurementApi.startSourcing(requestId, Number(maxResults), effectiveQueryIds, effectiveEngineIds),
+    onSuccess: accept,
+  })
+  const cancel = useMutation({
+    mutationFn: () => procurementApi.cancelSourcing(query.data.id),
     onSuccess: accept,
   })
   const retrySource = useMutation({
@@ -137,7 +150,7 @@ export default function SourcingPage() {
   const candidate = useMemo(() => run?.candidates?.find(item => item.id === selectedId), [run, selectedId])
   const sourceMap = useMemo(() => new Map((run?.sources || []).map(item => [item.id, item])), [run])
   const counts = useMemo(() => (run?.candidates || []).reduce((result, item) => ({ ...result, [item.preliminaryStatus]: (result[item.preliminaryStatus] || 0) + 1 }), {}), [run])
-  const operationError = start.error || addSource.error || review.error || promote.error || retrySource.error
+  const operationError = start.error || addSource.error || review.error || promote.error || retrySource.error || cancel.error
   const normalized = card.data?.normalizationStatus === 'NORMALIZED'
   const isRunning = run?.status === 'RUNNING'
   const isBusy = isRunning || start.isPending
@@ -154,7 +167,8 @@ export default function SourcingPage() {
   </>}>
     <div className="pr-stack">
       <Card className="pr-sourcing-launch"><CardHeader><div><CardTitle>Открытый поиск</CardTitle><p>Сайты производителей, регуляторы, разрешения, мощности, инвестпроекты, новости, каталоги и B2B-площадки.</p></div></CardHeader><CardContent>
-        <div className="pr-sourcing-launch__controls"><SelectField label="Лимит результатов" selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))} isDisabled={isBusy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['14', '28', '42', '70'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField><Button isDisabled={!normalized || !canResearchSourcing || isBusy || !effectiveQueryIds.length} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button></div>
+        <div className="pr-sourcing-launch__controls"><SelectField label="Лимит результатов" selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))} isDisabled={isBusy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['10', '20', '50', '100'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField><Button isDisabled={!normalized || !canResearchSourcing || isBusy || !effectiveQueryIds.length || !effectiveEngineIds.length} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button>{isRunning && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить поиск'}</Button>}</div>
+        <EnginePicker engines={engineList} selectedIds={effectiveEngineIds} disabled={isBusy} onToggle={(id, checked) => setSelectedEngineIds(current => { const base = current ?? availableEngineIds; return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} />
         <QueryPlanPanel templates={templates} isDefault={queryTemplates.data?.isDefault} selectedIds={effectiveQueryIds} onSelectionChange={(id, checked) => setSelectedQueryIds(current => { const base = current ?? templates.filter(item => item.enabled).map(item => item.id); return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} onSave={async payload => { try { await saveTemplates.mutateAsync(payload); return true } catch { return false } }} onReset={() => saveTemplates.mutate((queryTemplates.data?.defaultTemplates || []).map(template => ({ template, enabled: true })))} isSaving={saveTemplates.isPending} saveError={saveTemplates.error} canEdit={canReviewSourcing} disabled={isBusy} cas={card.data?.casNumber} substanceName={card.data?.substanceName} />
         <p className="pr-note">Новый запуск создаёт отдельный снимок результатов. Система не присваивает статус производителя автоматически.</p>
       </CardContent></Card>

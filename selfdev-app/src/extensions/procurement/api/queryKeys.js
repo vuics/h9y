@@ -11,6 +11,7 @@ export const procurementKeys = {
   sourcing: id => [...procurementKeys.all, 'sourcing', String(id)],
   sourcingRun: runId => [...procurementKeys.all, 'sourcing-run', String(runId)],
   sourcingQueryTemplates: () => [...procurementKeys.all, 'sourcing-query-templates'],
+  sourcingEngines: () => [...procurementKeys.all, 'sourcing-engines'],
   suppliers: filters => [...procurementKeys.all, 'suppliers', filters],
   supplier: id => [...procurementKeys.all, 'supplier', id],
   negotiations: filters => [...procurementKeys.all, 'negotiations', filters],

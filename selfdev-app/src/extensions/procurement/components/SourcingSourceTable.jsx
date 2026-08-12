@@ -101,6 +101,7 @@ export function SourcingSourceTable({ sources = [], onRetry, retryingId, canRetr
                       </a>
                       <span title={source.title}>{source.title || 'Без заголовка'}</span>
                       {source.query && <code title="Запрос, который нашёл источник">{source.query}</code>}
+                      {source.engine && <em>Найден движком: {source.engine}</em>}
                     </th>
                     <td><StatusBadge status={source.sourceType} compact /></td>
                     <td>

@@ -1,0 +1,10 @@
+# The Dockerfile runs `npm install` and then `COPY . .`, so a node_modules built
+# on a developer machine would overwrite the image's own install with binaries
+# for the wrong platform.
+node_modules
+.git
+.gitignore
+.DS_Store
+*.log
+npm-debug.log*
+coverage

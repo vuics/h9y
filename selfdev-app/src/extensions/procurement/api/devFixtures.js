@@ -45,6 +45,16 @@ export const sourcingQueryTemplates = {
   scopeNote: 'The search plan is shared by every procurement card in this installation.',
 }
 
+export const sourcingEngines = {
+  engines: [
+    { id: 'brave', label: 'Brave Search', kind: 'WEB_SEARCH', available: true, detail: 'Готов к работе.' },
+    { id: 'ddgs', label: 'DuckDuckGo (ddgs)', kind: 'WEB_SEARCH', available: true, detail: 'Не требует ключа API.' },
+    { id: 'openserp', label: 'OpenSERP', kind: 'WEB_SEARCH', available: false, detail: 'Не задан OPENSERP_BASE_URL.' },
+  ],
+  configuredBy: 'SOURCING_SEARCH_ENGINES',
+  scopeNote: 'Which engines exist is a deployment decision; which of them a run uses is chosen per run.',
+}
+
 export function sourcingFixtureForCard(cardId) {
   return String(cardId) === String(sourcingRun.cardId) ? sourcingRun : null
 }

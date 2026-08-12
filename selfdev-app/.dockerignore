@@ -1,0 +1,13 @@
+# The Dockerfile runs `npm install` and then `COPY . .`, so anything built on a
+# developer machine would overwrite the image's own install. A macOS
+# node_modules copied over a linux image replaces esbuild with a Mach-O binary
+# and the dev server dies with "The service is no longer running".
+node_modules
+dist
+.git
+.gitignore
+.DS_Store
+*.log
+npm-debug.log*
+.vite
+coverage

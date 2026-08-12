@@ -8,6 +8,7 @@ const stageLabels = {
   COMPLETED: 'Поиск завершён',
   FAILED: 'Поиск остановлен',
   INTERRUPTED: 'Прогон прерван',
+  CANCELLED: 'Поиск остановлен пользователем',
 }
 
 // Ordered so the bar always reads left-to-right from useful to unusable.

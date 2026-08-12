@@ -169,12 +169,24 @@ export const procurementApi = {
     if (useDevFixtures) return (await fixtures()).sourcingFixtureById(runId)
     return request(`/sourcing/${encodeURIComponent(runId)}`, { signal })
   },
-  async startSourcing(id, maxResults = 28, queryTemplateIds) {
+  async startSourcing(id, maxResults = 20, queryTemplateIds, engineIds) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/cards/${encodeURIComponent(id)}/sourcing/runs`, {
       method: 'post',
-      data: queryTemplateIds ? { maxResults, queryTemplateIds } : { maxResults },
+      data: {
+        maxResults,
+        ...(queryTemplateIds ? { queryTemplateIds } : {}),
+        ...(engineIds ? { engineIds } : {}),
+      },
     })
+  },
+  async cancelSourcing(runId) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/sourcing/${encodeURIComponent(runId)}/cancel`, { method: 'post' })
+  },
+  async sourcingEngines(signal) {
+    if (useDevFixtures) return (await fixtures()).sourcingEngines
+    return request('/sourcing/engines', { signal })
   },
   async retrySourcingSource(runId, sourceId) {
     if (useDevFixtures) return fixturesAreReadOnly()
