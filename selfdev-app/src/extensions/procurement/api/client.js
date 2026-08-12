@@ -224,6 +224,10 @@ export const procurementApi = {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/negotiations/${encodeURIComponent(id)}/web-form/approve`, { method: 'post', data: { fingerprint } })
   },
+  async submitNegotiationWebForm(id) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return request(`/negotiations/${encodeURIComponent(id)}/web-form/submit`, { method: 'post' })
+  },
   async reviewSourcingCandidate(runId, candidateId, payload) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return request(`/sourcing/${encodeURIComponent(runId)}/candidates/${encodeURIComponent(candidateId)}/review`, { method: 'post', data: payload })

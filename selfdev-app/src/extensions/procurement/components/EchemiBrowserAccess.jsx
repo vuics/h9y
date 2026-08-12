@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, LinkButton } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, Check, Copy, ExternalLink } from './icons'
 
@@ -31,7 +31,7 @@ export function EchemiBrowserAccess({ access, error, loading }) {
             ? <div className="pr-echemi-password"><span>Пароль x11vnc</span><code>{access.password}</code><Button variant="outline" onPress={copyPassword}>{copied ? <Check /> : <Copy />}{copied ? 'Скопировано' : 'Копировать'}</Button></div>
             : <Badge variant="outline">Пароль не требуется</Badge>}
         </div>
-        <a className="pr-echemi-browser-link" href={access.url} target="_blank" rel="noreferrer"><ExternalLink />Открыть браузер Echemi</a>
+        <LinkButton href={access.url} target="_blank" rel="noreferrer"><ExternalLink />Открыть браузер Echemi</LinkButton>
       </div>}
     </CardContent>
   </Card>

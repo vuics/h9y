@@ -5,7 +5,7 @@ import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import { StatusBadge } from './StatusBadge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import { Button, LinkButton } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -30,10 +30,11 @@ const capabilityLabels = {
 
 const message = mutation => mutation.error?.response?.data?.message || mutation.error?.message
 
-export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrowser }) {
+export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrowser, canSubmit }) {
   const queryClient = useQueryClient()
   const [form, setForm] = useState({ quantity: '', unit: 'KG', incoterm: 'CIP', destination: 'Moscow', destinationCountry: 'RU', message: '' })
   const [noVncUrl, setNoVncUrl] = useState('')
+  const [confirmSend, setConfirmSend] = useState(false)
 
   const query = useQuery({
     queryKey: procurementKeys.negotiationWebForm(negotiationId),
@@ -46,11 +47,15 @@ export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrows
   const prepare = useMutation({ mutationFn: () => procurementApi.prepareNegotiationWebForm(negotiationId, { ...form, quantity: Number(form.quantity) }), onSuccess: accept })
   const preview = useMutation({ mutationFn: () => procurementApi.previewNegotiationWebForm(negotiationId), onSuccess: accept })
   const approve = useMutation({ mutationFn: () => procurementApi.approveNegotiationWebForm(negotiationId, request.fingerprint), onSuccess: accept })
+  const submit = useMutation({
+    mutationFn: () => procurementApi.submitNegotiationWebForm(negotiationId),
+    onSuccess: data => { accept(data); setConfirmSend(false) },
+  })
 
   if (query.data && query.data.channel !== 'web_form') return null
 
   const request = query.data?.request
-  const operationError = prepare.error || preview.error || approve.error
+  const operationError = prepare.error || preview.error || approve.error || submit.error
   const formValid = Number(form.quantity) > 0 && form.destination.trim() && /^[A-Za-z]{2}$/.test(form.destinationCountry) && form.message.trim()
 
   return (
@@ -65,7 +70,7 @@ export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrows
       <CardContent>
         {operationError && (
           <Alert><CircleAlert /><AlertTitle>Операция не выполнена</AlertTitle>
-            <AlertDescription>{message(prepare.error ? prepare : preview.error ? preview : approve)}</AlertDescription></Alert>
+            <AlertDescription>{message(prepare.error ? prepare : preview.error ? preview : approve.error ? approve : submit)}</AlertDescription></Alert>
         )}
 
         {request?.unmappedCapabilities?.length > 0 && (
@@ -127,16 +132,38 @@ export function WebFormRfq({ negotiationId, canManage, canQueue, canOperateBrows
                 <Button isDisabled={request.status !== 'PREVIEWED' || approve.isPending} onPress={() => approve.mutate()}>
                   <Check />{approve.isPending ? 'Подтверждаем…' : 'Подтвердить проверенный запрос'}</Button>
               )}
-              {noVncUrl && <a className="pr-echemi-browser-link" href={noVncUrl} target="_blank" rel="noreferrer"><ExternalLink />Открыть браузер</a>}
+              {noVncUrl && <LinkButton variant="outline" href={noVncUrl} target="_blank" rel="noreferrer"><ExternalLink />Открыть браузер</LinkButton>}
             </div>
 
             {request.status === 'APPROVED' && (
-              <Alert><AlertTriangle /><AlertTitle>Подтверждено, но не отправлено</AlertTitle>
-                <AlertDescription>
-                  {request.submissionAllowed
-                    ? 'Отправка для этого сайта включена.'
-                    : 'Автоматическая отправка для этого сайта выключена. Отправьте проверенную форму вручную через браузер.'}
-                </AlertDescription></Alert>
+              <div className="pr-web-form__send">
+                {request.submissionAllowed && canSubmit
+                  ? confirmSend
+                    ? <>
+                        <Alert><AlertTriangle /><AlertTitle>Отправка необратима</AlertTitle>
+                          <AlertDescription>
+                            Запрос уйдёт компании «{request.recipientCompany}» на {request.adapterId}.
+                            Форма будет заполнена и сверена заново непосредственно перед нажатием.
+                          </AlertDescription></Alert>
+                        <div className="pr-inline-actions">
+                          <Button variant="outline" isDisabled={submit.isPending} onPress={() => setConfirmSend(false)}>Отмена</Button>
+                          <Button isDisabled={submit.isPending} onPress={() => submit.mutate()}>
+                            {submit.isPending ? 'Отправляем…' : 'Отправить запрос'}</Button>
+                        </div>
+                      </>
+                    : <Button onPress={() => setConfirmSend(true)}>Отправить запрос поставщику</Button>
+                  : <Alert><AlertTriangle /><AlertTitle>Подтверждено, но не отправлено</AlertTitle>
+                      <AlertDescription>
+                        {!request.submissionAllowed
+                          ? `Автоматическая отправка для этого сайта выключена. Отправьте проверенную форму вручную через браузер.`
+                          : 'Для отправки требуется разрешение ECHEMI_SUBMIT.'}
+                      </AlertDescription></Alert>}
+              </div>
+            )}
+
+            {request.status === 'SUBMITTED' && (
+              <Alert><Check /><AlertTitle>Запрос отправлен</AlertTitle>
+                <AlertDescription>Получатель: {request.recipientCompany}. Ответ придёт по обычному каналу и попадёт в эту карточку.</AlertDescription></Alert>
             )}
           </div>
         )}
