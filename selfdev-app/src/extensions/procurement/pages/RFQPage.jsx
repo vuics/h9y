@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AlertTriangle, Check, FileCheck, Refresh, Sliders } from '../components/icons'
+import { AlertTriangle, Check, FileCheck, Refresh, Search, Sliders } from '../components/icons'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 
 function message(error) {
@@ -143,7 +143,7 @@ export default function RFQPage() {
     setReviewed(current => new Set([...current, value]))
   }
 
-  const actions = hasRFQ ? <>{canWriteCards && <Button variant="outline" isDisabled={prepare.isPending || approve.isPending} onPress={() => setConfirmRegenerate(true)}><Refresh />Сформировать заново</Button>}{isApproved && <RouterLinkButton to={`/procurement/requests/${requestId}/echemi`}>Перейти к Echemi</RouterLinkButton>}</> : null
+  const actions = hasRFQ ? <>{canWriteCards && <Button variant="outline" isDisabled={prepare.isPending || approve.isPending} onPress={() => setConfirmRegenerate(true)}><Refresh />Сформировать заново</Button>}{isApproved && <RouterLinkButton to={`/procurement/requests/${requestId}/sourcing`}><Search />Поиск поставщиков</RouterLinkButton>}</> : null
 
   return <DetailLayout
     backTo={`/procurement/requests/${requestId}`}
@@ -174,7 +174,7 @@ export default function RFQPage() {
         { label: 'Согласован', value: document.approvedAt ? new Date(document.approvedAt).toLocaleString('ru-RU') : 'Нет' },
       ]} /></CardContent></Card>
 
-      {isApproved && <Alert><FileCheck /><AlertTitle>RFQ согласован</AlertTitle><AlertDescription>Согласована именно эта сохранённая двуязычная версия. Документ ещё не отправлен поставщику.</AlertDescription></Alert>}
+      {isApproved && <Alert><FileCheck /><AlertTitle>RFQ согласован</AlertTitle><AlertDescription>Согласованы именно эти сохранённые версии. Документ ещё не отправлен поставщику — следующий шаг найти поставщиков и создать переговоры.</AlertDescription></Alert>}
 
       <Tabs selectedKey={activeTab} onSelectionChange={chooseLanguage}>
         <TabsList aria-label="Версия RFQ">{available.map(meta => (

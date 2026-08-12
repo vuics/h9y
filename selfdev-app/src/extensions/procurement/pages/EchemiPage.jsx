@@ -93,6 +93,10 @@ export default function EchemiPage() {
   const formValid = selectedProductId && Number(delivery.quantity) > 0 && delivery.destination.trim() && /^[A-Za-z]{2}$/.test(delivery.country.trim()) && quantityCheck.state !== 'DIFFERS' && quantityCheck.state !== 'INVALID'
 
   return <DetailLayout backTo={`/procurement/requests/${requestId}`} backLabel="К карточке" eyebrow={`Карточка #${state.cardId}`} title="Отправка RFQ через Echemi" status={<StatusBadge status={state.search.status} />} meta={`CAS ${state.casNumber || '—'} · ${state.targetVolume || 'объём не указан'}`} warnings={<>
+    <Alert><AlertTriangle /><AlertTitle>Прямое обращение к площадке</AlertTitle><AlertDescription>
+      Эта страница обращается к продавцу Echemi напрямую. Поиск и квалификация поставщиков живут на <Link to={`/procurement/requests/${requestId}/sourcing`}>единой странице поиска</Link>, где Echemi — один из движков наравне с Brave, DDGS и OpenSERP.
+      Отправка отсюда заводит продавца в справочник и создаёт задание, чтобы его ответ было к чему привязать.
+    </AlertDescription></Alert>
     {!searchReady && <Alert><AlertTriangle /><AlertTitle>Поиск ещё недоступен</AlertTitle><AlertDescription>Сначала нормализуйте карточку: поиск Echemi выполняется по подтверждённому CAS.</AlertDescription></Alert>}
     {searchReady && !inquiryReady && <Alert><AlertTriangle /><AlertTitle>Можно искать, но нельзя готовить inquiry</AlertTitle><AlertDescription>Поиск кандидатов уже доступен. Для подготовки формы требуется отдельно сформировать и явно согласовать RFQ.</AlertDescription></Alert>}
     {!canOperateEchemi && <Alert><AlertTriangle /><AlertTitle>Недостаточно прав</AlertTitle><AlertDescription>Для операций Echemi требуется разрешение ECHEMI_OPERATE.</AlertDescription></Alert>}
