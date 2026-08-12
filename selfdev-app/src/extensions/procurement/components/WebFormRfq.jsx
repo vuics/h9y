@@ -41,10 +41,6 @@ export function WebFormRfq({ negotiationId, cardId, canManage, canQueue, canOper
     queryKey: procurementKeys.negotiationWebForm(negotiationId),
     queryFn: ({ signal }) => procurementApi.negotiationWebForm(negotiationId, signal),
   })
-  // The card and its approved RFQ are what this request must restate, so both
-  // are used as the starting point instead of an empty form.
-  const card = useQuery({ queryKey: procurementKeys.card(cardId), queryFn: ({ signal }) => procurementApi.card(cardId, signal), enabled: Boolean(cardId) })
-  const rfq = useQuery({ queryKey: procurementKeys.rfq(cardId), queryFn: ({ signal }) => procurementApi.rfq(cardId, signal), enabled: Boolean(cardId) })
   const browserAccess = useQuery({
     queryKey: procurementKeys.echemiBrowserAccess(cardId),
     queryFn: ({ signal }) => procurementApi.echemiBrowserAccess(cardId, signal),
@@ -52,21 +48,21 @@ export function WebFormRfq({ negotiationId, cardId, canManage, canQueue, canOper
     retry: false,
   })
 
-  const target = card.data?.target
-  // The English body is what a marketplace form expects; its email wrapper is not.
-  const rfqText = rfq.data?.rfq?.english?.bodyMarkdown || rfq.data?.rfq?.english?.emailText || ''
+  // The backend composes the opener and reads the card quantity, so the panel
+  // never re-derives either. The full RFQ is written for email and does not fit
+  // a marketplace field.
+  const suggestion = query.data?.suggestion
   useEffect(() => {
+    if (!suggestion) return
     setForm(current => {
       if (current.touched) return current
       const next = { ...current }
-      if (target?.parsed && !current.quantity) {
-        next.quantity = String(target.quantity)
-        if (units.includes(target.unit)) next.unit = target.unit
-      }
-      if (rfqText && !current.message) next.message = rfqText
+      if (suggestion.quantity != null && !current.quantity) next.quantity = String(suggestion.quantity)
+      if (suggestion.unit && units.includes(suggestion.unit)) next.unit = suggestion.unit
+      if (suggestion.message && !current.message) next.message = suggestion.message
       return next
     })
-  }, [target, rfqText])
+  }, [suggestion])
   const accept = data => {
     queryClient.setQueryData(procurementKeys.negotiationWebForm(negotiationId), current => ({ ...(current || {}), request: data.request }))
     if (data.noVncUrl) setNoVncUrl(data.noVncUrl)
@@ -95,7 +91,10 @@ export function WebFormRfq({ negotiationId, cardId, canManage, canQueue, canOper
 
   const request = query.data?.request
   const operationError = prepare.error || preview.error || approve.error || submit.error
-  const formValid = Number(form.quantity) > 0 && form.destination.trim() && /^[A-Za-z]{2}$/.test(form.destinationCountry) && form.message.trim()
+  // Refusing an over-long message here costs a click; refusing it on the server
+  // costs a round trip and an error about a limit the specialist never saw.
+  const messageTooLong = Boolean(suggestion?.messageLimit) && form.message.length > suggestion.messageLimit
+  const formValid = Number(form.quantity) > 0 && form.destination.trim() && /^[A-Za-z]{2}$/.test(form.destinationCountry) && form.message.trim() && !messageTooLong
 
   return (
     <Card className="pr-web-form">
@@ -126,7 +125,8 @@ export function WebFormRfq({ negotiationId, cardId, canManage, canQueue, canOper
         {canManage && (
           <form className="pr-card-form" onSubmit={event => { event.preventDefault(); if (formValid) prepare.mutate() }}>
             <label className="pr-form-field"><span>Количество <b>*</b></span>
-              <Input type="number" min="0.000001" step="any" value={form.quantity} onChange={event => setForm(v => ({ ...v, quantity: event.target.value, touched: true }))} required /></label>
+              <Input type="number" min="0.000001" step="any" value={form.quantity} onChange={event => setForm(v => ({ ...v, quantity: event.target.value, touched: true }))} required />
+              {suggestion?.volume && <small className="pr-quantity-hint">В карточке: {suggestion.volume}{suggestion.quantityParsed ? '' : ' — единица не указана, выберите её сами'}</small>}</label>
             <SelectField label="Единица" selectedKey={form.unit} onSelectionChange={value => setForm(v => ({ ...v, unit: value, touched: true }))}>
               <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{units.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
             <SelectField label="Базис" selectedKey={form.incoterm} onSelectionChange={value => setForm(v => ({ ...v, incoterm: value }))}>
@@ -136,7 +136,10 @@ export function WebFormRfq({ negotiationId, cardId, canManage, canQueue, canOper
             <label className="pr-form-field"><span>Страна <b>*</b></span>
               <Input value={form.destinationCountry} maxLength={2} onChange={event => setForm(v => ({ ...v, destinationCountry: event.target.value.toUpperCase() }))} required /></label>
             <label className="pr-form-field pr-form-field--wide"><span>Сообщение <b>*</b></span>
-              <Textarea value={form.message} onChange={event => setForm(v => ({ ...v, message: event.target.value, touched: true }))} placeholder="Что нужно уточнить: чистота, упаковка, документы, условия оплаты." required /></label>
+              <Textarea value={form.message} onChange={event => setForm(v => ({ ...v, message: event.target.value, touched: true }))} placeholder="Что нужно уточнить: чистота, упаковка, документы, условия оплаты." required />
+              <small className={`pr-quantity-hint${suggestion?.messageLimit && form.message.length > suggestion.messageLimit ? ' is-differs' : ''}`}>
+                {form.message.length}{suggestion?.messageLimit ? ` / ${suggestion.messageLimit}` : ''} символов · первый запрос короткий намеренно: детали дозапрашиваются в переписке
+              </small></label>
             <div className="pr-form-actions">
               <Button type="submit" isDisabled={!formValid || prepare.isPending}>
                 <FileCheck />{prepare.isPending ? 'Готовим…' : request ? 'Подготовить заново' : 'Подготовить запрос'}</Button>
