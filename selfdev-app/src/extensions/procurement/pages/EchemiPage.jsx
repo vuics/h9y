@@ -95,7 +95,8 @@ export default function EchemiPage() {
   return <DetailLayout backTo={`/procurement/requests/${requestId}`} backLabel="К карточке" eyebrow={`Карточка #${state.cardId}`} title="Отправка RFQ через Echemi" status={<StatusBadge status={state.search.status} />} meta={`CAS ${state.casNumber || '—'} · ${state.targetVolume || 'объём не указан'}`} warnings={<>
     <Alert><AlertTriangle /><AlertTitle>Прямое обращение к площадке</AlertTitle><AlertDescription>
       Эта страница обращается к продавцу Echemi напрямую. Поиск и квалификация поставщиков живут на <Link to={`/procurement/requests/${requestId}/sourcing`}>единой странице поиска</Link>, где Echemi — один из движков наравне с Brave, DDGS и OpenSERP.
-      Отправка отсюда заводит продавца в справочник и создаёт задание, чтобы его ответ было к чему привязать.
+      Поиск отсюда записывается как обычный прогон, поэтому его результаты видны и на странице поиска.
+      Отправка заводит продавца в справочник и создаёт задание, чтобы его ответ было к чему привязать.
     </AlertDescription></Alert>
     {!searchReady && <Alert><AlertTriangle /><AlertTitle>Поиск ещё недоступен</AlertTitle><AlertDescription>Сначала нормализуйте карточку: поиск Echemi выполняется по подтверждённому CAS.</AlertDescription></Alert>}
     {searchReady && !inquiryReady && <Alert><AlertTriangle /><AlertTitle>Можно искать, но нельзя готовить inquiry</AlertTitle><AlertDescription>Поиск кандидатов уже доступен. Для подготовки формы требуется отдельно сформировать и явно согласовать RFQ.</AlertDescription></Alert>}
