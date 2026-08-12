@@ -6,13 +6,37 @@ export function echemiReadiness(cardStatus, rfqStatus) {
   return { searchReady, inquiryReady: searchReady && rfqStatus === 'APPROVED' }
 }
 
-export function initialEchemiDelivery(targetVolume) {
-  const match = String(targetVolume || '').trim().match(/^(\d+(?:[.,]\d+)?)\s*([A-Za-z]+)$/)
+// The card volume is parsed by the backend, which also understands Cyrillic
+// units and container codes. Re-parsing it here would drift from the validator
+// that later accepts or rejects the inquiry.
+export function initialEchemiDelivery(target) {
+  const parsed = target && typeof target === 'object' ? target : null
+  const unit = parsed?.unit && echemiUnits.includes(parsed.unit) ? parsed.unit : 'KG'
   return {
-    quantity: match ? match[1].replace(',', '.') : '',
-    unit: match && echemiUnits.includes(match[2].toUpperCase()) ? match[2].toUpperCase() : 'KG',
+    quantity: parsed?.quantity != null ? String(parsed.quantity) : '',
+    unit,
     shipmentTerm: 'CIP', destination: '', country: 'RU',
   }
+}
+
+// Mirrors the server rule: the same mass expressed in another unit is fine,
+// anything else is not. Factors come from the backend, not a second table.
+export function quantityMatchesCard(target, quantity, unit) {
+  if (!target?.parsed) return { state: 'UNKNOWN' }
+  const entered = Number(String(quantity).replace(',', '.'))
+  if (!Number.isFinite(entered) || entered <= 0) return { state: 'INVALID' }
+  const factors = target.massFactors || {}
+  const cardFactor = factors[target.unit]
+  const enteredFactor = factors[unit]
+  if (cardFactor && enteredFactor) {
+    const cardBase = target.quantity * cardFactor
+    const enteredBase = entered * enteredFactor
+    const equal = Math.abs(cardBase - enteredBase) <= Math.max(1e-9, Math.abs(cardBase) * 1e-9)
+    return { state: equal ? 'MATCHES' : 'DIFFERS', converted: equal && unit !== target.unit }
+  }
+  if (unit !== target.unit) return { state: 'DIFFERS' }
+  const equal = Math.abs(target.quantity - entered) <= Math.max(1e-9, Math.abs(target.quantity) * 1e-9)
+  return { state: equal ? 'MATCHES' : 'DIFFERS' }
 }
 
 export function echemiOperationIsError(operation) {

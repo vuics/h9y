@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
-import { echemiOperationIsError, echemiOperationLabel, echemiReadiness, echemiTerms, echemiUnits, initialEchemiDelivery } from '../api/echemi'
+import { echemiOperationIsError, echemiOperationLabel, echemiReadiness, echemiTerms, echemiUnits, initialEchemiDelivery, quantityMatchesCard } from '../api/echemi'
 import { DetailLayout, DefinitionGrid } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
@@ -69,9 +69,11 @@ export default function EchemiPage() {
     },
   })
 
+  const cardTarget = query.data?.target
   useEffect(() => {
-    if (query.data?.targetVolume) setDelivery(current => current.quantity ? current : initialEchemiDelivery(query.data.targetVolume))
-  }, [query.data?.targetVolume])
+    // Seed once from the card, then leave the specialist's own edits alone.
+    if (cardTarget) setDelivery(current => current.quantity ? current : initialEchemiDelivery(cardTarget))
+  }, [cardTarget])
 
   const eligible = useMemo(() => query.data?.search.results.filter(item => item.eligible_for_inquiry) || [], [query.data])
   useEffect(() => {
@@ -85,7 +87,10 @@ export default function EchemiPage() {
   const state = query.data
   const { searchReady, inquiryReady } = echemiReadiness(state.cardStatus, state.rfqStatus)
   const pendingError = search.error || prepare.error || lifecycle.error || registerSeller.error
-  const formValid = selectedProductId && Number(delivery.quantity) > 0 && delivery.destination.trim() && /^[A-Za-z]{2}$/.test(delivery.country.trim())
+  const quantityCheck = quantityMatchesCard(state.target, delivery.quantity, delivery.unit)
+  // Refusing here costs a click; refusing on the server costs a round trip and
+  // an error the specialist has to decode.
+  const formValid = selectedProductId && Number(delivery.quantity) > 0 && delivery.destination.trim() && /^[A-Za-z]{2}$/.test(delivery.country.trim()) && quantityCheck.state !== 'DIFFERS' && quantityCheck.state !== 'INVALID'
 
   return <DetailLayout backTo={`/procurement/requests/${requestId}`} backLabel="К карточке" eyebrow={`Карточка #${state.cardId}`} title="Отправка RFQ через Echemi" status={<StatusBadge status={state.search.status} />} meta={`CAS ${state.casNumber || '—'} · ${state.targetVolume || 'объём не указан'}`} warnings={<>
     {!searchReady && <Alert><AlertTriangle /><AlertTitle>Поиск ещё недоступен</AlertTitle><AlertDescription>Сначала нормализуйте карточку: поиск Echemi выполняется по подтверждённому CAS.</AlertDescription></Alert>}
@@ -110,7 +115,7 @@ export default function EchemiPage() {
       </CardContent></Card>}
 
       {eligible.length > 0 && <Card><CardHeader><CardTitle>3. Параметры формы Echemi</CardTitle></CardHeader><CardContent><form className="pr-card-form" onSubmit={event => { event.preventDefault(); if (formValid) prepare.mutate() }}>
-        <label className="pr-form-field"><span>Количество <b>*</b></span><Input type="number" min="0.000001" step="any" value={delivery.quantity} onChange={event => setDelivery(value => ({ ...value, quantity: event.target.value }))} required /></label>
+        <label className="pr-form-field"><span>Количество <b>*</b></span><Input type="number" min="0.000001" step="any" value={delivery.quantity} onChange={event => setDelivery(value => ({ ...value, quantity: event.target.value }))} required aria-describedby="pr-quantity-hint" /><small id="pr-quantity-hint" className={`pr-quantity-hint is-${quantityCheck.state.toLowerCase()}`}>{quantityCheck.state === 'MATCHES' ? (quantityCheck.converted ? `Совпадает с карточкой (${state.target?.volume})` : `Из карточки: ${state.target?.volume}`) : quantityCheck.state === 'DIFFERS' ? `Не совпадает с карточкой (${state.target?.volume}). Разрешён только тот же объём в другой единице — иначе измените карточку и согласуйте новый RFQ.` : quantityCheck.state === 'INVALID' ? 'Укажите положительное количество.' : `Объём в карточке («${state.target?.volume || 'не указан'}») не разобран, значение придётся ввести вручную.`}</small></label>
         <SelectField label="Единица" required selectedKey={delivery.unit} onSelectionChange={value => setDelivery(current => ({ ...current, unit: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{echemiUnits.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
         <SelectField label="Incoterm" required selectedKey={delivery.shipmentTerm} onSelectionChange={value => setDelivery(current => ({ ...current, shipmentTerm: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{echemiTerms.map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField>
         <label className="pr-form-field"><span>Страна, ISO alpha-2 <b>*</b></span><Input maxLength={2} value={delivery.country} onChange={event => setDelivery(value => ({ ...value, country: event.target.value.toUpperCase() }))} required /></label>

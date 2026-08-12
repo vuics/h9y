@@ -393,3 +393,7 @@
 .pr-echemi-directory small { color: var(--pr-muted); white-space: nowrap; }
 
 .pr-supplier-description { margin: 12px 0 0; white-space: pre-wrap; color: var(--pr-text); }
+
+.pr-quantity-hint { display: block; margin-top: 4px; font-size: 11px; color: var(--pr-muted); }
+.pr-quantity-hint.is-matches { color: var(--pr-signal-green); }
+.pr-quantity-hint.is-differs, .pr-quantity-hint.is-invalid { color: var(--pr-danger); }
