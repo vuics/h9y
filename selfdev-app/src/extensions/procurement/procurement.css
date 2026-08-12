@@ -391,3 +391,5 @@
 .pr-echemi-directory li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pr-echemi-directory a { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .pr-echemi-directory small { color: var(--pr-muted); white-space: nowrap; }
+
+.pr-supplier-description { margin: 12px 0 0; white-space: pre-wrap; color: var(--pr-text); }

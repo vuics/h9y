@@ -246,6 +246,10 @@ export const procurementApi = {
     if (useDevFixtures) return fixturesAreReadOnly()
     return adaptSupplier(await request(`/suppliers/${encodeURIComponent(id)}/contacts/${encodeURIComponent(contactId)}`, { method: 'patch', data: payload }))
   },
+  async updateSupplierProfile(id, payload) {
+    if (useDevFixtures) return fixturesAreReadOnly()
+    return adaptSupplier(await request(`/suppliers/${encodeURIComponent(id)}`, { method: 'patch', data: payload }))
+  },
   async updateSupplierQualification(id, qualificationStatus) {
     if (useDevFixtures) return fixturesAreReadOnly()
     return adaptSupplier(await request(`/suppliers/${encodeURIComponent(id)}/qualification`, { method: 'patch', data: { qualification_status: qualificationStatus } }))

@@ -57,6 +57,7 @@ const writablePaths = {
     /^\/cards\/[^/]+$/,
     /^\/card-imports\/[^/]+\/mapping$/,
     /^\/suppliers\/[^/]+\/contacts\/[^/]+$/,
+    /^\/suppliers\/[^/]+$/,
     /^\/suppliers\/[^/]+\/qualification$/,
   ],
   PUT: [
