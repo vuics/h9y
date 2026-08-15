@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { identityHeaders } from './extensions.js'
-import { isAllowedProcurementRequest, isReadableProcurementPath, normalizeProcurementResponse } from './procurement.js'
+import conf from '../conf.js'
+import { isAllowedProcurementRequest, isReadableProcurementPath, normalizeProcurementResponse, timeoutFor } from './procurement.js'
 
 test('gateway exposes only the explicitly allow-listed read API', () => {
   assert.equal(isReadableProcurementPath('/overview'), true)
@@ -118,4 +119,16 @@ test('a domain error keeps its own code and message', () => {
 
   assert.equal(normalized.code, 'RFQ_NOT_PREVIEWED')
   assert.equal(normalized.message, 'Preview the filled form before approving it.')
+})
+
+test('every slow endpoint family has its own timeout rule', () => {
+  // The interactive default is 15s; an endpoint that waits on a model and is not
+  // listed here fails as "request timed out" with nothing in the logs to explain
+  // it, which is exactly how the simulation endpoint shipped broken.
+  assert.equal(timeoutFor('/communication/simulate'), conf.procurement.simulationTimeoutMs)
+  assert.equal(timeoutFor('/cards/1/sourcing/runs'), conf.procurement.sourcingTimeoutMs)
+  assert.equal(timeoutFor('/negotiations/NEG-1/responses'), conf.procurement.responseTimeoutMs)
+  assert.equal(timeoutFor('/card-imports'), conf.procurement.importTimeoutMs)
+  assert.equal(timeoutFor('/negotiations/NEG-1/web-form/preview'), conf.procurement.echemiTimeoutMs)
+  assert.equal(timeoutFor('/cards'), conf.procurement.timeoutMs)
 })

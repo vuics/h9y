@@ -12,6 +12,10 @@ export const TIMEOUTS = [
   { ms: 180000, matches: path => path.includes('/responses') || path.includes('/sourcing') },
   { ms: 120000, matches: path => path.startsWith('/card-imports') },
   { ms: 90000, matches: path => path.includes('/echemi') || path.includes('/web-form/') },
+  // A rehearsal waits on the same model the rest of the contour uses, and the
+  // gateway allows it 180s: giving the browser less would abandon a request the
+  // server is still honestly working on.
+  { ms: 180000, matches: path => path === '/communication/simulate' },
 ]
 
 export const DEFAULT_TIMEOUT_MS = 15000

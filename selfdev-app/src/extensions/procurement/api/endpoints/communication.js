@@ -30,6 +30,8 @@ export const communicationEndpoints = {
     request(`/communication/playbook/${id(itemId)}`, { method: 'patch', data: payload })),
   previewPlaybook: mutation(payload =>
     request('/communication/playbook/preview', { method: 'post', data: payload })),
+  simulateSupplierReply: mutation(payload =>
+    request('/communication/simulate', { method: 'post', data: payload })),
   communicationPolicy: read(
     ({ signal } = {}) => request('/communication/policy', { signal }),
     async () => ({ draftFirstStages: ['FIRST_CONTACT'], draftFirstSupplierIds: [], draftFirstAll: false }),

@@ -31,6 +31,26 @@ const allowedByMethod = PROCUREMENT_ENDPOINTS
     return byMethod
   }, {})
 
+
+// How long each family of endpoints may take. A table rather than a chain of
+// ternaries, because this is what gets edited whenever the backend grows another
+// slow operation, and an endpoint that quietly falls through to the 15s default
+// fails as a timeout mid-request rather than as a missing rule. First match wins.
+export const TIMEOUT_RULES = [
+  { key: 'responseTimeoutMs', matches: path => path.endsWith('/responses') },
+  { key: 'importTimeoutMs', matches: path => path.startsWith('/card-imports') },
+  { key: 'sourcingTimeoutMs', matches: path => path.includes('/sourcing') },
+  { key: 'echemiTimeoutMs', matches: path => path.includes('/echemi') || path.includes('/web-form/') },
+  // A rehearsal waits on the same model the sourcing extraction waits on, so it
+  // needs the same order of magnitude rather than the interactive default.
+  { key: 'simulationTimeoutMs', matches: path => path === '/communication/simulate' },
+]
+
+export function timeoutFor(path) {
+  const rule = TIMEOUT_RULES.find(entry => entry.matches(path))
+  return conf.procurement[rule?.key] ?? conf.procurement.timeoutMs
+}
+
 export function isReadableProcurementPath(path) {
   return isAllowedProcurementRequest('GET', path)
 }
@@ -88,15 +108,7 @@ router.all('*', checkAuth, async (req, res) => {
       params: req.query,
       data: req.method === 'GET' ? undefined : req.body,
       headers: identityHeaders(req.user),
-      timeout: req.path.endsWith('/responses')
-        ? conf.procurement.responseTimeoutMs
-        : req.path.startsWith('/card-imports')
-          ? conf.procurement.importTimeoutMs
-        : req.path.includes('/sourcing')
-          ? conf.procurement.sourcingTimeoutMs
-        : req.path.includes('/echemi') || req.path.includes('/web-form/')
-          ? conf.procurement.echemiTimeoutMs
-          : conf.procurement.timeoutMs,
+      timeout: timeoutFor(req.path),
       validateStatus: () => true,
       ...(binaryResponse ? { responseType: 'arraybuffer' } : {}),
     })

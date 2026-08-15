@@ -509,3 +509,7 @@
 .pr-attribution-inline { margin-top: 0.5rem; font-size: 0.85rem; }
 .pr-attribution-inline > summary { cursor: pointer; color: var(--muted-foreground); }
 .pr-attribution-inline ul { list-style: none; margin: 0.4rem 0; padding: 0 0 0 0.75rem; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 0.25rem; }
+
+.pr-simulation-fields { list-style: none; margin: 0.4rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.35rem; }
+.pr-simulation-fields > li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: 0.4rem; font-size: 0.85rem; }
+.pr-simulation-fields > li.is-missing { opacity: 0.6; border-style: dashed; }

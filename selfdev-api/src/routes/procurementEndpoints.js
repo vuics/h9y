@@ -50,6 +50,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'GET', path: '/communication/playbook/{item_id}/usage' },
   { method: 'GET', path: '/communication/policy' },
   { method: 'PUT', path: '/communication/policy' },
+  { method: 'POST', path: '/communication/simulate' },
   { method: 'GET', path: '/communication/vocabulary' },
   { method: 'GET', path: '/escalations' },
   { method: 'GET', path: '/escalations/{escalation_id}' },
