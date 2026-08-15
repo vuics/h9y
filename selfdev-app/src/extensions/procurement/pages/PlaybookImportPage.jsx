@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
@@ -9,12 +9,12 @@ import { DetailLayout } from '../components/DetailLayout'
 import { StatusBadge } from '../components/StatusBadge'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { KIND_SINGULAR, TOPIC_LABELS } from '../lib/playbookLabels'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { AlertTriangle, Check, CircleAlert, FileCheck } from '../components/icons'
+import { AlertTriangle, Check, CircleAlert, Refresh } from '../components/icons'
 
 const formatDate = value => (value ? new Date(value).toLocaleString('ru-RU') : '—')
 const mutationMessage = error => error?.response?.data?.message || error?.message
@@ -68,6 +68,7 @@ export default function PlaybookImportPage() {
   const queryClient = useQueryClient()
   const { canWritePlaybook } = useProcurementPermissions()
   const [selected, setSelected] = useState(new Set())
+  const [elapsed, setElapsed] = useState(0)
 
   const run = useQuery({
     queryKey: procurementKeys.playbookImport(importId),
@@ -76,6 +77,15 @@ export default function PlaybookImportPage() {
     // Recognition and proposal extraction happen behind the upload response.
     refetchInterval: data => (data?.status === 'ANALYZING' ? 3000 : false),
   })
+
+  const analysing = run.data?.status === 'ANALYZING'
+  useEffect(() => {
+    if (!analysing) return undefined
+    // The wait is long enough that a static message reads as a hang; a ticking
+    // number is the cheapest proof the page is still working.
+    const timer = setInterval(() => setElapsed(value => value + 1), 1000)
+    return () => clearInterval(timer)
+  }, [analysing])
 
   const upload = useMutation({
     mutationFn: async file =>
@@ -141,7 +151,9 @@ export default function PlaybookImportPage() {
                 }}
               />
               <small className="pr-muted">
-                {upload.isPending ? 'Загружаем…' : 'Распознавание идёт в фоне, страница обновится сама.'}
+                {upload.isPending
+                  ? <><Refresh size={13} className="pr-spin" /> Загружаем файл…</>
+                  : 'Распознавание идёт в фоне, страница обновится сама.'}
               </small>
             </label>
           </CardContent>
@@ -176,11 +188,23 @@ export default function PlaybookImportPage() {
         <>
           {data.status === 'ANALYZING' && (
             <Alert>
-              <FileCheck />
-              <AlertTitle>Читаем документ</AlertTitle>
+              <Refresh className="pr-spin" />
+              <AlertTitle>Читаем документ — {elapsed} с</AlertTitle>
               <AlertDescription>
-                Распознавание и разбор идут в фоне; страница обновится сама.
+                Распознавание идёт в фоне, затем модель предлагает правила; страница
+                обновится сама. Разбор длинного документа занимает до двух минут.
+                <span className="pr-progress" aria-hidden="true"><i /></span>
               </AlertDescription>
+              <AlertAction>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  isDisabled={cancel.isPending}
+                  onPress={() => cancel.mutate()}
+                >
+                  Прервать
+                </Button>
+              </AlertAction>
             </Alert>
           )}
           {data.error && (

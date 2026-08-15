@@ -531,3 +531,14 @@
 .pr-proposal--selected { border-color: var(--primary); }
 .pr-proposal__head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .pr-proposal__body { margin: 0; white-space: pre-wrap; }
+
+@keyframes pr-spin { to { transform: rotate(360deg); } }
+.pr-spin { animation: pr-spin 1.1s linear infinite; transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: reduce) { .pr-spin { animation: none; } }
+
+/* Indeterminate: the backend reports no percentage, and inventing one would be
+   a progress bar that lies. */
+.pr-progress { display: block; margin-top: 0.5rem; height: 4px; border-radius: 999px; background: var(--muted); overflow: hidden; }
+.pr-progress > i { display: block; height: 100%; width: 35%; border-radius: 999px; background: var(--primary); animation: pr-progress-slide 1.4s ease-in-out infinite; }
+@keyframes pr-progress-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
+@media (prefers-reduced-motion: reduce) { .pr-progress > i { animation: none; width: 100%; opacity: 0.4; } }
