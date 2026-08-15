@@ -31,3 +31,7 @@ services and permissions.
    answers and mandatory sentences that shape supplier messages, dry-run what
    would apply, review held drafts, and read the attribution of any message the
    negotiator produced.
+9. **Negotiator visibility — complete.** See what the background worker is doing,
+   scheduled and stuck, resolve unidentified inbound messages, and read one
+   merged conversation timeline of sent messages, unsent drafts and status
+   changes.

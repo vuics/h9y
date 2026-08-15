@@ -21,3 +21,4 @@ export const Sliders = props => <Icon {...props}><path d="M4 6h16M7 12h10M10 18h
 export const Plus = props => <Icon {...props}><path d="M12 5v14M5 12h14" /></Icon>
 export const Trash = props => <Icon {...props}><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"/></Icon>
 export const RotateBack = props => <Icon {...props}><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></Icon>
+export const Activity = props => <Icon {...props}><path d="M3 12h4l3 8 4-16 3 8h4"/></Icon>

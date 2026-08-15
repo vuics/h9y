@@ -57,3 +57,31 @@ export const communicationEndpoints = {
       data: { note },
     })),
 }
+
+/** Negotiator operations: what the worker is doing, and the quarantine.
+ *
+ * Lives beside the playbook endpoints because both serve the same question —
+ * what is the negotiator doing and why — even though the routes sit under
+ * `/negotiations` on the backend.
+ */
+export const negotiatorActivityEndpoints = {
+  negotiationActivity: read(
+    ({ signal } = {}) => request('/negotiations/activity', { signal }),
+    async () => (await fixtures()).negotiationActivityFixture(),
+  ),
+  negotiationQuarantine: read(
+    (filters = {}, signal) =>
+      request('/negotiations/quarantine', { params: filters, signal }),
+    async (filters = {}) => (await fixtures()).quarantineFixture(filters),
+  ),
+  assignQuarantinedMessage: mutation((messageId, assignmentId) =>
+    request(`/negotiations/quarantine/${id(messageId)}/assign`, {
+      method: 'post',
+      data: { assignmentId },
+    })),
+  dismissQuarantinedMessage: mutation((messageId, reason) =>
+    request(`/negotiations/quarantine/${id(messageId)}/dismiss`, {
+      method: 'post',
+      data: { reason },
+    })),
+}

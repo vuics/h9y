@@ -478,3 +478,34 @@
 .pr-diff { margin-top: 0.75rem; }
 .pr-diff > summary { cursor: pointer; font-size: 0.88rem; color: var(--muted-foreground); }
 .pr-preview-result { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.9rem; }
+
+/* ---- Negotiator activity ---------------------------------------------- */
+
+.pr-activity-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.pr-activity-list__head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.pr-activity-list__head > a { font-weight: 600; }
+.pr-activity-list__meta { display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.82rem; color: var(--muted-foreground); }
+.pr-activity-error { color: var(--destructive); }
+
+.pr-kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.6rem; }
+.pr-kpi { border: 1px solid var(--border); border-radius: 0.6rem; padding: 0.65rem 0.8rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.pr-kpi > strong { font-size: 1.5rem; line-height: 1.1; }
+.pr-kpi > span { font-size: 0.8rem; color: var(--muted-foreground); }
+.pr-kpi--zero { opacity: 0.55; }
+
+.pr-quarantine-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+.pr-quarantine-item { border: 1px solid var(--border); border-radius: 0.6rem; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.pr-quarantine-item__head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.pr-quarantine-item__head > time { margin-left: auto; font-size: 0.8rem; color: var(--muted-foreground); }
+.pr-quarantine-item__actions { display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; }
+
+/* ---- Conversation timeline -------------------------------------------- */
+
+.pr-conversation { display: flex; flex-direction: column; gap: 0.9rem; }
+.pr-message--draft .pr-message__marker { background: var(--muted-foreground); }
+.pr-message--blocked .pr-message__marker { background: var(--destructive); }
+.pr-message--status { opacity: 0.75; }
+.pr-message--status .pr-message__marker { background: var(--border); }
+.pr-attribution-inline { margin-top: 0.5rem; font-size: 0.85rem; }
+.pr-attribution-inline > summary { cursor: pointer; color: var(--muted-foreground); }
+.pr-attribution-inline ul { list-style: none; margin: 0.4rem 0; padding: 0 0 0 0.75rem; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 0.25rem; }

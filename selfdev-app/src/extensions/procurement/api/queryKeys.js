@@ -31,4 +31,6 @@ export const procurementKeys = {
   communicationPolicy: () => [...procurementKeys.all, 'communication-policy'],
   compositions: filters => [...procurementKeys.all, 'compositions', filters],
   composition: id => [...procurementKeys.all, 'composition', String(id)],
+  negotiationActivity: () => [...procurementKeys.all, 'negotiation-activity'],
+  negotiationQuarantine: filters => [...procurementKeys.all, 'negotiation-quarantine', filters],
 }

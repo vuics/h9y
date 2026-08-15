@@ -174,6 +174,26 @@ Decision rules that mirror the backend state machine live in
 `escalations.js` does — a rule the tests can reach cannot quietly drift away
 from the backend's.
 
+## Negotiator visibility
+
+Two screens answer "what is the agent doing, and why".
+
+`/procurement/negotiations/agent` is the worker's own view: what is due, what is
+scheduled, what is stuck, and the messages whose supplier could not be
+identified. The quarantine is resolved in place — attribute a message to an
+assignment, or dismiss it with a reason.
+
+The negotiation detail page merges three sources into one chronology through
+`lib/timeline.js`: delivered messages, the drafts the agent produced but never
+sent, and the assignment's status changes. A composition that was delivered
+enriches its message with an inline "why this was written" rather than appearing
+twice; a draft that was held, blocked or refused gets its own entry, so the
+specialist sees what the agent wanted to send and why it did not go.
+
+The merge lives in a tested module rather than in the page because the rules —
+which entries are duplicates, what sorts where, what still owes a decision — are
+exactly the sort of thing that drifts when it is embedded in JSX.
+
 ## Deployment activation
 
 `h9y-procurement` exposes the authenticated HTTP read API in

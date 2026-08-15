@@ -11,13 +11,13 @@ import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
 import { WebFormRfq } from '../components/WebFormRfq'
+import { ConversationTimeline } from '../components/ConversationTimeline'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { AlertTriangle, Clock, FileCheck, MessageSquare } from '../components/icons'
 
-const kindLabels = { system_outbound: 'Сообщение системы', supplier: 'Ответ поставщика', interpretation: 'Интерпретация агента', human: 'Действие специалиста', error: 'Ошибка' }
 const formatDate = value => value ? new Date(value).toLocaleString('ru-RU') : '—'
 
 function mutationMessage(mutation) {
@@ -27,13 +27,20 @@ function mutationMessage(mutation) {
 export default function NegotiationDetailPage() {
   const { negotiationId } = useParams()
   const queryClient = useQueryClient()
-  const { canQueueNegotiations, canWriteSupplierResponses, canManageNegotiations, canOperateEchemi, canSubmitEchemi } = useProcurementPermissions()
+  const { canQueueNegotiations, canWriteSupplierResponses, canManageNegotiations, canOperateEchemi, canSubmitEchemi, canReadCommunications } = useProcurementPermissions()
   const [priority, setPriority] = useState('50')
   const [queueAt, setQueueAt] = useState('')
   const [queueConfirmed, setQueueConfirmed] = useState(false)
   const [followUpAt, setFollowUpAt] = useState('')
   const [followUpConfirmed, setFollowUpConfirmed] = useState(false)
   const query = useQuery({ queryKey: procurementKeys.negotiation(negotiationId), queryFn: ({ signal }) => procurementApi.negotiation(negotiationId, signal) })
+  // Drafts the agent produced for this conversation, including the ones that
+  // were never sent — the timeline merges them with the delivered messages.
+  const compositions = useQuery({
+    queryKey: procurementKeys.compositions({ assignmentId: negotiationId }),
+    queryFn: ({ signal }) => procurementApi.compositions({ assignmentId: negotiationId }, signal),
+    enabled: canReadCommunications,
+  })
 
   const updateNegotiation = negotiation => {
     queryClient.setQueryData(procurementKeys.negotiation(negotiationId), negotiation)
@@ -85,7 +92,6 @@ export default function NegotiationDetailPage() {
     </CardContent></Card></div>}
 
     {negotiation.proposal && <Card><CardHeader><CardTitle>Текущие коммерческие условия</CardTitle><CardAction><Link to={`/procurement/proposals/${negotiation.proposal.id}`}>Открыть предложение</Link></CardAction></CardHeader><CardContent><DefinitionGrid items={[{ label: 'Цена', value: negotiation.proposal.price ? `${negotiation.proposal.price} ${negotiation.proposal.currency}/${negotiation.proposal.priceUnit}` : 'Нет данных' }, { label: 'Базис', value: `${negotiation.proposal.incoterm || '—'} ${negotiation.proposal.namedPlace || ''}` }, { label: 'MOQ', value: negotiation.proposal.moq }, { label: 'Готовность', value: <StatusBadge status={negotiation.proposal.completeness} /> }]} /></CardContent></Card>}
-    <Card><CardHeader><CardTitle>История статусов</CardTitle></CardHeader><CardContent className="pr-negotiation-history">{negotiation.statusHistory?.length ? [...negotiation.statusHistory].reverse().map((event, index) => <div key={`${event.changedAt}-${index}`}><StatusBadge status={event.toStatus} compact /><div><strong>{event.fromStatus ? `${event.fromStatus} → ${event.toStatus}` : event.toStatus}</strong><span>{event.source}{event.reason ? ` · ${event.reason}` : ''}{event.actorPrincipalKey ? ` · ${event.actorPrincipalKey}` : ''}</span></div><time>{formatDate(event.changedAt)}</time></div>) : <EmptyState title="История пока пуста" />}</CardContent></Card>
-    <Card><CardHeader><CardTitle>Хронология разговора</CardTitle></CardHeader><CardContent className="pr-timeline">{negotiation.messages?.length ? negotiation.messages.map(message => <article className={`pr-message pr-message--${message.kind}`} key={message.id}><div className="pr-message__marker" /><div><header><div><span className="pr-eyebrow">{kindLabels[message.kind] || message.kind}</span><strong>{message.author}</strong></div><time>{formatDate(message.createdAt)}</time></header><p>{message.text}</p><StatusBadge status={message.status} compact /></div></article>) : <EmptyState title="Сообщений пока нет" description="Создание задания не отправляет RFQ. После явной постановки в очередь сообщения появятся здесь." />}</CardContent></Card>
+    <Card><CardHeader><CardTitle>Ход переговоров</CardTitle><p className="pr-note">Отправленные и полученные сообщения, черновики, которые агент подготовил, но не отправил, и смены статуса — в одной хронологии.</p></CardHeader><CardContent><ConversationTimeline negotiation={negotiation} compositions={compositions.data?.compositions || []} /></CardContent></Card>
   </DetailLayout>
 }
