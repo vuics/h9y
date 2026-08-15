@@ -4,78 +4,39 @@ import axios from 'axios'
 import conf from '../conf.js'
 import { checkAuth } from '../middleware/check-auth.js'
 import { identityHeaders } from './extensions.js'
+import { PROCUREMENT_ENDPOINTS } from './procurementEndpoints.js'
+import { isDenied } from './procurementGatewayPolicy.js'
 
 const router = Router()
 
-const readablePaths = [
-  /^\/overview$/,
-  /^\/overview\/board$/,
-  /^\/cards(?:\/[^/]+)?$/,
-  /^\/card-imports(?:\/[^/]+)?$/,
-  /^\/cards\/[^/]+\/rfq$/,
-  /^\/cards\/[^/]+\/echemi$/,
-  /^\/cards\/[^/]+\/echemi\/browser-access$/,
-  /^\/cards\/[^/]+\/sourcing$/,
-  /^\/sourcing\/[^/]+$/,
-  /^\/suppliers(?:\/[^/]+)?$/,
-  /^\/negotiations(?:\/[^/]+)?$/,
-  /^\/negotiations\/[^/]+\/web-form$/,
-  /^\/web-form\/adapters$/,
-  /^\/supplier-response-attachments\/[^/]+$/,
-  /^\/proposals(?:\/[^/]+)?$/,
-  /^\/proposals\/export$/,
-  /^\/proposals\/compare$/,
-  /^\/escalations(?:\/[^/]+)?$/,
-  /^\/activity$/,
-]
-
-const writablePaths = {
-  POST: [
-    /^\/cards$/,
-    /^\/card-imports$/,
-    /^\/card-imports\/[^/]+\/(?:confirm|normalize|cancel)$/,
-    /^\/cards\/[^/]+\/normalize$/,
-    /^\/cards\/[^/]+\/rfq\/prepare$/,
-    /^\/cards\/[^/]+\/rfq\/approve$/,
-    /^\/cards\/[^/]+\/echemi\/search$/,
-    /^\/cards\/[^/]+\/echemi\/inquiries$/,
-    /^\/cards\/[^/]+\/echemi\/listings\/[^/]+\/supplier$/,
-    /^\/cards\/[^/]+\/echemi\/inquiries\/[^/]+\/(?:preview|approve|submit)$/,
-    /^\/cards\/[^/]+\/sourcing\/runs$/,
-    /^\/sourcing\/[^/]+\/cancel$/,
-    /^\/sourcing\/[^/]+\/sources$/,
-    /^\/sourcing\/[^/]+\/sources\/[^/]+\/retry$/,
-    /^\/sourcing\/[^/]+\/candidates\/[^/]+\/(?:review|promote)$/,
-    /^\/suppliers$/,
-    /^\/suppliers\/[^/]+\/capabilities$/,
-    /^\/suppliers\/[^/]+\/contacts$/,
-    /^\/negotiations$/,
-    /^\/negotiations\/[^/]+\/(?:queue|follow-up)$/,
-    /^\/negotiations\/[^/]+\/web-form\/(?:prepare|preview|approve|submit)$/,
-    /^\/negotiations\/[^/]+\/responses$/,
-    /^\/proposals\/[^/]+\/clarification$/,
-    /^\/escalations\/[^/]+\/(?:claim|recommendations|resolution)$/,
-  ],
-  PATCH: [
-    /^\/cards\/[^/]+$/,
-    /^\/cards\/[^/]+\/rfq$/,
-    /^\/card-imports\/[^/]+\/mapping$/,
-    /^\/suppliers\/[^/]+\/contacts\/[^/]+$/,
-    /^\/suppliers\/[^/]+$/,
-    /^\/suppliers\/[^/]+\/qualification$/,
-  ],
-  PUT: [
-    /^\/sourcing\/query-templates$/,
-  ],
+// Compile an OpenAPI path template into a fully anchored pattern. Each `{param}`
+// becomes exactly one non-slash segment, so a parameter cannot absorb further
+// segments and land on an endpoint that was never allow-listed. Literal text is
+// escaped, so a path is matched literally rather than as a regex.
+export function compilePathTemplate(template) {
+  const source = template
+    .split(/(\{[^}]+\})/)
+    .map(part => (
+      /^\{[^}]+\}$/.test(part) ? '[^/]+' : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    ))
+    .join('')
+  return new RegExp(`^${source}$`)
 }
 
+const allowedByMethod = PROCUREMENT_ENDPOINTS
+  .filter(endpoint => !isDenied(endpoint.method, endpoint.path))
+  .reduce((byMethod, endpoint) => {
+    const patterns = byMethod[endpoint.method] || (byMethod[endpoint.method] = [])
+    patterns.push(compilePathTemplate(endpoint.path))
+    return byMethod
+  }, {})
+
 export function isReadableProcurementPath(path) {
-  return readablePaths.some(pattern => pattern.test(path))
+  return isAllowedProcurementRequest('GET', path)
 }
 
 export function isAllowedProcurementRequest(method, path) {
-  if (method === 'GET') return isReadableProcurementPath(path)
-  return (writablePaths[method] || []).some(pattern => pattern.test(path))
+  return (allowedByMethod[method] || []).some(pattern => pattern.test(path))
 }
 
 export function normalizeProcurementResponse(status, data) {

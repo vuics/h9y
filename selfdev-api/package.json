@@ -22,7 +22,7 @@
     "bridge:prod": "NODE_ENV=production DEBUG=sd:* node ./src/bridge/index.js",
     "mcp:inspector": "DANGEROUSLY_OMIT_AUTH=true  npx @modelcontextprotocol/inspector --server-url http://selfdev-bridge.dev.local:6370/mcp/679b3c9a6e26f022ca69515b/mcp-server",
     "mcp:inspector:lo": "DANGEROUSLY_OMIT_AUTH=true  npx @modelcontextprotocol/inspector --server-url http://localhost:6370/mcp/679b3c9a6e26f022ca69515b/mcp-server",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test src/routes/*.test.js src/bridge/*.test.js",
     "test:bridges": "node --test src/bridge/omnichannel.test.js"
   },
   "keywords": [
