@@ -56,3 +56,60 @@ export function rateScale(rows, floor = 0.5) {
   )
   return Math.max(floor, best)
 }
+
+/** A duration in the unit a reader can act on.
+ *
+ * A step that really takes forty minutes rounds to "0,0 дн." and reads as
+ * instant — a far more flattering claim than the truth. Under a day the answer
+ * is hours; `null` stays "нет данных", because no measurable cases and zero
+ * elapsed time are different answers.
+ */
+export function formatDuration(days, hours) {
+  if (days == null) return { value: 'нет данных', unit: null, empty: true }
+  if (days < 1 && hours != null) {
+    return hours < 1
+      ? { value: String(Math.round(hours * 60)), unit: 'мин', empty: false }
+      : { value: String(hours).replace('.', ','), unit: 'ч', empty: false }
+  }
+  return { value: String(days).replace('.', ','), unit: 'дн', empty: false }
+}
+
+/** Below this many measured cases a median is a coincidence, not a duration. */
+export const MIN_DURATION_SAMPLE = 5
+
+export function durationIsReliable(sample) {
+  return sample >= MIN_DURATION_SAMPLE
+}
+
+/** Share of a whole, guarding the zero-denominator case that makes bars vanish. */
+export function share(part, whole) {
+  if (!whole) return 0
+  return Math.max(0, Math.min(100, (part / whole) * 100))
+}
+
+/** What the traffic light actually says, in one sentence.
+ *
+ * Worth stating outright: on a real base every candidate can sit in one colour,
+ * and a reader who sees a single bar deserves to know that is the scoring gate
+ * behaving, not a rendering fault.
+ */
+export function trafficLightSummary(rows) {
+  const total = rows.reduce((sum, row) => sum + row.total, 0)
+  const occupied = rows.filter(row => row.total > 0)
+  const unreviewed = rows.reduce((sum, row) => sum + row.unreviewed, 0)
+  return {
+    total,
+    unreviewed,
+    single: occupied.length === 1 ? occupied[0] : null,
+  }
+}
+
+/** Fields ordered worst-first, for the "what is missing" chart.
+ *
+ * Presentation order only — the server's order is stable so periods can be
+ * compared, but a reader opening this chart wants the gaps, not the schema.
+ */
+export function worstFirst(rows, limit = 0) {
+  const sorted = [...rows].sort((a, b) => (a.share ?? 1) - (b.share ?? 1))
+  return limit > 0 ? sorted.slice(0, limit) : sorted
+}

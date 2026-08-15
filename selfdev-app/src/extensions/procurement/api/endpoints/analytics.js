@@ -17,6 +17,19 @@ const emptyBottlenecks = {
   buckets: [], rows: [], total: 0, undated: 0, oldestDays: 0, truncated: false,
 }
 
+const emptyCycleTime = {
+  window: null, transitions: [],
+  firstReply: { buckets: [], measured: 0, silent: 0, note: '' },
+}
+
+const emptySupplyBase = {
+  trafficLight: [], roles: { rows: [], verifiedTotal: 0, manufacturerShare: null, note: '' },
+  geography: { rows: [], unknown: 0, total: 0 },
+  awaitingReview: 0, candidateTotal: 0, supplierTotal: 0, sourcingAvailable: true,
+}
+
+const emptyOfferQuality = { rows: [], total: 0, completeness: [], note: '' }
+
 export const analyticsEndpoints = {
   analyticsFunnel: read(
     (params = {}, signal) => request('/analytics/funnel', { params, signal }),
@@ -25,5 +38,17 @@ export const analyticsEndpoints = {
   analyticsBottlenecks: read(
     signal => request('/analytics/bottlenecks', { signal }),
     async () => emptyBottlenecks,
+  ),
+  analyticsCycleTime: read(
+    (params = {}, signal) => request('/analytics/cycle-time', { params, signal }),
+    async () => emptyCycleTime,
+  ),
+  analyticsSupplyBase: read(
+    signal => request('/analytics/supply-base', { signal }),
+    async () => emptySupplyBase,
+  ),
+  analyticsOfferQuality: read(
+    signal => request('/analytics/offer-quality', { signal }),
+    async () => emptyOfferQuality,
   ),
 }

@@ -31,7 +31,6 @@ import {
   windowParams,
 } from '../lib/dashboard'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -42,6 +41,14 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 import { CircleAlert, Clock } from '../components/icons'
+import {
+  CycleTimeChart,
+  FirstReplyChart,
+  GeographyChart,
+  OfferGapsChart,
+  RoleChart,
+  TrafficLightChart,
+} from '../components/DashboardCharts'
 
 const PERIODS = [
   ['7', '7 дней'],
@@ -357,6 +364,54 @@ function BottlenecksCard() {
   )
 }
 
+/** Timing, supply base and offer quality.
+ *
+ * One query per question rather than one per chart: the two timing charts read
+ * the same cohort, and splitting them would make the page ask the server for the
+ * same rows twice and then disagree with itself at the boundary of a minute.
+ */
+function TimingSection({ days }) {
+  const params = useMemo(() => windowParams(days), [days])
+  const query = useQuery({
+    queryKey: procurementKeys.analyticsCycleTime(params),
+    queryFn: ({ signal }) => procurementApi.analyticsCycleTime(params, signal),
+  })
+  if (query.isLoading) return <LoadingState rows={5} />
+  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  return (
+    <div className="pr-dash__grid">
+      <CycleTimeChart data={query.data} />
+      <FirstReplyChart data={query.data} />
+    </div>
+  )
+}
+
+function SupplyBaseSection() {
+  const query = useQuery({
+    queryKey: procurementKeys.analyticsSupplyBase(),
+    queryFn: ({ signal }) => procurementApi.analyticsSupplyBase(signal),
+  })
+  if (query.isLoading) return <LoadingState rows={5} />
+  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  return (
+    <div className="pr-dash__grid pr-dash__grid--three">
+      <TrafficLightChart data={query.data} />
+      <RoleChart data={query.data} />
+      <GeographyChart data={query.data} />
+    </div>
+  )
+}
+
+function OfferQualitySection() {
+  const query = useQuery({
+    queryKey: procurementKeys.analyticsOfferQuality(),
+    queryFn: ({ signal }) => procurementApi.analyticsOfferQuality(signal),
+  })
+  if (query.isLoading) return <LoadingState rows={5} />
+  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  return <OfferGapsChart data={query.data} />
+}
+
 export default function DashboardPage() {
   const [days, setDays] = useState('30')
   const { canReadEscalations, canReadCommunications } = useProcurementPermissions()
@@ -371,7 +426,6 @@ export default function DashboardPage() {
             оно посчитано; доли показаны вместе со знаменателем.
           </p>
         </div>
-        <Badge variant="outline">волна 1</Badge>
       </div>
 
       <FunnelCard days={days} onDays={setDays} />
@@ -380,6 +434,15 @@ export default function DashboardPage() {
         {canReadCommunications && <VariantCard />}
         {canReadEscalations && <BottlenecksCard />}
       </div>
+
+      <h3 className="pr-dash__section">Сроки</h3>
+      <TimingSection days={days} />
+
+      <h3 className="pr-dash__section">База поставщиков</h3>
+      <SupplyBaseSection />
+
+      <h3 className="pr-dash__section">Качество предложений</h3>
+      <OfferQualitySection />
     </div>
   )
 }
