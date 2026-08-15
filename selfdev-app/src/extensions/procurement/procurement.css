@@ -539,6 +539,13 @@
 /* Indeterminate: the backend reports no percentage, and inventing one would be
    a progress bar that lies. */
 .pr-progress { display: block; margin-top: 0.5rem; height: 4px; border-radius: 999px; background: var(--muted); overflow: hidden; }
-.pr-progress > i { display: block; height: 100%; width: 35%; border-radius: 999px; background: var(--primary); animation: pr-progress-slide 1.4s ease-in-out infinite; }
+.pr-progress > i { display: block; height: 100%; width: 35%; border-radius: 999px; background: var(--primary); }
 @keyframes pr-progress-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
 @media (prefers-reduced-motion: reduce) { .pr-progress > i { animation: none; width: 100%; opacity: 0.4; } }
+
+/* The meta row lost its separators once it held more than one span. */
+.pr-detail__meta > span + span::before { content: '·'; margin: 0 0.45rem; opacity: 0.55; }
+.pr-progress > i { transition: width 0.4s ease; }
+.pr-progress > i.pr-progress__pulse { animation: pr-progress-slide 1.4s ease-in-out infinite; }
+.pr-progress > i:not(.pr-progress__pulse) { animation: none; }
+.pr-provenance-link { font-size: 0.78rem; }

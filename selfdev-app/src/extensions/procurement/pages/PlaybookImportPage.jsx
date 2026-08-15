@@ -87,6 +87,12 @@ export default function PlaybookImportPage() {
     return () => clearInterval(timer)
   }, [analysing])
 
+  const history = useQuery({
+    queryKey: procurementKeys.playbookImports(),
+    queryFn: ({ signal }) => procurementApi.playbookImports({ signal }),
+    enabled: !importId,
+  })
+
   const upload = useMutation({
     mutationFn: async file =>
       procurementApi.startPlaybookImport(file.name, await toBase64(file)),
@@ -158,6 +164,48 @@ export default function PlaybookImportPage() {
             </label>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>История импортов</CardTitle>
+            <p className="pr-muted">
+              Прошлые загрузки остаются читаемыми: по ним видно, из какого документа взялось
+              правило, и почему разбор чего-то не дал.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {history.isLoading && <LoadingState rows={2} />}
+            {!history.isLoading && !history.data?.imports?.length && (
+              <EmptyState title="Импортов пока не было" description="Загрузите первый документ." />
+            )}
+            {history.data?.imports?.length > 0 && (
+              <ul className="pr-activity-list">
+                {history.data.imports.map(item => (
+                  <li key={item.importId}>
+                    <div className="pr-activity-list__head">
+                      <Link to={`/procurement/communication/imports/${item.importId}`}>
+                        {item.filename}
+                      </Link>
+                      <StatusBadge status={item.status} compact />
+                      <Badge variant="outline">
+                        предложений: {item.proposals?.length || 0}
+                      </Badge>
+                      {item.proposals?.some(entry => entry.state === 'CREATED') && (
+                        <Badge>
+                          добавлено: {item.proposals.filter(entry => entry.state === 'CREATED').length}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="pr-activity-list__meta">
+                      <span>{formatDate(item.createdAt)}</span>
+                      {item.error && <span className="pr-activity-error">{item.error}</span>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </DetailLayout>
     )
   }
@@ -168,6 +216,7 @@ export default function PlaybookImportPage() {
   if (!data) return <EmptyState title="Импорт не найден" />
 
   const decided = ['CONFIRMED', 'CANCELLED'].includes(data.status)
+  const progress = data.progress || { done: 0, total: 0, percent: null }
   const proposals = data.proposals || []
   const toggle = proposalId => setSelected(previous => {
     const next = new Set(previous)
@@ -183,17 +232,38 @@ export default function PlaybookImportPage() {
       eyebrow={data.filename}
       title="Импорт документа"
       status={<StatusBadge status={data.status} />}
-      meta={<><span>{formatDate(data.createdAt)}</span><span>символов распознано: {data.sourceChars}</span></>}
+      meta={
+        <>
+          <span>{formatDate(data.createdAt)}</span>
+          {data.sourceChars > 0 && <span>символов распознано: {data.sourceChars}</span>}
+        </>
+      }
       warnings={
         <>
           {data.status === 'ANALYZING' && (
             <Alert>
               <Refresh className="pr-spin" />
-              <AlertTitle>Читаем документ — {elapsed} с</AlertTitle>
+              <AlertTitle>
+                Читаем документ — {elapsed} с{progress.percent == null ? '' : ` · ${progress.percent}%`}
+              </AlertTitle>
               <AlertDescription>
-                Распознавание идёт в фоне, затем модель предлагает правила; страница
-                обновится сама. Разбор длинного документа занимает до двух минут.
-                <span className="pr-progress" aria-hidden="true"><i /></span>
+                {progress.total
+                  ? `Разобрано частей документа: ${progress.done} из ${progress.total}. Каждая часть — отдельный запрос к модели.`
+                  : 'Распознаём файл и делим его на части; счётчик появится, когда станет известно их число.'}
+                <span
+                  className="pr-progress"
+                  role="progressbar"
+                  aria-valuenow={progress.percent ?? undefined}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  {/* Determinate only once the denominator is real; inventing a
+                      percentage before the split would be a bar that lies. */}
+                  <i
+                    className={progress.percent == null ? 'pr-progress__pulse' : undefined}
+                    style={progress.percent == null ? undefined : { width: `${progress.percent}%` }}
+                  />
+                </span>
               </AlertDescription>
               <AlertAction>
                 <Button

@@ -45,6 +45,16 @@ function ItemRow({ item, canWrite, onToggle, toggling }) {
           {item.language !== 'any' && <Badge variant="outline">{item.language.toUpperCase()}</Badge>}
           {fromDefaults && <Badge variant="secondary">из поставки</Badge>}
           {item.provenance === 'LEARNED_FROM_EDIT' && <Badge variant="secondary">из правки</Badge>}
+          {item.provenance === 'IMPORTED' && (
+            item.sourceImportId
+              ? <Link
+                to={`/procurement/communication/imports/${item.sourceImportId}`}
+                className="pr-provenance-link"
+              >
+                из документа
+              </Link>
+              : <Badge variant="secondary">из документа</Badge>
+          )}
           {/* A version above 1 is the only visible sign that a shipped rule no
               longer says what it shipped saying. */}
           <Badge variant="outline">{edited ? `изменено · v${item.version}` : `v${item.version}`}</Badge>
