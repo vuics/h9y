@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { identityHeaders } from './extensions.js'
+import { identityHeaders, normalizeFeatures } from './extensions.js'
 import conf from '../conf.js'
 import { isAllowedProcurementRequest, isReadableProcurementPath, normalizeProcurementResponse, timeoutFor } from './procurement.js'
 
@@ -131,4 +131,15 @@ test('every slow endpoint family has its own timeout rule', () => {
   assert.equal(timeoutFor('/card-imports'), conf.procurement.importTimeoutMs)
   assert.equal(timeoutFor('/negotiations/NEG-1/web-form/preview'), conf.procurement.echemiTimeoutMs)
   assert.equal(timeoutFor('/cards'), conf.procurement.timeoutMs)
+})
+
+test('deployment switches reach the browser as booleans', () => {
+  // The capability payload is rebuilt field by field, so a switch that is not
+  // listed silently never arrives — which is how the simulator stayed visible
+  // after it was turned off upstream.
+  assert.deepEqual(normalizeFeatures({ supplierSimulation: false }), { supplierSimulation: false })
+  assert.deepEqual(normalizeFeatures({ supplierSimulation: 'false' }), { supplierSimulation: false })
+  assert.deepEqual(normalizeFeatures({ supplierSimulation: true }), { supplierSimulation: true })
+  assert.deepEqual(normalizeFeatures(undefined), {})
+  assert.deepEqual(normalizeFeatures({ nested: { a: 1 } }), {})
 })

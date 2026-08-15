@@ -4,6 +4,22 @@ import axios from 'axios'
 import conf from '../conf.js'
 import { checkAuth } from '../middleware/check-auth.js'
 
+/** Deployment switches the upstream service reports, as booleans only.
+ *
+ * The capability payload is rebuilt field by field rather than forwarded, so a
+ * new switch has to be listed here to reach the browser. Coercing to boolean
+ * keeps an upstream `"false"` string from arriving as a truthy value in the UI.
+ */
+export function normalizeFeatures(features) {
+  if (!features || typeof features !== 'object') return {}
+  return Object.fromEntries(
+    Object.entries(features)
+      .filter(([, value]) => typeof value === 'boolean' || typeof value === 'string')
+      .map(([key, value]) => [key, value === true || value === 'true']),
+  )
+}
+
+
 const router = Router()
 
 function identityHeaders(user) {
@@ -24,6 +40,7 @@ export function disabledProcurementCapability(reason = 'Disabled by installation
     enabled: false,
     apiVersion: conf.procurement.extensionApiVersion,
     permissions: [],
+    features: {},
     serviceAvailable: false,
     reason,
   }
@@ -65,6 +82,7 @@ router.get('/', checkAuth, async (req, res) => {
         enabled: capability.enabled === true,
         apiVersion: Number(capability.apiVersion),
         permissions: Array.isArray(capability.permissions) ? capability.permissions : [],
+        features: normalizeFeatures(capability.features),
         serviceAvailable: true,
         reason: capability.reason,
       }],
@@ -78,6 +96,9 @@ router.get('/', checkAuth, async (req, res) => {
         enabled: true,
         apiVersion: conf.procurement.extensionApiVersion,
         permissions: [],
+        // The service is unreachable, so nothing it gates can be offered: an
+        // absent flag must not read as "enabled" while the check is failing.
+        features: {},
         serviceAvailable: false,
         reason: error.code === 'ECONNABORTED'
           ? 'Procurement capability check timed out'
