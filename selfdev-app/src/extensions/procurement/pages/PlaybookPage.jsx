@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, CircleAlert, FileCheck, MessageSquare, Pencil, Plus, Search, Sliders } from '../components/icons'
+import { Activity, AlertTriangle, CircleAlert, FileCheck, MessageSquare, Pencil, Plus, Search, Sliders } from '../components/icons'
 
 const KIND_ORDER = ['DIRECTIVE', 'BLOCK', 'LOCKED_CLAUSE']
 
@@ -57,6 +57,7 @@ function ItemRow({ item, canWrite, onToggle, toggling }) {
           )}
           {/* A version above 1 is the only visible sign that a shipped rule no
               longer says what it shipped saying. */}
+          {item.variants?.length > 1 && <Badge variant="outline">вариантов: {item.variants.length}</Badge>}
           <Badge variant="outline">{edited ? `изменено · v${item.version}` : `v${item.version}`}</Badge>
           {!item.enabled && <Badge variant="outline">выключено</Badge>}
         </div>
@@ -146,6 +147,9 @@ export default function PlaybookPage() {
           </RouterLinkButton>
           <RouterLinkButton to="/procurement/communication/drafts" variant="outline" size="sm">
             <MessageSquare size={15} />Черновики и отправленные
+          </RouterLinkButton>
+          <RouterLinkButton to="/procurement/communication/performance" variant="outline" size="sm">
+            <Activity size={15} />Отклик на сообщения
           </RouterLinkButton>
           {canWrite && (
             <RouterLinkButton to="/procurement/communication/imports" variant="outline" size="sm">

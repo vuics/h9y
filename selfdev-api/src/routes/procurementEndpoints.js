@@ -47,6 +47,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'GET', path: '/communication/imports/{import_id}' },
   { method: 'POST', path: '/communication/imports/{import_id}/cancel' },
   { method: 'POST', path: '/communication/imports/{import_id}/confirm' },
+  { method: 'GET', path: '/communication/performance' },
   { method: 'GET', path: '/communication/playbook' },
   { method: 'POST', path: '/communication/playbook' },
   { method: 'POST', path: '/communication/playbook/preview' },

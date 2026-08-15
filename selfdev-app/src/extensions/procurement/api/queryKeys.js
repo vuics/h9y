@@ -34,6 +34,7 @@ export const procurementKeys = {
   negotiationActivity: () => [...procurementKeys.all, 'negotiation-activity'],
   negotiationQuarantine: filters => [...procurementKeys.all, 'negotiation-quarantine', filters],
   playbookImports: () => [...procurementKeys.all, 'playbook-imports'],
+  variantPerformance: filters => [...procurementKeys.all, 'variant-performance', filters],
   playbookImport: id => [...procurementKeys.all, 'playbook-import', String(id)],
   buyerSettings: () => [...procurementKeys.all, 'buyer-settings'],
 }

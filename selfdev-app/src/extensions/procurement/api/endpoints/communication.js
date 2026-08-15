@@ -32,6 +32,11 @@ export const communicationEndpoints = {
     request('/communication/playbook/preview', { method: 'post', data: payload })),
   simulateSupplierReply: mutation(payload =>
     request('/communication/simulate', { method: 'post', data: payload })),
+  variantPerformance: read(
+    (filters = {}, signal) =>
+      request('/communication/performance', { params: filters, signal }),
+    async () => ({ rows: [], minSample: 12, attributionNote: '' }),
+  ),
   communicationPolicy: read(
     ({ signal } = {}) => request('/communication/policy', { signal }),
     async () => ({ draftFirstStages: ['FIRST_CONTACT'], draftFirstSupplierIds: [], draftFirstAll: false }),

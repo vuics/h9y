@@ -23,7 +23,7 @@ import { CircleAlert } from '../components/icons'
 const EMPTY = {
   kind: 'DIRECTIVE', title: '', body: '', language: 'any', topic: null,
   scope: { cardIds: [], supplierIds: [], countries: [], channels: [], stages: [] },
-  forbidsDisclosure: [], verbatim: false, enabled: true,
+  forbidsDisclosure: [], variants: [], verbatim: false, enabled: true,
 }
 
 const csv = values => (values || []).join(', ')
@@ -95,6 +95,14 @@ export default function PlaybookItemPage() {
           stages: form.scope.stages,
         },
         forbidsDisclosure: form.kind === 'DIRECTIVE' ? form.forbidsDisclosure : [],
+        variants: (form.variants || [])
+          .filter(variant => variant.body?.trim())
+          .map(variant => ({
+            variantId: variant.variantId,
+            body: variant.body,
+            label: variant.label || '',
+            enabled: variant.enabled !== false,
+          })),
         verbatim: form.verbatim,
         enabled: form.enabled,
       }
@@ -277,6 +285,74 @@ export default function PlaybookItemPage() {
                 />
               </label>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Варианты формулировки</CardTitle>
+            <p className="pr-muted">
+              Несколько формулировок одного правила, чтобы измерить, какая чаще получает ответ.
+              Один диалог всегда читает один и тот же вариант — иначе поставщик слышал бы два
+              голоса, а отклик было бы не к чему отнести. Отклик виден на отдельном экране.
+            </p>
+            <p className="pr-muted">
+              Пусто — у правила одна формулировка, та что выше. Вариантов должно быть не меньше
+              двух: один не с чем сравнивать.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ul className="pr-variant-list">
+              {(form.variants || []).map((variant, index) => (
+                <li key={variant.variantId || index}>
+                  <Input
+                    value={variant.label || ''}
+                    isDisabled={!editable}
+                    placeholder="метка"
+                    onChange={event => setForm(prev => ({
+                      ...prev,
+                      variants: prev.variants.map((entry, position) =>
+                        (position === index ? { ...entry, label: event.target.value } : entry)),
+                    }))}
+                  />
+                  <Textarea
+                    rows={3}
+                    value={variant.body || ''}
+                    isDisabled={!editable}
+                    placeholder="Текст этого варианта"
+                    onChange={event => setForm(prev => ({
+                      ...prev,
+                      variants: prev.variants.map((entry, position) =>
+                        (position === index ? { ...entry, body: event.target.value } : entry)),
+                    }))}
+                  />
+                  {editable && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onPress={() => setForm(prev => ({
+                        ...prev,
+                        variants: prev.variants.filter((_, position) => position !== index),
+                      }))}
+                    >
+                      Убрать
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {editable && (
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={() => setForm(prev => ({
+                  ...prev,
+                  variants: [...(prev.variants || []), { body: '', label: '', enabled: true }],
+                }))}
+              >
+                Добавить вариант
+              </Button>
+            )}
           </CardContent>
         </Card>
 

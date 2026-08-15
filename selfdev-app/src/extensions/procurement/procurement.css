@@ -549,3 +549,8 @@
 .pr-progress > i.pr-progress__pulse { animation: pr-progress-slide 1.4s ease-in-out infinite; }
 .pr-progress > i:not(.pr-progress__pulse) { animation: none; }
 .pr-provenance-link { font-size: 0.78rem; }
+
+.pr-row--weak { opacity: 0.62; }
+.pr-variant-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.pr-variant-list > li { display: flex; gap: 0.5rem; align-items: flex-start; }
+.pr-variant-list textarea { flex: 1; }
