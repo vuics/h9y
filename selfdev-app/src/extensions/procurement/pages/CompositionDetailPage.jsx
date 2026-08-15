@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -11,6 +11,7 @@ import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import {
   approvalPayload, checkSummary, compositionActions, finalText, isPending,
 } from '../lib/compositions'
+import { suggestRule } from '../lib/learnFromEdit'
 import {
   CHECK_LABELS, COMPOSITION_STATUS_LABELS, GUARD_LABELS, KIND_SINGULAR,
   STAGE_LABELS, TOPIC_LABELS, TRIGGER_LABELS,
@@ -47,7 +48,8 @@ function CheckRow({ check }) {
 export default function CompositionDetailPage() {
   const { compositionId } = useParams()
   const queryClient = useQueryClient()
-  const { canQueueNegotiations } = useProcurementPermissions()
+  const navigate = useNavigate()
+  const { canQueueNegotiations, canWritePlaybook } = useProcurementPermissions()
 
   const query = useQuery({
     queryKey: procurementKeys.composition(compositionId),
@@ -81,6 +83,7 @@ export default function CompositionDetailPage() {
   const pending = isPending(record.status)
   const failed = checkSummary(record.checks).blocking
   const original = finalText(record)
+  const suggestion = suggestRule(record)
 
   return (
     <DetailLayout
@@ -283,6 +286,34 @@ export default function CompositionDetailPage() {
                 Не отправлять
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {suggestion && canWritePlaybook && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Сохранить правку как правило</CardTitle>
+            <p className="pr-muted">
+              Вы переписали то, что предложил агент — значит, применили знание, которого нет в
+              библиотеке. Это черновик правила: он ничего не сохраняет, пока вы не откроете форму
+              и не сохраните его сами.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <pre className="pr-message-text">{suggestion.body}</pre>
+            <p className="pr-muted">
+              Область по умолчанию — этот поставщик и эта стадия: правка в одном диалоге является
+              свидетельством об этом диалоге, а расширять её на всю установку — ваше решение.
+            </p>
+            <Button
+              variant="outline"
+              onPress={() => navigate('/procurement/communication/playbook/new', {
+                state: { prefill: suggestion },
+              })}
+            >
+              Открыть форму правила
+            </Button>
           </CardContent>
         </Card>
       )}

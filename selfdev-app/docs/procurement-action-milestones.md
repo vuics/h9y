@@ -35,3 +35,6 @@ services and permissions.
    scheduled and stuck, resolve unidentified inbound messages, and read one
    merged conversation timeline of sent messages, unsent drafts and status
    changes.
+10. **Learning from edits — complete.** A human rewrite of a draft can be kept as
+   a scoped library rule, carrying the composition it was learned from as its
+   evidence.

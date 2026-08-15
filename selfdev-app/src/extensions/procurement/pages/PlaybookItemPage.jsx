@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -52,7 +52,11 @@ export default function PlaybookItemPage() {
   const { itemId } = useParams()
   const isNew = !itemId || itemId === 'new'
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
+  // A rule proposed from a human edit arrives here as router state rather than
+  // as a saved draft: nothing exists until this form is submitted.
+  const prefill = location.state?.prefill || null
   const { canWritePlaybook, canApprovePlaybook } = useProcurementPermissions()
 
   const vocabulary = useQuery({
@@ -70,7 +74,7 @@ export default function PlaybookItemPage() {
     enabled: !isNew,
   })
 
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState(() => (prefill ? { ...EMPTY, ...prefill, scope: { ...EMPTY.scope, ...prefill.scope } } : EMPTY))
   const [summary, setSummary] = useState('')
   useEffect(() => {
     if (item.data) setForm({ ...EMPTY, ...item.data, scope: { ...EMPTY.scope, ...item.data.scope } })
@@ -93,6 +97,10 @@ export default function PlaybookItemPage() {
         forbidsDisclosure: form.kind === 'DIRECTIVE' ? form.forbidsDisclosure : [],
         verbatim: form.verbatim,
         enabled: form.enabled,
+      }
+      if (isNew && prefill?.provenance) {
+        payload.provenance = prefill.provenance
+        payload.sourceCompositionId = prefill.sourceCompositionId
       }
       return isNew
         ? procurementApi.createPlaybookItem({ ...payload, kind: form.kind })
