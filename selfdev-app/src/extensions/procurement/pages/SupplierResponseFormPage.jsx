@@ -7,20 +7,22 @@ import { procurementKeys } from '../api/queryKeys'
 import { responseFilesPayload, validateResponseInput } from '../api/responses'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { LoadingState, ErrorState } from '../components/AsyncState'
+import { SupplierRehearsal } from '../components/SupplierRehearsal'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { AlertTriangle, ArrowLeft, FileCheck } from '../components/icons'
+import { AlertTriangle, ArrowLeft, FileCheck, Flask } from '../components/icons'
 
 export default function SupplierResponseFormPage() {
   const { negotiationId } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { canWriteSupplierResponses } = useProcurementPermissions()
+  const { canWriteSupplierResponses, simulationEnabled } = useProcurementPermissions()
   const [text, setText] = useState('')
   const [files, setFiles] = useState([])
+  const [rehearsing, setRehearsing] = useState(false)
   const query = useQuery({ queryKey: procurementKeys.negotiation(negotiationId), queryFn: ({ signal }) => procurementApi.negotiation(negotiationId, signal) })
   const validation = validateResponseInput(text, files)
   const mutation = useMutation({
@@ -52,5 +54,12 @@ export default function SupplierResponseFormPage() {
       {validation && <p className="pr-form-error pr-form-field--wide">{validation}</p>}
       <div className="pr-form-actions"><Button type="button" variant="outline" onPress={() => navigate(`/procurement/negotiations/${negotiationId}`)}>Отмена</Button><Button type="submit" isDisabled={Boolean(validation) || mutation.isPending}><FileCheck />{mutation.isPending ? 'Распознавание и извлечение…' : 'Обработать ответ'}</Button></div>
     </form></CardContent></Card>
+    {simulationEnabled && <div className="pr-inline-actions"><Button variant="outline" size="sm" onPress={() => setRehearsing(value => !value)}><Flask size={15} />{rehearsing ? 'Скрыть симулятор' : 'Нет настоящего ответа — сыграть поставщика'}</Button></div>}
+    {simulationEnabled && rehearsing && <SupplierRehearsal
+      cardId={negotiation?.cardId}
+      country={negotiation?.supplierCountry || ''}
+      useLabel="Подставить в поле ответа"
+      onUse={reply => { setText(reply); setRehearsing(false) }}
+    />}
   </div>
 }

@@ -5,31 +5,23 @@ import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import { LoadingState, ErrorState } from '../components/AsyncState'
 import { DetailLayout } from '../components/DetailLayout'
+import { SupplierRehearsal } from '../components/SupplierRehearsal'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { KIND_SINGULAR, STAGE_LABELS, TOPIC_LABELS } from '../lib/playbookLabels'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { StatusBadge } from '../components/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { CircleAlert, Flask, Search } from '../components/icons'
-
-const PERSONAS = [
-  ['COOPERATIVE', 'Отвечает по существу'],
-  ['TERSE', 'Односложно'],
-  ['EVASIVE_ON_DOCUMENTS', 'Уклоняется от документов'],
-  ['TRADER_CLAIMING_MANUFACTURER', 'Трейдер под видом производителя'],
-  ['OFFERS_DIFFERENT_PRODUCT', 'Предлагает другой продукт'],
-]
+import { CircleAlert, Search } from '../components/icons'
 
 const parseCsv = value => String(value || '').split(',').map(part => part.trim()).filter(Boolean)
 const mutationMessage = error => error?.response?.data?.message || error?.message
 
 export default function CommunicationPolicyPage() {
   const queryClient = useQueryClient()
-  const { canWritePlaybook } = useProcurementPermissions()
+  const { canWritePlaybook, simulationEnabled } = useProcurementPermissions()
 
   const policy = useQuery({
     queryKey: procurementKeys.communicationPolicy(),
@@ -55,16 +47,9 @@ export default function CommunicationPolicyPage() {
   })
 
   const [preview, setPreview] = useState({ stage: 'FIRST_CONTACT', cardId: '', supplierId: '', supplierMessage: '' })
-  const [rehearsal, setRehearsal] = useState({ persona: 'COOPERATIVE', message: '', cardId: '', country: '', language: 'en' })
-  const simulate = useMutation({
-    mutationFn: () => procurementApi.simulateSupplierReply({
-      persona: rehearsal.persona,
-      message: rehearsal.message,
-      cardId: rehearsal.cardId ? Number(rehearsal.cardId) : null,
-      country: rehearsal.country || null,
-      language: rehearsal.language,
-    }),
-  })
+  // The rehearsal reuses whichever card the dry run is pointed at, so a
+  // specialist does not type the same number into two forms.
+  const rehearsalCardId = preview.cardId
   const runPreview = useMutation({
     mutationFn: () => procurementApi.previewPlaybook({
       stage: preview.stage,
@@ -161,104 +146,9 @@ export default function CommunicationPolicyPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Репетиция ответа поставщика</CardTitle>
-          <p className="pr-muted">
-            Проверка первого письма до того, как его увидит настоящий поставщик. Ценность не в
-            самой ролевой игре, а в ответе на вопрос «что моё письмо на самом деле вытянет»:
-            письмо может читаться отлично и при этом не получить MOQ. Ответ синтетический и
-            нигде не сохраняется — он не попадает ни в предложения, ни в сравнение, ни в экспорт.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="pr-form-field pr-form-field--wide">
-            <span>Поведение поставщика</span>
-            <div className="pr-inline-actions">
-              {PERSONAS.map(([value, label]) => (
-                <Button
-                  key={value}
-                  size="sm"
-                  variant={rehearsal.persona === value ? 'secondary' : 'outline'}
-                  onPress={() => setRehearsal(prev => ({ ...prev, persona: value }))}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="pr-form-grid">
-            <label className="pr-form-field">
-              <span>Карточка закупки</span>
-              <Input
-                value={rehearsal.cardId}
-                placeholder="1042"
-                onChange={event => setRehearsal(prev => ({ ...prev, cardId: event.target.value }))}
-              />
-            </label>
-            <label className="pr-form-field">
-              <span>Страна поставщика</span>
-              <Input
-                value={rehearsal.country}
-                placeholder="CN"
-                onChange={event => setRehearsal(prev => ({ ...prev, country: event.target.value }))}
-              />
-            </label>
-          </div>
-          <label className="pr-form-field pr-form-field--wide">
-            <span>Сообщение, которое проверяем</span>
-            <Textarea
-              rows={6}
-              value={rehearsal.message}
-              placeholder="Вставьте первое письмо или черновик, который хотите проверить"
-              onChange={event => setRehearsal(prev => ({ ...prev, message: event.target.value }))}
-            />
-          </label>
-          <Button
-            isDisabled={!rehearsal.message.trim() || simulate.isPending}
-            onPress={() => simulate.mutate()}
-          >
-            <Flask size={15} />{simulate.isPending ? 'Модель отвечает…' : 'Прогнать репетицию'}
-          </Button>
-
-          {simulate.isError && (
-            <Alert>
-              <CircleAlert />
-              <AlertTitle>Репетиция не выполнена</AlertTitle>
-              <AlertDescription>{mutationMessage(simulate.error)}</AlertDescription>
-            </Alert>
-          )}
-
-          {simulate.data && (
-            <div className="pr-preview-result">
-              <div className="pr-inline-actions">
-                <Badge>{simulate.data.personaLabel}</Badge>
-                <Badge variant="outline">не сохраняется</Badge>
-              </div>
-              <pre className="pr-message-text">{simulate.data.reply}</pre>
-              <h4>
-                {simulate.data.stillMissing?.length
-                  ? `Останется дозапросить: ${simulate.data.stillMissing.length}`
-                  : 'Письмо вытянуло все отслеживаемые поля'}
-              </h4>
-              <ul className="pr-simulation-fields">
-                {(simulate.data.fields || []).map(field => (
-                  <li key={field.field} className={field.elicited ? 'is-elicited' : 'is-missing'}>
-                    <span>{field.label}</span>
-                    <StatusBadge status={field.status} compact />
-                  </li>
-                ))}
-              </ul>
-              {simulate.data.extractionError && (
-                <p className="pr-muted">
-                  Разбор ответа не удался ({simulate.data.extractionError}) — показан только текст.
-                </p>
-              )}
-              <p className="pr-muted">{simulate.data.disclaimer}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {simulationEnabled && (
+        <SupplierRehearsal cardId={rehearsalCardId} showRfqPicker={Boolean(rehearsalCardId)} />
+      )}
 
       <Card>
         <CardHeader>

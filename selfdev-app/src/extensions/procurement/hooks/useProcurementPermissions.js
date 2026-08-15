@@ -2,7 +2,9 @@ import { useExtensions } from '../../registry/ExtensionContext'
 
 export function useProcurementPermissions() {
   const { getExtension } = useExtensions()
-  const permissions = getExtension('procurement')?.capability?.permissions || []
+  const capability = getExtension('procurement')?.capability
+  const permissions = capability?.permissions || []
+  const features = capability?.features || {}
   const set = new Set(permissions)
   return {
     canReadCards: set.has('CARD_READ'),
@@ -24,5 +26,8 @@ export function useProcurementPermissions() {
     canReadPlaybook: set.has('PLAYBOOK_READ'),
     canWritePlaybook: set.has('PLAYBOOK_WRITE'),
     canApprovePlaybook: set.has('PLAYBOOK_APPROVE'),
+    // A deployment switch, not a grant: served by the API so a stale bundle
+    // cannot keep offering a feature the installation turned off.
+    simulationEnabled: features.supplierSimulation !== false,
   }
 }
