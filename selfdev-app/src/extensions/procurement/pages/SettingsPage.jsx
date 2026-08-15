@@ -150,6 +150,8 @@ export default function SettingsPage() {
 
   return <div className="pr-stack">
     <div className="pr-section-heading"><div><h2>Настройки Procurement</h2><p>Реквизиты, которые видят поставщики. Они отделены от персонального профиля входа в HyperAgency.</p></div></div>
+    {draft.usedByAgent === false && <Alert><AlertTriangle /><AlertTitle>Эти настройки не использует ни один агент</AlertTitle><AlertDescription>{draft.scopeNote} Чтобы они попали в RFQ, войдите под учётной записью, которой принадлежит развёрнутый Procurement Agent, и задайте отправителя там — или разверните агента под этой учётной записью.</AlertDescription></Alert>}
+    {draft.usedByAgent && <p className="pr-note">Рабочее место: <code>{draft.scope}</code>. {draft.scopeNote}</p>}
     {draft.source === 'ENV_LEGACY' && <Alert><AlertTriangle /><AlertTitle>Импортировано из окружения</AlertTitle><AlertDescription>Текущие значения показаны из PROCUREMENT_* переменных. После сохранения Procurement и Negotiator начнут использовать эту запись.</AlertDescription></Alert>}
     {!canManageBuyerSettings && <Alert><AlertTriangle /><AlertTitle>Только просмотр</AlertTitle><AlertDescription>Изменять организацию и отправителей может пользователь с разрешением BUYER_SETTINGS_MANAGE.</AlertDescription></Alert>}
     {save.isError && <Alert><AlertTriangle /><AlertTitle>Настройки не сохранены</AlertTitle><AlertDescription>{save.error?.response?.data?.message || save.error?.message}</AlertDescription></Alert>}
