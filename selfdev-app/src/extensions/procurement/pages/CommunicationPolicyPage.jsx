@@ -47,9 +47,6 @@ export default function CommunicationPolicyPage() {
   })
 
   const [preview, setPreview] = useState({ stage: 'FIRST_CONTACT', cardId: '', supplierId: '', supplierMessage: '' })
-  // The rehearsal reuses whichever card the dry run is pointed at, so a
-  // specialist does not type the same number into two forms.
-  const rehearsalCardId = preview.cardId
   const runPreview = useMutation({
     mutationFn: () => procurementApi.previewPlaybook({
       stage: preview.stage,
@@ -146,16 +143,13 @@ export default function CommunicationPolicyPage() {
         </CardContent>
       </Card>
 
-      {simulationEnabled && (
-        <SupplierRehearsal cardId={rehearsalCardId} showRfqPicker={Boolean(rehearsalCardId)} />
-      )}
-
       <Card>
         <CardHeader>
-          <CardTitle>Проверить, что применится</CardTitle>
+          <CardTitle>Что проверяем</CardTitle>
           <p className="pr-muted">
-            Сухой прогон: показывает ровно тот набор правил и тот текст инструкций, которые получил бы
-            агент, — не обращаясь ни к модели, ни к поставщику.
+            Общий контекст для обеих проверок ниже: сухой прогон покажет, какие правила применятся
+            к такому сообщению, а симулятор — что на такое письмо ответит поставщик. Карточка нужна,
+            чтобы подставить её готовый RFQ и её вещество.
           </p>
         </CardHeader>
         <CardContent>
@@ -192,6 +186,24 @@ export default function CommunicationPolicyPage() {
               ))}
             </div>
           </div>
+          {!preview.cardId && (
+            <p className="pr-muted">
+              Без номера карточки обе проверки работают, но правила, привязанные к конкретной
+              карточке, не применятся, а готовый RFQ подставить будет неоткуда.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Проверить, что применится</CardTitle>
+          <p className="pr-muted">
+            Сухой прогон: показывает ровно тот набор правил и тот текст инструкций, которые получил бы
+            агент, — не обращаясь ни к модели, ни к поставщику.
+          </p>
+        </CardHeader>
+        <CardContent>
           <label className="pr-form-field pr-form-field--wide">
             <span>Сообщение поставщика (необязательно)</span>
             <Textarea
@@ -241,6 +253,13 @@ export default function CommunicationPolicyPage() {
           )}
         </CardContent>
       </Card>
+
+      {simulationEnabled && (
+        <SupplierRehearsal
+          cardId={preview.cardId}
+          showRfqPicker={Boolean(preview.cardId)}
+        />
+      )}
     </DetailLayout>
   )
 }
