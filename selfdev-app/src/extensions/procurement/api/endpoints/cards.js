@@ -55,8 +55,10 @@ export const rfqEndpoints = {
       })
     },
   ),
-  prepareRFQ: mutation(async cardId =>
-    adaptRFQ(await request(`/cards/${id(cardId)}/rfq/prepare`, { method: 'post' }))),
+  prepareRFQ: mutation(async (cardId, senderId) =>
+    adaptRFQ(await request(`/cards/${id(cardId)}/rfq/prepare`, {
+      method: 'post', data: senderId ? { sender_id: senderId } : {},
+    }))),
   editRFQ: mutation(async (cardId, versions) =>
     adaptRFQ(await request(`/cards/${id(cardId)}/rfq`, { method: 'patch', data: versions }))),
   approveRFQ: mutation(async (cardId, documentFingerprint) =>

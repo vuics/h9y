@@ -90,7 +90,9 @@ export default function RFQPage() {
   const [reviewed, setReviewed] = useState(() => new Set([DEFAULT_TAB]))
   const [savingVersion, setSavingVersion] = useState('')
   const [confirmRegenerate, setConfirmRegenerate] = useState(false)
+  const [senderId, setSenderId] = useState('')
   const query = useQuery({ queryKey: procurementKeys.rfq(requestId), queryFn: ({ signal }) => procurementApi.rfq(requestId, signal) })
+  const settings = useQuery({ queryKey: procurementKeys.buyerSettings(), queryFn: ({ signal }) => procurementApi.buyerSettings(signal) })
 
   const updateCaches = value => {
     queryClient.setQueryData(procurementKeys.rfq(requestId), value)
@@ -98,7 +100,7 @@ export default function RFQPage() {
     queryClient.invalidateQueries({ queryKey: procurementKeys.overview() })
   }
   const prepare = useMutation({
-    mutationFn: () => procurementApi.prepareRFQ(requestId),
+    mutationFn: () => procurementApi.prepareRFQ(requestId, senderId),
     onSuccess: value => {
       updateCaches(value)
       setLanguage(DEFAULT_TAB)
@@ -121,6 +123,13 @@ export default function RFQPage() {
     setReviewed(new Set([DEFAULT_TAB]))
   }, [query.data?.documentFingerprint])
 
+  useEffect(() => {
+    if (!settings.data) return
+    const savedSender = query.data?.buyerIdentity?.sender_id
+    const candidate = savedSender || settings.data.defaultSenderId
+    if (settings.data.senders.some(item => item.senderId === candidate && item.active !== false)) setSenderId(candidate)
+  }, [settings.data, query.data?.buyerIdentity?.sender_id])
+
   if (query.isLoading) return <LoadingState />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   if (!query.data) return <EmptyState title="Карточка не найдена" />
@@ -137,6 +146,7 @@ export default function RFQPage() {
     : available[0]?.tab || DEFAULT_TAB
   const bothReviewed = available.every(meta => reviewed.has(meta.tab))
   const effects = document.effects
+  const activeSenders = settings.data?.senders.filter(item => item.active !== false) || []
 
   const chooseLanguage = value => {
     setLanguage(value)
@@ -156,13 +166,18 @@ export default function RFQPage() {
     warnings={<>
       {mutationError && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{message(mutationError)}</AlertDescription></Alert>}
       {effects?.staleInquiries > 0 && <Alert><AlertTriangle /><AlertTitle>Связанные обращения устарели</AlertTitle><AlertDescription>{effects.staleInquiries} ранее подготовленных обращений помечено как STALE после регенерации RFQ.</AlertDescription></Alert>}
-      {confirmRegenerate && <Alert><AlertTriangle /><AlertTitle>Заменить текущий RFQ?</AlertTitle><AlertDescription>Новый документ потребуется заново проверить и согласовать. Несохранённых отправок не произойдёт.<div className="pr-rfq-confirm-actions"><Button variant="outline" onPress={() => setConfirmRegenerate(false)}>Отмена</Button><Button isDisabled={prepare.isPending} onPress={() => prepare.mutate()}>{prepare.isPending ? 'Формирование…' : 'Да, сформировать заново'}</Button></div></AlertDescription></Alert>}
+      {confirmRegenerate && <Alert><AlertTriangle /><AlertTitle>Заменить текущий RFQ?</AlertTitle><AlertDescription>Новый документ потребуется заново проверить и согласовать. Несохранённых отправок не произойдёт.<label className="pr-form-field pr-form-field--wide"><span>Отправитель нового RFQ</span><select value={senderId} onChange={event => setSenderId(event.target.value)}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName} · {sender.email}</option>)}</select></label><div className="pr-rfq-confirm-actions"><Button variant="outline" onPress={() => setConfirmRegenerate(false)}>Отмена</Button><Button isDisabled={prepare.isPending || !senderId} onPress={() => prepare.mutate()}>{prepare.isPending ? 'Формирование…' : 'Да, сформировать заново'}</Button></div></AlertDescription></Alert>}
     </>}
   >
+    {!hasRFQ && <Card><CardHeader><CardTitle>Кто представляет покупателя</CardTitle></CardHeader><CardContent>
+      {settings.isError && <Alert><AlertTriangle /><AlertTitle>Реквизиты недоступны</AlertTitle><AlertDescription>{message(settings.error)}</AlertDescription></Alert>}
+      {!settings.isError && <label className="pr-form-field pr-form-field--wide"><span>Отправитель RFQ <b>*</b></span><select value={senderId} onChange={event => setSenderId(event.target.value)} disabled={settings.isLoading}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName} · {sender.email}</option>)}</select><small>Имя, компания и контакты сохранятся вместе с RFQ и не изменятся в уже созданных переговорах.</small></label>}
+      {!settings.isLoading && activeSenders.length === 0 && <Alert><AlertTriangle /><AlertTitle>Нет активного отправителя</AlertTitle><AlertDescription>Сначала заполните раздел «Настройки» Procurement.</AlertDescription></Alert>}
+    </CardContent></Card>}
     {!hasRFQ && <Card><CardHeader><CardTitle>RFQ будет создан в четырёх версиях</CardTitle></CardHeader><CardContent>
       <p className="pr-note">Короткие версии — первый запрос поставщику: только ключевые вопросы, чтобы получить ответ, а не отпугнуть анкетой. Полные версии остаются для письма и для дозапроса. Все четыре сохраняются как один документ и согласуются вместе.</p>
       {!ready && <Alert><AlertTriangle /><AlertTitle>Карточка не готова</AlertTitle><AlertDescription>Перед подготовкой RFQ нормализуйте CAS-номер и наименование вещества.</AlertDescription></Alert>}
-      {ready && canWriteCards && <Button isDisabled={prepare.isPending} onPress={() => prepare.mutate()}><FileCheck />{prepare.isPending ? 'Формирование…' : 'Подготовить RFQ'}</Button>}
+      {ready && canWriteCards && <Button isDisabled={prepare.isPending || !senderId || settings.isLoading || settings.isError} onPress={() => prepare.mutate()}><FileCheck />{prepare.isPending ? 'Формирование…' : 'Подготовить RFQ'}</Button>}
       {ready && !canWriteCards && <Alert><AlertTriangle /><AlertTitle>Недостаточно прав</AlertTitle><AlertDescription>Для подготовки RFQ требуется разрешение CARD_WRITE.</AlertDescription></Alert>}
     </CardContent></Card>}
 
@@ -172,6 +187,7 @@ export default function RFQPage() {
         { label: 'Статус', value: <StatusBadge status={document.status} /> },
         { label: 'Отправлен поставщику', value: document.sentToSupplier ? 'Да' : 'Нет' },
         { label: 'Согласован', value: document.approvedAt ? new Date(document.approvedAt).toLocaleString('ru-RU') : 'Нет' },
+        { label: 'Отправитель', value: document.buyerIdentity ? `${document.buyerIdentity.contact_name} · ${document.buyerIdentity.email}` : 'Legacy configuration' },
       ]} /></CardContent></Card>
 
       {isApproved && <Alert><FileCheck /><AlertTitle>RFQ согласован</AlertTitle><AlertDescription>Согласованы именно эти сохранённые версии. Документ ещё не отправлен поставщику — следующий шаг найти поставщиков и создать переговоры.</AlertDescription></Alert>}

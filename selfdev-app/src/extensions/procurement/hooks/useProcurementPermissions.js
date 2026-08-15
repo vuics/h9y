@@ -26,6 +26,7 @@ export function useProcurementPermissions() {
     canReadPlaybook: set.has('PLAYBOOK_READ'),
     canWritePlaybook: set.has('PLAYBOOK_WRITE'),
     canApprovePlaybook: set.has('PLAYBOOK_APPROVE'),
+    canManageBuyerSettings: set.has('BUYER_SETTINGS_MANAGE'),
     // A deployment switch, not a grant: served by the API so a stale bundle
     // cannot keep offering a feature the installation turned off.
     simulationEnabled: features.supplierSimulation !== false,

@@ -479,6 +479,18 @@
 .pr-diff > summary { cursor: pointer; font-size: 0.88rem; color: var(--muted-foreground); }
 .pr-preview-result { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.9rem; }
 
+/* ---- Buyer settings --------------------------------------------------- */
+
+.pr-settings-senders { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.85rem; }
+.pr-settings-sender--inactive { opacity: 0.62; }
+.pr-settings-sender [data-slot="card-header"] { flex-direction: row; justify-content: space-between; }
+.pr-settings-sender [data-slot="card-header"] p { margin: 0.2rem 0 0; }
+.pr-settings-check { display: flex; align-items: center; gap: 0.5rem; min-height: 2.4rem; font-size: 0.88rem; }
+.pr-settings-check input { width: 1rem; height: 1rem; }
+.pr-settings-profile-action { justify-content: flex-end; margin-bottom: 0.75rem; }
+.pr-form-field > select { width: 100%; min-height: 2.35rem; border: 1px solid var(--border); border-radius: 0.45rem; background: var(--background); padding: 0 0.65rem; color: inherit; }
+.pr-form-field > select:disabled { opacity: 0.6; }
+
 /* ---- Negotiator activity ---------------------------------------------- */
 
 .pr-activity-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }

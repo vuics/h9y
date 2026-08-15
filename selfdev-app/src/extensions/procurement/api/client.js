@@ -23,6 +23,7 @@ import {
   proposalEndpoints,
   supplierEndpoints,
 } from './endpoints/suppliers'
+import { settingsEndpoints } from './endpoints/settings'
 
 export const procurementApi = {
   ...cardEndpoints,
@@ -37,4 +38,5 @@ export const procurementApi = {
   ...escalationEndpoints,
   ...communicationEndpoints,
   ...negotiatorActivityEndpoints,
+  ...settingsEndpoints,
 }
