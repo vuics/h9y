@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { AlertTriangle, Building, Plus } from '../components/icons'
+import { AlertTriangle, Building, Plus, Trash } from '../components/icons'
 
 const clone = value => JSON.parse(JSON.stringify(value))
 
@@ -37,14 +37,36 @@ function TextField({ value, onChange, name, label, required, wide, ...props }) {
   </label>
 }
 
-function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUseProfile, profileLoading }) {
+function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUseProfile, profileLoading, onRemove }) {
+  const isDefault = sender.senderId === defaultSenderId
   const update = change => setDraft(current => ({
     ...current,
     senders: current.senders.map((item, itemIndex) => itemIndex === index ? { ...item, ...change } : item),
   }))
   const input = (name, label, props = {}) => <TextField name={name} label={label} value={sender[name]} onChange={update} disabled={!canEdit} {...props} />
   return <Card className={!sender.active ? 'pr-settings-sender pr-settings-sender--inactive' : 'pr-settings-sender'}>
-    <CardHeader><div><CardTitle>{sender.displayName || `Новый отправитель ${index + 1}`}</CardTitle><p className="pr-note">{sender.senderId === defaultSenderId ? 'Отправитель по умолчанию' : sender.active ? 'Доступен для новых RFQ' : 'Неактивен'}</p></div></CardHeader>
+    <CardHeader>
+      <div>
+        <CardTitle>{sender.displayName || `Новый отправитель ${index + 1}`}</CardTitle>
+        <p className="pr-note">
+          {isDefault ? 'Отправитель по умолчанию' : sender.active ? 'Доступен для новых RFQ' : 'Неактивен'}
+          {sender.email ? ` · ${sender.email}` : ''}
+        </p>
+      </div>
+      {canEdit && (
+        <Button
+          variant="ghost"
+          size="sm"
+          /* The default sender cannot be removed: doing so would leave the
+             workspace unable to prepare an RFQ at all. Pick another default
+             first. */
+          isDisabled={isDefault}
+          onPress={onRemove}
+        >
+          <Trash size={14} />Удалить
+        </Button>
+      )}
+    </CardHeader>
     <CardContent>{canEdit && <div className="pr-inline-actions pr-settings-profile-action"><Button variant="outline" size="sm" isDisabled={profileLoading} onPress={() => onUseProfile(index)}>{profileLoading ? 'Загрузка профиля…' : 'Подставить из моего профиля'}</Button></div>}<div className="pr-card-form">
       {input('displayName', 'Имя для поставщиков', { required: true })}
       {input('jobTitle', 'Должность')}
@@ -105,7 +127,26 @@ export default function SettingsPage() {
   const setOrganization = change => setDraft(current => ({ ...current, organization: { ...current.organization, ...change } }))
   const orgInput = (name, label, props = {}) => <TextField name={name} label={label} value={organization[name]} onChange={setOrganization} disabled={!canManageBuyerSettings} {...props} />
   const activeSenders = draft.senders.filter(item => item.active !== false)
-  const valid = organization.displayName.trim() && activeSenders.length > 0 && activeSenders.every(item => item.displayName.trim() && item.email.trim() && item.phoneCountry.trim() && item.phoneNumber.trim()) && activeSenders.some(item => item.senderId === draft.defaultSenderId)
+  // A disabled Save button with no explanation reads as a broken page: the user
+  // fills the form, presses nothing, reloads, and sees their work gone.
+  const blockers = []
+  if (!organization.displayName.trim()) blockers.push('не задано название организации для поставщиков')
+  if (activeSenders.length === 0) blockers.push('нет ни одного активного отправителя')
+  activeSenders.forEach((item, index) => {
+    const missing = [
+      !item.displayName.trim() && 'имя',
+      !item.email.trim() && 'email',
+      !item.phoneCountry.trim() && 'код страны',
+      !item.phoneNumber.trim() && 'телефон',
+    ].filter(Boolean)
+    if (missing.length) {
+      blockers.push(`у отправителя «${item.displayName.trim() || `№${index + 1}`}» не заполнено: ${missing.join(', ')}`)
+    }
+  })
+  if (activeSenders.length > 0 && !activeSenders.some(item => item.senderId === draft.defaultSenderId)) {
+    blockers.push('отправитель по умолчанию не выбран или выключен')
+  }
+  const valid = blockers.length === 0
 
   return <div className="pr-stack">
     <div className="pr-section-heading"><div><h2>Настройки Procurement</h2><p>Реквизиты, которые видят поставщики. Они отделены от персонального профиля входа в HyperAgency.</p></div></div>
@@ -125,7 +166,8 @@ export default function SettingsPage() {
 
     <div className="pr-section-heading"><div><h3>Команда и отправители</h3><p>Каждый RFQ сохраняет выбранного отправителя как неизменяемый снимок.</p></div>{canManageBuyerSettings && <Button variant="outline" onPress={() => setDraft(current => { const sender = newSender(); return { ...current, senders: [...current.senders, sender], defaultSenderId: current.defaultSenderId || sender.senderId } })}><Plus />Добавить отправителя</Button>}</div>
     <label className="pr-form-field"><span>Отправитель по умолчанию <b>*</b></span><select disabled={!canManageBuyerSettings} value={draft.defaultSenderId || ''} onChange={event => setDraft(current => ({ ...current, defaultSenderId: event.target.value }))}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName || sender.email || 'Без имени'}</option>)}</select></label>
-    <div className="pr-settings-senders">{draft.senders.map((sender, index) => <SenderEditor key={sender.senderId || index} sender={sender} index={index} setDraft={setDraft} canEdit={canManageBuyerSettings} defaultSenderId={draft.defaultSenderId} onUseProfile={useAccountProfile} profileLoading={profileLoading} />)}</div>
+    <div className="pr-settings-senders">{draft.senders.map((sender, index) => <SenderEditor key={sender.senderId || index} sender={sender} index={index} setDraft={setDraft} canEdit={canManageBuyerSettings} defaultSenderId={draft.defaultSenderId} onUseProfile={useAccountProfile} profileLoading={profileLoading} onRemove={() => setDraft(current => ({ ...current, senders: current.senders.filter((_, position) => position !== index) }))} />)}</div>
+    {canManageBuyerSettings && blockers.length > 0 && <Alert><AlertTriangle /><AlertTitle>Пока нельзя сохранить</AlertTitle><AlertDescription><ul className="pr-blocker-list">{blockers.map(item => <li key={item}>{item}</li>)}</ul></AlertDescription></Alert>}
     {canManageBuyerSettings && <div className="pr-form-actions"><Button variant="outline" isDisabled={save.isPending} onPress={() => setDraft(clone(query.data))}>Отменить изменения</Button><Button isDisabled={!valid || save.isPending} onPress={() => save.mutate()}>{save.isPending ? 'Сохранение…' : 'Сохранить настройки'}</Button></div>}
   </div>
 }

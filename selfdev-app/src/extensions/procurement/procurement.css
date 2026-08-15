@@ -481,7 +481,11 @@
 
 /* ---- Buyer settings --------------------------------------------------- */
 
-.pr-settings-senders { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.85rem; }
+/* One per row: senders are edited one at a time, and a side-by-side grid turns
+   a team of ten into a wall of identical forms. */
+.pr-settings-senders { display: flex; flex-direction: column; gap: 0.85rem; }
+.pr-settings-sender [data-slot="card-content"] .pr-card-form { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.pr-blocker-list { margin: 0.35rem 0 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; }
 .pr-settings-sender--inactive { opacity: 0.62; }
 .pr-settings-sender [data-slot="card-header"] { flex-direction: row; justify-content: space-between; }
 .pr-settings-sender [data-slot="card-header"] p { margin: 0.2rem 0 0; }
