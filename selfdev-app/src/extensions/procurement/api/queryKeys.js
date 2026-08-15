@@ -1,6 +1,8 @@
 export const procurementKeys = {
   all: ['procurement'],
   overview: () => [...procurementKeys.all, 'overview'],
+  analyticsFunnel: filters => [...procurementKeys.all, 'analytics-funnel', filters],
+  analyticsBottlenecks: () => [...procurementKeys.all, 'analytics-bottlenecks'],
   cards: filters => [...procurementKeys.all, 'cards', filters],
   card: id => [...procurementKeys.all, 'card', String(id)],
   cardImports: () => [...procurementKeys.all, 'card-imports'],

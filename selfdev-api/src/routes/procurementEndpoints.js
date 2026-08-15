@@ -11,6 +11,8 @@
 
 export const PROCUREMENT_ENDPOINTS = [
   { method: 'GET', path: '/activity' },
+  { method: 'GET', path: '/analytics/bottlenecks' },
+  { method: 'GET', path: '/analytics/funnel' },
   { method: 'GET', path: '/capabilities' },
   { method: 'GET', path: '/card-imports' },
   { method: 'POST', path: '/card-imports' },

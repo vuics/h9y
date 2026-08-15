@@ -6,6 +6,7 @@
  * `devMode.js`, so neither is repeated per call.
  */
 
+import { analyticsEndpoints } from './endpoints/analytics'
 import {
   communicationEndpoints,
   negotiatorActivityEndpoints,
@@ -30,6 +31,7 @@ import {
 import { settingsEndpoints } from './endpoints/settings'
 
 export const procurementApi = {
+  ...analyticsEndpoints,
   ...cardEndpoints,
   ...cardImportEndpoints,
   ...rfqEndpoints,
