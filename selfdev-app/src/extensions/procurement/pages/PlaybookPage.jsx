@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, CircleAlert, MessageSquare, Plus, Sliders } from '../components/icons'
+import { AlertTriangle, CircleAlert, MessageSquare, Pencil, Plus, Search, Sliders } from '../components/icons'
 
 const KIND_ORDER = ['DIRECTIVE', 'BLOCK', 'LOCKED_CLAUSE']
 
@@ -33,6 +33,8 @@ function ScopeSummary({ scope }) {
 }
 
 function ItemRow({ item, canWrite, onToggle, toggling }) {
+  const fromDefaults = item.provenance === 'DEFAULT'
+  const edited = item.version > 1
   return (
     <li className={`pr-playbook-item${item.enabled ? '' : ' pr-playbook-item--off'}`}>
       <div className="pr-playbook-item__head">
@@ -41,7 +43,12 @@ function ItemRow({ item, canWrite, onToggle, toggling }) {
           {item.topic && <Badge>{TOPIC_LABELS[item.topic] || item.topic}</Badge>}
           {item.verbatim && <Badge variant="outline">дословно</Badge>}
           {item.language !== 'any' && <Badge variant="outline">{item.language.toUpperCase()}</Badge>}
-          <Badge variant="outline">v{item.version}</Badge>
+          {fromDefaults && <Badge variant="secondary">из поставки</Badge>}
+          {item.provenance === 'LEARNED_FROM_EDIT' && <Badge variant="secondary">из правки</Badge>}
+          {/* A version above 1 is the only visible sign that a shipped rule no
+              longer says what it shipped saying. */}
+          <Badge variant="outline">{edited ? `изменено · v${item.version}` : `v${item.version}`}</Badge>
+          {!item.enabled && <Badge variant="outline">выключено</Badge>}
         </div>
       </div>
       <p className="pr-playbook-item__body">{item.body}</p>
@@ -53,9 +60,20 @@ function ItemRow({ item, canWrite, onToggle, toggling }) {
           </span>
         )}
         {canWrite && (
-          <Button variant="ghost" size="sm" isDisabled={toggling} onPress={() => onToggle(item)}>
-            {item.enabled ? 'Выключить' : 'Включить'}
-          </Button>
+          <>
+            {/* The title has always been a link to the editor, but a link that
+                looks like a heading is not an affordance anyone finds. */}
+            <RouterLinkButton
+              to={`/procurement/communication/playbook/${item.itemId}`}
+              variant="outline"
+              size="sm"
+            >
+              <Pencil size={14} />Изменить
+            </RouterLinkButton>
+            <Button variant="ghost" size="sm" isDisabled={toggling} onPress={() => onToggle(item)}>
+              {item.enabled ? 'Выключить' : 'Включить'}
+            </Button>
+          </>
         )}
       </div>
       {item.needsCustomerReview && (
@@ -76,6 +94,7 @@ export default function PlaybookPage() {
   const queryClient = useQueryClient()
   const { canWritePlaybook: canWrite } = useProcurementPermissions()
   const [kind, setKind] = useState(null)
+  const [onlyDisabled, setOnlyDisabled] = useState(false)
 
   const query = useQuery({
     queryKey: procurementKeys.playbook({ kind }),
@@ -92,7 +111,9 @@ export default function PlaybookPage() {
   if (query.isLoading) return <LoadingState />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
 
-  const items = query.data?.items || []
+  const allItems = query.data?.items || []
+  const disabledCount = allItems.filter(item => !item.enabled).length
+  const items = onlyDisabled ? allItems.filter(item => !item.enabled) : allItems
   const counts = query.data?.counts || {}
   const unfilled = query.data?.needsCustomerReview || 0
 
@@ -107,6 +128,9 @@ export default function PlaybookPage() {
           </p>
         </div>
         <div className="pr-inline-actions">
+          <RouterLinkButton to="/procurement/communication/policy" variant="outline" size="sm">
+            <Search size={15} />Проверить, что применится
+          </RouterLinkButton>
           <RouterLinkButton to="/procurement/communication/policy" variant="outline" size="sm">
             <Sliders size={15} />Политика проверки
           </RouterLinkButton>
@@ -147,6 +171,16 @@ export default function PlaybookPage() {
             {KIND_LABELS[value]}{counts[value] != null ? ` (${counts[value]})` : ''}
           </Button>
         ))}
+        {/* A rule someone switched off months ago and forgot is indistinguishable
+            from a system that does not work. The count makes it findable. */}
+        <Button
+          variant={onlyDisabled ? 'secondary' : 'outline'}
+          size="sm"
+          isDisabled={disabledCount === 0}
+          onPress={() => setOnlyDisabled(value => !value)}
+        >
+          Выключено: {disabledCount}
+        </Button>
       </div>
 
       {KIND_ORDER.filter(value => !kind || value === kind).map(value => {
@@ -159,7 +193,12 @@ export default function PlaybookPage() {
             </CardHeader>
             <CardContent>
               {group.length === 0
-                ? <EmptyState title="Пока пусто" description="Добавьте первый элемент этого типа." />
+                ? <EmptyState
+                  title={onlyDisabled ? 'Выключенных правил этого типа нет' : 'Пока пусто'}
+                  description={onlyDisabled
+                    ? 'Снимите фильтр «Выключено», чтобы увидеть действующие правила.'
+                    : 'Добавьте первый элемент этого типа.'}
+                />
                 : <ul className="pr-playbook-list">
                   {group.map(item => (
                     <ItemRow
