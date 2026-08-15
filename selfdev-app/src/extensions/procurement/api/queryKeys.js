@@ -24,4 +24,11 @@ export const procurementKeys = {
   escalations: filters => [...procurementKeys.all, 'escalations', filters],
   escalation: id => [...procurementKeys.all, 'escalation', id],
   activity: filters => [...procurementKeys.all, 'activity', filters],
+  playbook: filters => [...procurementKeys.all, 'playbook', filters],
+  playbookItem: itemId => [...procurementKeys.all, 'playbook-item', String(itemId)],
+  playbookItemUsage: itemId => [...procurementKeys.all, 'playbook-item-usage', String(itemId)],
+  playbookVocabulary: () => [...procurementKeys.all, 'playbook-vocabulary'],
+  communicationPolicy: () => [...procurementKeys.all, 'communication-policy'],
+  compositions: filters => [...procurementKeys.all, 'compositions', filters],
+  composition: id => [...procurementKeys.all, 'composition', String(id)],
 }

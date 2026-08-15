@@ -147,6 +147,33 @@ a limited set of current Python persistence names (`_id`, `card_id`,
 `canonical_name`, etc.). A production API should return explicit DTOs rather
 than raw Mongo documents.
 
+## Communication section
+
+`/procurement/communication` is the library that shapes what the negotiator
+writes: directives, company answers to the specification's eight recurring
+supplier questions, and mandatory sentences. It is a settings-shaped area — read
+often, edited rarely — so it sits in its own tab rather than inside a card.
+
+Two screens hang off it:
+
+* `/procurement/communication/policy` — when a message waits for a human before
+  it is sent, plus a dry run that shows exactly which rules would apply and the
+  prompt text the agent would receive, without calling a model.
+* `/procurement/communication/drafts` — every message the negotiator produced,
+  including the ones that were held or blocked. Its detail page is the
+  attribution panel: what triggered the message, which library items applied at
+  which versions, what was withheld from the supplier, and every check with its
+  result. From there a specialist approves (optionally editing the text, which
+  is re-checked) or refuses to send with a mandatory reason.
+
+Both directions of the link work: a library item lists the real messages it
+shaped, and a message links back to each rule that shaped it.
+
+Decision rules that mirror the backend state machine live in
+`lib/compositions.js` rather than in the pages, for the same reason
+`escalations.js` does — a rule the tests can reach cannot quietly drift away
+from the backend's.
+
 ## Deployment activation
 
 `h9y-procurement` exposes the authenticated HTTP read API in

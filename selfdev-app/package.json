@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "serve": "serve -s dist",
     "serve:ssl": "serve -s dist --ssl-cert /opt/ssl/tls.crt --ssl-key /opt/ssl/tls.key",
-    "test": "node --test src/extensions/registry/*.test.js src/extensions/procurement/api/*.test.js src/extensions/procurement/components/*.test.js"
+    "test": "node --test src/extensions/registry/*.test.js src/extensions/procurement/api/*.test.js src/extensions/procurement/components/*.test.js src/extensions/procurement/lib/*.test.js"
   },
   "dependencies": {
     "@artsy/fresnel": "^8.1.0",

@@ -21,5 +21,8 @@ export function useProcurementPermissions() {
     canRecommendEscalations: set.has('ESCALATION_RECOMMEND'),
     canResolveEscalations: set.has('ESCALATION_RESOLVE'),
     canReadAudit: set.has('AUDIT_READ'),
+    canReadPlaybook: set.has('PLAYBOOK_READ'),
+    canWritePlaybook: set.has('PLAYBOOK_WRITE'),
+    canApprovePlaybook: set.has('PLAYBOOK_APPROVE'),
   }
 }

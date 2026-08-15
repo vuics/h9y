@@ -27,3 +27,7 @@ services and permissions.
    correct the mapping, then confirm creation with live progress. Rows missing
    required fields become drafts that cannot produce an RFQ until completed, and
    PubChem resolution runs as a separate cancellable pass.
+8. **Communication playbook — complete.** Edit the library of directives, company
+   answers and mandatory sentences that shape supplier messages, dry-run what
+   would apply, review held drafts, and read the attribution of any message the
+   negotiator produced.

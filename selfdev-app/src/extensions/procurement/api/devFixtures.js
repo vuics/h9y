@@ -113,3 +113,52 @@ export function overviewFixture() {
     recentActivity: activity.slice(0, 4),
   }
 }
+
+export const playbookItems = [
+  { itemId: 'PB-DEMO-DIR-1', kind: 'DIRECTIVE', title: 'Не раскрывать целевую цену и объём потребности', body: 'Не называй поставщику ориентир цены и целевой годовой объём из карточки закупки.', language: 'any', topic: null, scope: { cardIds: [], supplierIds: [], countries: [], channels: [], stages: [], specificity: 0 }, forbidsDisclosure: ['TARGET_PRICE'], verbatim: false, enabled: true, version: 1, provenance: 'DEFAULT', needsCustomerReview: false, history: [] },
+  { itemId: 'PB-DEMO-DIR-2', kind: 'DIRECTIVE', title: 'Китай: экспортная лицензия', body: 'Если поставщик находится в Китае, уточни наличие экспортной лицензии на это вещество.', language: 'any', topic: null, scope: { cardIds: [], supplierIds: [], countries: ['CN'], channels: [], stages: [], specificity: 1 }, forbidsDisclosure: [], verbatim: false, enabled: true, version: 2, provenance: 'DEFAULT', needsCustomerReview: false, history: [] },
+  { itemId: 'PB-DEMO-BLK-1', kind: 'BLOCK', title: 'Ответ о применении вещества', body: '[ТРЕБУЕТ ЗАПОЛНЕНИЯ ЗАКАЗЧИКОМ] Укажите, что сообщать поставщику о применении.', language: 'any', topic: 'APPLICATION', scope: { cardIds: [], supplierIds: [], countries: [], channels: [], stages: [], specificity: 0 }, forbidsDisclosure: [], verbatim: false, enabled: true, version: 1, provenance: 'DEFAULT', needsCustomerReview: true, history: [] },
+  { itemId: 'PB-DEMO-LCK-1', kind: 'LOCKED_CLAUSE', title: 'Точный CAS без замены', body: 'Please quote this exact CAS: a different product, grade or concentration is not a substitute without written approval.', language: 'en', topic: null, scope: { cardIds: [], supplierIds: [], countries: [], channels: [], stages: ['FIRST_CONTACT'], specificity: 1 }, forbidsDisclosure: [], verbatim: true, enabled: true, version: 1, provenance: 'DEFAULT', needsCustomerReview: false, history: [] },
+]
+
+export const compositions = [
+  { compositionId: 'CMP-DEMO-1', assignmentId: 'NEG-1042-B2', cardId: 1042, supplierId: 'SUP-B72D', contactId: 'CONTACT-27', channel: 'email', language: 'en', stage: 'CLARIFICATION', trigger: 'INBOUND_MESSAGE', reviewMode: 'DRAFT_FIRST', status: 'DRAFT', appliedItems: [{ itemId: 'PB-DEMO-DIR-1', kind: 'DIRECTIVE', title: 'Не раскрывать целевую цену и объём потребности', version: 1, topic: null, reason: 'Действует для всех сообщений.' }, { itemId: 'PB-DEMO-DIR-2', kind: 'DIRECTIVE', title: 'Китай: экспортная лицензия', version: 2, topic: null, reason: 'Правило задано для стран: CN.' }], detectedTopics: ['DOCUMENTS', 'DELIVERY_TERMS'], missingFields: ['coa', 'incoterm'], withheld: ['TARGET_PRICE'], checks: [{ check: 'NOT_EMPTY', status: 'PASSED', detail: 'Черновик содержит текст.' }, { check: 'LOCKED_CLAUSES_PRESENT', status: 'SKIPPED', detail: 'Для этой стадии обязательные формулировки не заданы.' }, { check: 'NO_FORBIDDEN_DISCLOSURE', status: 'PASSED', detail: 'Закрытые данные карточки не раскрыты: TARGET_PRICE' }, { check: 'NO_UNFILLED_PLACEHOLDER', status: 'PASSED', detail: 'Незаполненных шаблонных маркеров нет.' }], draftText: 'Thank you for the quotation.\n\nCould you please confirm:\n1. The delivery basis you can offer and the lead time.\n2. Whether a recent CoA can be provided before shipment.\n\nWe also need confirmation of your export licence for this substance.', editedText: null, draftSha256: 'a'.repeat(64), sourceResponseId: 'RESP-1042-02', sourceCommunicationId: null, communicationId: null, wasEdited: false, createdAt: ago(2), decidedAt: null, decidedByPrincipalKey: null, decisionNote: null },
+  { compositionId: 'CMP-DEMO-2', assignmentId: 'NEG-1042-A1', cardId: 1042, supplierId: 'SUP-A19F', contactId: 'CONTACT-11', channel: 'email', language: 'en', stage: 'FIRST_CONTACT', trigger: 'FIRST_CONTACT', reviewMode: 'AUTO', status: 'SENT', appliedItems: [{ itemId: 'PB-DEMO-LCK-1', kind: 'LOCKED_CLAUSE', title: 'Точный CAS без замены', version: 1, topic: null, reason: 'Правило задано для стадии FIRST_CONTACT.' }], detectedTopics: [], missingFields: [], withheld: [], checks: [{ check: 'LOCKED_CLAUSES_PRESENT', status: 'PASSED', detail: 'Все обязательные формулировки присутствуют дословно: Точный CAS без замены' }], draftText: 'Hello,\n\nWe are looking for Acetone (CAS 67-64-1), 20 MT.\n\nPlease quote this exact CAS: a different product, grade or concentration is not a substitute without written approval.', editedText: null, draftSha256: 'b'.repeat(64), sourceResponseId: null, sourceCommunicationId: null, communicationId: 'COMM-DEMO-9', wasEdited: false, createdAt: ago(30), decidedAt: ago(30), decidedByPrincipalKey: 'USER:demo', decisionNote: null },
+]
+
+export function playbookVocabularyFixture() {
+  return {
+    kinds: ['DIRECTIVE', 'BLOCK', 'LOCKED_CLAUSE'],
+    topics: ['APPLICATION', 'VOLUME', 'GRADE', 'DOCUMENTS', 'DELIVERY_TERMS', 'SAMPLE', 'PAYMENT', 'COMPANY'],
+    stages: ['FIRST_CONTACT', 'CLARIFICATION', 'FOLLOW_UP', 'NEGOTIATION', 'CLOSING'],
+    disclosureGuards: ['TARGET_PRICE', 'TARGET_VOLUME', 'APPLICATION_AREA', 'SPECIALIST_COMMENTS'],
+    languages: ['any', 'ru', 'en'],
+  }
+}
+
+export function playbookFixture(filters = {}) {
+  const items = playbookItems.filter(item => !filters.kind || item.kind === filters.kind)
+  return {
+    items,
+    counts: { DIRECTIVE: 2, BLOCK: 1, LOCKED_CLAUSE: 1 },
+    needsCustomerReview: playbookItems.filter(item => item.needsCustomerReview).length,
+  }
+}
+
+export function playbookItemFixture(itemId) {
+  const item = playbookItems.find(entry => entry.itemId === itemId)
+  return item ? { ...item, usageCount: 3 } : null
+}
+
+export function compositionsFixture(filters = {}) {
+  return {
+    compositions: compositions.filter(item =>
+      (!filters.status || item.status === filters.status) &&
+      (!filters.assignmentId || item.assignmentId === filters.assignmentId)),
+    hasMore: false,
+  }
+}
+
+export function compositionFixture(compositionId) {
+  return compositions.find(item => item.compositionId === compositionId) || null
+}
