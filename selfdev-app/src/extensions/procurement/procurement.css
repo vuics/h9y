@@ -525,3 +525,9 @@
 .pr-simulation-fields { list-style: none; margin: 0.4rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.35rem; }
 .pr-simulation-fields > li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: 0.4rem; font-size: 0.85rem; }
 .pr-simulation-fields > li.is-missing { opacity: 0.6; border-style: dashed; }
+
+.pr-proposal-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.pr-proposal { border: 1px solid var(--border); border-radius: 0.6rem; padding: 0.7rem 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.pr-proposal--selected { border-color: var(--primary); }
+.pr-proposal__head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.pr-proposal__body { margin: 0; white-space: pre-wrap; }

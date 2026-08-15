@@ -10,7 +10,7 @@
 // slow operation. The first match wins.
 export const TIMEOUTS = [
   { ms: 180000, matches: path => path.includes('/responses') || path.includes('/sourcing') },
-  { ms: 120000, matches: path => path.startsWith('/card-imports') },
+  { ms: 120000, matches: path => path.startsWith('/card-imports') || path.startsWith('/communication/imports') },
   { ms: 90000, matches: path => path.includes('/echemi') || path.includes('/web-form/') },
   // A rehearsal waits on the same model the rest of the contour uses, and the
   // gateway allows it 180s: giving the browser less would abandon a request the

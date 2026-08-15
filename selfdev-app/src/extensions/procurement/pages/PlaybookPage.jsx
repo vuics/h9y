@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, CircleAlert, MessageSquare, Pencil, Plus, Search, Sliders } from '../components/icons'
+import { AlertTriangle, CircleAlert, FileCheck, MessageSquare, Pencil, Plus, Search, Sliders } from '../components/icons'
 
 const KIND_ORDER = ['DIRECTIVE', 'BLOCK', 'LOCKED_CLAUSE']
 
@@ -137,6 +137,11 @@ export default function PlaybookPage() {
           <RouterLinkButton to="/procurement/communication/drafts" variant="outline" size="sm">
             <MessageSquare size={15} />Черновики и отправленные
           </RouterLinkButton>
+          {canWrite && (
+            <RouterLinkButton to="/procurement/communication/imports" variant="outline" size="sm">
+              <FileCheck size={15} />Импорт из документа
+            </RouterLinkButton>
+          )}
           {canWrite && (
             <RouterLinkButton to="/procurement/communication/playbook/new" size="sm">
               <Plus size={15} />Добавить

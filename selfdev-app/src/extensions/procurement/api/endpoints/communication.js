@@ -87,3 +87,27 @@ export const negotiatorActivityEndpoints = {
       data: { reason },
     })),
 }
+
+/** Reading the customer's own documents into proposed library entries. */
+export const playbookImportEndpoints = {
+  playbookImports: read(
+    ({ signal } = {}) => request('/communication/imports', { signal }),
+    async () => ({ imports: [] }),
+  ),
+  playbookImport: read(
+    (importId, signal) => request(`/communication/imports/${id(importId)}`, { signal }),
+    async () => null,
+  ),
+  startPlaybookImport: mutation((filename, contentBase64) =>
+    request('/communication/imports', {
+      method: 'post',
+      data: { filename, contentBase64 },
+    })),
+  confirmPlaybookImport: mutation((importId, proposalIds) =>
+    request(`/communication/imports/${id(importId)}/confirm`, {
+      method: 'post',
+      data: { proposalIds },
+    })),
+  cancelPlaybookImport: mutation(importId =>
+    request(`/communication/imports/${id(importId)}/cancel`, { method: 'post' })),
+}

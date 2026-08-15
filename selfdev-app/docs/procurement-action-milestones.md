@@ -38,3 +38,6 @@ services and permissions.
 10. **Learning from edits — complete.** A human rewrite of a draft can be kept as
    a scoped library rule, carrying the composition it was learned from as its
    evidence.
+11. **Document import — complete.** Read an RFQ template, commercial letter or
+   standard-answer document into grounded proposals, review each against its
+   quote from the source, and create only the entries a specialist ticked.
