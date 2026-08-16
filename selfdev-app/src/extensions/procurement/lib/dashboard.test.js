@@ -2,7 +2,11 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  BASELINE_FIELDS,
   barWidth,
+  baselineFormValues,
+  benchmarkWidths,
+  describeDelta,
   cohortIsEmpty,
   describeStep,
   durationIsReliable,
@@ -133,4 +137,52 @@ test('a field with no responses yet sorts as though complete rather than worst',
   // share === null means "nothing measured", which must not top a gap chart.
   const rows = [{ field: 'tds', share: null }, { field: 'moq', share: 0.34 }]
   assert.deepEqual(worstFirst(rows).map(row => row.field), ['moq', 'tds'])
+})
+
+test('each benchmark row is scaled to itself, never to a shared axis', () => {
+  // Hours and counts share no unit; one axis across them invents a comparison.
+  const hours = benchmarkWidths({ human: { value: 14 }, agent: { value: 2 } })
+  assert.equal(hours.human, 100)
+  assert.ok(hours.agent > 14 && hours.agent < 15)
+})
+
+test('a missing side of a benchmark row draws nothing rather than a zero bar', () => {
+  const widths = benchmarkWidths({ human: { value: null }, agent: { value: 4.5 } })
+  assert.equal(widths.human, 0)
+  assert.equal(widths.agent, 100)
+})
+
+test('a row with neither side measured draws nothing at all', () => {
+  assert.deepEqual(benchmarkWidths({ human: {}, agent: {} }), { human: 0, agent: 0 })
+})
+
+test('fewer hours reads as an improvement even though the number went down', () => {
+  const delta = describeDelta({
+    lowerIsBetter: true,
+    delta: { difference: -12, ratio: 7, improved: true },
+  })
+  assert.equal(delta.improved, true)
+  assert.equal(delta.arrow, '↑')
+  assert.equal(delta.text, '7×')
+})
+
+test('an incomparable row has no delta to describe', () => {
+  assert.equal(describeDelta({ delta: null }), null)
+})
+
+test('only labour hours are declarable on the agent side', () => {
+  const declarable = BASELINE_FIELDS.filter(field => field.agentDeclared).map(f => f.key)
+  assert.deepEqual(declarable, ['HOURS_PER_CASE'])
+})
+
+test('the baseline form is prefilled from the rows it will overwrite', () => {
+  const values = baselineFormValues([
+    { key: 'HOURS_PER_CASE', human: { value: 14 }, agent: { value: 1.8 } },
+    { key: 'CANDIDATES_FOUND', human: { value: null }, agent: { value: 4.5 } },
+  ])
+  assert.equal(values.HUMAN_HOURS_PER_CASE, 14)
+  assert.equal(values.AGENT_HOURS_PER_CASE, 1.8)
+  // A measured agent figure is never offered as an input.
+  assert.equal('AGENT_CANDIDATES_FOUND' in values, false)
+  assert.equal(values.HUMAN_CANDIDATES_FOUND, '')
 })

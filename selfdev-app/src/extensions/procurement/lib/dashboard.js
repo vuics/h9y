@@ -113,3 +113,64 @@ export function worstFirst(rows, limit = 0) {
   const sorted = [...rows].sort((a, b) => (a.share ?? 1) - (b.share ?? 1))
   return limit > 0 ? sorted.slice(0, limit) : sorted
 }
+
+/** The metrics a benchmark row can hold a declared value for.
+ *
+ * Mirrors the server's allow-list. Only labour hours are declarable on the
+ * agent side; every other agent figure is measured, and offering a field for it
+ * would invite someone to overwrite a measurement with a wish.
+ */
+export const BASELINE_FIELDS = [
+  { key: 'HOURS_PER_CASE', label: 'Часов на кейс', unit: 'ч', agentDeclared: true },
+  { key: 'CANDIDATES_FOUND', label: 'Найдено кандидатов', unit: '', agentDeclared: false },
+  { key: 'VERIFIED_MANUFACTURERS', label: 'Подтверждённых производителей', unit: '', agentDeclared: false },
+  { key: 'REQUESTS_SENT', label: 'Запросов отправлено', unit: '', agentDeclared: false },
+  { key: 'REPLIES_RECEIVED', label: 'Ответов получено', unit: '', agentDeclared: false },
+  { key: 'QUOTES_RECEIVED', label: 'Котировок получено', unit: '', agentDeclared: false },
+]
+
+/** Bar widths for one benchmark row.
+ *
+ * Each row is scaled to its own larger value, never to a shared axis: hours and
+ * counts are different units, and one axis across them would be a dual-axis
+ * chart wearing a disguise — it would invent a comparison that is not in the
+ * data.
+ */
+export function benchmarkWidths(row) {
+  const human = row.human?.value
+  const agent = row.agent?.value
+  const largest = Math.max(human ?? 0, agent ?? 0)
+  if (!largest) return { human: 0, agent: 0 }
+  return {
+    human: human == null ? 0 : Math.max(1.5, (human / largest) * 100),
+    agent: agent == null ? 0 : Math.max(1.5, (agent / largest) * 100),
+  }
+}
+
+/** How a delta should read to someone scanning the column.
+ *
+ * Direction is not the same as improvement: fewer hours is better, fewer
+ * replies is worse, and the arrow has to follow meaning rather than sign.
+ */
+export function describeDelta(row) {
+  if (!row.delta || row.delta.improved == null) return null
+  const { ratio, improved } = row.delta
+  return {
+    improved,
+    arrow: improved ? '↑' : '↓',
+    text: ratio ? `${String(ratio).replace('.', ',')}×` : null,
+  }
+}
+
+/** Turn the stored metric map into the flat form the inputs bind to. */
+export function baselineFormValues(rows) {
+  const values = {}
+  for (const field of BASELINE_FIELDS) {
+    const row = rows.find(item => item.key === field.key)
+    values[`HUMAN_${field.key}`] = row?.human?.value ?? ''
+    if (field.agentDeclared) {
+      values[`AGENT_${field.key}`] = row?.agent?.value ?? ''
+    }
+  }
+  return values
+}

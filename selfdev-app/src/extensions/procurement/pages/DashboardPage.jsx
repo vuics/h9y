@@ -49,6 +49,7 @@ import {
   RoleChart,
   TrafficLightChart,
 } from '../components/DashboardCharts'
+import { BenchmarkChart } from '../components/BenchmarkChart'
 
 const PERIODS = [
   ['7', '7 дней'],
@@ -386,6 +387,18 @@ function TimingSection({ days }) {
   )
 }
 
+/** The comparison the pilot is judged on. */
+function BenchmarkSection({ days, canEdit }) {
+  const params = useMemo(() => windowParams(days), [days])
+  const query = useQuery({
+    queryKey: procurementKeys.analyticsBenchmark(params),
+    queryFn: ({ signal }) => procurementApi.analyticsBenchmark(params, signal),
+  })
+  if (query.isLoading) return <LoadingState rows={6} />
+  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  return <BenchmarkChart data={query.data} canEdit={canEdit} />
+}
+
 function SupplyBaseSection() {
   const query = useQuery({
     queryKey: procurementKeys.analyticsSupplyBase(),
@@ -414,7 +427,11 @@ function OfferQualitySection() {
 
 export default function DashboardPage() {
   const [days, setDays] = useState('30')
-  const { canReadEscalations, canReadCommunications } = useProcurementPermissions()
+  const {
+    canReadEscalations,
+    canReadCommunications,
+    canManageBuyerSettings,
+  } = useProcurementPermissions()
 
   return (
     <div className="pr-dash">
@@ -434,6 +451,9 @@ export default function DashboardPage() {
         {canReadCommunications && <VariantCard />}
         {canReadEscalations && <BottlenecksCard />}
       </div>
+
+      <h3 className="pr-dash__section">Человек и агент</h3>
+      <BenchmarkSection days={days} canEdit={canManageBuyerSettings} />
 
       <h3 className="pr-dash__section">Сроки</h3>
       <TimingSection days={days} />

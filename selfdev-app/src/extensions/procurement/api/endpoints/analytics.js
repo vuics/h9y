@@ -1,4 +1,4 @@
-import { read } from '../devMode'
+import { mutation, read } from '../devMode'
 import { request } from '../http'
 
 /** Empty shapes rather than nulls: the dashboard renders its axes and its
@@ -30,6 +30,12 @@ const emptySupplyBase = {
 
 const emptyOfferQuality = { rows: [], total: 0, completeness: [], note: '' }
 
+const emptyBenchmark = {
+  window: null, cases: 0, rows: [],
+  baseline: { recordedAt: null, recordedBy: null, note: null, present: false },
+  provenanceNote: '', caseNote: '',
+}
+
 export const analyticsEndpoints = {
   analyticsFunnel: read(
     (params = {}, signal) => request('/analytics/funnel', { params, signal }),
@@ -51,4 +57,10 @@ export const analyticsEndpoints = {
     signal => request('/analytics/offer-quality', { signal }),
     async () => emptyOfferQuality,
   ),
+  analyticsBenchmark: read(
+    (params = {}, signal) => request('/analytics/benchmark', { params, signal }),
+    async () => emptyBenchmark,
+  ),
+  saveBenchmarkBaseline: mutation(({ metrics, note }) =>
+    request('/analytics/benchmark/baseline', { method: 'put', data: { metrics, note } })),
 }
