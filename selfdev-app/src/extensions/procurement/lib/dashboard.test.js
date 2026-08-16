@@ -4,13 +4,16 @@ import assert from 'node:assert/strict'
 import {
   BASELINE_FIELDS,
   barWidth,
+  decimal,
   baselineFormValues,
   benchmarkWidths,
   describeDelta,
+  durationWidth,
   cohortIsEmpty,
   describeStep,
   durationIsReliable,
   formatDuration,
+  niceTicks,
   percent,
   rateScale,
   share,
@@ -185,4 +188,45 @@ test('the baseline form is prefilled from the rows it will overwrite', () => {
   // A measured agent figure is never offered as an input.
   assert.equal('AGENT_CANDIDATES_FOUND' in values, false)
   assert.equal(values.HUMAN_CANDIDATES_FOUND, '')
+})
+
+test('a step under a minute says so instead of showing zero minutes', () => {
+  // "0 мин" recreates the instant-looking claim one unit lower down.
+  assert.deepEqual(formatDuration(0, 0.004), {
+    value: 'меньше минуты', unit: null, empty: false,
+  })
+})
+
+test('decimals are shown with a comma, as a Russian reader expects', () => {
+  assert.equal(decimal(0.3), '0,3')
+  assert.equal(decimal(null), '—')
+})
+
+test('a measured duration always draws a visible bar', () => {
+  // 36 minutes against a two-day scale is ~1%: an empty track would read as
+  // "no data", which is a different statement.
+  assert.ok(durationWidth(0.025, 2.1, true) >= 2)
+})
+
+test('a sub-minute step is still drawn, because it was still measured', () => {
+  assert.ok(durationWidth(0, 2.1, true) >= 2)
+})
+
+test('an unmeasured transition draws nothing at all', () => {
+  assert.equal(durationWidth(null, 2.1, false), 0)
+})
+
+test('a small count axis is labelled one by one', () => {
+  assert.deepEqual(niceTicks(5), [0, 1, 2, 3, 4, 5])
+})
+
+test('a larger count axis keeps its gaps even', () => {
+  const ticks = niceTicks(37)
+  const gaps = ticks.slice(1).map((value, index) => value - ticks[index])
+  assert.equal(new Set(gaps).size, 1)
+  assert.ok(ticks[ticks.length - 1] >= 37)
+})
+
+test('an empty axis still has a top, so the chart keeps its shape', () => {
+  assert.deepEqual(niceTicks(0), [0, 1])
 })

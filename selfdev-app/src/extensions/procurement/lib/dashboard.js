@@ -67,11 +67,20 @@ export function rateScale(rows, floor = 0.5) {
 export function formatDuration(days, hours) {
   if (days == null) return { value: 'нет данных', unit: null, empty: true }
   if (days < 1 && hours != null) {
+    const minutes = Math.round(hours * 60)
+    // Rounding down to a bare "0 мин" recreates, one unit lower, exactly the
+    // "reads as instant" problem that hours were introduced to fix.
+    if (minutes < 1) return { value: 'меньше минуты', unit: null, empty: false }
     return hours < 1
-      ? { value: String(Math.round(hours * 60)), unit: 'мин', empty: false }
-      : { value: String(hours).replace('.', ','), unit: 'ч', empty: false }
+      ? { value: String(minutes), unit: 'мин', empty: false }
+      : { value: decimal(hours), unit: 'ч', empty: false }
   }
-  return { value: String(days).replace('.', ','), unit: 'дн', empty: false }
+  return { value: decimal(days), unit: 'дн', empty: false }
+}
+
+/** A decimal a Russian reader expects: comma, not point. */
+export function decimal(value) {
+  return value == null ? '—' : String(value).replace('.', ',')
 }
 
 /** Below this many measured cases a median is a coincidence, not a duration. */
@@ -173,4 +182,33 @@ export function baselineFormValues(rows) {
     }
   }
   return values
+}
+
+/** Width of a measured-duration bar.
+ *
+ * A measured value always draws something. Thirty-six minutes beside a two-day
+ * step is about one percent of the scale and renders as an empty track — which
+ * is exactly how "no data" renders. Those two must never look the same, so a
+ * measured value gets a visible floor and only an unmeasured one gets nothing.
+ */
+export function durationWidth(days, largest, measured) {
+  if (!measured || !largest) return 0
+  return Math.max(2, Math.min(100, ((days || 0) / largest) * 100))
+}
+
+/** Evenly spaced integer ticks up to a count.
+ *
+ * Left to itself Recharts appends the data maximum as its own tick, so an axis
+ * over five cases reads 0, 2, 4, 5 — the last gap half the others, which makes
+ * the top of the chart look mismeasured. Counts are integers, so the ticks are
+ * too, and they are evenly spaced by construction.
+ */
+export function niceTicks(max) {
+  const top = Math.max(1, Math.ceil(max || 0))
+  if (top <= 5) return Array.from({ length: top + 1 }, (_, index) => index)
+  const step = Math.ceil(top / 4)
+  const ceiling = step * Math.ceil(top / step)
+  const ticks = []
+  for (let value = 0; value <= ceiling; value += step) ticks.push(value)
+  return ticks
 }

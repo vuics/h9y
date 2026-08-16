@@ -25,7 +25,9 @@ import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import {
   barWidth,
   cohortIsEmpty,
+  decimal,
   describeStep,
+  niceTicks,
   percent,
   rateScale,
   windowParams,
@@ -299,6 +301,7 @@ function BottlenecksCard() {
     label: row.label,
     ...row.buckets,
   }))
+  const ticks = niceTicks(Math.max(...(data.rows || []).map(row => row.total), 0))
   const config = Object.fromEntries(
     (data.buckets || []).map(bucket => [
       bucket.key,
@@ -334,7 +337,16 @@ function BottlenecksCard() {
                   interval={0}
                   tick={{ fontSize: 11 }}
                 />
-                <YAxis tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={28}
+                  // Recharts' default picks a round tick count, so a queue of one
+                  // case gets an axis to four and the bar reads as negligible.
+                  domain={[0, ticks[ticks.length - 1]]}
+                  ticks={ticks}
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <ChartLegend content={<ChartLegendContent />} />
                 {(data.buckets || []).map((bucket, index, all) => (
@@ -346,13 +358,17 @@ function BottlenecksCard() {
                     // A 2px surface gap between segments, and rounded ends only
                     // on the top of the stack.
                     radius={index === all.length - 1 ? [4, 4, 0, 0] : 0}
+                    // Without a cap, a queue holding one category stretches that
+                    // bar across the whole plot: a single slab that reads as a
+                    // rendering fault rather than as one open case.
+                    maxBarSize={72}
                   />
                 ))}
               </BarChart>
             </ChartContainer>
             <p className="pr-chart-note">
               <Clock size={12} /> Всего открытых: <b>{data.total}</b>
-              {data.oldestDays > 0 && ` · самая старая ждёт ${data.oldestDays} дн.`}
+              {data.oldestDays > 0 && ` · самая старая ждёт ${decimal(data.oldestDays)} дн.`}
               {data.undated > 0 && ` · без даты создания: ${data.undated}`}
             </p>
             <div className="pr-inline-actions">

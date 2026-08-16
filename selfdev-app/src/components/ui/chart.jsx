@@ -114,9 +114,19 @@ const ChartLegend = Legend
 function ChartLegendContent({ payload, className }) {
   const { config } = useChart()
   if (!payload?.length) return null
+  // Recharts hands the payload back in its own render order, which for a
+  // stacked bar is not the order the series were declared in: an ordered scale
+  // — age buckets, severity tiers — then reads as shuffled. The config is the
+  // authoritative order, so the legend follows it.
+  const order = Object.keys(config)
+  const ordered = [...payload].sort((a, b) => {
+    const left = order.indexOf(String(a.dataKey ?? a.value))
+    const right = order.indexOf(String(b.dataKey ?? b.value))
+    return (left < 0 ? order.length : left) - (right < 0 ? order.length : right)
+  })
   return (
     <div className={cn("tw:flex tw:flex-wrap tw:items-center tw:justify-center tw:gap-x-4 tw:gap-y-1.5 tw:pt-3", className)}>
-      {payload.map(item => {
+      {ordered.map(item => {
         const key = String(item.dataKey ?? item.value)
         return (
           <div key={key} className="tw:flex tw:items-center tw:gap-1.5">

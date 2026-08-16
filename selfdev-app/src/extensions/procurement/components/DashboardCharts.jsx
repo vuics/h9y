@@ -14,12 +14,32 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { CircleAlert } from './icons'
 import {
   durationIsReliable,
+  durationWidth,
   formatDuration,
+  niceTicks,
   percent,
   share,
   trafficLightSummary,
   worstFirst,
 } from '../lib/dashboard'
+
+/** Why one bar is the whole chart. Spelled out per colour, because "all yellow"
+ *  and "all red" mean opposite things and a generic sentence would say neither. */
+const SINGLE_COLOUR_NOTES = {
+  GREEN:
+    'Каждый найденный кандидат прошёл полный гейт: продукт и производственная роль '
+    + 'подтверждены официальным источником, есть независимое подтверждение и нет рисков. '
+    + 'Это редкий случай — стоит выборочно перепроверить вручную.',
+  YELLOW:
+    'Ни один кандидат не набрал на зелёный и ни один не попал в красный. Зелёный требует '
+    + 'подтверждения продукта и производственной роли на официальном источнике плюс '
+    + 'независимого подтверждения; жёлтый — это «доказательств пока недостаточно», '
+    + 'а не «что-то не так». Работа гейта, а не сбой отрисовки.',
+  RED:
+    'У каждого кандидата найден риск: несоответствие продукта, негативный сигнал '
+    + 'регулятора или противоречия между источниками. Проверьте запрос — возможно, '
+    + 'ищется не то вещество.',
+}
 
 const STATUS_COLORS = {
   GREEN: 'var(--pr-good, #0ca30c)',
@@ -64,7 +84,7 @@ export function CycleTimeChart({ data }) {
                     <div
                       className="pr-funnel__bar"
                       data-weak={reliable ? undefined : 'true'}
-                      style={{ width: `${share(item.medianDays, longest)}%` }}
+                      style={{ width: `${durationWidth(item.medianDays, longest, true)}%` }}
                     />
                   )}
                 </div>
@@ -89,6 +109,7 @@ export function FirstReplyChart({ data }) {
     count: bucket.count,
   }))
   const config = { count: { label: 'Ответов', color: 'var(--chart-1)' } }
+  const ticks = niceTicks(Math.max(...chartData.map(item => item.count), 0))
   return (
     <Card>
       <CardHeader>
@@ -109,9 +130,21 @@ export function FirstReplyChart({ data }) {
               <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 11 }} />
-                <YAxis tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={28}
+                  domain={[0, ticks[ticks.length - 1]]}
+                  ticks={ticks}
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="count"
+                  fill="var(--color-count)"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={72}
+                />
               </BarChart>
             </ChartContainer>
             <p className="pr-chart-note">
@@ -169,7 +202,14 @@ export function TrafficLightChart({ data }) {
                         />
                         <i
                           className="pr-split-bar__pending"
-                          style={{ width: `${share(row.unreviewed, widest)}%` }}
+                          style={{
+                            width: `${share(row.unreviewed, widest)}%`,
+                            // Hatched in the row's own status colour: same
+                            // status, not yet confirmed. Filled flat it would be
+                            // indistinguishable from the empty track, and the
+                            // gap between the two segments is the entire point.
+                            '--pending-color': STATUS_COLORS[row.status],
+                          }}
                         />
                       </div>
                     </div>
@@ -186,10 +226,7 @@ export function TrafficLightChart({ data }) {
                 <CircleAlert />
                 <AlertTitle>Все кандидаты в одном цвете</AlertTitle>
                 <AlertDescription>
-                  Автоскоринг не выдал ни одного «{summary.single.status === 'GREEN' ? 'зелёного' : 'другого'}»
-                  статуса: зелёный требует подтверждения продукта и производственной роли
-                  на официальном источнике плюс независимого подтверждения. Это работа
-                  гейта, а не сбой отрисовки.
+                  {SINGLE_COLOUR_NOTES[summary.single.status]}
                 </AlertDescription>
               </Alert>
             )}

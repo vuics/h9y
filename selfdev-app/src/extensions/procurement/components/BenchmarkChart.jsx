@@ -28,6 +28,7 @@ import {
   BASELINE_FIELDS,
   baselineFormValues,
   benchmarkWidths,
+  decimal,
   describeDelta,
 } from '../lib/dashboard'
 
@@ -38,7 +39,7 @@ const SOURCE_LABELS = {
 
 function formatValue(value, unit) {
   if (value == null) return '—'
-  return `${String(value).replace('.', ',')}${unit ? ` ${unit}` : ''}`
+  return `${decimal(value)}${unit ? ` ${unit}` : ''}`
 }
 
 function BenchmarkRow({ row }) {
@@ -71,8 +72,8 @@ function BenchmarkRow({ row }) {
             </div>
             <span className="pr-bench__value">
               <b>{formatValue(cell.value, row.unit)}</b>
-              {cell.source && <span>{SOURCE_LABELS[cell.source]}</span>}
-              {cell.total != null && <span>всего {cell.total}</span>}
+              {cell.value != null && cell.source && <span>{SOURCE_LABELS[cell.source]}</span>}
+              {cell.value != null && cell.total != null && <span>всего {cell.total}</span>}
             </span>
           </div>
         ))}
