@@ -700,3 +700,15 @@
   .pr-bench__bars { grid-column: 1 / -1; }
   .pr-bench__delta { grid-column: 2; justify-self: end; }
 }
+
+/* The PNG control lives over the card's own corner rather than in its header:
+   the header belongs to the chart's title and description, and an export button
+   sitting in the reading order would be read as part of the chart. */
+.pr-exportable { position: relative; display: flex; }
+.pr-exportable > [data-slot="card"] { flex: 1; min-width: 0; }
+.pr-exportable__control { position: absolute; top: 8px; right: 10px; opacity: 0; transition: opacity .12s ease; }
+.pr-exportable:hover .pr-exportable__control,
+.pr-exportable__control:focus-within { opacity: 1; }
+/* Touch and keyboard users never hover, so the control cannot hide from them. */
+@media (hover: none) { .pr-exportable__control { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pr-exportable__control { transition: none; } }

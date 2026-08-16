@@ -52,6 +52,7 @@ import {
   TrafficLightChart,
 } from '../components/DashboardCharts'
 import { BenchmarkChart } from '../components/BenchmarkChart'
+import { DashboardCsvButton, ExportableCard } from '../components/ChartExport'
 
 const PERIODS = [
   ['7', '7 дней'],
@@ -110,8 +111,7 @@ function Funnel({ cohort }) {
   )
 }
 
-function FunnelCard({ days, onDays }) {
-  const params = useMemo(() => windowParams(days), [days])
+function FunnelCard({ params, days, onDays }) {
   const query = useQuery({
     queryKey: procurementKeys.analyticsFunnel(params),
     queryFn: ({ signal }) => procurementApi.analyticsFunnel(params, signal),
@@ -125,6 +125,7 @@ function FunnelCard({ days, onDays }) {
   const outreachEmpty = cohortIsEmpty(data.outreach)
 
   return (
+    <ExportableCard title="Воронка закупочного цикла">
     <Card>
       <CardHeader>
         <CardTitle>Воронка закупочного цикла</CardTitle>
@@ -185,6 +186,7 @@ function FunnelCard({ days, onDays }) {
         )}
       </CardContent>
     </Card>
+    </ExportableCard>
   )
 }
 
@@ -208,6 +210,7 @@ function VariantCard() {
   const scale = rateScale(rows)
 
   return (
+    <ExportableCard title="Что отвечают на первое письмо">
     <Card>
       <CardHeader>
         <CardTitle>Что отвечают на первое письмо</CardTitle>
@@ -279,6 +282,7 @@ function VariantCard() {
         )}
       </CardContent>
     </Card>
+    </ExportableCard>
   )
 }
 
@@ -310,6 +314,7 @@ function BottlenecksCard() {
   )
 
   return (
+    <ExportableCard title="Эскалации по возрасту и причине">
     <Card>
       <CardHeader>
         <CardTitle>Эскалации по возрасту и причине</CardTitle>
@@ -378,6 +383,7 @@ function BottlenecksCard() {
         )}
       </CardContent>
     </Card>
+    </ExportableCard>
   )
 }
 
@@ -387,8 +393,7 @@ function BottlenecksCard() {
  * the same cohort, and splitting them would make the page ask the server for the
  * same rows twice and then disagree with itself at the boundary of a minute.
  */
-function TimingSection({ days }) {
-  const params = useMemo(() => windowParams(days), [days])
+function TimingSection({ params }) {
   const query = useQuery({
     queryKey: procurementKeys.analyticsCycleTime(params),
     queryFn: ({ signal }) => procurementApi.analyticsCycleTime(params, signal),
@@ -397,22 +402,25 @@ function TimingSection({ days }) {
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   return (
     <div className="pr-dash__grid">
-      <CycleTimeChart data={query.data} />
-      <FirstReplyChart data={query.data} />
+      <ExportableCard title="Куда уходит время"><CycleTimeChart data={query.data} /></ExportableCard>
+      <ExportableCard title="Через сколько отвечает поставщик"><FirstReplyChart data={query.data} /></ExportableCard>
     </div>
   )
 }
 
 /** The comparison the pilot is judged on. */
-function BenchmarkSection({ days, canEdit }) {
-  const params = useMemo(() => windowParams(days), [days])
+function BenchmarkSection({ params, canEdit }) {
   const query = useQuery({
     queryKey: procurementKeys.analyticsBenchmark(params),
     queryFn: ({ signal }) => procurementApi.analyticsBenchmark(params, signal),
   })
   if (query.isLoading) return <LoadingState rows={6} />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
-  return <BenchmarkChart data={query.data} canEdit={canEdit} />
+  return (
+    <ExportableCard title="Человек и агент">
+      <BenchmarkChart data={query.data} canEdit={canEdit} />
+    </ExportableCard>
+  )
 }
 
 function SupplyBaseSection() {
@@ -424,9 +432,9 @@ function SupplyBaseSection() {
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   return (
     <div className="pr-dash__grid pr-dash__grid--three">
-      <TrafficLightChart data={query.data} />
-      <RoleChart data={query.data} />
-      <GeographyChart data={query.data} />
+      <ExportableCard title="Светофор базы поставщиков"><TrafficLightChart data={query.data} /></ExportableCard>
+      <ExportableCard title="Производители и посредники"><RoleChart data={query.data} /></ExportableCard>
+      <ExportableCard title="География поставщиков"><GeographyChart data={query.data} /></ExportableCard>
     </div>
   )
 }
@@ -438,11 +446,19 @@ function OfferQualitySection() {
   })
   if (query.isLoading) return <LoadingState rows={5} />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
-  return <OfferGapsChart data={query.data} />
+  return (
+    <ExportableCard title="Чего не хватает в предложениях">
+      <OfferGapsChart data={query.data} />
+    </ExportableCard>
+  )
 }
 
 export default function DashboardPage() {
   const [days, setDays] = useState('30')
+  // Computed once per period and handed down. Recomputing it inside the export
+  // would stamp a fresh `new Date()` into the query key, miss the cache the
+  // charts filled, and report the dashboard as empty.
+  const params = useMemo(() => windowParams(days), [days])
   const {
     canReadEscalations,
     canReadCommunications,
@@ -459,9 +475,10 @@ export default function DashboardPage() {
             оно посчитано; доли показаны вместе со знаменателем.
           </p>
         </div>
+        <DashboardCsvButton params={params} />
       </div>
 
-      <FunnelCard days={days} onDays={setDays} />
+      <FunnelCard params={params} days={days} onDays={setDays} />
 
       <div className="pr-dash__grid">
         {canReadCommunications && <VariantCard />}
@@ -469,10 +486,10 @@ export default function DashboardPage() {
       </div>
 
       <h3 className="pr-dash__section">Человек и агент</h3>
-      <BenchmarkSection days={days} canEdit={canReviewSourcing} />
+      <BenchmarkSection params={params} canEdit={canReviewSourcing} />
 
       <h3 className="pr-dash__section">Сроки</h3>
-      <TimingSection days={days} />
+      <TimingSection params={params} />
 
       <h3 className="pr-dash__section">База поставщиков</h3>
       <SupplyBaseSection />
