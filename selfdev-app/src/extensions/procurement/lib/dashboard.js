@@ -253,6 +253,7 @@ export function headlineTiles({ funnel, cycleTime, channelHealth, bottlenecks })
       label: 'Полных предложений',
       value: complete ? complete.count : null,
       hint: complete?.of == null ? null : `из ${complete.of} котировок`,
+      delta: periodDelta(complete?.count, complete?.previous),
     },
     {
       key: 'TO_QUOTE',
@@ -261,18 +262,72 @@ export function headlineTiles({ funnel, cycleTime, channelHealth, bottlenecks })
       days: quote?.medianDays ?? null,
       hours: quote?.medianHours ?? null,
       hint: quote?.sample ? `медиана по ${quote.sample} кейсам` : 'нет измеримых кейсов',
+      delta: periodDelta(quote?.medianDays, quote?.previousMedianDays, { lowerIsBetter: true }),
+      deltaUnit: 'дн',
     },
+    // The two below are point-in-time states, not windowed counts. There is no
+    // record of how many were waiting a month ago, so they carry no delta and
+    // say why rather than being given a fabricated one.
     {
       key: 'WAITING',
       label: 'Ждут поставщика',
       value: channelHealth?.now?.waiting ?? null,
       hint: 'заданий отправлено, ответа нет',
+      delta: null,
+      pointInTime: true,
     },
     {
       key: 'ATTENTION',
       label: 'Требуют специалиста',
       value: bottlenecks?.total ?? null,
       hint: bottlenecks?.oldestDays ? `самая старая ждёт ${decimal(bottlenecks.oldestDays)} дн.` : null,
+      delta: null,
+      pointInTime: true,
     },
   ]
+}
+
+/** Change against the preceding period, with direction read as meaning.
+ *
+ * Fewer hours is an improvement; fewer replies is not. The arrow follows what
+ * the change *means*, never its sign — an arrow that only tracked the sign
+ * would colour a shrinking backlog as a loss.
+ *
+ * `null` when there is nothing to compare against. That is not zero: a period
+ * nobody measured and a period with nothing in it are different statements, and
+ * rendering both as "0%" would invent a flat trend.
+ */
+export function periodDelta(current, previous, { lowerIsBetter = false } = {}) {
+  if (current == null || previous == null) return null
+  const difference = current - previous
+  if (!difference) return { difference: 0, percent: 0, improved: null, arrow: '=' }
+  const improved = lowerIsBetter ? difference < 0 : difference > 0
+  return {
+    difference,
+    // Against a previous zero any increase is infinite, so the share is left out
+    // and the absolute change speaks for itself.
+    //
+    // Rounded by magnitude and then signed: `Math.round` breaks ties toward
+    // positive infinity, so -47.5 becomes -47 while +47.5 becomes 48, and the
+    // same size of change would print differently depending on its direction.
+    percent: previous
+      ? Math.sign(difference / previous) * Math.round(Math.abs((difference / previous) * 100))
+      : null,
+    improved,
+    arrow: difference > 0 ? '↑' : '↓',
+  }
+}
+
+/** "↑ 6 · 75%" — the absolute change first, because it is the one that is
+ *  always defined. */
+export function formatDelta(delta, { unit = '' } = {}) {
+  if (!delta) return null
+  if (!delta.difference) return { text: 'без изменений', improved: null, arrow: '=' }
+  const absolute = decimal(Math.abs(Number(delta.difference.toFixed(2))))
+  const share = delta.percent == null ? '' : ` · ${Math.abs(delta.percent)}%`
+  return {
+    text: `${absolute}${unit ? ` ${unit}` : ''}${share}`,
+    improved: delta.improved,
+    arrow: delta.arrow,
+  }
 }

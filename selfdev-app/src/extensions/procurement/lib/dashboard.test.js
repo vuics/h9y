@@ -7,7 +7,9 @@ import {
   barWidth,
   dayLabel,
   headlineTiles,
+  formatDelta,
   monthLabel,
+  periodDelta,
   decimal,
   baselineFormValues,
   benchmarkWidths,
@@ -271,4 +273,42 @@ test('the headline tiles come from the payloads already on the page', () => {
 test('a tile with nothing loaded is null, never a zero standing in for unknown', () => {
   const tiles = headlineTiles({})
   assert.deepEqual(tiles.map(t => t.value), [null, null, null, null])
+})
+
+test('a shrinking backlog is an improvement even though the number fell', () => {
+  const delta = periodDelta(2.1, 4.0, { lowerIsBetter: true })
+  assert.equal(delta.improved, true)
+  assert.equal(delta.arrow, '↓')
+})
+
+test('fewer replies is not an improvement, however the arrow points', () => {
+  const delta = periodDelta(5, 9)
+  assert.equal(delta.improved, false)
+  assert.equal(delta.arrow, '↓')
+})
+
+test('nothing to compare against yields no delta, never a zero', () => {
+  assert.equal(periodDelta(5, null), null)
+  assert.equal(periodDelta(null, 5), null)
+})
+
+test('an unchanged metric says so rather than showing an arrow', () => {
+  const delta = periodDelta(7, 7)
+  assert.equal(delta.improved, null)
+  assert.equal(formatDelta(delta).text, 'без изменений')
+})
+
+test('growth from zero reports the absolute change and no share', () => {
+  const delta = periodDelta(4, 0)
+  assert.equal(delta.percent, null)
+  assert.equal(formatDelta(delta).text, '4')
+})
+
+test('the absolute change comes first, because it is always defined', () => {
+  assert.equal(formatDelta(periodDelta(14, 8)).text, '6 · 75%')
+})
+
+test('a delta in days carries its unit', () => {
+  assert.equal(formatDelta(periodDelta(2.1, 4.0, { lowerIsBetter: true }), { unit: 'дн' }).text,
+    '1,9 дн · 48%')
 })

@@ -27,8 +27,10 @@ import {
   cohortIsEmpty,
   decimal,
   describeStep,
+  formatDelta,
   formatDuration,
   headlineTiles,
+  periodDelta,
   niceTicks,
   percent,
   rateScale,
@@ -71,6 +73,20 @@ const BUCKET_COLORS = {
   OVER_7D: 'var(--chart-ordinal-4)',
 }
 
+/** Change against the preceding period, coloured by meaning rather than sign. */
+function DeltaBadge({ delta, className }) {
+  if (!delta) return null
+  return (
+    <span
+      className={className || 'pr-delta'}
+      data-improved={delta.improved == null ? undefined : String(delta.improved)}
+      title="Изменение к предыдущему периоду той же длины"
+    >
+      {delta.arrow} {delta.text}
+    </span>
+  )
+}
+
 /** One funnel stage.
  *
  * Drawn as a row with its own track rather than as a Recharts bar, because the
@@ -80,10 +96,12 @@ const BUCKET_COLORS = {
 function FunnelRow({ step, entry }) {
   const width = barWidth(step.count, entry)
   const described = describeStep(step)
+  const delta = formatDelta(periodDelta(step.count, step.previous))
   const value = (
     <span className="pr-funnel__value">
       <b>{described.value}</b>
       {described.of && <span>{described.of}</span>}
+      <DeltaBadge delta={delta} />
     </span>
   )
   return (
@@ -178,6 +196,7 @@ function FunnelCard({ params, days, onDays }) {
 
         <p className="pr-funnel__foot">{data.seam}</p>
         <p className="pr-funnel__foot">{data.cohortNote}</p>
+        {data.comparisonNote && <p className="pr-funnel__foot">{data.comparisonNote}</p>}
         {data.truncated && (
           <Alert>
             <CircleAlert />
@@ -434,7 +453,9 @@ function HeadlineTiles({ params }) {
                     ? <>{duration.value}{duration.unit && <i>{duration.unit}</i>}</>
                     : tile.value}
               </strong>
+              <DeltaBadge delta={formatDelta(tile.delta, { unit: tile.deltaUnit })} />
               {tile.hint && <small>{tile.hint}</small>}
+              {tile.pointInTime && <small>состояние на сейчас — сравнивать не с чем</small>}
             </CardContent>
           </Card>
         )
