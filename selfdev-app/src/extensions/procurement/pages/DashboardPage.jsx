@@ -14,7 +14,7 @@
  */
 
 import React, { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 
@@ -27,6 +27,8 @@ import {
   cohortIsEmpty,
   decimal,
   describeStep,
+  formatDuration,
+  headlineTiles,
   niceTicks,
   percent,
   rateScale,
@@ -44,11 +46,13 @@ import {
 } from '@/components/ui/chart'
 import { CircleAlert, Clock } from '../components/icons'
 import {
+  ChannelHealthChart,
   CycleTimeChart,
   FirstReplyChart,
   GeographyChart,
   OfferGapsChart,
   RoleChart,
+  RoleTrendChart,
   TrafficLightChart,
 } from '../components/DashboardCharts'
 import { BenchmarkChart } from '../components/BenchmarkChart'
@@ -387,6 +391,73 @@ function BottlenecksCard() {
   )
 }
 
+/** The four headline numbers, derived from payloads already on the page.
+ *
+ * Read from the cache rather than fetched: a fifth request for numbers the
+ * charts below already hold would be a second source of truth and a chance for
+ * the tiles to disagree with the charts they summarise.
+ */
+function HeadlineTiles({ params }) {
+  // Subscribed to the cache but never fetching: `getQueryData` is a one-time
+  // read, so tiles built from it render before the sections resolve and then
+  // stay on an em dash forever. `enabled: false` keeps them purely derived —
+  // they show a number the moment the chart below them has one, and they can
+  // never issue a request the reader's permissions might not allow.
+  const [funnel, cycleTime, channelHealth, bottlenecks] = useQueries({
+    queries: [
+      procurementKeys.analyticsFunnel(params),
+      procurementKeys.analyticsCycleTime(params),
+      procurementKeys.analyticsChannelHealth(params),
+      procurementKeys.analyticsBottlenecks(),
+    ].map(queryKey => ({ queryKey, enabled: false })),
+  })
+  const tiles = headlineTiles({
+    funnel: funnel.data,
+    cycleTime: cycleTime.data,
+    channelHealth: channelHealth.data,
+    bottlenecks: bottlenecks.data,
+  })
+  return (
+    <div className="pr-dash__tiles">
+      {tiles.map(tile => {
+        const duration = tile.key === 'TO_QUOTE'
+          ? formatDuration(tile.days, tile.hours)
+          : null
+        return (
+          <Card key={tile.key} size="sm" className="pr-dash__tile">
+            <CardContent>
+              <span className="pr-dash__tile-label">{tile.label}</span>
+              <strong>
+                {tile.value == null
+                  ? '—'
+                  : duration
+                    ? <>{duration.value}{duration.unit && <i>{duration.unit}</i>}</>
+                    : tile.value}
+              </strong>
+              {tile.hint && <small>{tile.hint}</small>}
+            </CardContent>
+          </Card>
+        )
+      })}
+    </div>
+  )
+}
+
+/** Is the agent working right now. */
+function ChannelHealthSection({ params }) {
+  const query = useQuery({
+    queryKey: procurementKeys.analyticsChannelHealth(params),
+    queryFn: ({ signal }) => procurementApi.analyticsChannelHealth(params, signal),
+  })
+  if (query.isLoading) return <LoadingState rows={5} />
+  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  return (
+    <ExportableCard title="Здоровье каналов и очередь агента">
+      <ChannelHealthChart data={query.data} />
+    </ExportableCard>
+  )
+}
+
 /** Timing, supply base and offer quality.
  *
  * One query per question rather than one per chart: the two timing charts read
@@ -435,6 +506,7 @@ function SupplyBaseSection() {
       <ExportableCard title="Светофор базы поставщиков"><TrafficLightChart data={query.data} /></ExportableCard>
       <ExportableCard title="Производители и посредники"><RoleChart data={query.data} /></ExportableCard>
       <ExportableCard title="География поставщиков"><GeographyChart data={query.data} /></ExportableCard>
+      <ExportableCard title="Доля производителей по месяцам"><RoleTrendChart data={query.data} /></ExportableCard>
     </div>
   )
 }
@@ -478,6 +550,8 @@ export default function DashboardPage() {
         <DashboardCsvButton params={params} />
       </div>
 
+      <HeadlineTiles params={params} />
+
       <FunnelCard params={params} days={days} onDays={setDays} />
 
       <div className="pr-dash__grid">
@@ -496,6 +570,13 @@ export default function DashboardPage() {
 
       <h3 className="pr-dash__section">Качество предложений</h3>
       <OfferQualitySection />
+
+      {canReadCommunications && (
+        <>
+          <h3 className="pr-dash__section">Каналы и агент</h3>
+          <ChannelHealthSection params={params} />
+        </>
+      )}
     </div>
   )
 }

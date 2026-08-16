@@ -212,3 +212,67 @@ export function niceTicks(max) {
   for (let value = 0; value <= ceiling; value += step) ticks.push(value)
   return ticks
 }
+
+/** Short day label for a daily series: `2026-08-16` → `16.08`.
+ *
+ * The year is dropped because every point in a window shares it, and a
+ * thirty-point axis of full dates is unreadable at any width.
+ */
+export function dayLabel(day) {
+  const [, month, date] = String(day || '').split('-')
+  return month && date ? `${date}.${month}` : String(day || '')
+}
+
+/** Show roughly this many labels on a daily axis, whatever the window length. */
+export function axisInterval(pointCount, target = 8) {
+  return pointCount <= target ? 0 : Math.ceil(pointCount / target) - 1
+}
+
+/** `2026-07` → `июль`. Month names are what a reader compares, not ISO keys. */
+const MONTHS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+
+export function monthLabel(month) {
+  const [year, index] = String(month || '').split('-')
+  const name = MONTHS[Number(index) - 1]
+  return name ? `${name} ${String(year).slice(2)}` : String(month || '')
+}
+
+/** The four headline numbers, taken from payloads the charts already hold.
+ *
+ * Derived rather than fetched: a fifth request for numbers already on the page
+ * would be a second source of truth and a chance for the tiles to disagree with
+ * the charts under them.
+ */
+export function headlineTiles({ funnel, cycleTime, channelHealth, bottlenecks }) {
+  const step = key => funnel?.outreach?.steps?.find(item => item.key === key)
+  const complete = step('COMPLETE')
+  const quote = cycleTime?.transitions?.find(item => item.key === 'REPLY_TO_QUOTE')
+  return [
+    {
+      key: 'COMPLETE',
+      label: 'Полных предложений',
+      value: complete ? complete.count : null,
+      hint: complete?.of == null ? null : `из ${complete.of} котировок`,
+    },
+    {
+      key: 'TO_QUOTE',
+      label: 'Ответ → котировка',
+      value: quote?.medianDays ?? null,
+      days: quote?.medianDays ?? null,
+      hours: quote?.medianHours ?? null,
+      hint: quote?.sample ? `медиана по ${quote.sample} кейсам` : 'нет измеримых кейсов',
+    },
+    {
+      key: 'WAITING',
+      label: 'Ждут поставщика',
+      value: channelHealth?.now?.waiting ?? null,
+      hint: 'заданий отправлено, ответа нет',
+    },
+    {
+      key: 'ATTENTION',
+      label: 'Требуют специалиста',
+      value: bottlenecks?.total ?? null,
+      hint: bottlenecks?.oldestDays ? `самая старая ждёт ${decimal(bottlenecks.oldestDays)} дн.` : null,
+    },
+  ]
+}

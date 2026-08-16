@@ -3,7 +3,11 @@ import assert from 'node:assert/strict'
 
 import {
   BASELINE_FIELDS,
+  axisInterval,
   barWidth,
+  dayLabel,
+  headlineTiles,
+  monthLabel,
   decimal,
   baselineFormValues,
   benchmarkWidths,
@@ -229,4 +233,42 @@ test('a larger count axis keeps its gaps even', () => {
 
 test('an empty axis still has a top, so the chart keeps its shape', () => {
   assert.deepEqual(niceTicks(0), [0, 1])
+})
+
+test('a daily label drops the year every point shares', () => {
+  assert.equal(dayLabel('2026-08-16'), '16.08')
+})
+
+test('a malformed day is shown as given rather than as NaN', () => {
+  assert.equal(dayLabel(''), '')
+  assert.equal(dayLabel('сегодня'), 'сегодня')
+})
+
+test('a short series labels every point', () => {
+  assert.equal(axisInterval(5), 0)
+})
+
+test('a month-long series thins its labels instead of overprinting them', () => {
+  assert.ok(axisInterval(31) >= 3)
+})
+
+test('a month key becomes a name a reader compares', () => {
+  assert.equal(monthLabel('2026-07'), 'июл 26')
+})
+
+test('the headline tiles come from the payloads already on the page', () => {
+  const tiles = headlineTiles({
+    funnel: { outreach: { steps: [{ key: 'COMPLETE', count: 3, of: 5 }] } },
+    cycleTime: { transitions: [{ key: 'REPLY_TO_QUOTE', medianDays: 2.8, medianHours: 67.2, sample: 5 }] },
+    channelHealth: { now: { waiting: 45 } },
+    bottlenecks: { total: 17, oldestDays: 9.3 },
+  })
+  assert.deepEqual(tiles.map(t => t.value), [3, 2.8, 45, 17])
+  assert.equal(tiles[0].hint, 'из 5 котировок')
+  assert.equal(tiles[3].hint, 'самая старая ждёт 9,3 дн.')
+})
+
+test('a tile with nothing loaded is null, never a zero standing in for unknown', () => {
+  const tiles = headlineTiles({})
+  assert.deepEqual(tiles.map(t => t.value), [null, null, null, null])
 })

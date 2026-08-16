@@ -30,6 +30,12 @@ const emptySupplyBase = {
 
 const emptyOfferQuality = { rows: [], total: 0, completeness: [], note: '' }
 
+const emptyChannelHealth = {
+  window: null, series: [], totals: { failures: 0, quarantine: 0 },
+  now: { stuck: 0, waiting: 0, unresolvedQuarantine: 0 },
+  quarantineAvailable: true, seriesNote: '', stuckNote: '',
+}
+
 const emptyBenchmark = {
   window: null, cases: 0, rows: [],
   baseline: { recordedAt: null, recordedBy: null, note: null, present: false },
@@ -56,6 +62,10 @@ export const analyticsEndpoints = {
   analyticsOfferQuality: read(
     signal => request('/analytics/offer-quality', { signal }),
     async () => emptyOfferQuality,
+  ),
+  analyticsChannelHealth: read(
+    (params = {}, signal) => request('/analytics/channel-health', { params, signal }),
+    async () => emptyChannelHealth,
   ),
   analyticsBenchmark: read(
     (params = {}, signal) => request('/analytics/benchmark', { params, signal }),

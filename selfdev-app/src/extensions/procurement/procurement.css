@@ -712,3 +712,19 @@
 /* Touch and keyboard users never hover, so the control cannot hide from them. */
 @media (hover: none) { .pr-exportable__control { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pr-exportable__control { transition: none; } }
+
+.pr-dash__tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.pr-dash__tile [data-slot="card-content"] { display: flex; flex-direction: column; gap: 3px; }
+.pr-dash__tile-label { color: var(--pr-muted); font-size: 11.5px; }
+.pr-dash__tile strong { font-size: 27px; font-weight: 650; letter-spacing: -.02em; line-height: 1.05; }
+.pr-dash__tile strong i { font-style: normal; font-size: 15px; color: var(--pr-muted); font-weight: 500; margin-left: 4px; }
+.pr-dash__tile small { color: var(--pr-muted); font-size: 11px; }
+
+/* Point-in-time counters beside the series, never inside it: they have no
+   recorded history, and drawing them as a trend would invent one. */
+.pr-channel__now { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.pr-channel__stat { border: 1px solid var(--pr-border); border-radius: 8px; padding: 9px 11px; display: flex; flex-direction: column; gap: 2px; }
+.pr-channel__stat[data-alarm="true"] { border-color: color-mix(in oklch, var(--pr-warning) 55%, var(--pr-border)); }
+.pr-channel__stat strong { font-size: 21px; font-weight: 650; line-height: 1.05; }
+.pr-channel__stat span { font-size: 12px; }
+.pr-channel__stat small { color: var(--pr-muted); font-size: 10.5px; line-height: 1.3; }

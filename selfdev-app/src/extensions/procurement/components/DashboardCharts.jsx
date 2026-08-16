@@ -6,16 +6,25 @@
  */
 
 import React from 'react'
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
 import { CircleAlert } from './icons'
 import {
+  axisInterval,
+  dayLabel,
   durationIsReliable,
   durationWidth,
   formatDuration,
+  monthLabel,
   niceTicks,
   percent,
   share,
@@ -382,6 +391,179 @@ export function OfferGapsChart({ data }) {
             </div>
             <p className="pr-chart-note">
               Разобрано ответов: <b>{data.total}</b>
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+/** Is the agent working right now, and what is stuck.
+ *
+ * Two series and three counters, kept visibly apart. Failures and quarantine are
+ * timestamped events and plot as a daily line; "stuck" is a current state with
+ * no recorded history, so it sits beside the chart as a number rather than being
+ * drawn as a trend nobody measured.
+ */
+export function ChannelHealthChart({ data }) {
+  const series = (data?.series || []).map(point => ({
+    label: dayLabel(point.day),
+    failures: point.failures,
+    quarantine: point.quarantine,
+  }))
+  const config = {
+    failures: { label: 'Сбои доставки', color: 'var(--chart-2)' },
+    quarantine: { label: 'Карантин неопознанных', color: 'var(--chart-3)' },
+  }
+  const peak = Math.max(...series.map(p => Math.max(p.failures, p.quarantine)), 0)
+  const ticks = niceTicks(peak)
+  const quiet = data?.totals && !data.totals.failures && !data.totals.quarantine
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Здоровье каналов и очередь агента</CardTitle>
+        <p className="pr-muted">
+          Отвечает на вопрос «работает ли агент прямо сейчас» без чтения логов
+          контейнера.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="pr-channel__now">
+          {[
+            ['Застряло', data?.now?.stuck, 'ESCALATED или последняя ошибка воркера'],
+            ['Ждут поставщика', data?.now?.waiting, 'отправлено, ответа нет'],
+            ['Карантин открыт', data?.now?.unresolvedQuarantine, 'отправитель не опознан'],
+          ].map(([label, value, hint]) => (
+            <div className="pr-channel__stat" key={label} data-alarm={value > 0 ? 'true' : undefined}>
+              <strong>{value ?? '—'}</strong>
+              <span>{label}</span>
+              <small>{hint}</small>
+            </div>
+          ))}
+        </div>
+
+        {series.length > 0 && (
+          <ChartContainer config={config} className="tw:aspect-[16/6] tw:w-full">
+            <LineChart data={series} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                interval={axisInterval(series.length)}
+                tick={{ fontSize: 11 }}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+                width={28}
+                domain={[0, ticks[ticks.length - 1]]}
+                ticks={ticks}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+              {/* Straight segments, not a spline: a monotone curve through
+                  0, 0, 16, 0, 0 bulges above zero on the days either side, and
+                  those days had no incidents at all. Counts do not interpolate. */}
+              <Line
+                type="linear" dataKey="failures" stroke="var(--color-failures)"
+                strokeWidth={2} dot={false} activeDot={{ r: 4 }}
+              />
+              <Line
+                type="linear" dataKey="quarantine" stroke="var(--color-quarantine)"
+                strokeWidth={2} dot={false} activeDot={{ r: 4 }}
+              />
+            </LineChart>
+          </ChartContainer>
+        )}
+
+        {quiet && (
+          <p className="pr-chart-note">
+            За период ни одного сбоя доставки и ни одного неопознанного сообщения.
+            Для этого графика пустой ряд — это и есть ответ.
+          </p>
+        )}
+        <p className="pr-chart-note">
+          За период: сбоев <b>{data?.totals?.failures ?? 0}</b>, в карантин попало{' '}
+          <b>{data?.totals?.quarantine ?? 0}</b>
+        </p>
+        <p className="pr-chart-note">{data?.seriesNote}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+/** Manufacturer share over time.
+ *
+ * The snapshot beside it answers "what do we have"; this answers "is the sorting
+ * getting better", which is the question behind the customer's stated pain.
+ */
+export function RoleTrendChart({ data }) {
+  const rows = (data?.roleTrend?.rows || []).map(row => ({
+    label: monthLabel(row.month),
+    MANUFACTURER: row.MANUFACTURER,
+    BOTH: row.BOTH,
+    DISTRIBUTOR: row.DISTRIBUTOR,
+    UNKNOWN: row.UNKNOWN,
+    share: row.manufacturerShare,
+    total: row.total,
+  }))
+  const config = {
+    MANUFACTURER: { label: 'Производитель', color: 'var(--chart-1)' },
+    BOTH: { label: 'Производитель и дистрибьютор', color: 'var(--chart-3)' },
+    DISTRIBUTOR: { label: 'Дистрибьютор', color: 'var(--chart-2)' },
+    UNKNOWN: { label: 'Роль не установлена', color: 'var(--chart-track)' },
+  }
+  const ticks = niceTicks(Math.max(...rows.map(r => r.total), 0))
+  const measured = rows.filter(row => row.total > 0)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Доля производителей по месяцам</CardTitle>
+        <p className="pr-muted">{data?.roleTrend?.note}</p>
+      </CardHeader>
+      <CardContent>
+        {measured.length === 0 ? (
+          <p className="pr-funnel__foot">
+            Подтверждённых кандидатов пока нет ни в одном месяце — тренд появится
+            после первых решений специалиста.
+          </p>
+        ) : (
+          <>
+            <ChartContainer config={config} className="tw:aspect-[16/7] tw:w-full">
+              <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+                <CartesianGrid vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 11 }} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={28}
+                  domain={[0, ticks[ticks.length - 1]]}
+                  ticks={ticks}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                {['MANUFACTURER', 'BOTH', 'DISTRIBUTOR', 'UNKNOWN'].map((key, index, all) => (
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="roles"
+                    fill={`var(--color-${key})`}
+                    radius={index === all.length - 1 ? [4, 4, 0, 0] : 0}
+                    maxBarSize={72}
+                  />
+                ))}
+              </BarChart>
+            </ChartContainer>
+            <p className="pr-chart-note">
+              Последний месяц с решениями: доля производителей{' '}
+              <b>{percent(measured[measured.length - 1].share)}</b> из{' '}
+              {measured[measured.length - 1].total} подтверждённых
             </p>
           </>
         )}
