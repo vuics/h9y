@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
 import { StageBoard } from '../components/StageBoard'
+import { Sparkline } from '../components/Sparkline'
 
 const kpis = [
   ['activeCards', 'Активные карточки', Flask, 'progress'],
@@ -18,14 +19,34 @@ const kpis = [
   ['failures', 'Ошибки обработки', Inbox, 'danger'],
 ]
 
+const TREND_DAYS = 14
+
 export default function OverviewPage() {
   const query = useQuery({ queryKey: procurementKeys.overview(), queryFn: ({ signal }) => procurementApi.overview({ signal }), staleTime: 30000, retry: 1 })
+  // Its own query, deliberately not blocking the page: the tiles are useful
+  // without a trend, and a slow series must never hold up the worklist.
+  const trends = useQuery({
+    queryKey: procurementKeys.analyticsTrends(TREND_DAYS),
+    queryFn: ({ signal }) => procurementApi.analyticsTrends({ days: TREND_DAYS }, signal),
+    staleTime: 60000,
+    retry: 1,
+  })
   if (query.isLoading) return <LoadingState rows={8} />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   const data = query.data
   if (!data) return <EmptyState />
   return <div className="pr-stack pr-stack--lg">
-    <section className="pr-kpis" aria-label="Ключевые показатели">{kpis.map(([key, label, KpiIcon, tone]) => <Card key={key} className="pr-kpi"><CardContent><div className={`pr-kpi__icon pr-kpi__icon--${tone}`}><KpiIcon /></div><div><strong>{data.kpis?.[key] ?? '—'}</strong><span>{label}</span></div></CardContent></Card>)}</section>
+    <section className="pr-kpis" aria-label="Ключевые показатели">{kpis.map(([key, label, KpiIcon, tone]) => {
+      const series = trends.data?.series?.[key]
+      return <Card key={key} className="pr-kpi"><CardContent><div className={`pr-kpi__icon pr-kpi__icon--${tone}`}><KpiIcon /></div><div className="pr-kpi__body"><strong>{data.kpis?.[key] ?? '—'}</strong><span>{label}</span>{series && <>
+        <Sparkline points={series.points} label={series.label} kind={series.kind} tone={tone} />
+        <small>{series.label}</small>
+      </>}</div></CardContent></Card>
+    })}</section>
+    {/* Said once under the row rather than repeated on four tiles: one fact
+        multiplied by four is noise, which is the mistake the benchmark card
+        already taught. */}
+    {trends.data?.note && <p className="pr-kpis__note">{trends.data.note}</p>}
     <section><div className="pr-section-heading"><div><h2>Активные закупки по этапам</h2><p>Счётчик каждой колонки — точное число карточек на этапе, а не размер первой страницы.</p></div><Link to="/procurement/requests">Все карточки</Link></div>
       <StageBoard stages={data.stages} truncated={data.truncated} />
     </section>

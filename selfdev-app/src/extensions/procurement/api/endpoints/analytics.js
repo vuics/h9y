@@ -30,6 +30,8 @@ const emptySupplyBase = {
 
 const emptyOfferQuality = { rows: [], total: 0, completeness: [], note: '' }
 
+const emptyTrends = { from: null, to: null, days: 14, series: {}, note: '' }
+
 const emptyChannelHealth = {
   window: null, series: [], totals: { failures: 0, quarantine: 0 },
   now: { stuck: 0, waiting: 0, unresolvedQuarantine: 0 },
@@ -62,6 +64,10 @@ export const analyticsEndpoints = {
   analyticsOfferQuality: read(
     signal => request('/analytics/offer-quality', { signal }),
     async () => emptyOfferQuality,
+  ),
+  analyticsTrends: read(
+    (params = {}, signal) => request('/analytics/trends', { params, signal }),
+    async () => emptyTrends,
   ),
   analyticsChannelHealth: read(
     (params = {}, signal) => request('/analytics/channel-health', { params, signal }),

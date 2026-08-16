@@ -737,3 +737,19 @@
 .dark .pr-delta[data-improved="true"] { color: #4cc44c; }
 .pr-funnel__value .pr-delta { margin-left: 8px; }
 .pr-dash__tile .pr-delta { margin-top: 1px; }
+
+/* Sparklines sit under the KPI number, not beside it: the tiles are already
+   narrow, and a chart competing with the figure for width shrinks both. */
+.pr-kpi [data-slot="card-content"] { align-items: flex-start; }
+.pr-kpi__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pr-kpi__body > small { color: var(--pr-muted); font-size: 10px; line-height: 1.25; }
+.pr-spark { display: block; margin-top: 4px; overflow: visible; color: var(--pr-progress); }
+/* One tone per tile, matching the icon beside it, so a reader connects the line
+   to the number without a legend. */
+.pr-spark[data-tone="waiting"] { color: #795f10; }
+.pr-spark[data-tone="warning"] { color: var(--pr-warning); }
+.pr-spark[data-tone="complete"] { color: var(--pr-accent); }
+.pr-spark[data-tone="danger"] { color: var(--pr-danger); }
+.pr-kpis { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+.pr-kpis__note { color: var(--pr-muted); font-size: 11.5px; margin: -8px 0 0; max-width: 92ch; }
