@@ -17,7 +17,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -78,12 +78,15 @@ function BenchmarkRow({ row }) {
           </div>
         ))}
       </div>
+      {/* Empty when there is nothing to compare: the human bar already shows a
+          dash, and the card states once why. Repeating "нет эталона" on every
+          row turned one fact into six lines of noise. */}
       <div className="pr-bench__delta">
-        {delta
-          ? <Badge variant="outline" data-improved={delta.improved ? 'true' : 'false'}>
+        {delta && (
+          <Badge variant="outline" data-improved={delta.improved ? 'true' : 'false'}>
             {delta.arrow} {delta.text}
           </Badge>
-          : <span className="pr-muted">нет эталона</span>}
+        )}
       </div>
     </div>
   )
@@ -192,7 +195,15 @@ export function BenchmarkChart({ data, canEdit }) {
                 <AlertDescription>
                   Пока показана только колонка агента. Сравнивать не с чем, и
                   подставлять ноль вместо эталона значило бы нарисовать победу.
+                  {canEdit
+                    ? ' Введите замер: сколько часов, кандидатов и котировок выходит у специалиста на один кейс.'
+                    : ' Ввести замер может специалист с правом проверки поставщиков (SOURCING_REVIEW) — попросите его открыть этот экран.'}
                 </AlertDescription>
+                {canEdit && (
+                  <AlertAction>
+                    <Button size="sm" onPress={() => setEditing(true)}>Задать эталон</Button>
+                  </AlertAction>
+                )}
               </Alert>
             )}
             <div className="pr-bench">

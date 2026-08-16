@@ -446,7 +446,7 @@ export default function DashboardPage() {
   const {
     canReadEscalations,
     canReadCommunications,
-    canManageBuyerSettings,
+    canReviewSourcing,
   } = useProcurementPermissions()
 
   return (
@@ -469,7 +469,7 @@ export default function DashboardPage() {
       </div>
 
       <h3 className="pr-dash__section">Человек и агент</h3>
-      <BenchmarkSection days={days} canEdit={canManageBuyerSettings} />
+      <BenchmarkSection days={days} canEdit={canReviewSourcing} />
 
       <h3 className="pr-dash__section">Сроки</h3>
       <TimingSection days={days} />
