@@ -3,7 +3,11 @@
 # node_modules copied over a linux image replaces esbuild with a Mach-O binary
 # and the dev server dies with "The service is no longer running".
 node_modules
-dist
+
+# NOTE: The ../selfdev-helm/ build of k8s images needs the dist/ dir to be copied to docker image.
+#       We could fix building inside the docker image (maybe multi-stage docker building).
+# dist
+
 .git
 .gitignore
 .DS_Store
