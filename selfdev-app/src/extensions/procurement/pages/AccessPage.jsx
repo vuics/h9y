@@ -225,26 +225,33 @@ function GrantForm({ vocabulary, principal, onSubmit, pending, error }) {
       <Input type="date" value={validUntil} onChange={event => setValidUntil(event.target.value)} />
     </label>
 
-    {/* Rendering nothing when there is nothing to offer left the legend
-        describing a control the reader could not find. */}
-    {role && offered.length === 0 && <p className="pr-note">
-      Точечные разрешения недоступны: эта роль уже включает всё, что вы можете выдать.
-    </p>}
-
-    {role && offered.length > 0 && <details className="pr-access-extra">
-      <summary>Точечные разрешения сверх роли ({extra.length})</summary>
-      {grouped(offered).map(([group, entries]) => <fieldset key={group}>
-        <legend>{group}</legend>
-        {entries.map(entry => <label key={entry.permission} className="pr-access-check">
-          <input
-            type="checkbox"
-            checked={extra.includes(entry.permission)}
-            onChange={() => toggle(entry.permission)}
-          />
-          <span><code>{entry.permission}</code> — {entry.description}</span>
-        </label>)}
-      </fieldset>)}
-    </details>}
+    {/* Always rendered, never behind a disclosure. This section was hidden
+        twice over — absent until a role was picked, and then collapsed — so the
+        legend described a control the reader could not find. A heading that is
+        always present and states why it is empty costs one line and answers the
+        question the empty space raised. */}
+    <section className="pr-access-extra">
+      <h4>Точечные разрешения сверх роли {role && offered.length > 0 && `(${extra.length})`}</h4>
+      {!role && <p className="pr-note">
+        Сначала выберите роль — набор зависит от неё: то, что уже входит в роль,
+        здесь не повторяется.
+      </p>}
+      {role && offered.length === 0 && <p className="pr-note">
+        Эта роль уже включает всё, что вы можете выдать, — добавлять нечего.
+      </p>}
+      {role && offered.length > 0 && grouped(offered).map(([group, entries]) =>
+        <fieldset key={group}>
+          <legend>{group}</legend>
+          {entries.map(entry => <label key={entry.permission} className="pr-access-check">
+            <input
+              type="checkbox"
+              checked={extra.includes(entry.permission)}
+              onChange={() => toggle(entry.permission)}
+            />
+            <span><code>{entry.permission}</code> — {entry.description}</span>
+          </label>)}
+        </fieldset>)}
+    </section>
 
     <Alert>
       <CircleAlert />

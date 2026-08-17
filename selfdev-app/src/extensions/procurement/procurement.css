@@ -786,7 +786,7 @@
   border-radius: 6px; background: var(--background); color: inherit;
 }
 
-.pr-access-extra summary { cursor: pointer; padding: 6px 0; }
+.pr-access-extra h4 { margin: 0 0 6px; font-size: 0.9rem; }
 .pr-access-extra fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
 .pr-access-extra legend { padding: 0 4px; font-size: 0.85rem; }
 
