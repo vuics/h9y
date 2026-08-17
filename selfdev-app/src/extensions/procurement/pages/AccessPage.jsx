@@ -36,6 +36,17 @@ function SourceBadges({ sources }) {
   </span>
 }
 
+/** What pressing "Отозвать" would actually achieve for this permission.
+ *
+ * Three states rather than two: a permission granted by both a platform role and
+ * a procurement назначение survives the revoke, and saying nothing there implies
+ * it would not.
+ */
+const REVOCABILITY_NOTE = {
+  PARTIALLY_REVOCABLE: ' — снимется частично: роль платформы всё равно оставит это разрешение',
+  PLATFORM_ONLY: ' — только через роль платформы, здесь не снимается',
+}
+
 function EffectivePermissions({ principal }) {
   if (!principal.effectivePermissions.length) {
     return <p className="pr-note">Нет ни одного разрешения в этом рабочем месте.</p>
@@ -46,10 +57,64 @@ function EffectivePermissions({ principal }) {
       <ul>{entries.map(entry => <li key={entry.permission}>
         <code>{entry.permission}</code>
         <SourceBadges sources={entry.sources} />
-        {!entry.revocableHere && <span className="pr-note"> — только через роль платформы, здесь не снимается</span>}
+        {REVOCABILITY_NOTE[entry.revocability] &&
+          <span className="pr-note">{REVOCABILITY_NOTE[entry.revocability]}</span>}
       </li>)}</ul>
     </div>)}
   </div>
+}
+
+/** How the access model works, on the page where it is used.
+ *
+ * Collapsed by default: an administrator doing this for the tenth time does not
+ * need it, and the person doing it for the first time has nowhere else to look.
+ */
+function AccessLegend({ roles }) {
+  return <details className="pr-access-legend">
+    <summary>Как устроен доступ</summary>
+
+    <h4>Два источника разрешений</h4>
+    <p>
+      <strong>Роль платформы</strong> выдаётся вне Procurement и общая для всей
+      установки — здесь она только показывается. <strong>Назначение</strong> —
+      собственная запись Procurement: только её на этой странице и выдают,
+      и только её отзывают.
+    </p>
+
+    <h4>Три пометки у разрешения</h4>
+    <ul>
+      <li><Badge variant="outline">роль платформы</Badge> — пришло из ролей платформы, здесь не снимается.</li>
+      <li><Badge variant="outline">роль</Badge> — входит в набор роли выданного назначения.</li>
+      <li><Badge>точечно</Badge> — добавлено отдельной галочкой сверх роли.</li>
+    </ul>
+    <p className="pr-note">
+      Одно и то же разрешение может прийти из нескольких источников сразу. Тогда
+      отзыв назначения снимет только свою часть — об этом написано прямо
+      в строке разрешения.
+    </p>
+
+    <h4>Роли дополняют друг друга</h4>
+    <p>
+      Разрешения всех ролей объединяются, и ни одна не включает другую целиком.
+      Поэтому роль обычно <em>добавляют</em>: если заменить «Закупщика» на
+      «Специалиста», человек получит право подтверждать производителя, но
+      потеряет право создавать карточки.
+    </p>
+    <ul className="pr-access-legend-roles">
+      {roles.map(entry => <li key={entry.role}>
+        <strong>{entry.label}</strong> <code>{entry.role}</code>
+        <span className="pr-note"> — {entry.description}</span>
+      </li>)}
+    </ul>
+
+    <h4>Ограничения выдачи</h4>
+    <ul>
+      <li>Выдать можно только то, что есть у вас самих — своё право нельзя превысить.</li>
+      <li>Ключевое разделение контура: находить поставщиков может закупщик, а <em>подтверждать производителя</em> — только специалист. Автоматическая оценка это сделать не может ни при каких условиях.</li>
+      <li>«Только рекомендует» снимает у роли право закрывать эскалации: человек разбирает случай и пишет рекомендацию, а решение принимает другой.</li>
+      <li>Срок действия необязателен; после его истечения назначение перестаёт давать разрешения, но остаётся видимым — чтобы было понятно, почему доступ пропал.</li>
+    </ul>
+  </details>
 }
 
 /** One binding this workspace owns, with the switch that removes it. */
@@ -287,6 +352,8 @@ export default function AccessPage() {
         <p>{vocabulary.data.roleNote}</p>
       </div>
     </div>
+
+    <AccessLegend roles={vocabulary.data.roles} />
 
     {!vocabulary.data.scopeAgentId && <Alert>
       <CircleAlert />

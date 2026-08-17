@@ -798,3 +798,14 @@
 .pr-access-effective ul { margin: 0; padding-left: 18px; }
 .pr-access-effective li { padding: 2px 0; font-size: 0.85rem; }
 .pr-access-sources { display: inline-flex; gap: 4px; margin-left: 6px; }
+
+.pr-access-legend {
+  border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+  background: var(--muted);
+}
+.pr-access-legend summary { cursor: pointer; font-weight: 600; }
+.pr-access-legend h4 { margin: 14px 0 4px; font-size: 0.85rem; }
+.pr-access-legend p { margin: 0 0 6px; font-size: 0.85rem; }
+.pr-access-legend ul { margin: 0 0 6px; padding-left: 18px; font-size: 0.85rem; }
+.pr-access-legend li { padding: 2px 0; }
+.pr-access-legend-roles { list-style: none; padding-left: 0; }
