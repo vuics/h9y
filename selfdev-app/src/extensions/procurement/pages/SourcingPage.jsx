@@ -12,6 +12,7 @@ import { SourcingSourceTable } from '../components/SourcingSourceTable'
 import { QueryPlanPanel } from '../components/QueryPlanPanel'
 import { EnginePicker } from '../components/EnginePicker'
 import { SelectField } from '../components/SelectField'
+import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -68,7 +69,7 @@ function SourceLink({ source }) {
 export default function SourcingPage() {
   const { requestId } = useParams()
   const queryClient = useQueryClient()
-  const { canResearchSourcing, canReviewSourcing } = useProcurementPermissions()
+  const { canResearchSourcing, canReviewSourcing, canOperateEchemi } = useProcurementPermissions()
   const [maxResults, setMaxResults] = useState('10')
   const [sourceUrl, setSourceUrl] = useState('')
   const [selectedId, setSelectedId] = useState('')
@@ -171,6 +172,13 @@ export default function SourcingPage() {
         <EnginePicker engines={engineList} selectedIds={effectiveEngineIds} disabled={isBusy} onToggle={(id, checked) => setSelectedEngineIds(current => { const base = current ?? availableEngineIds; return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} />
         <QueryPlanPanel templates={templates} isDefault={queryTemplates.data?.isDefault} selectedIds={effectiveQueryIds} onSelectionChange={(id, checked) => setSelectedQueryIds(current => { const base = current ?? templates.filter(item => item.enabled).map(item => item.id); return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} onSave={async payload => { try { await saveTemplates.mutateAsync(payload); return true } catch { return false } }} onReset={() => saveTemplates.mutate((queryTemplates.data?.defaultTemplates || []).map(template => ({ template, enabled: true })))} isSaving={saveTemplates.isPending} saveError={saveTemplates.error} canEdit={canReviewSourcing} disabled={isBusy} cas={card.data?.casNumber} substanceName={card.data?.substanceName} />
         <p className="pr-note">Новый запуск создаёт отдельный снимок результатов. Система не присваивает статус производителя автоматически.</p>
+        {canOperateEchemi && <details className="pr-sourcing-manual">
+          {/* Collapsed by default: the unified run already covers Echemi as an
+              engine, so this is the exception, not a second way to search. */}
+          <summary>Ручная работа с площадками</summary>
+          <p className="pr-note">Echemi участвует в общем поиске выше как источник заявок маркетплейса — отдельно запускать его не нужно. Ручной режим решает другую задачу: открыть карточку товара на площадке, заполнить форму обращения, проверить заполненные поля в браузере и отправить её после согласования.</p>
+          <RouterLinkButton variant="outline" size="sm" to={`/procurement/requests/${requestId}/echemi`}><ExternalLink size={14} />Открыть Echemi вручную</RouterLinkButton>
+        </details>}
       </CardContent></Card>
 
       {!run && <EmptyState title="Поиск ещё не запускался" description="После запуска здесь появятся источники, предварительный светофор и подтверждающие цитаты по каждому кандидату." />}
