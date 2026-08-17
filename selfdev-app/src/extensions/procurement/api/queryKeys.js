@@ -45,4 +45,7 @@ export const procurementKeys = {
   variantPerformance: filters => [...procurementKeys.all, 'variant-performance', filters],
   playbookImport: id => [...procurementKeys.all, 'playbook-import', String(id)],
   buyerSettings: () => [...procurementKeys.all, 'buyer-settings'],
+  accessVocabulary: () => [...procurementKeys.all, 'access-vocabulary'],
+  accessPrincipals: filters => [...procurementKeys.all, 'access-principals', filters],
+  accessPrincipal: key => [...procurementKeys.all, 'access-principal', String(key)],
 }

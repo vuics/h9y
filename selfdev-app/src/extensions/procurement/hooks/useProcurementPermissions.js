@@ -28,6 +28,8 @@ export function useProcurementPermissions() {
     canWritePlaybook: set.has('PLAYBOOK_WRITE'),
     canApprovePlaybook: set.has('PLAYBOOK_APPROVE'),
     canManageBuyerSettings: set.has('BUYER_SETTINGS_MANAGE'),
+    // Grants roles and permissions to other people, including this one.
+    canManageAccess: set.has('EXPERT_REGISTRY_MANAGE'),
     // Who signs a letter, as opposed to which legal entity it commits.
     canManageSenders: set.has('SENDER_MANAGE'),
     // A deployment switch, not a grant: served by the API so a stale bundle

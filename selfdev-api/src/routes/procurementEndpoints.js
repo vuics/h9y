@@ -10,6 +10,11 @@
 // segments and reach an endpoint that is not listed here.
 
 export const PROCUREMENT_ENDPOINTS = [
+  { method: 'GET', path: '/access/principals' },
+  { method: 'GET', path: '/access/principals/{principal_key}' },
+  { method: 'POST', path: '/access/principals/{principal_key}/grants' },
+  { method: 'POST', path: '/access/principals/{principal_key}/grants/revoke' },
+  { method: 'GET', path: '/access/vocabulary' },
   { method: 'GET', path: '/activity' },
   { method: 'GET', path: '/analytics/benchmark' },
   { method: 'PUT', path: '/analytics/benchmark/baseline' },

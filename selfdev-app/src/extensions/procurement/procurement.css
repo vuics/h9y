@@ -753,3 +753,48 @@
 .pr-kpis { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 
 .pr-kpis__note { color: var(--pr-muted); font-size: 11.5px; margin: -8px 0 0; max-width: 92ch; }
+
+/* Access management ------------------------------------------------------- */
+
+.pr-access-list { display: flex; flex-direction: column; gap: 6px; }
+
+.pr-access-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; padding: 10px 12px; text-align: left; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card); color: inherit; font: inherit;
+}
+.pr-access-row:hover { border-color: var(--ring); }
+.pr-access-row--selected { border-color: var(--ring); box-shadow: 0 0 0 1px var(--ring); }
+.pr-access-row > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pr-access-row__roles { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+
+.pr-access-detail h3 { margin: 20px 0 8px; font-size: 0.95rem; }
+
+.pr-access-binding {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px;
+}
+/* An expired binding is kept visible rather than hidden: it explains why a
+   permission the reader remembers granting is no longer in effect. */
+.pr-access-binding--expired { opacity: 0.65; }
+.pr-access-binding code { font-size: 0.8rem; }
+
+.pr-access-grant { display: flex; flex-direction: column; gap: 12px; max-width: 640px; }
+.pr-access-grant select {
+  width: 100%; padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--background); color: inherit;
+}
+
+.pr-access-extra summary { cursor: pointer; padding: 6px 0; }
+.pr-access-extra fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+.pr-access-extra legend { padding: 0 4px; font-size: 0.85rem; }
+
+.pr-access-check { display: flex; align-items: flex-start; gap: 8px; padding: 3px 0; font-size: 0.85rem; }
+.pr-access-check input { margin-top: 3px; }
+
+.pr-access-effective { display: flex; flex-direction: column; gap: 12px; }
+.pr-access-effective h4 { margin: 0 0 4px; font-size: 0.85rem; }
+.pr-access-effective ul { margin: 0; padding-left: 18px; }
+.pr-access-effective li { padding: 2px 0; font-size: 0.85rem; }
+.pr-access-sources { display: inline-flex; gap: 4px; margin-left: 6px; }
