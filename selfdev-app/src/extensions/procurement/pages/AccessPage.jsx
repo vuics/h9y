@@ -152,7 +152,11 @@ function BindingRow({ binding, onRevoke, busy }) {
  */
 function GrantForm({ vocabulary, principal, onSubmit, pending, error }) {
   const grantable = vocabulary.grantableRoles
-  const [role, setRole] = useState(grantable[0] || '')
+  // No preselected role. `grantableRoles` arrives sorted, so defaulting to the
+  // first one meant the form opened on Администратор — the widest grant in the
+  // list, one Enter away, and the one role whose set already contains every
+  // permission and therefore hid the point-permission block entirely.
+  const [role, setRole] = useState('')
   const [authority, setAuthority] = useState('RESOLVE_ALLOWED')
   const [extra, setExtra] = useState([])
   const [validUntil, setValidUntil] = useState('')
@@ -195,7 +199,13 @@ function GrantForm({ vocabulary, principal, onSubmit, pending, error }) {
   >
     <label className="pr-form-field">
       <span>Роль</span>
-      <select value={role} onChange={event => setRole(event.target.value)}>
+      <select
+        value={role}
+        /* Точечные разрешения относятся к выбранной роли: то, что отмечено для
+           одной, для другой может уже входить в набор роли. */
+        onChange={event => { setRole(event.target.value); setExtra([]) }}
+      >
+        <option value="">— выберите роль —</option>
         {vocabulary.roles.filter(entry => grantable.includes(entry.role)).map(entry =>
           <option key={entry.role} value={entry.role}>{entry.label} — {entry.role}</option>)}
       </select>
@@ -215,7 +225,13 @@ function GrantForm({ vocabulary, principal, onSubmit, pending, error }) {
       <Input type="date" value={validUntil} onChange={event => setValidUntil(event.target.value)} />
     </label>
 
-    {offered.length > 0 && <details className="pr-access-extra">
+    {/* Rendering nothing when there is nothing to offer left the legend
+        describing a control the reader could not find. */}
+    {role && offered.length === 0 && <p className="pr-note">
+      Точечные разрешения недоступны: эта роль уже включает всё, что вы можете выдать.
+    </p>}
+
+    {role && offered.length > 0 && <details className="pr-access-extra">
       <summary>Точечные разрешения сверх роли ({extra.length})</summary>
       {grouped(offered).map(([group, entries]) => <fieldset key={group}>
         <legend>{group}</legend>
