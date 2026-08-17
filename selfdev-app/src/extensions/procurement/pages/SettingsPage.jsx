@@ -83,7 +83,7 @@ function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUse
 
 export default function SettingsPage() {
   const queryClient = useQueryClient()
-  const { canManageBuyerSettings } = useProcurementPermissions()
+  const { canManageBuyerSettings, canManageSenders, echemiSubmissionEnabled } = useProcurementPermissions()
   const query = useQuery({ queryKey: procurementKeys.buyerSettings(), queryFn: ({ signal }) => procurementApi.buyerSettings(signal) })
   const [draft, setDraft] = useState(null)
   const [profileLoading, setProfileLoading] = useState(false)
@@ -130,7 +130,13 @@ export default function SettingsPage() {
   // A disabled Save button with no explanation reads as a broken page: the user
   // fills the form, presses nothing, reloads, and sees their work gone.
   const blockers = []
-  if (!organization.displayName.trim()) blockers.push('не задано название организации для поставщиков')
+  if (!organization.displayName.trim()) {
+    // A specialist cannot fix this one themselves, so saying "fill it in" would
+    // send them looking for a field they are not allowed to edit.
+    blockers.push(canManageBuyerSettings
+      ? 'не задано название организации для поставщиков'
+      : 'не задано название организации для поставщиков — его задаёт администратор')
+  }
   if (activeSenders.length === 0) blockers.push('нет ни одного активного отправителя')
   activeSenders.forEach((item, index) => {
     const missing = [
@@ -153,7 +159,8 @@ export default function SettingsPage() {
     {draft.usedByAgent === false && <Alert><AlertTriangle /><AlertTitle>Эти настройки не использует ни один агент</AlertTitle><AlertDescription>{draft.scopeNote} Чтобы они попали в RFQ, войдите под учётной записью, которой принадлежит развёрнутый Procurement Agent, и задайте отправителя там — или разверните агента под этой учётной записью.</AlertDescription></Alert>}
     {draft.usedByAgent && <p className="pr-note">Рабочее место: <code>{draft.scope}</code>. {draft.scopeNote}</p>}
     {draft.source === 'ENV_LEGACY' && <Alert><AlertTriangle /><AlertTitle>Импортировано из окружения</AlertTitle><AlertDescription>Текущие значения показаны из PROCUREMENT_* переменных. После сохранения Procurement и Negotiator начнут использовать эту запись.</AlertDescription></Alert>}
-    {!canManageBuyerSettings && <Alert><AlertTriangle /><AlertTitle>Только просмотр</AlertTitle><AlertDescription>Изменять организацию и отправителей может пользователь с разрешением BUYER_SETTINGS_MANAGE.</AlertDescription></Alert>}
+    {!canManageSenders && <Alert><AlertTriangle /><AlertTitle>Только просмотр</AlertTitle><AlertDescription>Изменять отправителей может пользователь с разрешением SENDER_MANAGE, реквизиты организации — с BUYER_SETTINGS_MANAGE.</AlertDescription></Alert>}
+    {canManageSenders && !canManageBuyerSettings && <Alert><AlertTriangle /><AlertTitle>Реквизиты организации меняет администратор</AlertTitle><AlertDescription>Вы можете добавлять и править отправителей и выбирать отправителя по умолчанию. Название и юридические реквизиты компании-покупателя изменяются с разрешением BUYER_SETTINGS_MANAGE, потому что ими определяется, от какого юрлица уходит запрос.</AlertDescription></Alert>}
     {save.isError && <Alert><AlertTriangle /><AlertTitle>Настройки не сохранены</AlertTitle><AlertDescription>{save.error?.response?.data?.message || save.error?.message}</AlertDescription></Alert>}
     {profileError && <Alert><AlertTriangle /><AlertTitle>Профиль не загружен</AlertTitle><AlertDescription>{profileError}</AlertDescription></Alert>}
 
@@ -166,10 +173,23 @@ export default function SettingsPage() {
       <label className="pr-form-field pr-form-field--wide"><span>Описание компании</span><Textarea disabled={!canManageBuyerSettings} value={organization.description || ''} onChange={event => setOrganization({ description: event.target.value })} placeholder="Факты, которые допустимо использовать в сообщениях поставщикам" /></label>
     </div></CardContent></Card>
 
-    <div className="pr-section-heading"><div><h3>Команда и отправители</h3><p>Каждый RFQ сохраняет выбранного отправителя как неизменяемый снимок.</p></div>{canManageBuyerSettings && <Button variant="outline" onPress={() => setDraft(current => { const sender = newSender(); return { ...current, senders: [...current.senders, sender], defaultSenderId: current.defaultSenderId || sender.senderId } })}><Plus />Добавить отправителя</Button>}</div>
-    <label className="pr-form-field"><span>Отправитель по умолчанию <b>*</b></span><select disabled={!canManageBuyerSettings} value={draft.defaultSenderId || ''} onChange={event => setDraft(current => ({ ...current, defaultSenderId: event.target.value }))}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName || sender.email || 'Без имени'}</option>)}</select></label>
-    <div className="pr-settings-senders">{draft.senders.map((sender, index) => <SenderEditor key={sender.senderId || index} sender={sender} index={index} setDraft={setDraft} canEdit={canManageBuyerSettings} defaultSenderId={draft.defaultSenderId} onUseProfile={useAccountProfile} profileLoading={profileLoading} onRemove={() => setDraft(current => ({ ...current, senders: current.senders.filter((_, position) => position !== index) }))} />)}</div>
-    {canManageBuyerSettings && blockers.length > 0 && <Alert><AlertTriangle /><AlertTitle>Пока нельзя сохранить</AlertTitle><AlertDescription><ul className="pr-blocker-list">{blockers.map(item => <li key={item}>{item}</li>)}</ul></AlertDescription></Alert>}
-    {canManageBuyerSettings && <div className="pr-form-actions"><Button variant="outline" isDisabled={save.isPending} onPress={() => setDraft(clone(query.data))}>Отменить изменения</Button><Button isDisabled={!valid || save.isPending} onPress={() => save.mutate()}>{save.isPending ? 'Сохранение…' : 'Сохранить настройки'}</Button></div>}
+    <div className="pr-section-heading"><div><h3>Команда и отправители</h3><p>Каждый RFQ сохраняет выбранного отправителя как неизменяемый снимок: правка здесь меняет только будущие запросы и не затрагивает уже отправленные RFQ и идущие переговоры.</p></div>{canManageSenders && <Button variant="outline" onPress={() => setDraft(current => { const sender = newSender(); return { ...current, senders: [...current.senders, sender], defaultSenderId: current.defaultSenderId || sender.senderId } })}><Plus />Добавить отправителя</Button>}</div>
+    <label className="pr-form-field"><span>Отправитель по умолчанию <b>*</b></span><select disabled={!canManageSenders} value={draft.defaultSenderId || ''} onChange={event => setDraft(current => ({ ...current, defaultSenderId: event.target.value }))}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName || sender.email || 'Без имени'}</option>)}</select></label>
+    <p className="pr-note">Отправители общие для всего рабочего места: изменение увидят все его пользователи.{draft.updatedAt ? ` Последнее изменение: ${new Date(draft.updatedAt).toLocaleString('ru-RU')}${draft.updatedBy ? `, ${draft.updatedBy}` : ''}.` : ''}</p>
+    <div className="pr-settings-senders">{draft.senders.map((sender, index) => <SenderEditor key={sender.senderId || index} sender={sender} index={index} setDraft={setDraft} canEdit={canManageSenders} defaultSenderId={draft.defaultSenderId} onUseProfile={useAccountProfile} profileLoading={profileLoading} onRemove={() => setDraft(current => ({ ...current, senders: current.senders.filter((_, position) => position !== index) }))} />)}</div>
+
+    <Card><CardHeader><CardTitle><Building /> Отправка форм на площадках</CardTitle></CardHeader><CardContent>
+      <p className="pr-note">
+        {echemiSubmissionEnabled
+          ? 'Отправка форм на Echemi разрешена в этой инсталляции. Запрос уходит поставщику только после предпросмотра и явного согласования точных значений.'
+          : 'Отправка форм на Echemi отключена в этой инсталляции. Поиск, подготовка, предпросмотр и согласование работают, кнопка отправки — нет.'}
+      </p>
+      <p className="pr-note">
+        Это переключатель развёртывания <code>ECHEMI_ENABLE_SUBMISSION</code>, а не право пользователя: он подтверждает, что контур браузерной интеграции проверен. Его меняет администратор в конфигурации сервиса — из интерфейса он не редактируется намеренно, потому что это последний рубеж перед необратимой отправкой реальному поставщику.
+      </p>
+    </CardContent></Card>
+
+    {canManageSenders && blockers.length > 0 && <Alert><AlertTriangle /><AlertTitle>Пока нельзя сохранить</AlertTitle><AlertDescription><ul className="pr-blocker-list">{blockers.map(item => <li key={item}>{item}</li>)}</ul></AlertDescription></Alert>}
+    {canManageSenders && <div className="pr-form-actions"><Button variant="outline" isDisabled={save.isPending} onPress={() => setDraft(clone(query.data))}>Отменить изменения</Button><Button isDisabled={!valid || save.isPending} onPress={() => save.mutate()}>{save.isPending ? 'Сохранение…' : 'Сохранить настройки'}</Button></div>}
   </div>
 }
