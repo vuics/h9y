@@ -30,8 +30,8 @@ export const accessEndpoints = {
     `/access/principals/${encodeURIComponent(principalKey)}/grants`,
     { method: 'post', data: body },
   )),
-  revokeAccess: mutation(({ principalKey, role }) => request(
+  revokeAccess: mutation(({ principalKey, bindingId }) => request(
     `/access/principals/${encodeURIComponent(principalKey)}/grants/revoke`,
-    { method: 'post', data: { role } },
+    { method: 'post', data: { bindingId } },
   )),
 }

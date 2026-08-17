@@ -64,12 +64,16 @@ function BindingRow({ binding, onRevoke, busy }) {
       <p className="pr-note">
         Выдал: {binding.grantedBy || '—'}
         {binding.validUntil ? ` · действует до ${formatDate(binding.validUntil)}` : ''}
+        {/* Shown because a binding written against an agent workspace still
+            grants permissions to a reader who has no workspace of their own,
+            and its origin is otherwise invisible. */}
+        {binding.scopeAgentId ? ` · рабочее место агента ${binding.scopeAgentId}` : ' · вся установка'}
       </p>
       {binding.permissions.length > 0 && <p className="pr-note">
         Дополнительно: {binding.permissions.join(', ')}
       </p>}
     </div>
-    <Button variant="ghost" size="sm" isDisabled={busy} onPress={() => onRevoke(binding.role)}>
+    <Button variant="ghost" size="sm" isDisabled={busy} onPress={() => onRevoke(binding.bindingId)}>
       <Trash size={14} />Отозвать
     </Button>
   </div>
@@ -224,7 +228,7 @@ function PrincipalDetail({ principalKey, vocabulary, onClose }) {
           key={binding.bindingId}
           binding={binding}
           busy={revoke.isPending}
-          onRevoke={role => revoke.mutate({ principalKey, role })}
+          onRevoke={bindingId => revoke.mutate({ principalKey, bindingId })}
         />)}
       {revoke.isError && <Alert>
         <AlertTriangle />
