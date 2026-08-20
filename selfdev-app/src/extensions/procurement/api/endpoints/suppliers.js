@@ -102,13 +102,17 @@ export const proposalEndpoints = {
     request(`/proposals/${id(responseId)}/clarification`, { method: 'post', data: { language } })),
   // Not routed through `request`: the export is a file download, so it needs a
   // blob response and its own short timeout rather than the JSON pipeline.
-  exportSupplierComparison: mutation(async (cardId, language = 'ru') => {
+  exportSupplierComparison: mutation(async (cardId, language = 'ru', filters = {}) => {
     const response = await axios.get(procurementUrl('/proposals/export'), {
-      params: { cardId, language }, withCredentials: true, responseType: 'blob', timeout: 30000,
+      params: { cardId, language, search: filters.search || undefined, status: filters.status || undefined },
+      withCredentials: true, responseType: 'blob', timeout: 30000,
     })
     const disposition = response.headers['content-disposition'] || ''
+    // The API does not expose `Content-Disposition` cross-origin, so the fallback
+    // name is what users normally get: it has to carry the filtered marker too.
+    const suffix = filters.search || filters.status ? '-filtered' : ''
     const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] ||
-      `supplier-comparison-card-${cardId}-${language}.csv`
+      `supplier-comparison-card-${cardId}-${language}${suffix}.csv`
     return { blob: response.data, filename }
   }),
   supplierAttachmentUrl(attachmentId) {
