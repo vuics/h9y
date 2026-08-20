@@ -4,9 +4,9 @@
 # and the dev server dies with "The service is no longer running".
 node_modules
 
-# NOTE: The ../selfdev-helm/ build of k8s images needs the dist/ dir to be copied to docker image.
-#       We could fix building inside the docker image (maybe multi-stage docker building).
-# dist
+# Dockerfile.k8s builds dist/ itself in its builder stage, so a host-built dist/
+# must not leak into the build context.
+dist
 
 .git
 .gitignore

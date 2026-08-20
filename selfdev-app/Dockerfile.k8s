@@ -1,4 +1,32 @@
+# syntax=docker/dockerfile:1
+
+# Multi-stage build for the nginx-hosted production bundle.
+#
+# NOTE: The builder runs on $BUILDPLATFORM (the host's native arch), NOT on the
+#       target platform. Running Vite under QEMU emulation is what used to hang
+#       cross-platform builds, and what made an in-Dockerfile build impossible.
+#       The dist/ output is plain static assets, so it is arch independent and
+#       can be copied into a target-platform nginx image.
+FROM --platform=$BUILDPLATFORM node:24.3.0-bookworm-slim AS builder
+
+WORKDIR /opt/app/
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+# BUILD_MODE selects the .env.<mode> file loaded by vite: aaa | gke | ...
+ARG BUILD_MODE=aaa
+# NOTE: Cap the V8 heap. Without a cap the build grows past the Docker VM's
+#       memory and the whole build is OOMKilled instead of failing loudly.
+ARG BUILD_NODE_OPTIONS=--max-old-space-size=4096
+# NOTE: Source maps roughly double peak memory. Keep them off for k8s images.
+ARG BUILD_SOURCEMAP=false
+RUN NODE_OPTIONS="${BUILD_NODE_OPTIONS}" BUILD_SOURCEMAP="${BUILD_SOURCEMAP}" \
+      npm run build -- --mode "${BUILD_MODE}"
+
 FROM nginx:alpine
 
-COPY ./dist /usr/share/nginx/html
+COPY --from=builder /opt/app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
