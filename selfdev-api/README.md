@@ -13,7 +13,7 @@ PROCUREMENT_ENABLED=true
 PROCUREMENT_SERVICE_URL=http://h9y-procurement:8080/v1
 PROCUREMENT_SERVICE_TOKEN=<same-long-random-shared-secret>
 PROCUREMENT_EXTENSION_API_VERSION=1
-PROCUREMENT_SERVICE_TIMEOUT_MS=15000
+PROCUREMENT_SERVICE_TIMEOUT_MS=60000
 ```
 
 The proxy replaces client-supplied identity with the authenticated Selfdev

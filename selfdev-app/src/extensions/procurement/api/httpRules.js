@@ -18,7 +18,7 @@ export const TIMEOUTS = [
   { ms: 180000, matches: path => path === '/communication/simulate' },
 ]
 
-export const DEFAULT_TIMEOUT_MS = 15000
+export const DEFAULT_TIMEOUT_MS = 60000
 
 export function timeoutFor(path) {
   return TIMEOUTS.find(entry => entry.matches(path))?.ms ?? DEFAULT_TIMEOUT_MS

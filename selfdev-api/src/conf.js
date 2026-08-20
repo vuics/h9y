@@ -166,7 +166,7 @@ const conf = {
     serviceUrl: (process.env.PROCUREMENT_SERVICE_URL || '').replace(/\/$/, ''),
     serviceToken: process.env.PROCUREMENT_SERVICE_TOKEN || '',
     extensionApiVersion: num(process.env.PROCUREMENT_EXTENSION_API_VERSION || 1),
-    timeoutMs: num(process.env.PROCUREMENT_SERVICE_TIMEOUT_MS || 15000),
+    timeoutMs: num(process.env.PROCUREMENT_SERVICE_TIMEOUT_MS || 60000),
     sourcingTimeoutMs: num(process.env.PROCUREMENT_SOURCING_TIMEOUT_MS || 180000),
     echemiTimeoutMs: num(process.env.PROCUREMENT_ECHEMI_TIMEOUT_MS || 90000),
     simulationTimeoutMs: num(process.env.PROCUREMENT_SIMULATION_TIMEOUT_MS || 180000),
