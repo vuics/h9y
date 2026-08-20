@@ -47,8 +47,15 @@ function matches(item, filters, keys) {
   return true
 }
 
+function compareIds(left, right) {
+  const numbers = [Number(left), Number(right)]
+  if (numbers.every(value => Number.isFinite(value))) return numbers[0] - numbers[1]
+  return String(left).localeCompare(String(right), 'ru')
+}
+
 export function fixturePage(items, filters, keys) {
   const filtered = items.filter(item => matches(item, filters, keys))
+  if (filters.order) filtered.sort((a, b) => (filters.order === 'asc' ? 1 : -1) * compareIds(a.id, b.id))
   const page = Math.max(1, Number(filters.page || 1))
   const pageSize = Math.max(1, Number(filters.pageSize || 20))
   const start = (page - 1) * pageSize

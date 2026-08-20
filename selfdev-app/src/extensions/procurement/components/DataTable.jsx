@@ -20,3 +20,10 @@ export function Pagination({ page = 1, pageSize = 20, total, hasMore, onChange }
   if (page <= 1 && !hasMore && (!lastPage || lastPage <= 1)) return null
   return <div className="pr-pagination"><span>{total == null ? `Страница ${page}` : `${total} записей · страница ${page} из ${lastPage}`}</span><div><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onChange(page - 1)}>Назад</Button><Button variant="outline" size="sm" disabled={lastPage ? page >= lastPage : !hasMore} onClick={() => onChange(page + 1)}>Далее</Button></div></div>
 }
+
+/** Tail of an infinitely scrolling list: progress, the scroll sentinel and a
+ * manual fallback for readers who never reach the end of the viewport. */
+export function InfiniteListFooter({ sentinelRef, loaded, total, hasNextPage, isFetchingNextPage, onLoadMore }) {
+  if (!loaded && !hasNextPage) return null
+  return <div className="pr-pagination" ref={sentinelRef}><span>{isFetchingNextPage ? 'Загружаем ещё…' : total == null ? `Показано ${loaded}` : `Показано ${loaded} из ${total}`}</span><div>{hasNextPage && <Button variant="outline" size="sm" disabled={isFetchingNextPage} onClick={onLoadMore}>Показать ещё</Button>}</div></div>
+}
