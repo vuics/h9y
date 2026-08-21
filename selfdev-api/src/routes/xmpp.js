@@ -88,7 +88,14 @@ const credentials = async (req, res, next) => {
       result: 'ok',
       jid: `${user}@${conf.xmpp.host}`,
       password: password,
-      user: user
+      user: user,
+
+      // Let clients follow whichever deployment issued these credentials
+      // instead of relying on their own build-time XMPP configuration. The
+      // credentials are only valid on this deployment's XMPP server.
+      host: conf.xmpp.host,
+      websocketUrl: conf.xmpp.websocketUrl,
+      mucHost: conf.xmpp.mucHost,
     }
     // verbose('out:', out)
     res.json(out)
