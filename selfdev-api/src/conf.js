@@ -478,6 +478,12 @@ const conf = {
     connectHost: process.env.XMPP_CONNECT_HOST || 'localhost',
 
     websocketUrl: process.env.XMPP_WEBSOCKET_URL || 'ws://localhost:5280/xmpp-websocket',
+
+    // The address external clients (mobile, browser) should connect to, which
+    // is not always XMPP_WEBSOCKET_URL: under compose that one is an internal
+    // service address that only resolves inside the container network. Empty
+    // means 'do not tell clients', so they keep using their own configuration.
+    publicWebsocketUrl: process.env.XMPP_PUBLIC_WEBSOCKET_URL || '',
     mucHost: process.env.XMPP_MUC_HOST || 'g.localhost',
     shareHost: process.env.XMPP_SHARE_HOST || 'f.localhost',
     shareUrlPrefix: process.env.XMPP_SHARE_URL_PREFIX || 'http://localhost:6369/v1/files/',

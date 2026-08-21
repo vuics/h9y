@@ -266,6 +266,8 @@ services:
       - SESSION_DOMAIN=.${DOMAIN}
       - XMPP_HOST=x.${DOMAIN}
       - XMPP_WEBSOCKET_URL=wss://selfdev-prosody:5281/xmpp-websocket
+      # Internal above, ingress below: the one handed to external clients.
+      - XMPP_PUBLIC_WEBSOCKET_URL=wss://x.${DOMAIN}/xmpp-websocket
       - XMPP_MUC_HOST=g.${DOMAIN}
       - XMPP_SHARE_HOST=f.${DOMAIN}
       - XMPP_SHARE_URL_PREFIX=https://api.${DOMAIN}/v1/files/

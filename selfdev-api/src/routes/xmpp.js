@@ -94,8 +94,14 @@ const credentials = async (req, res, next) => {
       // instead of relying on their own build-time XMPP configuration. The
       // credentials are only valid on this deployment's XMPP server.
       host: conf.xmpp.host,
-      websocketUrl: conf.xmpp.websocketUrl,
       mucHost: conf.xmpp.mucHost,
+
+      // Only when an externally reachable address is configured. Reporting
+      // XMPP_WEBSOCKET_URL instead would hand clients an internal service
+      // address under compose, which they cannot resolve.
+      ...(conf.xmpp.publicWebsocketUrl
+        ? { websocketUrl: conf.xmpp.publicWebsocketUrl }
+        : {}),
     }
     // verbose('out:', out)
     res.json(out)
