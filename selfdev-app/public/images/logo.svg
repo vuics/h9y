@@ -38,200 +38,92 @@
   <circle cx="235" cy="160" r="10" fill="#e74c3c" opacity="0.2" />
   
   <!-- Tentacles (each representing different aspects of the platform) -->
-  <!-- Tentacle 1 - Web/Mobile -->
+  <!-- Tentacle 1 - Memory -->
   <path d="M165,205 C140,230 110,245 80,240" fill="none" stroke="#3498db" stroke-width="14" stroke-linecap="round">
     <animate attributeName="d" values="M165,205 C140,230 110,245 80,240; M165,205 C145,235 105,250 75,235; M165,205 C140,230 110,245 80,240" dur="4s" repeatCount="indefinite"/>
   </path>
   <circle cx="80" cy="240" r="22" fill="#3498db" />
   
-  <!-- Web/Mobile Human and Agent -->
+  <!-- Memory -->
   <g transform="translate(80, 240)">
-    <!-- Human figure -->
-    <circle cx="-8" cy="0" r="7" fill="#f0f6fc" />
-    <path d="M-8,7 L-8,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,10 L-4,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-4,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    
-    <!-- Agent/Robot figure -->
-    <rect x="0" y="-7" width="14" height="14" rx="2" fill="#f0f6fc" />
-    <circle cx="5" cy="-3" r="2" fill="#3498db" />
-    <circle cx="9" cy="-3" r="2" fill="#3498db" />
-    <path d="M4,2 L10,2" stroke="#3498db" stroke-width="2" stroke-linecap="round" />
-    <path d="M7,7 L7,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M3,10 L11,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
+    <ellipse cx="0" cy="-8" rx="10" ry="3.6" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"/><path d="M-10,-8 L-10,7" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"/><path d="M10,-8 L10,7" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"/><path d="M-10,7 A 10,3.6 0 0 0 10,7" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"/><path d="M-10,-0.6 A 10,3.6 0 0 0 10,-0.6" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"/>
   </g>
   
-  <!-- Tentacle 2 - APIs -->
+  <!-- Tentacle 2 - Evolution -->
   <path d="M185,220 C180,260 170,295 150,325" fill="none" stroke="#9b59b6" stroke-width="14" stroke-linecap="round">
     <animate attributeName="d" values="M185,220 C180,260 170,295 150,325; M185,220 C185,265 165,300 145,330; M185,220 C180,260 170,295 150,325" dur="3.7s" repeatCount="indefinite"/>
   </path>
   <circle cx="150" cy="325" r="22" fill="#9b59b6" />
   
-  <!-- API Human and Agent -->
+  <!-- Evolution -->
   <g transform="translate(150, 325)">
-    <!-- Human figure -->
-    <circle cx="-8" cy="0" r="7" fill="#f0f6fc" />
-    <path d="M-8,7 L-8,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,10 L-4,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-4,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    
-    <!-- Agent/Robot figure with API symbol -->
-    <rect x="0" y="-7" width="14" height="14" rx="2" fill="#f0f6fc" />
-    <path d="M4,-3 L10,-3" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" />
-    <path d="M4,0 L10,0" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" />
-    <path d="M4,3 L10,3" stroke="#9b59b6" stroke-width="2" stroke-linecap="round" />
-    <path d="M7,7 L7,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M3,10 L11,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
+    <path d="M-11,7 L-4,-0.5 L0.5,4 L9,-7" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6"/><path d="M3.6,-7 L9,-7 L9,-1.6" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6"/>
   </g>
   
-  <!-- Tentacle 3 - Databases -->
+  <!-- Tentacle 3 - Coordination -->
   <path d="M215,220 C220,260 230,295 250,325" fill="none" stroke="#2ecc71" stroke-width="14" stroke-linecap="round">
     <animate attributeName="d" values="M215,220 C220,260 230,295 250,325; M215,220 C215,265 235,300 255,330; M215,220 C220,260 230,295 250,325" dur="4.1s" repeatCount="indefinite"/>
   </path>
   <circle cx="250" cy="325" r="22" fill="#2ecc71" />
   
-  <!-- Database Human and Agent -->
+  <!-- Coordination -->
   <g transform="translate(250, 325)">
-    <!-- Human figure -->
-    <circle cx="-8" cy="0" r="7" fill="#f0f6fc" />
-    <path d="M-8,7 L-8,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,10 L-4,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-4,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    
-    <!-- Agent/Robot with database symbol -->
-    <rect x="0" y="-7" width="14" height="14" rx="2" fill="#f0f6fc" />
-    <path d="M3,-5 L11,-5 Q13,-5 13,-3 L13,-1 Q13,1 11,1 L3,1 Q1,1 1,-1 L1,-3 Q1,-5 3,-5 Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="0.5" />
-    <path d="M3,3 L11,3 Q13,3 13,5 L13,6 Q13,8 11,8 L3,8 Q1,8 1,6 L1,5 Q1,3 3,3 Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="0.5" />
-    <path d="M7,7 L7,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M3,10 L11,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
+    <path d="M0,-8 L-8.5,6.5 M0,-8 L8.5,6.5 M-8.5,6.5 L8.5,6.5" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"/><circle cx="0" cy="-8" r="3.4" fill="#f0f6fc"/><circle cx="-8.5" cy="6.5" r="3.4" fill="#f0f6fc"/><circle cx="8.5" cy="6.5" r="3.4" fill="#f0f6fc"/>
   </g>
   
-  <!-- Tentacle 4 - Desktop/Command Line -->
+  <!-- Tentacle 4 - Authority & Guardrails -->
   <path d="M235,205 C260,230 290,245 320,240" fill="none" stroke="#e74c3c" stroke-width="14" stroke-linecap="round">
     <animate attributeName="d" values="M235,205 C260,230 290,245 320,240; M235,205 C255,235 295,250 325,235; M235,205 C260,230 290,245 320,240" dur="3.8s" repeatCount="indefinite"/>
   </path>
   <circle cx="320" cy="240" r="22" fill="#e74c3c" />
   
-  <!-- Desktop Human and Agent -->
+  <!-- Authority & Guardrails -->
   <g transform="translate(320, 240)">
-    <!-- Human figure -->
-    <circle cx="-8" cy="0" r="7" fill="#f0f6fc" />
-    <path d="M-8,7 L-8,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,10 L-4,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-4,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    
-    <!-- Agent/Robot with computer symbol -->
-    <rect x="0" y="-7" width="14" height="14" rx="2" fill="#f0f6fc" />
-    <rect x="2" y="-5" width="10" height="7" rx="1" fill="#e74c3c" />
-    <rect x="5" y="2" width="4" height="2" fill="#e74c3c" />
-    <rect x="3" y="4" width="8" height="1" fill="#e74c3c" />
-    <path d="M7,7 L7,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M3,10 L11,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
+    <path d="M0,-10.5 L9.5,-6.8 C9.5,1.2 5.4,7.8 0,10.5 C-5.4,7.8 -9.5,1.2 -9.5,-6.8 Z" fill="#f0f6fc"/><path d="M-4.2,-0.6 L-1.2,2.6 L4.4,-3.6" stroke="#e74c3c" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   
-  <!-- Tentacle 5 - Social Media -->
+  <!-- Tentacle 5 - Human in the Loop -->
   <path d="M160,180 C115,170 85,150 70,110" fill="none" stroke="#f39c12" stroke-width="14" stroke-linecap="round">
     <animate attributeName="d" values="M160,180 C115,170 85,150 70,110; M160,180 C120,175 90,155 75,105; M160,180 C115,170 85,150 70,110" dur="4.2s" repeatCount="indefinite"/>
   </path>
   <circle cx="70" cy="110" r="22" fill="#f39c12" />
   
-  <!-- Social Media Human and Agent -->
+  <!-- Human in the Loop -->
   <g transform="translate(70, 110)">
-    <!-- Human figure -->
-    <circle cx="-8" cy="0" r="7" fill="#f0f6fc" />
-    <path d="M-8,7 L-8,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,10 L-4,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-4,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    
-    <!-- Agent/Robot with social media symbol -->
-    <rect x="0" y="-7" width="14" height="14" rx="2" fill="#f0f6fc" />
-    <circle cx="7" cy="-3" r="4" fill="#f39c12" />
-    <path d="M3,2 L11,2" stroke="#f39c12" stroke-width="1.5" stroke-linecap="round" />
-    <path d="M4,5 L10,5" stroke="#f39c12" stroke-width="1.5" stroke-linecap="round" />
-    <path d="M7,7 L7,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M3,10 L11,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
+    <circle cx="-6.5" cy="-5.6" r="3.5" fill="#f0f6fc"/><path d="M-12,7 C-12,1.8 -9.6,-0.6 -6.5,-0.6 C-3.4,-0.6 -1,1.8 -1,7 Z" fill="#f0f6fc"/><rect x="2.2" y="-9.8" width="9.2" height="8" rx="2.3" fill="#f0f6fc"/><circle cx="4.9" cy="-5.9" r="1.2" fill="#f39c12"/><circle cx="8.4" cy="-5.9" r="1.2" fill="#f39c12"/><path d="M1,7 C1,2.4 3.4,0.4 6.5,0.4 C9.6,0.4 12,2.4 12,7 Z" fill="#f0f6fc"/>
   </g>
   
-  <!-- Tentacle 6 - Virtual Reality -->
+  <!-- Tentacle 6 - Agents as Entities -->
   <path d="M200,100 C200,70 200,50 200,20" fill="none" stroke="#1abc9c" stroke-width="14" stroke-linecap="round">
     <animate attributeName="d" values="M200,100 C200,70 200,50 200,20; M200,100 C195,65 205,45 195,20; M200,100 C200,70 200,50 200,20" dur="3.5s" repeatCount="indefinite"/>
   </path>
   <circle cx="200" cy="20" r="22" fill="#1abc9c" />
   
-  <!-- VR Human and Agent -->
+  <!-- Agents as Entities -->
   <g transform="translate(200, 20)">
-    <!-- Human figure -->
-    <circle cx="-8" cy="0" r="7" fill="#f0f6fc" />
-    <path d="M-8,7 L-8,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,10 L-4,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-4,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    
-    <!-- Agent/Robot with VR headset -->
-    <rect x="0" y="-7" width="14" height="14" rx="2" fill="#f0f6fc" />
-    <rect x="2" y="-5" width="10" height="5" rx="1" fill="#1abc9c" />
-    <circle cx="5" cy="-2.5" r="1.5" fill="#f0f6fc" />
-    <circle cx="9" cy="-2.5" r="1.5" fill="#f0f6fc" />
-    <path d="M4,2 L10,2" stroke="#1abc9c" stroke-width="1.5" stroke-linecap="round" />
-    <path d="M7,7 L7,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M3,10 L11,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
+    <circle cx="0" cy="-13.4" r="1.8" fill="#f0f6fc"/><path d="M0,-11.8 L0,-9.6" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round"/><rect x="-8.6" y="-9.6" width="17.2" height="13" rx="4.2" fill="#f0f6fc"/><circle cx="-3.4" cy="-3.2" r="1.9" fill="#1abc9c"/><circle cx="3.4" cy="-3.2" r="1.9" fill="#1abc9c"/><path d="M-9.8,11.4 C-9.8,6.6 -5.4,4.6 0,4.6 C5.4,4.6 9.8,6.6 9.8,11.4 Z" fill="#f0f6fc"/>
   </g>
   
-  <!-- Tentacle 7 - Phone/SMS -->
+  <!-- Tentacle 7 - Intent & Goals -->
   <path d="M240,180 C285,170 315,150 330,110" fill="none" stroke="#8e44ad" stroke-width="14" stroke-linecap="round">
     <animate attributeName="d" values="M240,180 C285,170 315,150 330,110; M240,180 C280,175 310,155 325,105; M240,180 C285,170 315,150 330,110" dur="4.3s" repeatCount="indefinite"/>
   </path>
   <circle cx="330" cy="110" r="22" fill="#8e44ad" />
   
-  <!-- Phone/SMS Human and Agent -->
+  <!-- Intent & Goals -->
   <g transform="translate(330, 110)">
-    <!-- Human figure -->
-    <circle cx="-8" cy="0" r="7" fill="#f0f6fc" />
-    <path d="M-8,7 L-8,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,10 L-4,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-4,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    
-    <!-- Agent/Robot with phone symbol -->
-    <rect x="0" y="-7" width="14" height="14" rx="2" fill="#f0f6fc" />
-    <rect x="4" y="-5" width="6" height="10" rx="1" fill="#8e44ad" />
-    <circle cx="7" cy="7" r="1.5" fill="#8e44ad" />
-    <path d="M7,7 L7,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M3,10 L11,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
+    <circle cx="0" cy="0" r="10" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"/><circle cx="0" cy="0" r="5" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"/><circle cx="0" cy="0" r="1.9" fill="#f0f6fc"/>
   </g>
   
-  <!-- Tentacle 8 - AI Models -->
+  <!-- Tentacle 8 - Observability -->
   <path d="M210,225 C220,250 245,275 285,285" fill="none" stroke="#16a085" stroke-width="14" stroke-linecap="round">
     <animate attributeName="d" values="M210,225 C220,250 245,275 285,285; M210,225 C215,255 240,280 280,290; M210,225 C220,250 245,275 285,285" dur="3.9s" repeatCount="indefinite"/>
   </path>
   <circle cx="285" cy="285" r="22" fill="#16a085" />
   
-  <!-- AI Models Human and Agent -->
+  <!-- Observability -->
   <g transform="translate(285, 285)">
-    <!-- Human figure -->
-    <circle cx="-8" cy="0" r="7" fill="#f0f6fc" />
-    <path d="M-8,7 L-8,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,10 L-4,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-12,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M-4,14 L-8,9" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    
-    <!-- Agent/Robot with circuit board pattern -->
-    <rect x="0" y="-7" width="14" height="14" rx="2" fill="#f0f6fc" />
-    <path d="M3,-3 L11,-3" stroke="#16a085" stroke-width="1" />
-    <path d="M3,0 L11,0" stroke="#16a085" stroke-width="1" />
-    <path d="M3,3 L11,3" stroke="#16a085" stroke-width="1" />
-    <path d="M5,-5 L5,5" stroke="#16a085" stroke-width="1" />
-    <path d="M9,-5 L9,5" stroke="#16a085" stroke-width="1" />
-    <circle cx="5" cy="-3" r="1" fill="#16a085" />
-    <circle cx="9" cy="0" r="1" fill="#16a085" />
-    <circle cx="5" cy="3" r="1" fill="#16a085" />
-    <path d="M7,7 L7,14" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
-    <path d="M3,10 L11,10" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round" />
+    <rect x="-10.5" y="-8.6" width="21" height="17.2" rx="3.2" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3"/><path d="M-6,1.6 L-2.6,-3.6 L0.6,2.4 L4,-4.6 L6.4,0.4" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"/>
   </g>
   
   <!-- Data pulse effects on each endpoint -->
@@ -270,33 +162,6 @@
     </circle>
   </g>
   
-  <!-- Connector lines between humans and agents -->
-  <g>
-    <line x1="72" y1="240" x2="88" y2="240" stroke="#f0f6fc" stroke-width="2" opacity="0.6">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite" />
-    </line>
-    <line x1="142" y1="325" x2="158" y2="325" stroke="#f0f6fc" stroke-width="2" opacity="0.6">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.7s" repeatCount="indefinite" />
-    </line>
-    <line x1="242" y1="325" x2="258" y2="325" stroke="#f0f6fc" stroke-width="2" opacity="0.6">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.6s" repeatCount="indefinite" />
-    </line>
-    <line x1="312" y1="240" x2="328" y2="240" stroke="#f0f6fc" stroke-width="2" opacity="0.6">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.8s" repeatCount="indefinite" />
-    </line>
-    <line x1="62" y1="110" x2="78" y2="110" stroke="#f0f6fc" stroke-width="2" opacity="0.6">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.9s" repeatCount="indefinite" />
-    </line>
-    <line x1="192" y1="20" x2="208" y2="20" stroke="#f0f6fc" stroke-width="2" opacity="0.6">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite" />
-    </line>
-    <line x1="322" y1="110" x2="338" y2="110" stroke="#f0f6fc" stroke-width="2" opacity="0.6">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.4s" repeatCount="indefinite" />
-    </line>
-    <line x1="277" y1="285" x2="293" y2="285" stroke="#f0f6fc" stroke-width="2" opacity="0.6">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite" />
-    </line>
-  </g>
   
   <!-- Center pulse -->
   <circle cx="200" cy="160" r="70" stroke="#4a6fa5" stroke-width="3" fill="none" opacity="0.5">
