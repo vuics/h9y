@@ -126,6 +126,10 @@ if (conf.cors.enabled) {
       if (!origin || conf.cors.whitelist.includes(origin)) {
         return callback(null, true)
       }
+      // An origin outside the whitelist is refused rather than left waiting.
+      // Without this the callback is never called, the cors middleware never
+      // continues, and the request hangs until the client times out.
+      return callback(null, false)
     },
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],

@@ -262,7 +262,7 @@ services:
       - COMPOSE_PROFILES=${COMPOSE_PROFILES}
       - DB_URL=mongodb://mongo:27017/selfdev
       - WEB_APP_ORIGIN=https://${DOMAIN}
-      - CORS_WHITELIST=https://${DOMAIN},https://app.${DOMAIN},http://m.${DOMAIN}
+      - CORS_WHITELIST=https://${DOMAIN},https://app.${DOMAIN},https://m.${DOMAIN}
       - SESSION_DOMAIN=.${DOMAIN}
       - XMPP_HOST=x.${DOMAIN}
       - XMPP_WEBSOCKET_URL=wss://selfdev-prosody:5281/xmpp-websocket
