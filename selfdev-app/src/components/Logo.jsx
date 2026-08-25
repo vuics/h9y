@@ -1,6 +1,7 @@
 import React from 'react'
 
-import LogoSvg from '../logo.svg'
+import LogoChipSvg from '../logo-chip.svg'
+import LogoChipMarkSvg from '../logo-chip-mark.svg'
 import conf from '../conf'
 
 const sizes = {
@@ -17,10 +18,15 @@ const sizes = {
   massive: '450px'
 }
 
+// Below this the eight tip glyphs stop resolving and turn to mud, so the
+// glyphless cut is used instead. See selfdev-assets/logo/logo-v3/README.md.
+const GLYPH_THRESHOLD = 128
+
 export default function Logo ({ children, style, size = 'medium', gray = conf.style.grayLogo } = {}) {
+  const px = parseInt(sizes[size], 10)
   return (
     <img
-      src={LogoSvg}
+      src={px >= GLYPH_THRESHOLD ? LogoChipSvg : LogoChipMarkSvg}
       alt="Our logo"
       style={{
         filter: gray ? 'grayscale(100%)' : null,
