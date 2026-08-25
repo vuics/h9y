@@ -1,5 +1,5 @@
 import { Button } from 'semantic-ui-react'
-import logo from './logo.svg';
+import logo from './octopus.svg';
 import './App.css';
 import conf from './conf'
 

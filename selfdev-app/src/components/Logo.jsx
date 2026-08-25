@@ -1,6 +1,6 @@
 import React from 'react'
 
-import LogoChipSvg from '../logo-chip.svg'
+import LogoChipSvg from '../logo.svg'
 import LogoChipMarkSvg from '../logo-chip-mark.svg'
 import conf from '../conf'
 
