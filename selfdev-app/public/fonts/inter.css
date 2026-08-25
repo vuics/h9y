@@ -1,0 +1,23 @@
+/*
+ * Inter (variable) — SIL Open Font License 1.1, see Inter-OFL-LICENSE.txt
+ * Source: https://github.com/rsms/inter/releases/tag/v4.1
+ *
+ * NOTE: the React app does NOT need this file. It already gets Inter through
+ * `@import "@fontsource-variable/inter"` in src/shadcn.css.
+ * This copy exists for standalone pages under public/ that are served
+ * without going through the bundler.
+ */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable-Italic.woff2') format('woff2');
+}

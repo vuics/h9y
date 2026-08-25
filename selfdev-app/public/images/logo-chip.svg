@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldPlate" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%"   stop-color="#f5ecc4"/>
+      <stop offset="38%"  stop-color="#e6d197"/>
+      <stop offset="72%"  stop-color="#d8bd7d"/>
+      <stop offset="100%" stop-color="#c39a4b"/>
+    </linearGradient>
+    <radialGradient id="headGradient" cx="50%" cy="36%" r="64%">
+      <stop offset="0%"   stop-color="#5c85bf"/>
+      <stop offset="62%"  stop-color="#35547d"/>
+      <stop offset="100%" stop-color="#22303f"/>
+    </radialGradient>
+    <linearGradient id="tubeLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ===== CHIP PLATE ===== -->
+  <rect x="34" y="50" width="332" height="300" rx="38"
+        fill="url(#goldPlate)" stroke="#1c2936" stroke-width="9"/>
+
+  <!-- ===== CONDUCTOR BEDS (dark chip traces) ===== -->
+  <g id="traces" fill="none" stroke="#1c2936" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M200,138 L200,80"/>
+    <path d="M200,262 L200,320"/>
+    <path d="M142,200 L63,200"/>
+    <path d="M258,200 L337,200"/>
+    <path d="M159,159 L123,123 Q117,117 107,117 L62,117"/>
+    <path d="M241,159 L277,123 Q283,117 293,117 L338,117"/>
+    <path d="M159,241 L123,277 Q117,283 107,283 L62,283"/>
+    <path d="M241,241 L277,277 Q283,283 293,283 L338,283"/>
+  </g>
+
+  <!-- ===== TENTACLES INSCRIBED IN THE CONDUCTORS ===== -->
+  <g fill="none" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M200,138 L200,80"   stroke="#1abc9c"/>
+    <path d="M200,262 L200,320"  stroke="#2ecc71"/>
+    <path d="M142,200 L63,200"   stroke="#3498db"/>
+    <path d="M258,200 L337,200"  stroke="#e74c3c"/>
+    <path d="M159,159 L123,123 Q117,117 107,117 L62,117" stroke="#f39c12"/>
+    <path d="M241,159 L277,123 Q283,117 293,117 L338,117" stroke="#8e44ad"/>
+    <path d="M159,241 L123,277 Q117,283 107,283 L62,283" stroke="#9b59b6"/>
+    <path d="M241,241 L277,277 Q283,283 293,283 L338,283" stroke="#16a085"/>
+  </g>
+  <!-- tube highlight -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M195,134 L195,82"/>
+    <path d="M195,266 L195,318"/>
+    <path d="M146,195 L64,195"/>
+    <path d="M262,195 L336,195"/>
+    <path d="M156,156 L120,120 Q113,113 103,113 L68,113"/>
+    <path d="M244,156 L280,120 Q287,113 297,113 L332,113"/>
+    <path d="M155,238 L119,274 Q114,278 104,278 L68,278"/>
+    <path d="M245,238 L281,274 Q286,278 296,278 L332,278"/>
+  </g>
+
+  <!-- ===== CENTRAL CHIP CIRCLE ===== -->
+  <circle cx="200" cy="200" r="68" fill="url(#goldPlate)" stroke="#1c2936" stroke-width="9"/>
+
+  <!-- ===== CONTACT PADS (tentacle tips) ===== -->
+  <g stroke="#1c2936" stroke-width="5">
+    <circle cx="200" cy="80"  r="20" fill="#1abc9c"/>
+    <circle cx="200" cy="320" r="20" fill="#2ecc71"/>
+    <circle cx="63"  cy="200" r="20" fill="#3498db"/>
+    <circle cx="337" cy="200" r="20" fill="#e74c3c"/>
+    <circle cx="63"  cy="117" r="20" fill="#f39c12"/>
+    <circle cx="337" cy="117" r="20" fill="#8e44ad"/>
+    <circle cx="63"  cy="283" r="20" fill="#9b59b6"/>
+    <circle cx="337" cy="283" r="20" fill="#16a085"/>
+  </g>
+
+  <g transform="translate(200,80) scale(0.82)">
+    <circle cx="0" cy="-13.4" r="1.8" fill="#f0f6fc"/><path d="M0,-11.8 L0,-9.6" stroke="#f0f6fc" stroke-width="2" stroke-linecap="round"/><rect x="-8.6" y="-9.6" width="17.2" height="13" rx="4.2" fill="#f0f6fc"/><circle cx="-3.4" cy="-3.2" r="1.9" fill="#1abc9c"/><circle cx="3.4" cy="-3.2" r="1.9" fill="#1abc9c"/><path d="M-9.8,11.4 C-9.8,6.6 -5.4,4.6 0,4.6 C5.4,4.6 9.8,6.6 9.8,11.4 Z" fill="#f0f6fc"/>
+  </g>
+  <g transform="translate(200,320) scale(0.82)">
+    <path d="M0,-8 L-8.5,6.5 M0,-8 L8.5,6.5 M-8.5,6.5 L8.5,6.5" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6"/><circle cx="0" cy="-8" r="3.4" fill="#f0f6fc"/><circle cx="-8.5" cy="6.5" r="3.4" fill="#f0f6fc"/><circle cx="8.5" cy="6.5" r="3.4" fill="#f0f6fc"/>
+  </g>
+  <g transform="translate(63,200) scale(0.82)">
+    <ellipse cx="0" cy="-8" rx="10" ry="3.6" stroke="#f0f6fc" fill="none" stroke-width="2.6"/><path d="M-10,-8 L-10,7" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-width="2.6"/><path d="M10,-8 L10,7" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-width="2.6"/><path d="M-10,7 A 10,3.6 0 0 0 10,7" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-width="2.6"/><path d="M-10,-0.6 A 10,3.6 0 0 0 10,-0.6" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-width="2.6"/>
+  </g>
+  <g transform="translate(337,200) scale(0.82)">
+    <path d="M0,-10.5 L9.5,-6.8 C9.5,1.2 5.4,7.8 0,10.5 C-5.4,7.8 -9.5,1.2 -9.5,-6.8 Z" fill="#f0f6fc"/><path d="M-4.2,-0.6 L-1.2,2.6 L4.4,-3.6" stroke="#e74c3c" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(63,117) scale(0.82)">
+    <circle cx="-6.5" cy="-5.6" r="3.5" fill="#f0f6fc"/><path d="M-12,7 C-12,1.8 -9.6,-0.6 -6.5,-0.6 C-3.4,-0.6 -1,1.8 -1,7 Z" fill="#f0f6fc"/><rect x="2.2" y="-9.8" width="9.2" height="8" rx="2.3" fill="#f0f6fc"/><circle cx="4.9" cy="-5.9" r="1.2" fill="#f39c12"/><circle cx="8.4" cy="-5.9" r="1.2" fill="#f39c12"/><path d="M1,7 C1,2.4 3.4,0.4 6.5,0.4 C9.6,0.4 12,2.4 12,7 Z" fill="#f0f6fc"/>
+  </g>
+  <g transform="translate(337,117) scale(0.82)">
+    <circle cx="0" cy="0" r="10" stroke="#f0f6fc" fill="none" stroke-width="2.6"/><circle cx="0" cy="0" r="5" stroke="#f0f6fc" fill="none" stroke-width="2.6"/><circle cx="0" cy="0" r="1.9" fill="#f0f6fc"/>
+  </g>
+  <g transform="translate(63,283) scale(0.82)">
+    <path d="M-11,7 L-4,-0.5 L0.5,4 L9,-7" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"/><path d="M3.6,-7 L9,-7 L9,-1.6" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"/>
+  </g>
+  <g transform="translate(337,283) scale(0.82)">
+    <rect x="-10.5" y="-8.6" width="21" height="17.2" rx="3.2" stroke="#f0f6fc" fill="none" stroke-linejoin="round" stroke-width="2.6"/><path d="M-6,1.6 L-2.6,-3.6 L0.6,2.4 L4,-4.6 L6.4,0.4" stroke="#f0f6fc" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"/>
+  </g>
+
+  <!-- ===== OCTOPUS HEAD INSCRIBED IN THE CHIP CIRCLE ===== -->
+  <circle cx="200" cy="200" r="55" fill="url(#headGradient)" stroke="#1c2936" stroke-width="3"/>
+  <circle cx="200" cy="192" r="44" fill="url(#tubeLight)"/>
+
+  <circle cx="177" cy="188" r="12.5" fill="#f0f6fc"/>
+  <circle cx="223" cy="188" r="12.5" fill="#f0f6fc"/>
+  <circle cx="177" cy="189" r="6.3"  fill="#22303f"/>
+  <circle cx="223" cy="189" r="6.3"  fill="#22303f"/>
+  <circle cx="174.4" cy="185" r="2.7"  fill="#f0f6fc" opacity="0.95"/>
+  <circle cx="220.4" cy="185" r="2.7"  fill="#f0f6fc" opacity="0.95"/>
+
+  <path d="M179,209 Q200,226 221,209" fill="none" stroke="#f0f6fc" stroke-width="5" stroke-linecap="round"/>
+
+  
+</svg>
