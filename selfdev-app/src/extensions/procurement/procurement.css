@@ -809,3 +809,19 @@
 .pr-access-legend ul { margin: 0 0 6px; padding-left: 18px; font-size: 0.85rem; }
 .pr-access-legend li { padding: 2px 0; }
 .pr-access-legend-roles { list-style: none; padding-left: 0; }
+
+.pr-sourcing-scoring { border-top: 1px solid var(--pr-border); margin-top: 16px; padding-top: 12px; }
+.pr-sourcing-scoring > summary { cursor: pointer; color: var(--pr-accent); font-weight: 650; }
+.pr-sourcing-scoring h4 { font-size: 12px; margin: 14px 0 6px; }
+.pr-sourcing-scoring .pr-note { margin: 10px 0 0; }
+.pr-sourcing-scoring__grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 10px; }
+.pr-sourcing-scoring__grid section h4 { margin-top: 0; }
+.pr-sourcing-scoring__rules { display: flex; flex-direction: column; gap: 4px; margin: 0; border-left: 3px solid var(--pr-progress); border-radius: 6px; background: var(--pr-surface-muted); padding: 9px 10px; }
+.pr-sourcing-scoring__rules--good { border-left-color: var(--pr-accent); background: var(--pr-accent-soft); }
+.pr-sourcing-scoring__rules--risk { border-left-color: var(--pr-danger); background: var(--pr-danger-soft); }
+.pr-sourcing-scoring__rules > div { display: grid; grid-template-columns: 52px minmax(0,1fr); gap: 8px; align-items: baseline; }
+.pr-sourcing-scoring__rules dt { font-variant-numeric: tabular-nums; font-weight: 650; font-size: 11px; text-align: right; }
+.pr-sourcing-scoring__rules dd { margin: 0; font-size: 11px; }
+.pr-sourcing-scoring__lights { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.pr-sourcing-scoring__lights li { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px; align-items: baseline; font-size: 11px; }
+@media (max-width: 760px) { .pr-sourcing-scoring__grid { grid-template-columns: 1fr; } }

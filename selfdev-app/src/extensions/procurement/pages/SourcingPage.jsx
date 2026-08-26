@@ -54,6 +54,54 @@ function Score({ candidate }) {
   return <div className={`pr-sourcing-score pr-sourcing-score--${candidate.preliminaryStatus?.toLowerCase()}`} aria-label={`Оценка ${candidate.score} из 100`}><strong>{candidate.score}</strong><span>/100</span></div>
 }
 
+// Mirrors the deterministic rules in the backend's `qualify_candidate`. Kept
+// visible because an unexplained number reads as an opinion, and the whole
+// point of this screen is that the rating is arithmetic a specialist can check.
+const scoringAdds = [
+  ['+30', 'Продукт или CAS подтверждён на официальном сайте компании'],
+  ['+10', '…или только сторонним источником'],
+  ['+25', 'Роль производителя заявлена на официальном сайте компании'],
+  ['+10', '…или подтверждена только сторонним источником'],
+  ['+10…20', 'Лицензия, разрешение или регистрация в государственном либо регуляторном источнике (по 10 за категорию)'],
+  ['+10', 'Опубликованы сведения о производственных мощностях'],
+  ['+10', 'Ключевые сведения подтверждены минимум двумя независимыми доменами'],
+  ['+5', 'Инвестиционный или производственный проект'],
+  ['+5', 'Экспортный опыт'],
+  ['+5', 'Сертификация системы или продукции'],
+]
+
+const scoringSubtracts = [
+  ['−50', 'Источник указывает на несоответствие запрошенному продукту или CAS'],
+  ['−35', 'Явный негативный регуляторный или репутационный сигнал'],
+  ['−20', 'Источники содержат противоречивые сведения'],
+  ['−20', 'У компании с таким названием указаны разные страны'],
+  ['−20', 'С одним названием связаны несколько официальных доменов'],
+  ['−15', 'Компания или источник указывает на роль дистрибьютора либо трейдера'],
+]
+
+function ScoringRules({ rows, tone }) {
+  return <dl className={`pr-sourcing-scoring__rules pr-sourcing-scoring__rules--${tone}`}>{rows.map(([weight, text]) => <div key={`${weight}-${text}`}><dt>{weight}</dt><dd>{text}</dd></div>)}</dl>
+}
+
+function ScoreExplanation() {
+  return <details className="pr-sourcing-scoring">
+    <summary>Как считается оценка и цвет</summary>
+    <p className="pr-note">Оценка — сумма правил ниже, ограниченная диапазоном 0–100. Она считается кодом, а не моделью: каждое слагаемое требует доказательства с дословной цитатой из сохранённого источника. Модель только извлекает доказательства и не влияет ни на баллы, ни на цвет.</p>
+    <div className="pr-sourcing-scoring__grid">
+      <section><h4>Добавляет</h4><ScoringRules rows={scoringAdds} tone="good" /></section>
+      <section><h4>Вычитает</h4><ScoringRules rows={scoringSubtracts} tone="risk" /></section>
+    </div>
+    <h4>Цвет</h4>
+    <ul className="pr-sourcing-scoring__lights">
+      <li><StatusBadge status="RED" compact /><span>Найдено несоответствие продукту или явный негативный сигнал.</span></li>
+      <li><StatusBadge status="GREEN" compact /><span>Одновременно: не менее 70 баллов, продукт <b>и</b> роль производителя подтверждены на официальном сайте компании, есть подтверждение регулятора либо независимых источников, и не найдено ни одного риска.</span></li>
+      <li><StatusBadge status="YELLOW" compact /><span>Во всех остальных случаях.</span></li>
+    </ul>
+    <p className="pr-note">Отсюда обычная причина жёлтого статуса: если продукт и производство подтверждены только сторонними источниками, а официальный сайт компании в выдачу не попал, потолок оценки — около 20–40 баллов, и зелёный недостижим независимо от того, насколько компания известна. Что именно не хватает этому кандидату, перечислено в блоке «Пробелы».</p>
+    <p className="pr-note">Зелёный статус — не проверка поставщика. Автоматическая оценка не может присвоить статус «подтверждённый производитель»: это делает только специалист явным решением.</p>
+  </details>
+}
+
 function SignalList({ title, items, tone }) {
   if (!items?.length) return null
   return <div className={`pr-sourcing-signals pr-sourcing-signals--${tone}`}><h4>{title}</h4><ul>{items.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul></div>
@@ -196,6 +244,7 @@ export default function SourcingPage() {
             <Card><CardHeader><div><CardTitle>{candidate.name}</CardTitle><p>{candidate.aliases?.length ? `Также: ${candidate.aliases.join(', ')}` : 'Другие названия не найдены'}</p></div><StatusBadge status={candidate.preliminaryStatus} /></CardHeader><CardContent>
               <div className="pr-sourcing-identity"><Score candidate={candidate} /><div><span>Предполагаемая роль</span><strong>{statusLabel(candidate.role)}</strong></div><div><span>Страна</span><strong>{candidate.country || 'Не определена'}</strong></div>{externalUrl(candidate.website) && <a href={externalUrl(candidate.website)} target="_blank" rel="noreferrer"><ExternalLink />Сайт компании</a>}</div>
               <div className="pr-sourcing-signal-grid"><SignalList title="Надёжность" items={candidate.reliabilitySignals} tone="good" /><SignalList title="Риски" items={candidate.riskSignals} tone="risk" /><SignalList title="Пробелы" items={candidate.evidenceGaps} tone="gap" /></div>
+              <ScoreExplanation />
             </CardContent></Card>
 
             <Card><CardHeader><CardTitle>Проверяемые доказательства</CardTitle><span>{candidate.evidence?.length || 0} утверждений</span></CardHeader><CardContent>{!candidate.evidence?.length ? <EmptyState title="Доказательств пока нет" /> : <div className="pr-sourcing-evidence">{candidate.evidence.map(claim => <article key={claim.id} className={`is-${claim.polarity?.toLowerCase()}`}><header><strong>{evidenceLabels[claim.category] || claim.category}</strong><StatusBadge status={claim.polarity} compact /></header><p>{claim.value}</p><blockquote>{claim.quote}</blockquote><footer><SourceLink source={sourceMap.get(claim.sourceId)} /><span>Получено {formatDate(claim.sourceRetrievedAt)}</span>{claim.validUntil && <span>Действует до {claim.validUntil}</span>}</footer></article>)}</div>}</CardContent></Card>
