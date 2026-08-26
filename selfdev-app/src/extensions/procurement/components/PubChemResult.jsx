@@ -21,6 +21,7 @@ export function PubChemResult({ normalization }) {
   const [showAllSynonyms, setShowAllSynonyms] = useState(false)
   const synonyms = normalization.synonyms || []
   const visible = showAllSynonyms ? synonyms : synonyms.slice(0, SYNONYM_PREVIEW)
+  const isSubstance = normalization.recordType === 'SUBSTANCE'
 
   return (
     <div className="pr-normalization">
@@ -37,6 +38,7 @@ export function PubChemResult({ normalization }) {
         { label: 'Preferred name', value: normalization.preferredName },
         { label: 'IUPAC', value: normalization.iupacName },
         { label: 'PubChem CID', value: normalization.cid },
+        { label: 'PubChem SID', value: normalization.sid },
         { label: 'Формула', value: normalization.molecularFormula },
         { label: 'Молекулярная масса', value: normalization.molecularWeight },
         { label: 'Точная масса', value: normalization.exactMass },
@@ -45,6 +47,16 @@ export function PubChemResult({ normalization }) {
         { label: 'Название подтверждено', value: matchBadge(normalization.nameMatchesPubchem) },
         { label: 'Как найдено', value: resolvedByLabel[normalization.resolvedBy] || normalization.resolvedBy },
       ]} />
+
+      {isSubstance && (
+        <p className="pr-note">
+          Вещество переменного состава: в PubChem у него нет записи Compound, только
+          депонированные записи Substance
+          {normalization.sids?.length > 1 && ` (учтено записей: ${normalization.sids.length})`}.
+          Формула, молекулярная масса и структурные идентификаторы относятся к
+          определённой структуре и для такой записи не приводятся.
+        </p>
+      )}
 
       {(normalization.inchiKey || normalization.canonicalSmiles || normalization.inchi) && (
         <dl className="pr-structure-ids">
