@@ -93,33 +93,48 @@ const shortDate = value => value ? new Date(value).toLocaleDateString('ru-RU', {
 // it: the same company can be the maker of one product and a reseller of
 // another, and a hint that hides which one would invite the very substitution
 // the review exists to prevent.
-function KnownSupplierNote({ known, compact }) {
+const sameCas = (left, right) => String(left || '').trim() === String(right || '').trim()
+
+const decisionLine = item => <>
+  {decisionLabels[item.decision] || statusLabel(item.decision)}
+  {shortDate(item.decidedAt) && `, ${shortDate(item.decidedAt)}`}
+  {item.casNumber && <> — CAS <code>{item.casNumber}</code></>}
+  {item.productName && ` (${item.productName})`}
+</>
+
+function KnownSupplierNote({ known, requestedCas, compact }) {
   if (!known?.decisions?.length) return null
-  const [latest] = [...known.decisions].sort((a, b) => new Date(b.decidedAt || 0) - new Date(a.decidedAt || 0))
-  const label = decisionLabels[latest.decision] || statusLabel(latest.decision)
-  if (compact) return <small className="pr-known-supplier pr-known-supplier--compact">Уже в справочнике: {label}</small>
-  const date = shortDate(latest.decidedAt)
+  const byDate = [...known.decisions].sort((a, b) => new Date(b.decidedAt || 0) - new Date(a.decidedAt || 0))
+  // The warning below is only true of a decision made on another substance.
+  // Printing it over a decision about this very CAS would state something the
+  // reader can see is false, on the one point this contour asks to be trusted on.
+  const here = byDate.filter(item => sameCas(item.casNumber, requestedCas))
+  const elsewhere = byDate.filter(item => !sameCas(item.casNumber, requestedCas))
+
+  if (compact) {
+    const [first] = here.length ? here : elsewhere
+    const label = decisionLabels[first.decision] || statusLabel(first.decision)
+    return <small className="pr-known-supplier pr-known-supplier--compact">
+      Уже в справочнике: {label}{here.length ? '' : ' — по другому веществу'}
+    </small>
+  }
+
   return (
     <div className="pr-known-supplier">
       <strong>Уже в справочнике</strong>
-      <p>
-        Подтверждён как {label}
-        {date && ` ${date}`}
-        {latest.casNumber && <> по CAS <code>{latest.casNumber}</code></>}
-        {latest.productName && ` (${latest.productName})`}.
-      </p>
-      {known.decisions.length > 1 && (
-        <ul>
-          {known.decisions.filter(item => item !== latest).map((item, index) => (
-            <li key={`${item.casNumber}-${index}`}>
-              {decisionLabels[item.decision] || statusLabel(item.decision)}
-              {item.casNumber && <> по CAS <code>{item.casNumber}</code></>}
-              {shortDate(item.decidedAt) && `, ${shortDate(item.decidedAt)}`}
-            </li>
-          ))}
-        </ul>
+      {here.length > 0 && (
+        <>
+          <p>По этому веществу: {decisionLine(here[0])}.</p>
+          {here.length > 1 && <ul>{here.slice(1).map((item, index) => <li key={`here-${index}`}>{decisionLine(item)}</li>)}</ul>}
+        </>
       )}
-      <p className="pr-note">Решение принято по другому веществу и на эту карточку не переносится: роль привязана к веществу, а не к компании.</p>
+      {elsewhere.length > 0 && (
+        <>
+          <p>По другим веществам: {decisionLine(elsewhere[0])}.</p>
+          {elsewhere.length > 1 && <ul>{elsewhere.slice(1).map((item, index) => <li key={`other-${index}`}>{decisionLine(item)}</li>)}</ul>}
+          <p className="pr-note">Решение по другому веществу на эту карточку не переносится: роль привязана к веществу, а не к компании.</p>
+        </>
+      )}
       {known.supplierId && <Link to={`/procurement/suppliers/${known.supplierId}`}>Открыть карточку поставщика</Link>}
     </div>
   )
@@ -284,12 +299,12 @@ export default function SourcingPage() {
         <Alert><AlertTriangle /><AlertTitle>Светофор — предварительная оценка</AlertTitle><AlertDescription>Рейтинг объясняет найденные сигналы, но не является верификацией. Подтвердить роль компании может только уполномоченный специалист после изучения доказательств.</AlertDescription></Alert>
 
         <div className="pr-sourcing-workbench">
-          <Card><CardHeader><CardTitle>Кандидаты</CardTitle><span>{run.candidates?.length || 0} найдено</span></CardHeader><CardContent>{!run.candidates?.length ? <EmptyState title={isRunning ? 'Анализируем источники' : 'Кандидаты не найдены'} description={isRunning ? 'Первые кандидаты появятся здесь сразу после обработки подтверждающего источника.' : 'Добавьте релевантный источник вручную или запустите новый поиск с большим лимитом.'} /> : <div className="pr-sourcing-candidates">{run.candidates.map(item => <button type="button" key={item.id} className={selectedId === item.id ? 'is-selected' : ''} onClick={() => { setSelectedId(item.id); setPromotionCandidateId('') }}><Score candidate={item} /><span><strong>{item.name}</strong><small>{item.country || 'Страна не определена'} · {statusLabel(item.role)}</small><span className="pr-sourcing-badges"><StatusBadge status={item.preliminaryStatus} compact /><StatusBadge status={item.reviewDecision} compact /></span><KnownSupplierNote known={item.knownSupplier} compact /></span></button>)}</div>}</CardContent></Card>
+          <Card><CardHeader><CardTitle>Кандидаты</CardTitle><span>{run.candidates?.length || 0} найдено</span></CardHeader><CardContent>{!run.candidates?.length ? <EmptyState title={isRunning ? 'Анализируем источники' : 'Кандидаты не найдены'} description={isRunning ? 'Первые кандидаты появятся здесь сразу после обработки подтверждающего источника.' : 'Добавьте релевантный источник вручную или запустите новый поиск с большим лимитом.'} /> : <div className="pr-sourcing-candidates">{run.candidates.map(item => <button type="button" key={item.id} className={selectedId === item.id ? 'is-selected' : ''} onClick={() => { setSelectedId(item.id); setPromotionCandidateId('') }}><Score candidate={item} /><span><strong>{item.name}</strong><small>{item.country || 'Страна не определена'} · {statusLabel(item.role)}</small><span className="pr-sourcing-badges"><StatusBadge status={item.preliminaryStatus} compact /><StatusBadge status={item.reviewDecision} compact /></span><KnownSupplierNote known={item.knownSupplier} requestedCas={run.requestedCas} compact /></span></button>)}</div>}</CardContent></Card>
 
           {candidate && <div className="pr-sourcing-detail">
             <Card><CardHeader><div><CardTitle>{candidate.name}</CardTitle><p>{candidate.aliases?.length ? `Также: ${candidate.aliases.join(', ')}` : 'Другие названия не найдены'}</p></div><StatusBadge status={candidate.preliminaryStatus} /></CardHeader><CardContent>
               <div className="pr-sourcing-identity"><Score candidate={candidate} /><div><span>Предполагаемая роль</span><strong>{statusLabel(candidate.role)}</strong></div><div><span>Страна</span><strong>{candidate.country || 'Не определена'}</strong></div>{externalUrl(candidate.website) && <a href={externalUrl(candidate.website)} target="_blank" rel="noreferrer"><ExternalLink />Сайт компании</a>}</div>
-              <KnownSupplierNote known={candidate.knownSupplier} />
+              <KnownSupplierNote known={candidate.knownSupplier} requestedCas={run.requestedCas} />
               <div className="pr-sourcing-signal-grid"><SignalList title="Надёжность" items={candidate.reliabilitySignals} tone="good" /><SignalList title="Риски" items={candidate.riskSignals} tone="risk" /><SignalList title="Пробелы" items={candidate.evidenceGaps} tone="gap" /></div>
               <ScoreExplanation />
             </CardContent></Card>
