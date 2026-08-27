@@ -843,3 +843,5 @@
 .pr-sourcing-probe strong { display: block; font-size: 12px; }
 .pr-sourcing-probe span { color: var(--pr-muted); font-size: 11px; }
 .pr-sourcing-probe strong { color: var(--pr-ink, inherit); }
+
+.pr-sourcing-limit-note { margin: -6px 0 0; }

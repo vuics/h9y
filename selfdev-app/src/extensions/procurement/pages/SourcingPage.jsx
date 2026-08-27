@@ -51,6 +51,21 @@ const externalUrl = value => {
   }
 }
 
+// Mirrors the backend: the chosen number is a budget shared out over the
+// queries, then clamped, so the same choice means different things depending on
+// how many queries a run uses. Stating the result stops "10" reading as a
+// promise of ten sources when it produces about eighty.
+const plural = (count, one, few, many) => {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
+}
+
+const perQueryResults = (maxResults, queryCount) =>
+  Math.max(2, Math.min(10, Math.ceil(maxResults / queryCount)))
+
 function Score({ candidate }) {
   return <div className={`pr-sourcing-score pr-sourcing-score--${candidate.preliminaryStatus?.toLowerCase()}`} aria-label={`Оценка ${candidate.score} из 100`}><strong>{candidate.score}</strong><span>/100</span></div>
 }
@@ -288,6 +303,12 @@ export default function SourcingPage() {
           </span>
         </label>
         <div className="pr-sourcing-launch__controls"><SelectField label="Лимит результатов" selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))} isDisabled={isBusy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['1', '5', '10', '20', '50', '100'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField><Button isDisabled={!normalized || !canResearchSourcing || isBusy || !effectiveQueryIds.length || !effectiveEngineIds.length} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button>{isRunning && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить поиск'}</Button>}</div>
+        {effectiveQueryIds.length > 0 && (() => {
+          const per = perQueryResults(Number(maxResults), effectiveQueryIds.length)
+          return <p className="pr-note pr-sourcing-limit-note">
+            До {per} {plural(per, 'результата', 'результатов', 'результатов')}{effectiveQueryIds.length === 1 ? ' для единственного запроса' : ` на каждый из ${effectiveQueryIds.length} ${plural(effectiveQueryIds.length, 'запроса', 'запросов', 'запросов')}`} — по каждому выбранному движку. Охват растёт от числа запросов, а не от этого лимита.
+          </p>
+        })()}
         <EnginePicker engines={engineList} selectedIds={effectiveEngineIds} disabled={isBusy} onToggle={(id, checked) => setSelectedEngineIds(current => { const base = current ?? availableEngineIds; return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} />
         <QueryPlanPanel templates={templates} isDefault={queryTemplates.data?.isDefault} selectedIds={effectiveQueryIds} onSelectionChange={(id, checked) => setSelectedQueryIds(current => { const base = current ?? templates.filter(item => item.enabled).map(item => item.id); return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} onSave={async payload => { try { await saveTemplates.mutateAsync(payload); return true } catch { return false } }} onReset={() => saveTemplates.mutate((queryTemplates.data?.defaultTemplates || []).map(template => ({ template, enabled: true })))} isSaving={saveTemplates.isPending} saveError={saveTemplates.error} canEdit={canReviewSourcing} disabled={isBusy} cas={card.data?.casNumber} substanceName={card.data?.substanceName} />
         <p className="pr-note">Новый запуск создаёт отдельный снимок результатов. Система не присваивает статус производителя автоматически.</p>
