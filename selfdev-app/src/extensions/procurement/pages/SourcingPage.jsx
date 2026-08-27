@@ -36,7 +36,8 @@ const evidenceLabels = {
   MANUFACTURER_ROLE: 'Признак производства', DISTRIBUTOR_ROLE: 'Признак дистрибуции', PRODUCTION_CAPACITY: 'Производственные мощности',
   INVESTMENT_PROJECT: 'Инвестиционный проект', EXPORT_AUTHORIZATION: 'Экспортная лицензия', EXPORT_EXPERIENCE: 'Экспортный опыт',
   ENVIRONMENTAL_PERMIT: 'Экологическое разрешение', QUALITY_CERTIFICATION: 'Сертификат качества', REGULATORY_REGISTRATION: 'Регистрация у регулятора',
-  CONTACT: 'Контакт', NEGATIVE_RISK: 'Негативный риск', PRODUCT_MISMATCH: 'Несоответствие продукта',
+  CONTACT: 'Контакт', REFERENCE_STANDARDS_SCOPE: 'Аналитические стандарты, не сырьё',
+  NEGATIVE_RISK: 'Негативный риск', PRODUCT_MISMATCH: 'Несоответствие продукта',
 }
 
 const formatDate = value => value ? new Date(value).toLocaleString('ru-RU') : '—'
@@ -76,6 +77,7 @@ const scoringSubtracts = [
   ['−20', 'Источники содержат противоречивые сведения'],
   ['−20', 'У компании с таким названием указаны разные страны'],
   ['−20', 'С одним названием связаны несколько официальных доменов'],
+  ['−20', 'Источник описывает поставщика аналитических стандартов и реактивов, а не сырья'],
   ['−15', 'Компания или источник указывает на роль дистрибьютора либо трейдера'],
 ]
 
