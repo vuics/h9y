@@ -837,3 +837,9 @@
 /* Scoped past `.pr-sourcing-candidates small`, which is more specific than a
    lone class and would otherwise mute the hint into the country line. */
 .pr-sourcing-candidates .pr-known-supplier--compact { display: block; margin: 4px 0 0; border: 0; border-radius: 0; background: none; padding: 0; color: var(--pr-accent); font-size: 10px; font-weight: 650; }
+
+.pr-sourcing-probe { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 9px; align-items: start; border-top: 1px solid var(--pr-border); margin: 12px 0 16px; padding-top: 12px; }
+.pr-sourcing-probe input { margin-top: 2px; }
+.pr-sourcing-probe strong { display: block; font-size: 12px; }
+.pr-sourcing-probe span { color: var(--pr-muted); font-size: 11px; }
+.pr-sourcing-probe strong { color: var(--pr-ink, inherit); }

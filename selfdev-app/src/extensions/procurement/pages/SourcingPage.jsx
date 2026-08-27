@@ -182,6 +182,7 @@ export default function SourcingPage() {
   const queryClient = useQueryClient()
   const { canResearchSourcing, canReviewSourcing, canOperateEchemi } = useProcurementPermissions()
   const [maxResults, setMaxResults] = useState('10')
+  const [siteProbe, setSiteProbe] = useState(true)
   const [sourceUrl, setSourceUrl] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [reviewDecision, setReviewDecision] = useState('UNDER_REVIEW')
@@ -223,7 +224,7 @@ export default function SourcingPage() {
   const availableEngineIds = engineList.filter(item => item.available).map(item => item.id)
   const effectiveEngineIds = (selectedEngineIds ?? availableEngineIds).filter(id => availableEngineIds.includes(id))
   const start = useMutation({
-    mutationFn: () => procurementApi.startSourcing(requestId, Number(maxResults), effectiveQueryIds, effectiveEngineIds),
+    mutationFn: () => procurementApi.startSourcing(requestId, Number(maxResults), effectiveQueryIds, effectiveEngineIds, siteProbe),
     onSuccess: accept,
   })
   const cancel = useMutation({
@@ -279,6 +280,13 @@ export default function SourcingPage() {
   </>}>
     <div className="pr-stack">
       <Card className="pr-sourcing-launch"><CardHeader><div><CardTitle>Открытый поиск</CardTitle><p>Сайты производителей, регуляторы, разрешения, мощности, инвестпроекты, новости, каталоги и B2B-площадки.</p></div></CardHeader><CardContent>
+        <label className="pr-sourcing-probe">
+          <input type="checkbox" checked={siteProbe} onChange={event => setSiteProbe(event.target.checked)} disabled={isBusy} />
+          <span>
+            <strong>Проверять сайт кандидата</strong>
+            Открывать каталог и страницу «О компании» у тех, кто заявил производство: каталог на тысячи веществ и описание вида «поставщик аналитических стандартов» видны только там. Читается правилами, без обращения к модели.
+          </span>
+        </label>
         <div className="pr-sourcing-launch__controls"><SelectField label="Лимит результатов" selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))} isDisabled={isBusy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['1', '5', '10', '20', '50', '100'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField><Button isDisabled={!normalized || !canResearchSourcing || isBusy || !effectiveQueryIds.length || !effectiveEngineIds.length} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button>{isRunning && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить поиск'}</Button>}</div>
         <EnginePicker engines={engineList} selectedIds={effectiveEngineIds} disabled={isBusy} onToggle={(id, checked) => setSelectedEngineIds(current => { const base = current ?? availableEngineIds; return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} />
         <QueryPlanPanel templates={templates} isDefault={queryTemplates.data?.isDefault} selectedIds={effectiveQueryIds} onSelectionChange={(id, checked) => setSelectedQueryIds(current => { const base = current ?? templates.filter(item => item.enabled).map(item => item.id); return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} onSave={async payload => { try { await saveTemplates.mutateAsync(payload); return true } catch { return false } }} onReset={() => saveTemplates.mutate((queryTemplates.data?.defaultTemplates || []).map(template => ({ template, enabled: true })))} isSaving={saveTemplates.isPending} saveError={saveTemplates.error} canEdit={canReviewSourcing} disabled={isBusy} cas={card.data?.casNumber} substanceName={card.data?.substanceName} />

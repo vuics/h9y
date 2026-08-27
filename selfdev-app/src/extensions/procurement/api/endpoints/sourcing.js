@@ -45,13 +45,14 @@ export const sourcingEndpoints = {
     signal => request('/sourcing/query-templates', { signal }),
     async () => (await fixtures()).sourcingQueryTemplates,
   ),
-  startSourcing: mutation((cardId, maxResults = 20, queryTemplateIds, engineIds) =>
+  startSourcing: mutation((cardId, maxResults = 20, queryTemplateIds, engineIds, siteProbe = true) =>
     request(`/cards/${id(cardId)}/sourcing/runs`, {
       method: 'post',
       data: {
         maxResults,
         ...(queryTemplateIds ? { queryTemplateIds } : {}),
         ...(engineIds ? { engineIds } : {}),
+        siteProbe,
       },
     })),
   cancelSourcing: mutation(runId => request(`/sourcing/${id(runId)}/cancel`, { method: 'post' })),
