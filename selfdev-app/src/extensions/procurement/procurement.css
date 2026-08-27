@@ -825,3 +825,15 @@
 .pr-sourcing-scoring__lights { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .pr-sourcing-scoring__lights li { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px; align-items: baseline; font-size: 11px; }
 @media (max-width: 760px) { .pr-sourcing-scoring__grid { grid-template-columns: 1fr; } }
+
+.pr-known-supplier { border-left: 3px solid var(--pr-accent); border-radius: 6px; background: var(--pr-accent-soft); padding: 10px 12px; margin-top: 14px; }
+.pr-known-supplier strong { display: block; font-size: 12px; }
+.pr-known-supplier p { margin: 5px 0 0; font-size: 12px; }
+.pr-known-supplier code { font-size: 11px; }
+.pr-known-supplier ul { margin: 6px 0 0; padding-left: 16px; }
+.pr-known-supplier li { font-size: 11px; margin-top: 3px; }
+.pr-known-supplier .pr-note { margin-top: 7px; }
+.pr-known-supplier a { display: inline-block; margin-top: 8px; font-size: 11px; }
+/* Scoped past `.pr-sourcing-candidates small`, which is more specific than a
+   lone class and would otherwise mute the hint into the country line. */
+.pr-sourcing-candidates .pr-known-supplier--compact { display: block; margin: 4px 0 0; border: 0; border-radius: 0; background: none; padding: 0; color: var(--pr-accent); font-size: 10px; font-weight: 650; }
