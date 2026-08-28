@@ -284,11 +284,18 @@ export default function SourcingPage() {
   const isBusy = isRunning || start.isPending
 
   if (card.isLoading || query.isLoading) return <LoadingState />
-  if (card.isError) return <ErrorState error={card.error} onRetry={card.refetch} />
-  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  // Only when there is nothing to show. A running search polls every three
+  // seconds, and one failed poll used to replace the whole page with a red
+  // error: the results were still there, the screen simply stopped showing
+  // them, and a reload brought everything back. Losing a finished search to a
+  // moment of network trouble is worse than showing it with a warning.
+  if (card.isError && !card.data) return <ErrorState error={card.error} onRetry={card.refetch} />
+  if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
   if (!card.data) return <EmptyState title="Карточка не найдена" />
+  const staleError = query.isError ? query.error : card.isError ? card.error : null
 
   return <DetailLayout backTo={`/procurement/requests/${requestId}`} backLabel="К карточке" eyebrow={`Карточка #${requestId}`} title="Поиск и квалификация поставщиков" status={run ? <StatusBadge status={run.status} /> : <Badge variant="secondary">Не запускался</Badge>} meta={`CAS ${card.data.casNumber || '—'} · ${card.data.substanceName || 'вещество не указано'}`} warnings={<>
+    {staleError && <Alert><CircleAlert /><AlertTitle>Показаны последние полученные данные</AlertTitle><AlertDescription>Связь с сервисом прервалась: {mutationMessage(staleError) || 'запрос не выполнен'}. Результаты ниже сохранены и никуда не делись — обновление продолжает повторяться само. <Button variant="outline" size="sm" onPress={() => { query.refetch(); card.refetch() }}>Обновить сейчас</Button></AlertDescription></Alert>}
     {!normalized && <Alert><AlertTriangle /><AlertTitle>Нужна нормализованная карточка</AlertTitle><AlertDescription>Перед поиском подтвердите CAS и название вещества. Это снижает риск смешения похожих продуктов.</AlertDescription></Alert>}
     {!canResearchSourcing && <Alert><AlertTriangle /><AlertTitle>Поиск доступен только для чтения</AlertTitle><AlertDescription>Для запуска и добавления источников требуется разрешение SOURCING_RESEARCH.</AlertDescription></Alert>}
     {operationError && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(operationError)}</AlertDescription></Alert>}
