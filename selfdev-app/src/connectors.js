@@ -149,7 +149,7 @@ const connectors = {
                 secure: { type: 'boolean', title: 'Secure', default: true },
               },
             },
-            pollSec: { type: 'number', title: 'Poll Every Seconds', default: 30 },
+            pollSec: { type: 'number', title: 'Poll Every Seconds', default: 120 },
             defaultRecipient: { type: 'string', title: 'Default Recipient', default: 'default@example.com' },
             defaultSubject: { type: 'string', title: 'Default Subject', default: 'Message from Agentic AI' },
             messageFormat: {

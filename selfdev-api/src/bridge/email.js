@@ -55,12 +55,50 @@ export default class Email extends Connector {
     }
   }
 
+  /** Let go of the IMAP client without assuming its socket still works.
+   *
+   * `logout()` speaks IMAP: it sends BYE and waits for the reply, which a
+   * socket the network already dropped can never deliver. The server then keeps
+   * that session open until its own idle timeout, and the account accumulates
+   * them — WorkMail allows ten per user and IP, after which every login is
+   * refused and the mailbox is unreachable until the old ones expire. A dead
+   * connection needs `close()`, which tears the socket down locally.
+   */
+  async disconnectImap() {
+    const client = this.mailClient
+    this.mailClient = null
+    if (!client) return
+    try {
+      if (client.usable) await client.logout()
+      else client.close()
+    } catch {
+      try { client.close() } catch { /* already gone */ }
+    }
+  }
+
+  /** Build a client that reports its failures instead of killing the process.
+   *
+   * ImapFlow raises socket failures on the client as an `error` event, and an
+   * `error` event with no listener is rethrown by Node as an uncaught
+   * exception — which is how a dropped connection took the whole bridge down
+   * rather than one poll. The next poll builds a new client anyway, so noting
+   * the failure is all this has to do.
+   */
+  newImapClient() {
+    const client = new ImapFlow(this.imapOptions)
+    client.on('error', err => {
+      error('IMAP client error:', err)
+      this.slog('warn', 'IMAP client error', { message: err?.message })
+    })
+    return client
+  }
+
   async ensureConnected() {
-    if (this.mailClient?.connected && this.mailClient?.authenticated) return
+    if (this.mailClient?.usable && this.mailClient?.authenticated) return
     if (!this.imapOptions) throw new Error('IMAP options are not configured')
 
-    await this.mailClient?.logout().catch(() => {})
-    this.mailClient = new ImapFlow(this.imapOptions)
+    await this.disconnectImap()
+    this.mailClient = this.newImapClient()
     log('Reconnecting IMAP with a new client...')
     await this.mailClient.connect()
     await this.slog('info', 'IMAP client reconnected', {
@@ -85,23 +123,17 @@ export default class Email extends Connector {
       },
     }
     this.imapOptions = imapOptions
-    // verbose('imapOptions:', imapOptions)
-    this.mailClient = new ImapFlow(imapOptions)
-    // verbose('mailClient:', this.mailClient)
-    // log('mailClient connected (before):', this.mailClient.connected) // boolean
-    // log('mailClient authenticated (before):', this.mailClient.authenticated) // boolean
-
+    // Connect once so a wrong host or password is reported at startup rather
+    // than two minutes later, then hand the connection straight back. Whatever
+    // is left open here would sit idle until the first poll, and an idle
+    // connection is exactly what this network drops.
+    this.mailClient = this.newImapClient()
     await this.mailClient.connect()
-    // await connectImap(this.mailClient)
-    // await ensureConnected(this.mailClient)
-
-    // log('IMAP connected:', opts.imap.host)
-    // log('mailClient connected (after):', this.mailClient.connected) // boolean
-    // log('mailClient authenticated (after):', this.mailClient.authenticated) // boolean
 
     this.slog('info', 'IMAP client connected', {
       host: opts.imap.host
     })
+    await this.disconnectImap()
 
     // setInterval(() => {
     //   const c = this.mailClient
@@ -157,9 +189,14 @@ export default class Email extends Connector {
     this.inboundQueue.start()
 
     /* ---------- POLLING LOOP ---------- */
+    // A dead socket is only noticed when the next poll fails, and each failed
+    // poll leaves its connection behind on the server. WorkMail allows ten per
+    // user and IP, so a thirty-second loop spent that budget in five minutes and
+    // locked the mailbox out entirely. Two minutes keeps the same headroom four
+    // times longer, and mail that waits two minutes costs nothing here.
     this.pollInterval = setInterval(
       () => void this.checkInbox(),
-      (opts.pollSec || 30) * 1000
+      (opts.pollSec || 120) * 1000
     )
 
     this.xmppAgent.chat = async ({ prompt, from } = {}) => {
@@ -348,6 +385,12 @@ export default class Email extends Connector {
     } catch (err) {
       error('Error checking inbox:', err);
     } finally {
+      // Nothing keeps this connection alive between polls, and the network
+      // drops an idle one without telling either side — the failure only
+      // surfaces as ETIMEDOUT on the next read, by which time the session is
+      // already stranded on the server. Holding no idle connection at all
+      // removes the thing that breaks: each poll opens one and gives it back.
+      await this.disconnectImap()
       this.checkingInbox = false
     }
   }
@@ -357,7 +400,7 @@ export default class Email extends Connector {
     if (this.pollInterval) clearInterval(this.pollInterval)
     this.outbox?.stop()
     this.inboundQueue?.stop()
-    if (this.mailClient) await this.mailClient.logout().catch(() => {})
+    await this.disconnectImap()
     if (this.xmppAgent) await this.xmppAgent.stop().catch(() => {})
     verbose('EmailBridge stopped')
     this.slog('debug', 'Bridge stopped')
