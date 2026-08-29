@@ -513,6 +513,9 @@
 .pr-quarantine-item { border: 1px solid var(--border); border-radius: 0.6rem; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .pr-quarantine-item__head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .pr-quarantine-item__head > time { margin-left: auto; font-size: 0.8rem; color: var(--muted-foreground); }
+/* Mail only: a messenger message has no subject, so nothing is reserved for
+   one and the body stays where the eye already looks for it. */
+.pr-quarantine-item__subject { margin: 0.35rem 0 0; font-weight: 500; }
 .pr-quarantine-item__actions { display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; }
 
 /* ---- Conversation timeline -------------------------------------------- */

@@ -71,7 +71,12 @@ function QuarantineCard({ message, canResolve }) {
         <Badge variant="outline">{message.channel}</Badge>
         <time>{formatDate(message.createdAt)}</time>
       </div>
-      <pre className="pr-message-text">{message.text}</pre>
+      {message.subject && (
+        <p className="pr-quarantine-item__subject">{message.subject}</p>
+      )}
+      {message.text
+        ? <pre className="pr-message-text">{message.text}</pre>
+        : <p className="pr-muted">Письмо без текстовой части.</p>}
       {message.attachmentUrls?.length > 0 && (
         <p className="pr-muted">Вложений: {message.attachmentUrls.length}</p>
       )}

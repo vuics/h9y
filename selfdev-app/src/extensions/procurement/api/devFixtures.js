@@ -170,7 +170,7 @@ export function negotiationActivityFixture() {
     dueNow: [{ id: 'NEG-1042-B2', cardId: 1042, cardTitle: cards[0].title, supplierId: 'SUP-B72D', supplierName: suppliers[1].name, channel: 'email', status: 'FOLLOW_UP_DUE', nextActionAt: ago(1) }],
     scheduled: [{ id: 'NEG-1042-A1', cardId: 1042, cardTitle: cards[0].title, supplierId: 'SUP-A19F', supplierName: suppliers[0].name, channel: 'email', status: 'WAITING_SUPPLIER', nextActionAt: ago(-20) }],
     stuck: [{ id: 'NEG-1024-A3', cardId: 1024, cardTitle: cards[2]?.title || 'Карточка #1024', supplierId: 'SUP-A19F', supplierName: suppliers[0].name, channel: 'email', status: 'ESCALATED', lastWorkerError: 'smtp: 550 recipient rejected', escalationReason: 'Черновик сообщения отклонён специалистом' }],
-    quarantine: [{ id: 'UNASSIGNED-DEMO-1', channel: 'email', address: 'sales@unknown-trading.example', bridgeJid: 'procurement-email4@procurementassistant.x.h9y.localhost', conversationId: null, externalMessageId: 'demo-1', text: 'Dear Sir, we can supply acetone at competitive price. Please advise your requirement.', attachmentUrls: [], status: 'NEEDS_IDENTIFICATION', resolvedAssignmentId: null, dismissalReason: null, createdAt: ago(5) }],
+    quarantine: [{ id: 'UNASSIGNED-DEMO-1', channel: 'email', address: 'sales@unknown-trading.example', bridgeJid: 'procurement-email4@procurementassistant.x.h9y.localhost', conversationId: null, externalMessageId: 'demo-1', subject: 'Acetone 99.5% — quotation', text: 'Dear Sir, we can supply acetone at competitive price. Please advise your requirement.', attachmentUrls: [], status: 'NEEDS_IDENTIFICATION', resolvedAssignmentId: null, dismissalReason: null, createdAt: ago(5) }],
     quarantineTotal: 1,
   }
 }
