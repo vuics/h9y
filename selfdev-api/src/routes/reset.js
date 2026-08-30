@@ -8,6 +8,7 @@ import User from '../models/user.js'
 import { validatePassword, validateResetToken } from '../utils/validation.js'
 import conf from '../conf.js'
 import { transporter } from '../mailer.js'
+import { destroyUserSessions } from '../middleware/session.js'
 
 const verbose = Verbose('sd:routes/reset'); verbose('')
 const router = Router()
@@ -71,6 +72,18 @@ app.post('/', async (req, res, next) => {
     // verbose('Save user:', user)
     await user.save()
     log('User password reset for:', user.email)
+
+    // NOTE: Whoever is signed in was signed in under the old password, and one
+    //       reason to reset is that somebody else has it. Sessions survive a
+    //       password change on their own, so they have to be taken out here.
+    //       The password is already saved; a failure to clear the sessions is
+    //       worth shouting about but not worth failing the reset over.
+    try {
+      const destroyed = await destroyUserSessions({ userId: user._id })
+      log('Signed out', destroyed, 'session(s) of:', user.email)
+    } catch (err) {
+      error('Error signing out the sessions of', user.email, ':', err)
+    }
   } catch (err) {
     // NOTE: The client renders whatever comes back in `message`, so an error
     //       object would put internals on somebody's screen. Log it instead.
