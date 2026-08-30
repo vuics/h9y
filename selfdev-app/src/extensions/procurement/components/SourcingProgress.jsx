@@ -22,6 +22,50 @@ const segments = [
   ['PENDING', 'pending'],
 ]
 
+const contactScanLabels = {
+  RUNNING: 'Собираем контакты',
+  COMPLETED: 'Сбор контактов завершён',
+  CANCELLED: 'Сбор контактов остановлен пользователем',
+}
+
+export function ContactScanProgress({ run }) {
+  const scan = run?.contactScan
+  // Never run on this snapshot: an empty bar would suggest a pass that found
+  // nothing, which is a different statement from one that never happened.
+  if (!scan || scan.status === 'IDLE') return null
+  const running = scan.status === 'RUNNING'
+  const percent = scan.total ? Math.round((scan.checked / scan.total) * 100) : 0
+
+  return (
+    <section className={`pr-sourcing-progress${running ? ' is-running' : ''}`} aria-live="polite">
+      <header>
+        <div>
+          <strong>{contactScanLabels[scan.status] || 'Сбор контактов'}</strong>
+          <span>
+            {scan.total
+              ? `Проверено ${scan.checked} из ${scan.total} компаний · адреса найдены у ${scan.found}`
+              : 'Все найденные компании уже с контактами'}
+          </span>
+        </div>
+        <b aria-hidden="true">{percent}%</b>
+      </header>
+
+      <div
+        className="pr-sourcing-progress__track"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Готовность сбора контактов"
+      >
+        <div className="pr-sourcing-progress__stack">
+          <span className="is-good" style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function SourcingProgress({ run, isRunning }) {
   const progress = run?.progress || {}
   const counts = progress.sourceStatusCounts || {}

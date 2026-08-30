@@ -57,6 +57,7 @@ export const sourcingEndpoints = {
     })),
   cancelSourcing: mutation(runId => request(`/sourcing/${id(runId)}/cancel`, { method: 'post' })),
   collectSourcingContacts: mutation(runId => request(`/sourcing/${id(runId)}/contacts`, { method: 'post' })),
+  stopSourcingContacts: mutation(runId => request(`/sourcing/${id(runId)}/contacts/stop`, { method: 'post' })),
   retrySourcingSource: mutation((runId, sourceId) =>
     request(`/sourcing/${id(runId)}/sources/${id(sourceId)}/retry`, { method: 'post' })),
   saveSourcingQueryTemplates: mutation(templates =>
