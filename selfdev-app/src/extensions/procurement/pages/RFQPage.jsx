@@ -175,7 +175,7 @@ export default function RFQPage() {
       {!settings.isLoading && activeSenders.length === 0 && <Alert><AlertTriangle /><AlertTitle>Нет активного отправителя</AlertTitle><AlertDescription>Сначала заполните раздел «Настройки» Procurement.</AlertDescription></Alert>}
     </CardContent></Card>}
     {!hasRFQ && <Card><CardHeader><CardTitle>RFQ будет создан в четырёх версиях</CardTitle></CardHeader><CardContent>
-      <p className="pr-note">Короткие версии — первый запрос поставщику: только ключевые вопросы, чтобы получить ответ, а не отпугнуть анкетой. Полные версии остаются для письма и для дозапроса. Все четыре сохраняются как один документ и согласуются вместе.</p>
+      <p className="pr-note">Короткие версии — первый запрос поставщику: только ключевые вопросы, чтобы получить ответ, а не отпугнуть анкетой. Именно они уходят первым письмом и в формы на сайтах. Полные версии остаются для дозапроса, когда поставщик ответил. Все четыре сохраняются как один документ и согласуются вместе.</p>
       {!ready && <Alert><AlertTriangle /><AlertTitle>Карточка не готова</AlertTitle><AlertDescription>Перед подготовкой RFQ нормализуйте CAS-номер и наименование вещества.</AlertDescription></Alert>}
       {ready && canWriteCards && <Button isDisabled={prepare.isPending || !senderId || settings.isLoading || settings.isError} onPress={() => prepare.mutate()}><FileCheck />{prepare.isPending ? 'Формирование…' : 'Подготовить RFQ'}</Button>}
       {ready && !canWriteCards && <Alert><AlertTriangle /><AlertTitle>Недостаточно прав</AlertTitle><AlertDescription>Для подготовки RFQ требуется разрешение CARD_WRITE.</AlertDescription></Alert>}
@@ -214,7 +214,7 @@ export default function RFQPage() {
       </Tabs>
 
       {!isApproved && <Card className="pr-rfq-approval"><CardHeader><CardTitle>Явное согласование</CardTitle></CardHeader><CardContent>
-        <p>Откройте и проверьте каждую версию, включая короткие — именно они уходят в формы на сайтах поставщиков. Кнопка согласует только показанный документ; если RFQ изменится, сервер отклонит запрос.</p>
+        <p>Откройте и проверьте каждую версию, начиная с коротких — именно они уходят первым письмом поставщику и в формы на сайтах. Кнопка согласует только показанный документ; если RFQ изменится, сервер отклонит запрос.</p>
         <div className="pr-rfq-review-state">{available.map(meta => (
           <span key={meta.tab} className={reviewed.has(meta.tab) ? 'is-reviewed' : ''}><Check />{meta.label}</span>
         ))}</div>
