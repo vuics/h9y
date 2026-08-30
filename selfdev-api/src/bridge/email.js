@@ -3,6 +3,8 @@ import nodemailer from 'nodemailer'
 import { simpleParser } from 'mailparser'
 import fs from 'fs'
 import path from 'path'
+import crypto from 'crypto'
+import { redisClient } from '../redis.js'
 import { log, warn, error, Verbose } from '../services.js'
 import Connector from './connector.js'
 import XmppAgent from '../swarm/xmpp-agent.js'
@@ -215,6 +217,41 @@ export default class Email extends Connector {
     this.slog('debug', 'Bridge started')
   }
 
+  /** Whether this exact letter has already gone out in the last few minutes.
+   *
+   * A single outbound message can reach this bridge more than once — a stanza
+   * addressed to a bare JID is delivered to every connected session, and a
+   * session that should have been torn down is not always gone. The supplier
+   * then receives the same RFQ several times within seconds, which reads as a
+   * mailing rather than a request.
+   *
+   * The key is the letter itself, so it holds across sessions and containers.
+   * Ten minutes covers the fan-out, which arrives at once, without standing in
+   * the way of a resend somebody actually decided to make. If Redis is not
+   * reachable the answer is no: a duplicate is bad, and silently sending
+   * nothing at all is worse.
+   */
+  async alreadySent(mailOptions) {
+    if (!redisClient) return false
+    const fingerprint = crypto.createHash('sha256').update([
+      mailOptions.from,
+      mailOptions.to,
+      mailOptions.subject,
+      mailOptions.text,
+    ].join('\u0000')).digest('hex')
+    try {
+      const first = await redisClient.set(
+        `bridge_email_sent:${fingerprint}`,
+        conf.container.id,
+        'EX', 600, 'NX',
+      )
+      return first === null
+    } catch (e) {
+      warn(`Duplicate check unavailable, sending anyway: ${e}`)
+      return false
+    }
+  }
+
   async deliverEmail({ prompt, attachmentUrls = [] }) {
     const opts = this.bridge.options.email
     const msg = parseXmppPayload(prompt)
@@ -242,6 +279,14 @@ export default class Email extends Connector {
       ...mailOptions,
       attachments: mailOptions.attachments.map(item => item.filename),
     })
+    if (await this.alreadySent(mailOptions)) {
+      log('Email suppressed as a duplicate for:', mailOptions.to)
+      await this.slog('warn', 'Email suppressed as a duplicate', {
+        to: mailOptions.to,
+        subject: mailOptions.subject,
+      })
+      return { accepted: [], rejected: [], duplicate: true }
+    }
     const result = await this.smtpTransporter.sendMail(mailOptions)
     if ((!result.accepted || result.accepted.length === 0) &&
         result.rejected?.length > 0) {

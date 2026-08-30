@@ -135,7 +135,13 @@ function refreshLock(bridgeId) {
       await redisClient.set(heartbeatKey, String(Date.now() / 1000), 'EX', conf.bridge.lockTimeoutSeconds * 2);
     } else {
       warn(`Lost lock for bridge ${bridgeId}`);
-      await stopBridge(bridgeId);
+      // stopBridge takes an object. Called with the bare id it destructured
+      // undefined, matched nothing, and returned quietly — so a container that
+      // lost its lock kept the bridge running while another container started a
+      // second one. Two live XMPP sessions on one bridge JID mean the server
+      // hands each of them the same outbound stanza, and the supplier gets the
+      // letter once per session.
+      await stopBridge({ bridgeId });
       clearInterval(interval);
     }
   }, conf.bridge.lockRefreshSeconds * 1000);
