@@ -240,10 +240,16 @@ export default function SourcingPage() {
   const [selectedEngineIds, setSelectedEngineIds] = useState(null)
 
   const card = useQuery({ queryKey: procurementKeys.card(requestId), queryFn: ({ signal }) => procurementApi.card(requestId, signal) })
+  const [collectingUntil, setCollectingUntil] = useState(0)
   const query = useQuery({
     queryKey: procurementKeys.sourcing(requestId),
     queryFn: ({ signal }) => procurementApi.sourcing(requestId, signal),
-    refetchInterval: data => data?.status === 'RUNNING' ? 3000 : false,
+    // A finished run is still refetched while contacts are being collected: the
+    // collection runs out of band and lands on the same document, so the page
+    // shows addresses appearing rather than a button that did nothing.
+    refetchInterval: data => data?.status === 'RUNNING'
+      ? 3000
+      : (collectingUntil > Date.now() ? 5000 : false),
   })
   const accept = run => {
     queryClient.setQueryData(procurementKeys.sourcing(requestId), run)
@@ -280,7 +286,10 @@ export default function SourcingPage() {
   })
   const collectContacts = useMutation({
     mutationFn: () => procurementApi.collectSourcingContacts(query.data.id),
-    onSuccess: accept,
+    // The server answers as soon as it has accepted the work, not when the work
+    // is done, so the page keeps looking for a while rather than declaring it
+    // finished immediately.
+    onSuccess: run => { accept(run); setCollectingUntil(Date.now() + 15 * 60 * 1000) },
   })
   const retrySource = useMutation({
     mutationFn: sourceId => procurementApi.retrySourcingSource(query.data.id, sourceId),
@@ -345,7 +354,7 @@ export default function SourcingPage() {
             Открывать каталог и страницу «О компании» у тех, кто заявил производство: каталог на тысячи веществ и описание вида «поставщик аналитических стандартов» видны только там. Читается правилами, без обращения к модели.
           </span>
         </label>
-        <div className="pr-sourcing-launch__controls"><SelectField label="Лимит результатов" selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))} isDisabled={isBusy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['1', '5', '10', '20', '50', '100'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField><Button isDisabled={!normalized || !canResearchSourcing || isBusy || !effectiveQueryIds.length || !effectiveEngineIds.length} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button>{isRunning && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить поиск'}</Button>}{run && !isRunning && canResearchSourcing && <Button variant="outline" isDisabled={collectContacts.isPending} onPress={() => collectContacts.mutate()}>{collectContacts.isPending ? 'Ищем контакты…' : 'Собрать контакты'}</Button>}</div>
+        <div className="pr-sourcing-launch__controls"><SelectField label="Лимит результатов" selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))} isDisabled={isBusy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['1', '5', '10', '20', '50', '100'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField><Button isDisabled={!normalized || !canResearchSourcing || isBusy || !effectiveQueryIds.length || !effectiveEngineIds.length} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button>{isRunning && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить поиск'}</Button>}{run && !isRunning && canResearchSourcing && <Button variant="outline" isDisabled={collectContacts.isPending || collectingUntil > Date.now()} onPress={() => collectContacts.mutate()}>{collectContacts.isPending || collectingUntil > Date.now() ? 'Ищем контакты…' : 'Собрать контакты'}</Button>}</div>
         {run && !isRunning && <p className="pr-note">«Собрать контакты» перечитывает сайты найденных компаний и карточки в отраслевых каталогах. Доказательства и решения специалиста не затрагиваются — адрес устаревает сам по себе, и обновить его можно, не переискивая заново.</p>}
         {effectiveQueryIds.length > 0 && (() => {
           const per = perQueryResults(Number(maxResults), effectiveQueryIds.length)
