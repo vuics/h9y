@@ -108,6 +108,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/sourcing/{run_id}/cancel' },
   { method: 'POST', path: '/sourcing/{run_id}/candidates/{candidate_id}/promote' },
   { method: 'POST', path: '/sourcing/{run_id}/candidates/{candidate_id}/review' },
+  { method: 'POST', path: '/sourcing/{run_id}/contacts' },
   { method: 'POST', path: '/sourcing/{run_id}/sources' },
   { method: 'POST', path: '/sourcing/{run_id}/sources/{source_id}/retry' },
   { method: 'GET', path: '/supplier-response-attachments/{attachment_id}' },
