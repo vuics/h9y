@@ -10,19 +10,21 @@ import { updateUserLimits } from './subscriptions.js'
 const verbose = Verbose('sd:routes/login'); verbose('')
 const router = Router()
 
-const rememberMe = (req, res, next) => {
-  // FIXME: this does not work
-  if (!!req.body.rememberme) {
-    req.session.cookie.expires = false
+// NOTE: This has to run after req.login, not before it as a middleware. Since
+//       passport 0.6 req.login regenerates the session to prevent fixation,
+//       and a cookie configured on the session that gets replaced is thrown
+//       away with it. That is why the checkbox had no effect at all.
+const applyRememberMe = (req) => {
+  if (req.body.rememberme) {
+    req.session.cookie.maxAge = conf.session.rememberMaxAge
   } else {
-    const period = 3 * 24 * 3600 * 1000 // 3 days
-    req.session.cookie.expires = new Date(Date.now() + period);
-    req.session.cookie.maxAge = period
+    // No expiry at all, so the browser drops the cookie when it closes. The
+    // old code did this for the remembered case and the other way round.
+    req.session.cookie.expires = false
   }
-  next()
 }
 
-router.post('/', rememberMe, (req, res, next) => {
+router.post('/', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) {
       return next(err)
@@ -42,6 +44,7 @@ router.post('/', rememberMe, (req, res, next) => {
         return next(err)
       }
       try {
+        applyRememberMe(req)
         await updateUserLimits({ user })
 
         res.json({

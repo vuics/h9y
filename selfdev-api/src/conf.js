@@ -62,6 +62,9 @@ const conf = {
   session: {
     key: process.env.SESSION_KEY || 'SelfDev.sid',
     maxAge: process.env.SESSION_MAX_AGE || (1000 * 3600 * 24 * 7), // 7 days
+    // How long the cookie lives when the login form asked to be remembered.
+    // Without it the cookie is dropped when the browser closes.
+    rememberMaxAge: num(process.env.SESSION_REMEMBER_MAX_AGE || (1000 * 3600 * 24 * 30)), // 30 days
     secret: process.env.SESSION_SECRET || '!Se1f!DEV!$ecret',
     httpOnly: bool(process.env.SESSION_HTTP_ONLY || true),
     sameSite: process.env.SESSION_SAME_SITE || 'lax',

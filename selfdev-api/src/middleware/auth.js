@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import passport from 'passport'
 import { Strategy as LocalStrategy } from 'passport-local'
 import { BasicStrategy } from 'passport-http'
@@ -8,7 +9,6 @@ import jsonwebtoken from 'jsonwebtoken'
 const { verify } = jsonwebtoken
 
 import conf from '../conf.js'
-import { randomToken } from '../utils/token.js'
 import User from '../models/user.js'
 import Key from '../models/key.js'
 import { error, Verbose } from '../services.js'
@@ -84,32 +84,27 @@ export default (app) => {
     }
   }))
 
+  // NOTE: What the session stores is the user id. It used to store a token
+  //       minted on every login and kept in a single field on the user
+  //       document, so signing in from a second browser overwrote the key the
+  //       first one was holding and logged it out. An account could hold
+  //       exactly one session at a time, which is not a rule anybody asked for.
+  //       Sessions are separate documents in the store, so an id lets an
+  //       account keep as many of them as it has browsers.
   passport.serializeUser((user, done) => {
-    async function createAccessToken () {
-      try {
-        const token = randomToken()
-        const foundUser = await User.findOne({ rememberMe: { token } }).exec()
-        if (foundUser) {
-          // Run the function again - the token has to be unique!
-          return createAccessToken()
-        }
-        user.set('rememberMe.token', token)
-        await user.save()
-        return done(null, token)
-      } catch (err) {
-        error('Serialize user error:', err)
-        done(err)
-      }
-    }
-    if (user._id) {
-      createAccessToken()
-    }
+    done(null, user._id.toString())
   })
 
-  passport.deserializeUser(async (token, done) => {
+  passport.deserializeUser(async (id, done) => {
     try {
-      const user = await User.findOne({ rememberMe: { token: token } }).exec()
-      done(null, user)
+      // A session issued before the change carries the old token, which is not
+      // an id. Answer that nobody is signed in rather than failing the request.
+      if (!mongoose.isValidObjectId(id)) {
+        verbose('Session carries an identifier that is not a user id')
+        return done(null, false)
+      }
+      const user = await User.findById(id).exec()
+      done(null, user || false)
     } catch (err) {
       error('deserializeUser Error: ', err)
       done(err)
