@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 
@@ -16,6 +16,56 @@ import { AlertTriangle, Building, Plus, Trash } from '../components/icons'
 
 const clone = value => JSON.parse(JSON.stringify(value))
 
+// The server rejects these shapes anyway. Checking them here is what turns a
+// rejected save into a field the user can see and fix before pressing anything.
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+const COUNTRY_RE = /^[A-Za-z]{2}$/
+const PHONE_RE = /^[0-9+() .-]+$/
+const WEBSITE_RE = /^https?:\/\//
+
+const SENDER_FIELD_LABELS = {
+  display_name: 'Имя для поставщиков',
+  displayName: 'Имя для поставщиков',
+  job_title: 'Должность',
+  department: 'Подразделение',
+  email: 'Рабочий email',
+  phone_country: 'Страна телефона',
+  phoneCountry: 'Страна телефона',
+  phone_number: 'Телефон',
+  phoneNumber: 'Телефон',
+  preferred_language: 'Язык коммуникации',
+  signature: 'Подпись',
+}
+
+const ORGANIZATION_FIELD_LABELS = {
+  display_name: 'Название для поставщиков',
+  legal_name: 'Юридическое название',
+  country: 'Страна',
+  website: 'Сайт',
+  address: 'Адрес организации',
+  description: 'Описание компании',
+}
+
+/* A rejected save names the field the way the API spells it —
+   `senders.1.phone_number`. Nobody counts senders from zero to find their own
+   form, so the message is rewritten to point at the card by its name. */
+function describeServerError(message, senders) {
+  const text = String(message || '')
+  const sender = text.match(/senders\.(\d+)\.([A-Za-z_]+)/)
+  if (sender) {
+    const item = senders?.[Number(sender[1])]
+    const who = item?.displayName?.trim() || item?.email?.trim() || `№${Number(sender[1]) + 1}`
+    const field = SENDER_FIELD_LABELS[sender[2]] || sender[2]
+    return `Отправитель «${who}», поле «${field}» заполнено в недопустимом формате.`
+  }
+  const organization = text.match(/organization\.([A-Za-z_]+)/)
+  if (organization) {
+    const field = ORGANIZATION_FIELD_LABELS[organization[1]] || organization[1]
+    return `Реквизиты организации: поле «${field}» заполнено в недопустимом формате.`
+  }
+  return text
+}
+
 const newSender = () => ({
   senderId: `SENDER-${Date.now()}`,
   userId: null,
@@ -30,21 +80,23 @@ const newSender = () => ({
   active: true,
 })
 
-function TextField({ value, onChange, name, label, required, wide, ...props }) {
+function TextField({ value, onChange, name, label, required, wide, invalid, ...props }) {
   return <label className={`pr-form-field${wide ? ' pr-form-field--wide' : ''}`}>
     <span>{label}{required && <> <b>*</b></>}</span>
-    <Input {...props} required={required} value={value || ''} onChange={event => onChange({ [name]: event.target.value })} />
+    <Input {...props} required={required} aria-invalid={invalid ? true : undefined} value={value || ''} onChange={event => onChange({ [name]: event.target.value })} />
+    {invalid && <small className="pr-field-error">{invalid}</small>}
   </label>
 }
 
-function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUseProfile, profileLoading, onRemove }) {
+function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUseProfile, profileLoading, onRemove, issues }) {
   const isDefault = sender.senderId === defaultSenderId
   const update = change => setDraft(current => ({
     ...current,
     senders: current.senders.map((item, itemIndex) => itemIndex === index ? { ...item, ...change } : item),
   }))
-  const input = (name, label, props = {}) => <TextField name={name} label={label} value={sender[name]} onChange={update} disabled={!canEdit} {...props} />
-  return <Card className={!sender.active ? 'pr-settings-sender pr-settings-sender--inactive' : 'pr-settings-sender'}>
+  const input = (name, label, props = {}) => <TextField name={name} label={label} value={sender[name]} onChange={update} disabled={!canEdit} invalid={issues?.[name]} {...props} />
+  const hasIssues = Object.keys(issues || {}).length > 0
+  return <Card className={`${!sender.active ? 'pr-settings-sender pr-settings-sender--inactive' : 'pr-settings-sender'}${hasIssues ? ' pr-settings-sender--invalid' : ''}`}>
     <CardHeader>
       <div>
         <CardTitle>{sender.displayName || `Новый отправитель ${index + 1}`}</CardTitle>
@@ -97,6 +149,23 @@ export default function SettingsPage() {
       setDraft(clone(value))
     },
   })
+  const saveErrorRef = useRef(null)
+  // The Save button sits at the bottom of a long form. An error rendered
+  // anywhere else is an error nobody reads, so the page goes to it.
+  useEffect(() => {
+    if (save.isError && saveErrorRef.current) {
+      saveErrorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [save.isError, save.error])
+  // Settings live only in this component until they are saved. Reloading after
+  // a rejected save used to discard the work silently.
+  useEffect(() => {
+    if (!draft || !query.data) return undefined
+    if (JSON.stringify(draft) === JSON.stringify(query.data)) return undefined
+    const warn = event => { event.preventDefault(); event.returnValue = '' }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [draft, query.data])
 
   const useAccountProfile = async index => {
     setProfileLoading(true)
@@ -129,6 +198,26 @@ export default function SettingsPage() {
   const activeSenders = draft.senders.filter(item => item.active !== false)
   // A disabled Save button with no explanation reads as a broken page: the user
   // fills the form, presses nothing, reloads, and sees their work gone.
+  // Every sender in the list is validated, not only the active ones: the server
+  // validates the whole array, so an inactive card with a bad phone rejects the
+  // save just as loudly and used to do it invisibly.
+  const senderIssues = draft.senders.map(item => {
+    const issues = {}
+    const displayName = (item.displayName || '').trim()
+    const email = (item.email || '').trim()
+    const phoneCountry = (item.phoneCountry || '').trim()
+    const phoneNumber = (item.phoneNumber || '').trim()
+    if (!displayName) issues.displayName = 'Укажите имя, которое увидит поставщик'
+    if (!email) issues.email = 'Укажите рабочий email'
+    else if (!EMAIL_RE.test(email)) issues.email = 'Адрес вида name@company.com'
+    if (!phoneCountry) issues.phoneCountry = 'Укажите код страны'
+    else if (!COUNTRY_RE.test(phoneCountry)) issues.phoneCountry = 'Две латинские буквы, например RU'
+    if (!phoneNumber) issues.phoneNumber = 'Укажите телефон'
+    else if (!PHONE_RE.test(phoneNumber)) issues.phoneNumber = 'Только цифры и символы + ( ) . -'
+    else if (phoneNumber.length < 5) issues.phoneNumber = 'Не короче пяти символов'
+    return issues
+  })
+
   const blockers = []
   if (!organization.displayName.trim()) {
     // A specialist cannot fix this one themselves, so saying "fill it in" would
@@ -137,17 +226,24 @@ export default function SettingsPage() {
       ? 'не задано название организации для поставщиков'
       : 'не задано название организации для поставщиков — его задаёт администратор')
   }
+  const organizationCountry = (organization.country || '').trim()
+  if (organizationCountry && !COUNTRY_RE.test(organizationCountry)) {
+    blockers.push('страна организации — две латинские буквы, например RU')
+  }
+  const organizationWebsite = (organization.website || '').trim()
+  if (organizationWebsite && !WEBSITE_RE.test(organizationWebsite)) {
+    blockers.push('сайт организации должен начинаться с http:// или https://')
+  }
   if (activeSenders.length === 0) blockers.push('нет ни одного активного отправителя')
-  activeSenders.forEach((item, index) => {
-    const missing = [
-      !item.displayName.trim() && 'имя',
-      !item.email.trim() && 'email',
-      !item.phoneCountry.trim() && 'код страны',
-      !item.phoneNumber.trim() && 'телефон',
-    ].filter(Boolean)
-    if (missing.length) {
-      blockers.push(`у отправителя «${item.displayName.trim() || `№${index + 1}`}» не заполнено: ${missing.join(', ')}`)
-    }
+  draft.senders.forEach((item, index) => {
+    const issues = senderIssues[index]
+    const listed = Object.entries(issues)
+    if (!listed.length) return
+    const who = (item.displayName || '').trim() || (item.email || '').trim() || `№${index + 1}`
+    const details = listed
+      .map(([field, hint]) => `${SENDER_FIELD_LABELS[field] || field} — ${hint.toLowerCase()}`)
+      .join('; ')
+    blockers.push(`у отправителя «${who}»: ${details}`)
   })
   if (activeSenders.length > 0 && !activeSenders.some(item => item.senderId === draft.defaultSenderId)) {
     blockers.push('отправитель по умолчанию не выбран или выключен')
@@ -161,7 +257,6 @@ export default function SettingsPage() {
     {draft.source === 'ENV_LEGACY' && <Alert><AlertTriangle /><AlertTitle>Импортировано из окружения</AlertTitle><AlertDescription>Текущие значения показаны из PROCUREMENT_* переменных. После сохранения Procurement и Negotiator начнут использовать эту запись.</AlertDescription></Alert>}
     {!canManageSenders && <Alert><AlertTriangle /><AlertTitle>Только просмотр</AlertTitle><AlertDescription>Изменять отправителей может пользователь с разрешением SENDER_MANAGE, реквизиты организации — с BUYER_SETTINGS_MANAGE.</AlertDescription></Alert>}
     {canManageSenders && !canManageBuyerSettings && <Alert><AlertTriangle /><AlertTitle>Реквизиты организации меняет администратор</AlertTitle><AlertDescription>Вы можете добавлять и править отправителей и выбирать отправителя по умолчанию. Название и юридические реквизиты компании-покупателя изменяются с разрешением BUYER_SETTINGS_MANAGE, потому что ими определяется, от какого юрлица уходит запрос.</AlertDescription></Alert>}
-    {save.isError && <Alert><AlertTriangle /><AlertTitle>Настройки не сохранены</AlertTitle><AlertDescription>{save.error?.response?.data?.message || save.error?.message}</AlertDescription></Alert>}
     {profileError && <Alert><AlertTriangle /><AlertTitle>Профиль не загружен</AlertTitle><AlertDescription>{profileError}</AlertDescription></Alert>}
 
     <Card><CardHeader><CardTitle><Building /> Организация-покупатель</CardTitle></CardHeader><CardContent><div className="pr-card-form">
@@ -176,7 +271,7 @@ export default function SettingsPage() {
     <div className="pr-section-heading"><div><h3>Команда и отправители</h3><p>Каждый RFQ сохраняет выбранного отправителя как неизменяемый снимок: правка здесь меняет только будущие запросы и не затрагивает уже отправленные RFQ и идущие переговоры.</p></div>{canManageSenders && <Button variant="outline" onPress={() => setDraft(current => { const sender = newSender(); return { ...current, senders: [...current.senders, sender], defaultSenderId: current.defaultSenderId || sender.senderId } })}><Plus />Добавить отправителя</Button>}</div>
     <label className="pr-form-field"><span>Отправитель по умолчанию <b>*</b></span><select disabled={!canManageSenders} value={draft.defaultSenderId || ''} onChange={event => setDraft(current => ({ ...current, defaultSenderId: event.target.value }))}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName || sender.email || 'Без имени'}</option>)}</select></label>
     <p className="pr-note">Отправители общие для всего рабочего места: изменение увидят все его пользователи.{draft.updatedAt ? ` Последнее изменение: ${new Date(draft.updatedAt).toLocaleString('ru-RU')}${draft.updatedBy ? `, ${draft.updatedBy}` : ''}.` : ''}</p>
-    <div className="pr-settings-senders">{draft.senders.map((sender, index) => <SenderEditor key={sender.senderId || index} sender={sender} index={index} setDraft={setDraft} canEdit={canManageSenders} defaultSenderId={draft.defaultSenderId} onUseProfile={useAccountProfile} profileLoading={profileLoading} onRemove={() => setDraft(current => ({ ...current, senders: current.senders.filter((_, position) => position !== index) }))} />)}</div>
+    <div className="pr-settings-senders">{draft.senders.map((sender, index) => <SenderEditor key={sender.senderId || index} sender={sender} index={index} setDraft={setDraft} canEdit={canManageSenders} defaultSenderId={draft.defaultSenderId} onUseProfile={useAccountProfile} profileLoading={profileLoading} onRemove={() => setDraft(current => ({ ...current, senders: current.senders.filter((_, position) => position !== index) }))} issues={senderIssues[index]} />)}</div>
 
     <Card><CardHeader><CardTitle><Building /> Отправка форм на площадках</CardTitle></CardHeader><CardContent>
       <p className="pr-note">
@@ -189,7 +284,13 @@ export default function SettingsPage() {
       </p>
     </CardContent></Card>
 
-    {canManageSenders && blockers.length > 0 && <Alert><AlertTriangle /><AlertTitle>Пока нельзя сохранить</AlertTitle><AlertDescription><ul className="pr-blocker-list">{blockers.map(item => <li key={item}>{item}</li>)}</ul></AlertDescription></Alert>}
+    <div ref={saveErrorRef}>
+      {save.isError && <Alert variant="destructive"><AlertTriangle /><AlertTitle>Настройки не сохранены</AlertTitle><AlertDescription>
+        <p>{describeServerError(save.error?.response?.data?.message || save.error?.message, draft.senders)}</p>
+        <p className="pr-note"><code>{save.error?.response?.data?.message || save.error?.message}</code></p>
+      </AlertDescription></Alert>}
+    </div>
+    {canManageSenders && blockers.length > 0 && <Alert variant="destructive"><AlertTriangle /><AlertTitle>Пока нельзя сохранить</AlertTitle><AlertDescription><ul className="pr-blocker-list">{blockers.map(item => <li key={item}>{item}</li>)}</ul></AlertDescription></Alert>}
     {canManageSenders && <div className="pr-form-actions"><Button variant="outline" isDisabled={save.isPending} onPress={() => setDraft(clone(query.data))}>Отменить изменения</Button><Button isDisabled={!valid || save.isPending} onPress={() => save.mutate()}>{save.isPending ? 'Сохранение…' : 'Сохранить настройки'}</Button></div>}
   </div>
 }
