@@ -88,20 +88,23 @@ function TextField({ value, onChange, name, label, required, wide, invalid, ...p
   </label>
 }
 
-function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUseProfile, profileLoading, onRemove, issues }) {
+function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUseProfile, profileLoading, onRemove, onRestore, issues }) {
   const isDefault = sender.senderId === defaultSenderId
+  const removed = sender.removed === true
   const update = change => setDraft(current => ({
     ...current,
     senders: current.senders.map((item, itemIndex) => itemIndex === index ? { ...item, ...change } : item),
   }))
   const input = (name, label, props = {}) => <TextField name={name} label={label} value={sender[name]} onChange={update} disabled={!canEdit} invalid={issues?.[name]} {...props} />
   const hasIssues = Object.keys(issues || {}).length > 0
-  return <Card className={`${!sender.active ? 'pr-settings-sender pr-settings-sender--inactive' : 'pr-settings-sender'}${hasIssues ? ' pr-settings-sender--invalid' : ''}`}>
+  return <Card className={`${!sender.active ? 'pr-settings-sender pr-settings-sender--inactive' : 'pr-settings-sender'}${hasIssues ? ' pr-settings-sender--invalid' : ''}${removed ? ' pr-settings-sender--removed' : ''}`}>
     <CardHeader>
       <div>
         <CardTitle>{sender.displayName || `Новый отправитель ${index + 1}`}</CardTitle>
         <p className="pr-note">
-          {isDefault ? 'Отправитель по умолчанию' : sender.active ? 'Доступен для новых RFQ' : 'Неактивен'}
+          {removed
+            ? 'Будет удалён при сохранении'
+            : isDefault ? 'Отправитель по умолчанию' : sender.active ? 'Доступен для новых RFQ' : 'Неактивен'}
           {sender.email ? ` · ${sender.email}` : ''}
         </p>
       </div>
@@ -113,9 +116,9 @@ function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUse
              workspace unable to prepare an RFQ at all. Pick another default
              first. */
           isDisabled={isDefault}
-          onPress={onRemove}
+          onPress={removed ? onRestore : onRemove}
         >
-          <Trash size={14} />Удалить
+          {removed ? <>Вернуть</> : <><Trash size={14} />Удалить</>}
         </Button>
       )}
     </CardHeader>
@@ -142,7 +145,12 @@ export default function SettingsPage() {
   const [profileError, setProfileError] = useState('')
   useEffect(() => { if (query.data) setDraft(clone(query.data)) }, [query.data])
   const save = useMutation({
-    mutationFn: () => procurementApi.saveBuyerSettings(draft),
+    // A sender marked for removal stays in the draft so the card can say so;
+    // it is dropped only when the save actually goes out.
+    mutationFn: () => procurementApi.saveBuyerSettings({
+      ...draft,
+      senders: draft.senders.filter(sender => sender.removed !== true),
+    }),
     onSuccess: value => {
       queryClient.setQueryData(procurementKeys.buyerSettings(), value)
       queryClient.invalidateQueries({ queryKey: procurementKeys.all })
@@ -193,9 +201,11 @@ export default function SettingsPage() {
   if (query.isLoading || !draft) return <LoadingState />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   const organization = draft.organization
+  const dirty = JSON.stringify(draft) !== JSON.stringify(query.data)
   const setOrganization = change => setDraft(current => ({ ...current, organization: { ...current.organization, ...change } }))
   const orgInput = (name, label, props = {}) => <TextField name={name} label={label} value={organization[name]} onChange={setOrganization} disabled={!canManageBuyerSettings} {...props} />
-  const activeSenders = draft.senders.filter(item => item.active !== false)
+  const keptSenders = draft.senders.filter(item => item.removed !== true)
+  const activeSenders = keptSenders.filter(item => item.active !== false)
   // A disabled Save button with no explanation reads as a broken page: the user
   // fills the form, presses nothing, reloads, and sees their work gone.
   // Every sender in the list is validated, not only the active ones: the server
@@ -203,6 +213,7 @@ export default function SettingsPage() {
   // save just as loudly and used to do it invisibly.
   const senderIssues = draft.senders.map(item => {
     const issues = {}
+    if (item.removed === true) return issues
     const displayName = (item.displayName || '').trim()
     const email = (item.email || '').trim()
     const phoneCountry = (item.phoneCountry || '').trim()
@@ -236,6 +247,7 @@ export default function SettingsPage() {
   }
   if (activeSenders.length === 0) blockers.push('нет ни одного активного отправителя')
   draft.senders.forEach((item, index) => {
+    if (item.removed === true) return
     const issues = senderIssues[index]
     const listed = Object.entries(issues)
     if (!listed.length) return
@@ -271,7 +283,7 @@ export default function SettingsPage() {
     <div className="pr-section-heading"><div><h3>Команда и отправители</h3><p>Каждый RFQ сохраняет выбранного отправителя как неизменяемый снимок: правка здесь меняет только будущие запросы и не затрагивает уже отправленные RFQ и идущие переговоры.</p></div>{canManageSenders && <Button variant="outline" onPress={() => setDraft(current => { const sender = newSender(); return { ...current, senders: [...current.senders, sender], defaultSenderId: current.defaultSenderId || sender.senderId } })}><Plus />Добавить отправителя</Button>}</div>
     <label className="pr-form-field"><span>Отправитель по умолчанию <b>*</b></span><select disabled={!canManageSenders} value={draft.defaultSenderId || ''} onChange={event => setDraft(current => ({ ...current, defaultSenderId: event.target.value }))}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName || sender.email || 'Без имени'}</option>)}</select></label>
     <p className="pr-note">Отправители общие для всего рабочего места: изменение увидят все его пользователи.{draft.updatedAt ? ` Последнее изменение: ${new Date(draft.updatedAt).toLocaleString('ru-RU')}${draft.updatedBy ? `, ${draft.updatedBy}` : ''}.` : ''}</p>
-    <div className="pr-settings-senders">{draft.senders.map((sender, index) => <SenderEditor key={sender.senderId || index} sender={sender} index={index} setDraft={setDraft} canEdit={canManageSenders} defaultSenderId={draft.defaultSenderId} onUseProfile={useAccountProfile} profileLoading={profileLoading} onRemove={() => setDraft(current => ({ ...current, senders: current.senders.filter((_, position) => position !== index) }))} issues={senderIssues[index]} />)}</div>
+    <div className="pr-settings-senders">{draft.senders.map((sender, index) => <SenderEditor key={sender.senderId || index} sender={sender} index={index} setDraft={setDraft} canEdit={canManageSenders} defaultSenderId={draft.defaultSenderId} onUseProfile={useAccountProfile} profileLoading={profileLoading} onRemove={() => setDraft(current => ({ ...current, senders: current.senders.map((item, position) => position === index ? { ...item, removed: true } : item) }))} onRestore={() => setDraft(current => ({ ...current, senders: current.senders.map((item, position) => position === index ? Object.fromEntries(Object.entries(item).filter(([key]) => key !== 'removed')) : item) }))} issues={senderIssues[index]} />)}</div>
 
     <Card><CardHeader><CardTitle><Building /> Отправка форм на площадках</CardTitle></CardHeader><CardContent>
       <p className="pr-note">
@@ -291,6 +303,7 @@ export default function SettingsPage() {
       </AlertDescription></Alert>}
     </div>
     {canManageSenders && blockers.length > 0 && <Alert variant="destructive"><AlertTriangle /><AlertTitle>Пока нельзя сохранить</AlertTitle><AlertDescription><ul className="pr-blocker-list">{blockers.map(item => <li key={item}>{item}</li>)}</ul></AlertDescription></Alert>}
+    {canManageSenders && dirty && <p className="pr-note pr-unsaved-note">Изменения ещё не сохранены — они применятся только по кнопке «Сохранить настройки».</p>}
     {canManageSenders && <div className="pr-form-actions"><Button variant="outline" isDisabled={save.isPending} onPress={() => setDraft(clone(query.data))}>Отменить изменения</Button><Button isDisabled={!valid || save.isPending} onPress={() => save.mutate()}>{save.isPending ? 'Сохранение…' : 'Сохранить настройки'}</Button></div>}
   </div>
 }

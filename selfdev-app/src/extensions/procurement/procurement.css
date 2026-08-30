@@ -491,6 +491,12 @@
    reason is next to the input rather than in a banner further up the page. */
 .pr-field-error { color: var(--destructive); font-size: 0.78rem; line-height: 1.25; }
 .pr-settings-sender--invalid { border-color: var(--destructive); }
+/* A deleted sender is kept on screen, struck through, until the save that
+   actually removes it: a card that simply vanishes reads as "done", and the
+   page is a draft until the button is pressed. */
+.pr-settings-sender--removed { opacity: 0.55; border-style: dashed; }
+.pr-settings-sender--removed [data-slot="card-title"] { text-decoration: line-through; }
+.pr-unsaved-note { color: var(--destructive); }
 .pr-settings-sender [data-slot="card-header"] { flex-direction: row; justify-content: space-between; }
 .pr-settings-sender [data-slot="card-header"] p { margin: 0.2rem 0 0; }
 .pr-settings-check { display: flex; align-items: center; gap: 0.5rem; min-height: 2.4rem; font-size: 0.88rem; }
