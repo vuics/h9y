@@ -64,6 +64,22 @@ export interface SourcingSourceDto {
   extractionWarnings: string[]
 }
 
+export interface QualificationNoteDto {
+  text: string
+  /** What this line added to or took from the score. */
+  points: number
+  /** For a gap: what closing it would add. A gap never subtracts. */
+  potential: number
+}
+
+export interface CandidateContactDto {
+  channel: string
+  address: string
+  sourceUrl: string | null
+  retrievedAt: string | null
+  discoveredBy: string
+}
+
 export interface SourcingCandidateDto {
   id: string
   name: string
@@ -75,9 +91,10 @@ export interface SourcingCandidateDto {
   preliminaryStatus: 'GREEN' | 'YELLOW' | 'RED'
   reviewDecision: 'UNREVIEWED' | 'UNDER_REVIEW' | 'VERIFIED_MANUFACTURER' | 'VERIFIED_DISTRIBUTOR' | 'NEEDS_MORE_EVIDENCE' | 'REJECTED'
   promotedSupplierId?: string
-  reliabilitySignals: string[]
-  riskSignals: string[]
-  evidenceGaps: string[]
+  reliabilitySignals: QualificationNoteDto[]
+  riskSignals: QualificationNoteDto[]
+  evidenceGaps: QualificationNoteDto[]
+  contacts: CandidateContactDto[]
   sourceIds: string[]
   evidence: SourcingEvidenceDto[]
   reviewHistory: SourcingReviewDto[]

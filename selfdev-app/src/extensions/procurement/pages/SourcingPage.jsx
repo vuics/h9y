@@ -161,9 +161,16 @@ function ScoringRules({ rows, tone }) {
   return <dl className={`pr-sourcing-scoring__rules pr-sourcing-scoring__rules--${tone}`}>{rows.map(([weight, text]) => <div key={`${weight}-${text}`}><dt>{weight}</dt><dd>{text}</dd></div>)}</dl>
 }
 
-function ScoreExplanation() {
+function ScoreExplanation({ candidate }) {
+  const notes = [...(candidate?.reliabilitySignals || []), ...(candidate?.riskSignals || [])]
+  const sum = notes.reduce((total, item) => total + notePoints(item), 0)
+  // The stored score is clamped to 0..100, so on a candidate with many risks the
+  // lines above add up to less than the number on the badge. Saying so is better
+  // than letting the reader think the arithmetic is broken.
+  const clamped = candidate && notes.length > 0 && sum !== candidate.score
   return <details className="pr-sourcing-scoring">
     <summary>Как считается оценка и цвет</summary>
+    {clamped && <p className="pr-note">Сумма пунктов выше — {sum}, показано {candidate.score}: итог ограничен диапазоном 0–100.</p>}
     <p className="pr-note">Оценка — сумма правил ниже, ограниченная диапазоном 0–100. Она считается кодом, а не моделью: каждое слагаемое требует доказательства с дословной цитатой из сохранённого источника. Модель только извлекает доказательства и не влияет ни на баллы, ни на цвет.</p>
     <div className="pr-sourcing-scoring__grid">
       <section><h4>Добавляет</h4><ScoringRules rows={scoringAdds} tone="good" /></section>
@@ -180,9 +187,34 @@ function ScoreExplanation() {
   </details>
 }
 
+// A run stored before the rating carried numbers holds plain strings here.
+const noteText = item => (typeof item === 'string' ? item : item?.text || '')
+const notePoints = item => (typeof item === 'string' ? 0 : Number(item?.points) || 0)
+const notePotential = item => (typeof item === 'string' ? 0 : Number(item?.potential) || 0)
+
+function NoteWeight({ item }) {
+  const points = notePoints(item)
+  if (points) return <span className={`pr-sourcing-weight pr-sourcing-weight--${points > 0 ? 'plus' : 'minus'}`}>{points > 0 ? `+${points}` : points}</span>
+  const potential = notePotential(item)
+  // A gap took nothing away — it is a bonus that was not awarded — so it says
+  // what closing it would add rather than a penalty that never happened.
+  if (potential) return <span className="pr-sourcing-weight pr-sourcing-weight--none">0 · <em>+{potential}, если появится</em></span>
+  return null
+}
+
 function SignalList({ title, items, tone }) {
   if (!items?.length) return null
-  return <div className={`pr-sourcing-signals pr-sourcing-signals--${tone}`}><h4>{title}</h4><ul>{items.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul></div>
+  return <div className={`pr-sourcing-signals pr-sourcing-signals--${tone}`}><h4>{title}</h4><ul>{items.map((item, index) => <li key={`${noteText(item)}-${index}`}>{noteText(item)} <NoteWeight item={item} /></li>)}</ul></div>
+}
+
+function ContactList({ contacts }) {
+  if (!contacts?.length) return null
+  return <div className="pr-sourcing-contacts"><h4>Контакты</h4><ul>{contacts.map((contact, index) => <li key={`${contact.address}-${index}`}>
+    <strong>{contact.channel === 'email' ? 'email' : contact.channel}</strong>
+    <span>{contact.address}</span>
+    {externalUrl(contact.sourceUrl) && <a href={externalUrl(contact.sourceUrl)} target="_blank" rel="noreferrer"><ExternalLink size={13} />откуда</a>}
+    {contact.retrievedAt && <small>получено {formatDate(contact.retrievedAt)}</small>}
+  </li>)}</ul><p className="pr-note">Найдено на сайте компании и не подтверждено. При добавлении в поставщики эти адреса переносятся в карточку поставщика.</p></div>
 }
 
 function SourceLink({ source }) {
@@ -344,7 +376,8 @@ export default function SourcingPage() {
               <div className="pr-sourcing-identity"><Score candidate={candidate} /><div><span>Предполагаемая роль</span><strong>{statusLabel(candidate.role)}</strong></div><div><span>Страна</span><strong>{candidate.country || 'Не определена'}</strong></div>{externalUrl(candidate.website) && <a href={externalUrl(candidate.website)} target="_blank" rel="noreferrer"><ExternalLink />Сайт компании</a>}</div>
               <KnownSupplierNote known={candidate.knownSupplier} requestedCas={run.requestedCas} />
               <div className="pr-sourcing-signal-grid"><SignalList title="Надёжность" items={candidate.reliabilitySignals} tone="good" /><SignalList title="Риски" items={candidate.riskSignals} tone="risk" /><SignalList title="Пробелы" items={candidate.evidenceGaps} tone="gap" /></div>
-              <ScoreExplanation />
+              <ContactList contacts={candidate.contacts} />
+              <ScoreExplanation candidate={candidate} />
             </CardContent></Card>
 
             <Card><CardHeader><CardTitle>Проверяемые доказательства</CardTitle><span>{candidate.evidence?.length || 0} утверждений</span></CardHeader><CardContent>{!candidate.evidence?.length ? <EmptyState title="Доказательств пока нет" /> : <div className="pr-sourcing-evidence">{candidate.evidence.map(claim => <article key={claim.id} className={`is-${claim.polarity?.toLowerCase()}`}><header><strong>{evidenceLabels[claim.category] || claim.category}</strong><StatusBadge status={claim.polarity} compact /></header><p>{claim.value}</p><blockquote>{claim.quote}</blockquote><footer><SourceLink source={sourceMap.get(claim.sourceId)} /><span>Получено {formatDate(claim.sourceRetrievedAt)}</span>{claim.validUntil && <span>Действует до {claim.validUntil}</span>}</footer></article>)}</div>}</CardContent></Card>
