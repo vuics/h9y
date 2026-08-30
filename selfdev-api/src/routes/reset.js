@@ -72,10 +72,12 @@ app.post('/', async (req, res, next) => {
     await user.save()
     log('User password reset for:', user.email)
   } catch (err) {
+    // NOTE: The client renders whatever comes back in `message`, so an error
+    //       object would put internals on somebody's screen. Log it instead.
     error('Reset password error:', err)
     return res.status(500).json({
       result: 'error',
-      message: err,
+      message: 'Could not reset the password. Please, try again later.',
     })
   }
 
