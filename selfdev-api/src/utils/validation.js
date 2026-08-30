@@ -35,3 +35,11 @@ export const validatePassword = (password) => {
     length: pw.match(/.{8,}/),
   }
 }
+
+// NOTE: The token is generated in /forgot as randomBytes(32).toString('hex'),
+//       so it is always 64 hex characters. Checking the shape rather than the
+//       length keeps non-string bodies, such as `{"token": {"$ne": null}}`,
+//       out of the database query.
+export const validateResetToken = (token) => {
+  return typeof token === 'string' && /^[0-9a-f]{64}$/.test(token)
+}

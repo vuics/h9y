@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto'
 
 import { log, warn, error, Verbose } from '../services.js'
 import User from '../models/user.js'
-import { validateEmail } from '../utils/validation.js'
+import { validatePassword, validateResetToken } from '../utils/validation.js'
 import conf from '../conf.js'
 import { transporter } from '../mailer.js'
 
@@ -18,8 +18,11 @@ app.post('/', async (req, res, next) => {
   const { token, password } = req.body
 
   let validationError = ''
-  if (token.length < 32) {
+  if (!validateResetToken(token)) {
     validationError += 'Incorrect token. '
+  }
+  if (!(validatePassword(password)).valid) {
+    validationError += 'Invalid password. '
   }
   if (validationError) {
     return res.status(400).json({
@@ -39,6 +42,14 @@ app.post('/', async (req, res, next) => {
       })
     }
 
+    if (!user.resetPassword?.createdAt) {
+      warn('Reset password token for', user.email, 'has no creation date')
+      return res.status(410).json({
+        result: 'error',
+        message: 'Token expired',
+      })
+    }
+
     const createdAt = user.resetPassword.createdAt.valueOf()
     // log('createdAt:', createdAt)
     // log('conf.reset.expiresMinutes*60*1000:', conf.reset.expiresMinutes*60*1000)
@@ -53,9 +64,12 @@ app.post('/', async (req, res, next) => {
       })
     }
     user.password = password
-    delete user.resetPassword
+    // NOTE: `delete` only drops the getter on the document, the token stays in
+    //       the database and the reset link keeps working until it expires.
+    user.set('resetPassword.token', undefined)
+    user.set('resetPassword.createdAt', undefined)
     // verbose('Save user:', user)
-    const saved = await user.save()
+    await user.save()
     log('User password reset for:', user.email)
   } catch (err) {
     error('Reset password error:', err)
