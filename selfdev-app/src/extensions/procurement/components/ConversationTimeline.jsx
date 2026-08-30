@@ -64,6 +64,10 @@ function MessageEntry({ entry }) {
           </div>
           <time>{formatDate(message.createdAt)}</time>
         </header>
+        {/* What the supplier saw in their inbox list before opening anything.
+            A follow-up is grouped with the request it chases by this line and
+            nothing else, so it belongs on screen next to the body. */}
+        {message.subject && <p className="pr-message__subject">{message.subject}</p>}
         <p>{message.text}</p>
         <div className="pr-inline-actions">
           <StatusBadge status={message.status} compact />

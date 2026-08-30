@@ -504,6 +504,7 @@
 /* A rejected field says so under itself, in the destructive colour, so the
    reason is next to the input rather than in a banner further up the page. */
 .pr-field-error { color: var(--destructive); font-size: 0.78rem; line-height: 1.25; }
+.pr-message__subject { margin: 0 0 4px; font-weight: 600; }
 .pr-settings-sender--invalid { border-color: var(--destructive); }
 /* A deleted sender is kept on screen, struck through, until the save that
    actually removes it: a card that simply vanishes reads as "done", and the
