@@ -90,6 +90,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/negotiations/{negotiation_id}/responses' },
   { method: 'GET', path: '/negotiations/{negotiation_id}/web-form' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/approve' },
+  { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/confirm' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/prepare' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/preview' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/submit' },
