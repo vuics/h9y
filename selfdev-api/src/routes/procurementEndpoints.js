@@ -41,6 +41,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'GET', path: '/cards/{card_id}/echemi/browser-access' },
   { method: 'POST', path: '/cards/{card_id}/echemi/inquiries' },
   { method: 'POST', path: '/cards/{card_id}/echemi/inquiries/{inquiry_id}/approve' },
+  { method: 'POST', path: '/cards/{card_id}/echemi/inquiries/{inquiry_id}/confirm' },
   { method: 'POST', path: '/cards/{card_id}/echemi/inquiries/{inquiry_id}/preview' },
   { method: 'POST', path: '/cards/{card_id}/echemi/inquiries/{inquiry_id}/submit' },
   { method: 'POST', path: '/cards/{card_id}/echemi/listings/{product_id}/supplier' },
