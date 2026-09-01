@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
-import { followUpNegotiationStatuses, negotiationNextActionLabel, queueableNegotiationStatuses, toApiDateTime } from '../api/negotiations'
+import { followUpNegotiationStatuses, isQueueableNegotiationStatus, negotiationNextActionLabel, toApiDateTime } from '../api/negotiations'
 import { DetailLayout, DefinitionGrid } from '../components/DetailLayout'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
@@ -62,7 +62,7 @@ export default function NegotiationDetailPage() {
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   if (!query.data) return <EmptyState title="Переговоры не найдены" />
   const negotiation = query.data
-  const queueAllowed = canQueueNegotiations && queueableNegotiationStatuses.has(negotiation.status)
+  const queueAllowed = canQueueNegotiations && isQueueableNegotiationStatus(negotiation.status)
   const followUpAllowed = canQueueNegotiations && followUpNegotiationStatuses.has(negotiation.status)
   const nextActionLabel = negotiationNextActionLabel(negotiation.nextAction)
   const warnings = <>
@@ -82,7 +82,7 @@ export default function NegotiationDetailPage() {
       <div className="pr-operation-fields"><label className="pr-form-field"><span>Приоритет, 0–100</span><Input type="number" min="0" max="100" value={priority} onChange={event => setPriority(event.target.value)} /></label><label className="pr-form-field"><span>Не раньше (необязательно)</span><Input type="datetime-local" value={queueAt} onChange={event => setQueueAt(event.target.value)} /></label></div>
       <label className="pr-operation-confirm"><input type="checkbox" checked={queueConfirmed} onChange={event => setQueueConfirmed(event.target.checked)} /><span>Подтверждаю постановку действия «{nextActionLabel}» в рабочую очередь.</span></label>
       <Button isDisabled={!queueAllowed || !queueConfirmed || priority === '' || Number(priority) < 0 || Number(priority) > 100 || queue.isPending} onPress={() => queue.mutate()}><MessageSquare />{queue.isPending ? 'Постановка…' : negotiation.status === 'QUEUED' ? 'Обновить очередь' : 'Поставить в очередь'}</Button>
-      {!queueableNegotiationStatuses.has(negotiation.status) && <p className="pr-note">Из статуса {negotiation.status} постановка в очередь недоступна.</p>}
+      {!isQueueableNegotiationStatus(negotiation.status) && <p className="pr-note">Из статуса {negotiation.status} постановка в очередь недоступна.</p>}
     </CardContent></Card><Card><CardHeader><CardTitle>Назначить follow-up</CardTitle></CardHeader><CardContent>
       <p className="pr-note">Follow-up доступен после исходящей отправки, когда переговоры ожидают ответа поставщика. Укажите точное будущее время.</p>
       <label className="pr-form-field"><span>Дата и время follow-up</span><Input type="datetime-local" value={followUpAt} onChange={event => setFollowUpAt(event.target.value)} /></label>

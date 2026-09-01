@@ -5,7 +5,7 @@ import {
   followUpNegotiationStatuses,
   isUsableNegotiationContact,
   negotiationNextActionLabel,
-  queueableNegotiationStatuses,
+  isQueueableNegotiationStatus,
   toApiDateTime,
 } from './negotiations.js'
 
@@ -17,8 +17,14 @@ test('contact eligibility applies the domain channel verification boundary', () 
 })
 
 test('queue and follow-up controls reflect safe workflow states', () => {
-  assert.equal(queueableNegotiationStatuses.has('READY'), true)
-  assert.equal(queueableNegotiationStatuses.has('COMPLETE'), false)
+  assert.equal(isQueueableNegotiationStatus('READY'), true)
+  assert.equal(isQueueableNegotiationStatus('COMPLETE'), false)
+  // ACTIVE is the status a conversation takes the moment any supplier message
+  // is recorded — including a quotation entered by hand. Blocking it here made
+  // the queue button unusable for every such assignment.
+  assert.equal(isQueueableNegotiationStatus('ACTIVE'), true)
+  assert.equal(isQueueableNegotiationStatus('ESCALATED'), false)
+  assert.equal(isQueueableNegotiationStatus(undefined), false)
   assert.equal(followUpNegotiationStatuses.has('READY'), false)
   assert.equal(followUpNegotiationStatuses.has('WAITING_SUPPLIER'), true)
   assert.equal(negotiationNextActionLabel('SEND_INITIAL_RFQ'), 'Отправка согласованного RFQ')
