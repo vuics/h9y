@@ -140,7 +140,7 @@ export const BASELINE_FIELDS = [
   // customer feels, and the days are the figure they can state from memory —
   // "a complex quote takes about a week" — without anyone timing them.
   { key: 'DAYS_TO_FIRST_REPLY', label: 'Дней до первого ответа', unit: 'дн', agentDeclared: false },
-  { key: 'DAYS_TO_COMPLETE_QUOTE', label: 'Дней до котировки', unit: 'дн', agentDeclared: false },
+  { key: 'DAYS_TO_COMPLETE_QUOTE', label: 'Дней до полного предложения', unit: 'дн', agentDeclared: false },
 ]
 
 /** What one row is read on. Shown per row, never once for the card: mixing
