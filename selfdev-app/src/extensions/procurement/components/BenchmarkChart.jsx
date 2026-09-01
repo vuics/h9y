@@ -1,6 +1,6 @@
-/** Человек и агент на один кейс — график, по которому судят пилот.
+/** Человек и агент — график, по которому судят пилот.
  *
- * Its whole job is to be persuasive without overclaiming, so two things are
+ * Its whole job is to be persuasive without overclaiming, so three things are
  * structural rather than cosmetic:
  *
  *   1. Each row is scaled to its own larger value. Hours and counts share no
@@ -10,6 +10,10 @@
  *      reviews candidates and approves RFQs, and only a person can say how long
  *      that took. Reporting the agent at zero hours would win the chart and be
  *      false.
+ *   3. Every row says what it is read on. Counts and hours are per case;
+ *      the two rows in days are medians over assignments. The card no longer
+ *      claims one basis for all of them, because that claim would now be false
+ *      and a reader would be entitled to add the rows together.
  */
 
 import React, { useState } from 'react'
@@ -27,6 +31,7 @@ import { CircleAlert } from './icons'
 import {
   BASELINE_FIELDS,
   baselineFormValues,
+  basisLabel,
   benchmarkWidths,
   decimal,
   describeDelta,
@@ -49,7 +54,12 @@ function BenchmarkRow({ row }) {
     <div className="pr-bench__row">
       <div className="pr-bench__label">
         {row.label}
-        <small>{row.lowerIsBetter ? 'меньше — лучше' : 'больше — лучше'}</small>
+        {/* The basis belongs on the row, not in the card title: half of these
+            are per-case counts and half are medians in days, and a reader who
+            cannot tell them apart will eventually add them up. */}
+        <small>
+          {row.lowerIsBetter ? 'меньше — лучше' : 'больше — лучше'} · {basisLabel(row.basis)}
+        </small>
       </div>
       <div className="pr-bench__bars">
         {[
@@ -74,6 +84,9 @@ function BenchmarkRow({ row }) {
               <b>{formatValue(cell.value, row.unit)}</b>
               {cell.value != null && cell.source && <span>{SOURCE_LABELS[cell.source]}</span>}
               {cell.value != null && cell.total != null && <span>всего {cell.total}</span>}
+              {/* A median stands on assignments, not on the total behind an
+                  average — so it says how many, and never "всего". */}
+              {cell.value != null && cell.sample != null && <span>по {cell.sample} заданиям</span>}
             </span>
           </div>
         ))}
@@ -170,10 +183,11 @@ export function BenchmarkChart({ data, canEdit }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Человек и агент, на один кейс</CardTitle>
+        <CardTitle>Человек и агент</CardTitle>
         <p className="pr-muted">
-          У каждой строки собственная шкала — часы и штуки несопоставимы, и одна
-          общая ось выдумала бы сравнение, которого в данных нет.
+          У каждой строки собственная шкала и собственное основание: штуки и часы —
+          на один кейс, дни — медиана по заданиям. Общая ось выдумала бы сравнение,
+          которого в данных нет.
         </p>
         {canEdit && !editing && (
           <div className="pr-inline-actions">
@@ -196,7 +210,8 @@ export function BenchmarkChart({ data, canEdit }) {
                   Пока показана только колонка агента. Сравнивать не с чем, и
                   подставлять ноль вместо эталона значило бы нарисовать победу.
                   {canEdit
-                    ? ' Введите замер: сколько часов, кандидатов и котировок выходит у специалиста на один кейс.'
+                    ? ' Введите замер: сколько часов, кандидатов и котировок выходит у специалиста'
+                      + ' на один кейс и за сколько дней сегодня приходит ответ и полная котировка.'
                     : ' Ввести замер может специалист с правом проверки поставщиков (SOURCING_REVIEW) — попросите его открыть этот экран.'}
                 </AlertDescription>
                 {canEdit && (
@@ -214,6 +229,7 @@ export function BenchmarkChart({ data, canEdit }) {
               {recorded && <> · эталон записал {baseline.recordedBy || 'специалист'}, {recorded}</>}
             </p>
             {baseline.note && <p className="pr-chart-note">{baseline.note}</p>}
+            <p className="pr-chart-note">{data?.basisNote}</p>
             <p className="pr-chart-note">{data?.caseNote}</p>
             <p className="pr-chart-note">{data?.provenanceNote}</p>
           </>

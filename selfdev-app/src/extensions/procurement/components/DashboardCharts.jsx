@@ -21,6 +21,7 @@ import { CircleAlert } from './icons'
 import {
   axisInterval,
   dayLabel,
+  decimal,
   durationIsReliable,
   durationWidth,
   formatDuration,
@@ -56,10 +57,24 @@ const STATUS_COLORS = {
   RED: 'var(--pr-bad, #d03b3b)',
 }
 
-/** Median duration per transition. */
-export function CycleTimeChart({ data }) {
+/** Median duration per transition.
+ *
+ * `reference` is the customer's own figure for one of these steps, declared by
+ * hand. It is drawn as a mark on the track rather than as a second bar, because
+ * it is not a measurement of the same thing: their number is what a specialist
+ * lives with today, ours is what the agent did in this period. Two solid bars
+ * would read as one experiment run twice.
+ */
+export function CycleTimeChart({ data, reference }) {
   const transitions = data?.transitions || []
-  const longest = Math.max(1, ...transitions.map(item => item.medianDays || 0))
+  // The reference joins the scale rather than sitting outside it: a seven-day
+  // benchmark over a half-day median would otherwise be drawn past the end of
+  // the track, or clipped to the end and read as a tie.
+  const longest = Math.max(
+    1,
+    ...transitions.map(item => item.medianDays || 0),
+    reference?.days || 0,
+  )
   return (
     <Card>
       <CardHeader>
@@ -74,6 +89,7 @@ export function CycleTimeChart({ data }) {
           {transitions.map(item => {
             const shown = formatDuration(item.medianDays, item.medianHours)
             const reliable = durationIsReliable(item.sample)
+            const mark = reference?.key === item.key ? reference : null
             return (
               <div className="pr-funnel__row" key={item.key}>
                 <div className="pr-funnel__label">
@@ -87,13 +103,23 @@ export function CycleTimeChart({ data }) {
                 <div
                   className="pr-funnel__track"
                   role="img"
-                  aria-label={`${item.label}: ${shown.value} ${shown.unit || ''}`.trim()}
+                  aria-label={
+                    `${item.label}: ${shown.value} ${shown.unit || ''}`.trim()
+                    + (mark ? `, эталон заказчика ${decimal(mark.days)} дн.` : '')
+                  }
                 >
                   {!shown.empty && (
                     <div
                       className="pr-funnel__bar"
                       data-weak={reliable ? undefined : 'true'}
                       style={{ width: `${durationWidth(item.medianDays, longest, true)}%` }}
+                    />
+                  )}
+                  {mark && (
+                    <i
+                      className="pr-funnel__mark"
+                      style={{ left: `${durationWidth(mark.days, longest, true)}%` }}
+                      title={`Эталон заказчика: ${decimal(mark.days)} дн., введён вручную`}
                     />
                   )}
                 </div>
@@ -105,6 +131,13 @@ export function CycleTimeChart({ data }) {
             )
           })}
         </div>
+        {reference && (
+          <p className="pr-chart-note">
+            Штрих на шкале — срок, названный заказчиком: <b>{decimal(reference.days)} дн.</b>{' '}
+            Введён вручную и ничем в системе не измеряется; сравнивается со
+            средним случаем за период, а не с лучшим.
+          </p>
+        )}
       </CardContent>
     </Card>
   )

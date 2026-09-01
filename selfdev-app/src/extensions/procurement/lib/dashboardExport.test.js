@@ -88,7 +88,32 @@ test('a benchmark row says whether each side was measured or declared', () => {
     },
   })
   assert.equal(rows[0][5], 'эталон не задан')
-  assert.deepEqual(rows[1], ['Человек и агент', 'Найдено кандидатов · агент', 4.53, 86, '', 'измерено системой'])
+  assert.deepEqual(rows[1], [
+    'Человек и агент', 'Найдено кандидатов · агент', 4.53, 86, '',
+    'измерено системой · на один кейс',
+  ])
+})
+
+test('a median row exports the assignments it stands on, not a case denominator', () => {
+  const rows = dashboardRows({
+    benchmark: {
+      cases: 19,
+      rows: [{
+        label: 'Дней до котировки',
+        basis: 'MEDIAN',
+        human: { value: 7, source: 'DECLARED' },
+        agent: { value: 1.4, source: 'MEASURED', sample: 11 },
+      }],
+    },
+  })
+  assert.deepEqual(rows[0], [
+    'Человек и агент', 'Дней до котировки · человек', 7, '', '',
+    'введено вручную · медиана по заданиям',
+  ])
+  assert.deepEqual(rows[1], [
+    'Человек и агент', 'Дней до котировки · агент', 1.4, 11, '',
+    'измерено системой · медиана по заданиям',
+  ])
 })
 
 test('an unmeasurable transition exports its reason, not a zero duration', () => {

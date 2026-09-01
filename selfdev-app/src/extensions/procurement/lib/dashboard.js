@@ -136,7 +136,36 @@ export const BASELINE_FIELDS = [
   { key: 'REQUESTS_SENT', label: 'Запросов отправлено', unit: '', agentDeclared: false },
   { key: 'REPLIES_RECEIVED', label: 'Ответов получено', unit: '', agentDeclared: false },
   { key: 'QUOTES_RECEIVED', label: 'Котировок получено', unit: '', agentDeclared: false },
+  // Calendar days. Hours are what the effect is counted in; days are what the
+  // customer feels, and the days are the figure they can state from memory —
+  // "a complex quote takes about a week" — without anyone timing them.
+  { key: 'DAYS_TO_FIRST_REPLY', label: 'Дней до первого ответа', unit: 'дн', agentDeclared: false },
+  { key: 'DAYS_TO_COMPLETE_QUOTE', label: 'Дней до котировки', unit: 'дн', agentDeclared: false },
 ]
+
+/** What one row is read on. Shown per row, never once for the card: mixing
+ *  per-case counts and medians without saying which is which invites a reader
+ *  to add them together. */
+export const BASIS_LABELS = {
+  PER_CASE: 'на один кейс',
+  MEDIAN: 'медиана по заданиям',
+}
+
+export function basisLabel(basis) {
+  return BASIS_LABELS[basis] || BASIS_LABELS.PER_CASE
+}
+
+/** The declared human duration a cycle-time step can be drawn against.
+ *
+ * Only the one step that means the same thing on both sides. «Дней до
+ * котировки» spans two steps of that chart, and hanging it on either of them
+ * would compare a whole to a part.
+ */
+export function declaredReference(benchmark) {
+  const row = (benchmark?.rows || []).find(item => item.key === 'DAYS_TO_FIRST_REPLY')
+  const value = row?.human?.value
+  return value == null ? null : { key: 'DISPATCH_TO_REPLY', days: value }
+}
 
 /** Bar widths for one benchmark row.
  *

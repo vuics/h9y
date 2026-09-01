@@ -631,6 +631,10 @@
 .pr-funnel__track { position: relative; height: 26px; border-radius: 5px; background: var(--chart-track); overflow: hidden; }
 .pr-funnel__bar { position: absolute; inset: 0 auto 0 0; border-radius: 5px; background: var(--chart-1); transition: width .35s ease; }
 @media (prefers-reduced-motion: reduce) { .pr-funnel__bar { transition: none; } }
+/* The customer's own figure for a step, declared rather than measured. A mark
+   and not a second bar: two solid bars would read as one experiment run twice,
+   when in fact one side is a memory and the other a measurement. */
+.pr-funnel__mark { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--pr-text); opacity: .55; border-radius: 1px; }
 .pr-funnel__value { font-variant-numeric: tabular-nums; font-size: 12.5px; white-space: nowrap; text-align: right; min-width: 116px; }
 .pr-funnel__value b { font-weight: 650; }
 .pr-funnel__value span { color: var(--pr-muted); margin-left: 6px; }

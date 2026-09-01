@@ -70,14 +70,19 @@ export function dashboardRows({ funnel, variants, bottlenecks, benchmark, cycleT
   }
 
   for (const row of benchmark?.rows || []) {
+    // The "Из" column means different things on the two bases, so it is filled
+    // from the one that applies: a per-case figure carries the total it was
+    // averaged from, a median carries the assignments it stands on. Reusing one
+    // column silently would let a reader divide a duration by a case count.
+    const basis = row.basis === 'MEDIAN' ? 'медиана по заданиям' : 'на один кейс'
     rows.push([
       'Человек и агент', `${row.label} · человек`, row.human?.value ?? '', '', '',
-      row.human?.value == null ? 'эталон не задан' : SOURCE_LABELS.DECLARED,
+      row.human?.value == null ? 'эталон не задан' : `${SOURCE_LABELS.DECLARED} · ${basis}`,
     ])
     rows.push([
       'Человек и агент', `${row.label} · агент`, row.agent?.value ?? '',
-      row.agent?.total ?? '', '',
-      row.agent?.source ? SOURCE_LABELS[row.agent.source] : '',
+      row.agent?.total ?? row.agent?.sample ?? '', '',
+      row.agent?.source ? `${SOURCE_LABELS[row.agent.source]} · ${basis}` : '',
     ])
   }
   if (benchmark) {

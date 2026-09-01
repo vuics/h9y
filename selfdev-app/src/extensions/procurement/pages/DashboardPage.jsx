@@ -25,6 +25,7 @@ import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import {
   barWidth,
   cohortIsEmpty,
+  declaredReference,
   decimal,
   describeStep,
   formatDelta,
@@ -490,11 +491,23 @@ function TimingSection({ params }) {
     queryKey: procurementKeys.analyticsCycleTime(params),
     queryFn: ({ signal }) => procurementApi.analyticsCycleTime(params, signal),
   })
+  // The same key the benchmark card uses, so this is the cache it already
+  // filled rather than a second request — and the mark on the track can never
+  // disagree with the row it was taken from.
+  const benchmark = useQuery({
+    queryKey: procurementKeys.analyticsBenchmark(params),
+    queryFn: ({ signal }) => procurementApi.analyticsBenchmark(params, signal),
+  })
   if (query.isLoading) return <LoadingState rows={5} />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  // A missing benchmark leaves the chart without its mark; it never blocks the
+  // measurement, which stands on its own.
+  const reference = declaredReference(benchmark.data)
   return (
     <div className="pr-dash__grid">
-      <ExportableCard title="Куда уходит время"><CycleTimeChart data={query.data} /></ExportableCard>
+      <ExportableCard title="Куда уходит время">
+        <CycleTimeChart data={query.data} reference={reference} />
+      </ExportableCard>
       <ExportableCard title="Через сколько отвечает поставщик"><FirstReplyChart data={query.data} /></ExportableCard>
     </div>
   )

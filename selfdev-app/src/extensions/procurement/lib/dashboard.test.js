@@ -4,6 +4,8 @@ import assert from 'node:assert/strict'
 import {
   BASELINE_FIELDS,
   axisInterval,
+  basisLabel,
+  declaredReference,
   barWidth,
   dayLabel,
   headlineTiles,
@@ -311,4 +313,39 @@ test('the absolute change comes first, because it is always defined', () => {
 test('a delta in days carries its unit', () => {
   assert.equal(formatDelta(periodDelta(2.1, 4.0, { lowerIsBetter: true }), { unit: 'дн' }).text,
     '1,9 дн · 48%')
+})
+
+test('the customer\'s declared wait is offered as a mark on the step it names', () => {
+  const reference = declaredReference({
+    rows: [{ key: 'DAYS_TO_FIRST_REPLY', human: { value: 7, source: 'DECLARED' } }],
+  })
+  assert.deepEqual(reference, { key: 'DISPATCH_TO_REPLY', days: 7 })
+})
+
+test('a step spanning two rows of the chart is never hung on one of them', () => {
+  // «Дней до котировки» covers dispatch → reply → quote. Marking it on either
+  // step would compare a whole against a part.
+  const reference = declaredReference({
+    rows: [{ key: 'DAYS_TO_COMPLETE_QUOTE', human: { value: 7, source: 'DECLARED' } }],
+  })
+  assert.equal(reference, null)
+})
+
+test('no declared baseline leaves the chart without a mark rather than at zero', () => {
+  assert.equal(declaredReference(undefined), null)
+  assert.equal(
+    declaredReference({ rows: [{ key: 'DAYS_TO_FIRST_REPLY', human: { value: null } }] }),
+    null,
+  )
+})
+
+test('a row says what it is read on', () => {
+  assert.equal(basisLabel('MEDIAN'), 'медиана по заданиям')
+  assert.equal(basisLabel('PER_CASE'), 'на один кейс')
+})
+
+test('the calendar rows are declarable by a person but not on the agent side', () => {
+  const days = BASELINE_FIELDS.filter(field => field.unit === 'дн')
+  assert.deepEqual(days.map(field => field.key), ['DAYS_TO_FIRST_REPLY', 'DAYS_TO_COMPLETE_QUOTE'])
+  assert.ok(days.every(field => field.agentDeclared === false))
 })
