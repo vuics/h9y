@@ -547,6 +547,16 @@ function HandoverSection({ params }) {
   const held = data.heldHoursMedian
   return (
     <ExportableCard title="Что агент передал специалисту">
+    <Card>
+      <CardHeader>
+        <CardTitle>Что агент передал специалисту</CardTitle>
+        <p className="pr-muted">
+          Сколько раз агент не имел полномочий решить сам, и сколько кейс потом
+          ждал человека. Соседняя карточка сравнивает заявленные часы; здесь —
+          то, что известно из отметок времени.
+        </p>
+      </CardHeader>
+      <CardContent>
       <div className="pr-handover">
         <div><strong>{data.handovers ?? 0}</strong><span>решений запрошено</span></div>
         <div><strong>{data.cases ?? 0}</strong><span>карточек в работе</span></div>
@@ -563,6 +573,8 @@ function HandoverSection({ params }) {
         )}
       </div>
       <p className="pr-note">{data.note}</p>
+      </CardContent>
+    </Card>
     </ExportableCard>
   )
 }
