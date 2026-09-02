@@ -882,3 +882,7 @@
 .pr-card-identity a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .pr-domain-candidates { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
 .pr-domain-candidates > span { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--pr-border); border-radius: 7px; padding: 4px 4px 4px 10px; background: #fff; }
+.pr-handover { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 12px; }
+.pr-handover > div { border: 1px solid var(--pr-border); border-radius: 8px; padding: 12px; background: #fff; }
+.pr-handover strong { display: block; font-size: 22px; line-height: 1.2; }
+.pr-handover span { display: block; margin-top: 4px; color: var(--pr-muted); font-size: 12px; }

@@ -528,6 +528,45 @@ function BenchmarkSection({ params, canEdit }) {
   )
 }
 
+/** What the agent could not decide alone.
+ *
+ * Sits beside the benchmark on purpose. That table compares declared labour
+ * hours because nothing here watches a specialist work; this one reports the
+ * part the timestamps do know — how often the agent stopped and asked, and how
+ * long the case then waited. Keeping them adjacent is what stops a reader
+ * taking the measured number for the declared one.
+ */
+function HandoverSection({ params }) {
+  const query = useQuery({
+    queryKey: procurementKeys.analyticsHandover(params),
+    queryFn: ({ signal }) => procurementApi.analyticsHandover(params, signal),
+  })
+  if (query.isLoading) return <LoadingState rows={3} />
+  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  const data = query.data || {}
+  const held = data.heldHoursMedian
+  return (
+    <ExportableCard title="Что агент передал специалисту">
+      <div className="pr-handover">
+        <div><strong>{data.handovers ?? 0}</strong><span>решений запрошено</span></div>
+        <div><strong>{data.cases ?? 0}</strong><span>карточек в работе</span></div>
+        <div>
+          <strong>{data.perCase ?? '—'}</strong>
+          <span>решений на карточку</span>
+        </div>
+        <div>
+          <strong>{held === null || held === undefined ? '—' : `${held} ч`}</strong>
+          <span>медиана ожидания у специалиста{data.heldSample ? ` · n=${data.heldSample}` : ''}</span>
+        </div>
+        {data.open > 0 && (
+          <div><strong>{data.open}</strong><span>ещё не решено</span></div>
+        )}
+      </div>
+      <p className="pr-note">{data.note}</p>
+    </ExportableCard>
+  )
+}
+
 function SupplyBaseSection() {
   const query = useQuery({
     queryKey: procurementKeys.analyticsSupplyBase(),
@@ -595,6 +634,7 @@ export default function DashboardPage() {
 
       <h3 className="pr-dash__section">Человек и агент</h3>
       <BenchmarkSection params={params} canEdit={canReviewSourcing} />
+      {canReadEscalations && <HandoverSection params={params} />}
 
       <h3 className="pr-dash__section">Сроки</h3>
       <TimingSection params={params} />

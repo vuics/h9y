@@ -4,6 +4,7 @@ export const procurementKeys = {
   analyticsFunnel: filters => [...procurementKeys.all, 'analytics-funnel', filters],
   analyticsBottlenecks: () => [...procurementKeys.all, 'analytics-bottlenecks'],
   analyticsCycleTime: filters => [...procurementKeys.all, 'analytics-cycle-time', filters],
+  analyticsHandover: filters => [...procurementKeys.all, 'analytics-handover', filters],
   analyticsSupplyBase: () => [...procurementKeys.all, 'analytics-supply-base'],
   analyticsOfferQuality: () => [...procurementKeys.all, 'analytics-offer-quality'],
   analyticsTrends: days => [...procurementKeys.all, 'analytics-trends', days],

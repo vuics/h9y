@@ -44,6 +44,11 @@ const emptyBenchmark = {
   provenanceNote: '', caseNote: '',
 }
 
+const emptyHandover = {
+  cases: 0, handovers: 0, decided: 0, open: 0,
+  perCase: null, heldHoursMedian: null, heldSample: 0, busiestCard: null, note: '',
+}
+
 export const analyticsEndpoints = {
   analyticsFunnel: read(
     (params = {}, signal) => request('/analytics/funnel', { params, signal }),
@@ -56,6 +61,10 @@ export const analyticsEndpoints = {
   analyticsCycleTime: read(
     (params = {}, signal) => request('/analytics/cycle-time', { params, signal }),
     async () => emptyCycleTime,
+  ),
+  analyticsHandover: read(
+    (params = {}, signal) => request('/analytics/handover', { params, signal }),
+    async () => emptyHandover,
   ),
   analyticsSupplyBase: read(
     signal => request('/analytics/supply-base', { signal }),
