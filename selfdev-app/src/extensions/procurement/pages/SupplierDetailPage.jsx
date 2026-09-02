@@ -7,6 +7,7 @@ import { procurementKeys } from '../api/queryKeys'
 import { DetailLayout, DefinitionGrid } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
+import { websiteCandidates, websiteDomainMismatch } from '../lib/supplierWeb'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -15,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { AlertTriangle, ExternalLink, Flask, MessageSquare, Sliders } from '../components/icons'
+import { AlertTriangle, CircleAlert, ExternalLink, Flask, MessageSquare, Sliders } from '../components/icons'
 
 const qualificationStatuses = ['UNVERIFIED', 'UNDER_REVIEW', 'QUALIFIED', 'SUSPENDED', 'REJECTED']
 
@@ -58,6 +59,14 @@ export default function SupplierDetailPage() {
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   if (!supplier) return <EmptyState title="Поставщик не найден" />
   const { negotiations = [], proposals = [] } = query.data
+  const contacts = supplier.contacts || []
+  // Offered, never applied: the domain is a guess until someone opens it.
+  const siteCandidates = supplier.website ? [] : websiteCandidates(contacts, supplier.website)
+  const foreignDomains = websiteDomainMismatch(supplier.website, contacts)
+  const useCandidate = domain => {
+    setIsEditing(true)
+    setProfile(value => ({ ...value, website: `https://${domain}/` }))
+  }
   const actions = <>{canWriteSuppliers && !isEditing && <Button variant="outline" onPress={() => setIsEditing(true)}><Sliders />Редактировать карточку</Button>}{canManageNegotiations && <RouterLinkButton variant="outline" to={`/procurement/negotiations/new?supplierId=${supplier.id}`}><MessageSquare />Создать переговоры</RouterLinkButton>}{canWriteSuppliers && <RouterLinkButton variant="outline" to={`/procurement/suppliers/${supplier.id}/capabilities/new`}><Flask />Добавить capability</RouterLinkButton>}{canWriteSuppliers && <RouterLinkButton to={`/procurement/suppliers/${supplier.id}/contacts/new`}><MessageSquare />Добавить контакт</RouterLinkButton>}</>
 
   const profileCard = isEditing
@@ -79,7 +88,7 @@ export default function SupplierDetailPage() {
       </CardContent></Card>
       : null
 
-  return <DetailLayout backTo="/procurement/suppliers" backLabel="Все поставщики" eyebrow={supplier.id} title={supplier.name} status={<StatusBadge status={supplier.qualificationStatus} />} meta={supplier.country || 'Страна не указана'} actions={actions} warnings={<>{qualify.isError && <Alert><AlertTriangle /><AlertTitle>Квалификация не изменена</AlertTitle><AlertDescription>{qualify.error?.response?.data?.message || qualify.error?.message}</AlertDescription></Alert>}{saveProfile.isError && <Alert><AlertTriangle /><AlertTitle>Карточка не сохранена</AlertTitle><AlertDescription>{saveProfile.error?.response?.data?.message || saveProfile.error?.message}</AlertDescription></Alert>}</>}>
+  return <DetailLayout backTo="/procurement/suppliers" backLabel="Все поставщики" eyebrow={supplier.id} title={supplier.name} status={<StatusBadge status={supplier.qualificationStatus} />} meta={supplier.country || 'Страна не указана'} actions={actions} warnings={<>{siteCandidates.length > 0 && canWriteSuppliers && !isEditing && <Alert><CircleAlert /><AlertTitle>Сайт не заполнен</AlertTitle><AlertDescription><p>Домен из адреса контакта — это догадка, а не факт: поставщик может писать с бесплатной почты или с домена другой компании. Откройте и сверьте, что на сайте та же компания, затем подставьте.</p><div className="pr-domain-candidates">{siteCandidates.map(domain => <span key={domain}><a href={`https://${domain}/`} target="_blank" rel="noreferrer"><ExternalLink size={13} />{domain}</a><Button variant="outline" size="sm" onPress={() => useCandidate(domain)}>Подставить</Button></span>)}</div></AlertDescription></Alert>}{foreignDomains.length > 0 && <Alert><AlertTriangle /><AlertTitle>Контакт пишет с чужого домена</AlertTitle><AlertDescription>{foreignDomains.map(item => <p key={item.address}>{item.name ? `${item.name} — ` : ''}<strong>{item.address}</strong>: домен {item.domain} не совпадает с сайтом на карточке. Это может быть второй домен той же компании, а может быть другой контрагент — стоит уточнить у поставщика, прежде чем считать предложение его предложением.</p>)}</AlertDescription></Alert>}{qualify.isError && <Alert><AlertTriangle /><AlertTitle>Квалификация не изменена</AlertTitle><AlertDescription>{qualify.error?.response?.data?.message || qualify.error?.message}</AlertDescription></Alert>}{saveProfile.isError && <Alert><AlertTriangle /><AlertTitle>Карточка не сохранена</AlertTitle><AlertDescription>{saveProfile.error?.response?.data?.message || saveProfile.error?.message}</AlertDescription></Alert>}</>}>
     {profileCard}
     <div className="pr-detail-grid"><Card><CardHeader><CardTitle>Квалификация</CardTitle></CardHeader><CardContent>
       <DefinitionGrid items={[{ label: 'Текущий статус', value: <StatusBadge status={supplier.qualificationStatus} /> }, { label: 'Последнее изменение', value: supplier.qualificationUpdatedAt ? new Date(supplier.qualificationUpdatedAt).toLocaleString('ru-RU') : '—' }]} />

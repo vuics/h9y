@@ -877,3 +877,8 @@
 .pr-sourcing-probe strong { color: var(--pr-ink, inherit); }
 
 .pr-sourcing-limit-note { margin: -6px 0 0; }
+.pr-card-identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; margin: 6px 0 0; color: var(--pr-muted); font-size: 13px; }
+.pr-card-identity strong { color: var(--pr-text, inherit); font-weight: 600; }
+.pr-card-identity a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.pr-domain-candidates { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.pr-domain-candidates > span { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--pr-border); border-radius: 7px; padding: 4px 4px 4px 10px; background: #fff; }
