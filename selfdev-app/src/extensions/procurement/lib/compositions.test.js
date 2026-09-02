@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
-  approvalPayload, checkSummary, compositionActions, finalText, isPending,
+  approvalPayload, checkSummary, compositionActions, finalText, hasUnsavedEdit, isPending,
 } from './compositions.js'
 
 test('only an undecided message offers a decision', () => {
@@ -15,14 +15,25 @@ test('only an undecided message offers a decision', () => {
 
 test('decisions need the queue permission, and a blocked message stays editable', () => {
   assert.deepEqual(compositionActions('BLOCKED', { canQueue: true }), {
-    canEdit: true, canApprove: true, canReject: true,
+    canEdit: true, canSave: true, canApprove: true, canReject: true,
   })
   assert.deepEqual(compositionActions('DRAFT', { canQueue: false }), {
-    canEdit: false, canApprove: false, canReject: false,
+    canEdit: false, canSave: false, canApprove: false, canReject: false,
   })
   assert.deepEqual(compositionActions('SENT', { canQueue: true }), {
-    canEdit: false, canApprove: false, canReject: false,
+    canEdit: false, canSave: false, canApprove: false, canReject: false,
   })
+})
+
+test('saving is offered only for wording the server has not seen', () => {
+  const record = { draftText: 'agent wrote this' }
+  assert.equal(hasUnsavedEdit(record, 'agent wrote this'), false)
+  assert.equal(hasUnsavedEdit(record, 'a specialist rewrote it'), true)
+  assert.equal(hasUnsavedEdit(record, '   '), false)
+  // An edit already saved is the text on the record, so nothing is pending.
+  const saved = { draftText: 'agent wrote this', editedText: 'a specialist rewrote it' }
+  assert.equal(hasUnsavedEdit(saved, 'a specialist rewrote it'), false)
+  assert.equal(hasUnsavedEdit(saved, 'and again'), true)
 })
 
 test('the check summary keeps the failures that held the message back', () => {

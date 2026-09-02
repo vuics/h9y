@@ -21,9 +21,20 @@ export function compositionActions(status, { canQueue = false } = {}) {
   const pending = isPending(status)
   return {
     canEdit: pending && canQueue,
+    canSave: pending && canQueue,
     canApprove: pending && canQueue,
     canReject: pending && canQueue,
   }
+}
+
+/** Whether the box holds wording the server has not been told about yet.
+ *
+ * The editor keeps the text in the page, so leaving the screen used to throw
+ * a rewrite away. Saving is only worth offering when there is something to
+ * save, which is also what stops a save from recording an edit nobody made.
+ */
+export function hasUnsavedEdit(record, text) {
+  return Boolean(String(text ?? '').trim()) && text !== finalText(record)
 }
 
 /** Counts per check outcome, plus the failures that held the message back. */

@@ -9,7 +9,7 @@ import { DetailLayout } from '../components/DetailLayout'
 import { StatusBadge } from '../components/StatusBadge'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import {
-  approvalPayload, checkSummary, compositionActions, finalText, isPending,
+  approvalPayload, checkSummary, compositionActions, finalText, hasUnsavedEdit, isPending,
 } from '../lib/compositions'
 import { suggestRule } from '../lib/learnFromEdit'
 import {
@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { AlertTriangle, Check, CircleAlert, Clock } from '../components/icons'
+import { AlertTriangle, Check, CircleAlert, Clock, FileCheck } from '../components/icons'
 
 const formatDate = value => (value ? new Date(value).toLocaleString('ru-RU') : '—')
 const mutationMessage = error => error?.response?.data?.message || error?.message
@@ -68,6 +68,10 @@ export default function CompositionDetailPage() {
       procurementApi.approveComposition(compositionId, approvalPayload(query.data, text, note)),
     onSuccess: invalidate,
   })
+  const saveEdit = useMutation({
+    mutationFn: () => procurementApi.saveCompositionEdit(compositionId, text),
+    onSuccess: invalidate,
+  })
   const reject = useMutation({
     mutationFn: () => procurementApi.rejectComposition(compositionId, note),
     onSuccess: invalidate,
@@ -83,6 +87,7 @@ export default function CompositionDetailPage() {
   const pending = isPending(record.status)
   const failed = checkSummary(record.checks).blocking
   const original = finalText(record)
+  const unsaved = hasUnsavedEdit(record, text)
   const suggestion = suggestRule(record)
 
   return (
@@ -238,6 +243,10 @@ export default function CompositionDetailPage() {
               приняли, а доставкой занимается тот же рабочий процесс переговоров, что и всегда.
               Правки перепроверяются теми же правилами.
             </p>
+            <p className="pr-muted">
+              «Сохранить черновик» оставляет решение открытым: текст запоминается и проверяется,
+              но поставщику ничего не уходит и переговоры остаются на месте.
+            </p>
           </CardHeader>
           <CardContent>
             {!canQueueNegotiations && (
@@ -246,6 +255,24 @@ export default function CompositionDetailPage() {
                 <AlertTitle>Недостаточно прав</AlertTitle>
                 <AlertDescription>
                   Для подтверждения и отклонения сообщений нужно право NEGOTIATION_QUEUE.
+                </AlertDescription>
+              </Alert>
+            )}
+            {saveEdit.isError && (
+              <Alert variant="destructive">
+                <AlertTriangle />
+                <AlertTitle>Черновик не сохранён</AlertTitle>
+                <AlertDescription>{mutationMessage(saveEdit.error)}</AlertDescription>
+              </Alert>
+            )}
+            {saveEdit.isSuccess && !unsaved && (
+              <Alert>
+                <Check />
+                <AlertTitle>Черновик сохранён</AlertTitle>
+                <AlertDescription>
+                  {failed.length
+                    ? 'Текст сохранён, но проверки не пройдены — отправить его нельзя, пока замечания не сняты.'
+                    : 'Поставщику ничего не отправлено. Вернуться к решению можно позже.'}
                 </AlertDescription>
               </Alert>
             )}
@@ -277,6 +304,13 @@ export default function CompositionDetailPage() {
                 onPress={() => approve.mutate()}
               >
                 <Check size={15} />Подтвердить и отправить
+              </Button>
+              <Button
+                variant="outline"
+                isDisabled={!actions.canSave || saveEdit.isPending || !unsaved}
+                onPress={() => saveEdit.mutate()}
+              >
+                <FileCheck size={15} />Сохранить черновик
               </Button>
               <Button
                 variant="outline"

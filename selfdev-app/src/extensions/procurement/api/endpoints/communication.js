@@ -58,6 +58,11 @@ export const communicationEndpoints = {
       method: 'post',
       data: payload,
     })),
+  saveCompositionEdit: mutation((compositionId, editedText) =>
+    request(`/communication/compositions/${id(compositionId)}/edit`, {
+      method: 'post',
+      data: { editedText },
+    })),
   rejectComposition: mutation((compositionId, note) =>
     request(`/communication/compositions/${id(compositionId)}/reject`, {
       method: 'post',
