@@ -42,6 +42,10 @@ export const supplierEndpoints = {
     ))),
   updateSupplierProfile: mutation(async (supplierId, payload) =>
     adaptSupplier(await request(`/suppliers/${id(supplierId)}`, { method: 'patch', data: payload }))),
+  updateSupplierBusinessRole: mutation(async (supplierId, role, note) =>
+    adaptSupplier(await request(`/suppliers/${id(supplierId)}/business-role`, {
+      method: 'patch', data: { role, note: note || null },
+    }))),
   updateSupplierQualification: mutation(async (supplierId, qualificationStatus) =>
     adaptSupplier(await request(`/suppliers/${id(supplierId)}/qualification`, {
       method: 'patch', data: { qualification_status: qualificationStatus },

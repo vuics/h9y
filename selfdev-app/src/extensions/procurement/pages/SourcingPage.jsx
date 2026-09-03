@@ -7,6 +7,7 @@ import { procurementKeys } from '../api/queryKeys'
 import { DetailLayout } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge, statusLabel } from '../components/StatusBadge'
+import { businessRoleLabel, businessRoleSourceLabels } from '../components/BusinessRole'
 import { ContactScanProgress, SourcingProgress } from '../components/SourcingProgress'
 import { SourcingSourceTable } from '../components/SourcingSourceTable'
 import { QueryPlanPanel } from '../components/QueryPlanPanel'
@@ -120,7 +121,18 @@ const decisionLine = item => <>
 </>
 
 function KnownSupplierNote({ known, requestedCas, compact }) {
-  if (!known?.decisions?.length) return null
+  if (!known?.supplierId) return null
+  // A company already in the directory but with no verdict on any substance
+  // still carries a marking on its card. Showing it keeps the reviewer from
+  // re-deciding what a colleague has already decided — while the wording says
+  // plainly that this is the company-level answer, not one about this CAS.
+  if (!known.decisions?.length) {
+    if (!known.businessRole || known.businessRole === 'UNKNOWN') return null
+    const summary = `Уже в справочнике, отмечен как: ${businessRoleLabel(known.businessRole).toLowerCase()}`
+    return compact
+      ? <small className="pr-known-supplier pr-known-supplier--compact">{summary}</small>
+      : <div className="pr-known-supplier"><strong>Уже в справочнике</strong><p>{summary} — {businessRoleSourceLabels[known.businessRoleSource] || 'без основания'}. По этому веществу решения ещё нет.</p><Link to={`/procurement/suppliers/${known.supplierId}`}>Открыть карточку поставщика</Link></div>
+  }
   const byDate = [...known.decisions].sort((a, b) => new Date(b.decidedAt || 0) - new Date(a.decidedAt || 0))
   // The warning below is only true of a decision made on another substance.
   // Printing it over a decision about this very CAS would state something the

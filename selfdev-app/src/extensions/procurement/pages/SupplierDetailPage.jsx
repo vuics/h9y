@@ -7,6 +7,7 @@ import { procurementKeys } from '../api/queryKeys'
 import { DetailLayout, DefinitionGrid } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
+import { BusinessRoleBadge, businessRoleLabel, businessRoleSourceLabels } from '../components/BusinessRole'
 import { websiteCandidates, websiteDomainMismatch } from '../lib/supplierWeb'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
@@ -19,17 +20,41 @@ import { Textarea } from '@/components/ui/textarea'
 import { AlertTriangle, CircleAlert, ExternalLink, Flask, MessageSquare, Sliders } from '../components/icons'
 
 const qualificationStatuses = ['UNVERIFIED', 'UNDER_REVIEW', 'QUALIFIED', 'SUSPENDED', 'REJECTED']
+// `AUTO` is not a role: it hands the card back to the evidence, which is what
+// makes a wrong marking something a specialist can undo rather than only
+// overwrite with another guess.
+const businessRoleChoices = [
+  { value: 'AUTO', label: 'Определять по доказательствам' },
+  { value: 'MANUFACTURER', label: 'Производитель' },
+  { value: 'DISTRIBUTOR', label: 'Дистрибьютор' },
+  { value: 'BOTH', label: 'Производитель и дистрибьютор' },
+  { value: 'UNKNOWN', label: 'Под вопросом' },
+]
+
+function roleSignalLine(signal) {
+  const where = signal.source === 'SOURCING_REVIEW'
+    ? `проверка кандидата${signal.casNumber ? ` по CAS ${signal.casNumber}` : ''}`
+    : `профиль на ${signal.platform || 'площадке'} — со слов компании`
+  return `${businessRoleLabel(signal.role)}: ${where}${signal.detail ? ` (${signal.detail})` : ''}`
+}
 
 export default function SupplierDetailPage() {
   const { supplierId } = useParams()
   const queryClient = useQueryClient()
   const { canWriteSuppliers, canQualifySuppliers, canManageNegotiations } = useProcurementPermissions()
   const [qualification, setQualification] = useState('UNVERIFIED')
+  const [businessRole, setBusinessRole] = useState('AUTO')
+  const [businessRoleNote, setBusinessRoleNote] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [profile, setProfile] = useState({ name: '', website: '', country: '', description: '' })
   const query = useQuery({ queryKey: procurementKeys.supplier(supplierId), queryFn: ({ signal }) => procurementApi.supplier(supplierId, signal) })
   const supplier = query.data?.supplier
   useEffect(() => { if (supplier?.qualificationStatus) setQualification(supplier.qualificationStatus) }, [supplier?.qualificationStatus])
+  useEffect(() => {
+    if (!supplier) return
+    setBusinessRole(supplier.businessRoleIsManual ? supplier.businessRole : 'AUTO')
+    setBusinessRoleNote(supplier.businessRoleNote || '')
+  }, [supplier])
   useEffect(() => {
     if (!supplier || isEditing) return
     setProfile({ name: supplier.name || '', website: supplier.website || '', country: supplier.country || '', description: supplier.description || '' })
@@ -45,6 +70,13 @@ export default function SupplierDetailPage() {
       queryClient.setQueryData(procurementKeys.supplier(supplierId), current => ({ ...(current || {}), supplier: updated }))
       queryClient.invalidateQueries({ queryKey: [...procurementKeys.all, 'suppliers'] })
       setIsEditing(false)
+    },
+  })
+  const markRole = useMutation({
+    mutationFn: () => procurementApi.updateSupplierBusinessRole(supplierId, businessRole, businessRoleNote.trim()),
+    onSuccess: updated => {
+      queryClient.setQueryData(procurementKeys.supplier(supplierId), current => ({ ...(current || {}), supplier: updated }))
+      queryClient.invalidateQueries({ queryKey: [...procurementKeys.all, 'suppliers'] })
     },
   })
   const qualify = useMutation({
@@ -88,14 +120,28 @@ export default function SupplierDetailPage() {
       </CardContent></Card>
       : null
 
-  return <DetailLayout backTo="/procurement/suppliers" backLabel="Все поставщики" eyebrow={supplier.id} title={supplier.name} status={<StatusBadge status={supplier.qualificationStatus} />} meta={supplier.country || 'Страна не указана'} actions={actions} warnings={<>{siteCandidates.length > 0 && canWriteSuppliers && !isEditing && <Alert><CircleAlert /><AlertTitle>Сайт не заполнен</AlertTitle><AlertDescription><p>Домен из адреса контакта — это догадка, а не факт: поставщик может писать с бесплатной почты или с домена другой компании. Откройте и сверьте, что на сайте та же компания, затем подставьте.</p><div className="pr-domain-candidates">{siteCandidates.map(domain => <span key={domain}><a href={`https://${domain}/`} target="_blank" rel="noreferrer"><ExternalLink size={13} />{domain}</a><Button variant="outline" size="sm" onPress={() => useCandidate(domain)}>Подставить</Button></span>)}</div></AlertDescription></Alert>}{foreignDomains.length > 0 && <Alert><AlertTriangle /><AlertTitle>Контакт пишет с чужого домена</AlertTitle><AlertDescription>{foreignDomains.map(item => <p key={item.address}>{item.name ? `${item.name} — ` : ''}<strong>{item.address}</strong>: домен {item.domain} не совпадает с сайтом на карточке. Это может быть второй домен той же компании, а может быть другой контрагент — стоит уточнить у поставщика, прежде чем считать предложение его предложением.</p>)}</AlertDescription></Alert>}{qualify.isError && <Alert><AlertTriangle /><AlertTitle>Квалификация не изменена</AlertTitle><AlertDescription>{qualify.error?.response?.data?.message || qualify.error?.message}</AlertDescription></Alert>}{saveProfile.isError && <Alert><AlertTriangle /><AlertTitle>Карточка не сохранена</AlertTitle><AlertDescription>{saveProfile.error?.response?.data?.message || saveProfile.error?.message}</AlertDescription></Alert>}</>}>
+  return <DetailLayout backTo="/procurement/suppliers" backLabel="Все поставщики" eyebrow={supplier.id} title={supplier.name} status={<><BusinessRoleBadge role={supplier.businessRole} source={supplier.businessRoleSource} conflict={supplier.businessRoleConflict} compact /><StatusBadge status={supplier.qualificationStatus} /></>} meta={supplier.country || 'Страна не указана'} actions={actions} warnings={<>{siteCandidates.length > 0 && canWriteSuppliers && !isEditing && <Alert><CircleAlert /><AlertTitle>Сайт не заполнен</AlertTitle><AlertDescription><p>Домен из адреса контакта — это догадка, а не факт: поставщик может писать с бесплатной почты или с домена другой компании. Откройте и сверьте, что на сайте та же компания, затем подставьте.</p><div className="pr-domain-candidates">{siteCandidates.map(domain => <span key={domain}><a href={`https://${domain}/`} target="_blank" rel="noreferrer"><ExternalLink size={13} />{domain}</a><Button variant="outline" size="sm" onPress={() => useCandidate(domain)}>Подставить</Button></span>)}</div></AlertDescription></Alert>}{foreignDomains.length > 0 && <Alert><AlertTriangle /><AlertTitle>Контакт пишет с чужого домена</AlertTitle><AlertDescription>{foreignDomains.map(item => <p key={item.address}>{item.name ? `${item.name} — ` : ''}<strong>{item.address}</strong>: домен {item.domain} не совпадает с сайтом на карточке. Это может быть второй домен той же компании, а может быть другой контрагент — стоит уточнить у поставщика, прежде чем считать предложение его предложением.</p>)}</AlertDescription></Alert>}{markRole.isError && <Alert><AlertTriangle /><AlertTitle>Тип компании не изменён</AlertTitle><AlertDescription>{markRole.error?.response?.data?.message || markRole.error?.message}</AlertDescription></Alert>}{qualify.isError && <Alert><AlertTriangle /><AlertTitle>Квалификация не изменена</AlertTitle><AlertDescription>{qualify.error?.response?.data?.message || qualify.error?.message}</AlertDescription></Alert>}{saveProfile.isError && <Alert><AlertTriangle /><AlertTitle>Карточка не сохранена</AlertTitle><AlertDescription>{saveProfile.error?.response?.data?.message || saveProfile.error?.message}</AlertDescription></Alert>}</>}>
     {profileCard}
-    <div className="pr-detail-grid"><Card><CardHeader><CardTitle>Квалификация</CardTitle></CardHeader><CardContent>
+    <div className="pr-detail-grid"><Card><CardHeader><CardTitle>Тип компании</CardTitle></CardHeader><CardContent>
+      <DefinitionGrid items={[{ label: 'Кто это', value: <BusinessRoleBadge role={supplier.businessRole} source={supplier.businessRoleSource} conflict={supplier.businessRoleConflict} /> }, { label: 'Основание', value: businessRoleSourceLabels[supplier.businessRoleSource] || '—' }]} />
+      {supplier.businessRoleNote && <p className="pr-supplier-description">{supplier.businessRoleNote}</p>}
+      {supplier.businessRoleSignals?.length > 0
+        ? <ul className="pr-role-signals">{supplier.businessRoleSignals.map((signal, index) => <li key={`${signal.source}-${index}`}>{roleSignalLine(signal)}</li>)}</ul>
+        : <p className="pr-note">Ни проверка кандидата, ни профиль на площадке пока не говорят, производит компания или перепродаёт.</p>}
+      {supplier.businessRoleConflict && <Alert><AlertTriangle /><AlertTitle>Доказательства расходятся</AlertTitle><AlertDescription>Проверка кандидата и профиль на площадке говорят разное. Обычно так выглядит трейдер, назвавший себя производителем, — стоит решить вручную и записать почему.</AlertDescription></Alert>}
+      {canWriteSuppliers && <div className="pr-qualification-control pr-role-control">
+        <Select selectedKey={businessRole} onSelectionChange={setBusinessRole}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{businessRoleChoices.map(choice => <SelectItem id={choice.value} key={choice.value}>{choice.label}</SelectItem>)}</SelectContent></Select>
+        <Input value={businessRoleNote} onChange={event => setBusinessRoleNote(event.target.value)} placeholder="На чём основано решение" maxLength={500} isDisabled={businessRole === 'AUTO'} />
+        <Button isDisabled={markRole.isPending || (businessRole === (supplier.businessRoleIsManual ? supplier.businessRole : 'AUTO') && businessRoleNote.trim() === (supplier.businessRoleNote || ''))} onPress={() => markRole.mutate()}>{markRole.isPending ? 'Сохранение…' : 'Сохранить тип'}</Button>
+      </div>}
+      <p className="pr-note">Отметка вручную перевешивает автоматические признаки и сохраняется для будущих прогонов: сорсинг оценит эту же компанию на следующей карточке, и решение не придётся принимать заново. Роль по конкретному веществу остаётся в capabilities — здесь итог по компании целиком.</p>
+    </CardContent></Card>
+      <Card><CardHeader><CardTitle>Квалификация</CardTitle></CardHeader><CardContent>
       <DefinitionGrid items={[{ label: 'Текущий статус', value: <StatusBadge status={supplier.qualificationStatus} /> }, { label: 'Последнее изменение', value: supplier.qualificationUpdatedAt ? new Date(supplier.qualificationUpdatedAt).toLocaleString('ru-RU') : '—' }]} />
       {canQualifySuppliers && <div className="pr-qualification-control"><Select selectedKey={qualification} onSelectionChange={setQualification}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{qualificationStatuses.map(value => <SelectItem id={value} key={value}>{value}</SelectItem>)}</SelectContent></Select><Button isDisabled={qualification === supplier.qualificationStatus || qualify.isPending} onPress={() => qualify.mutate()}>{qualify.isPending ? 'Сохранение…' : 'Изменить статус'}</Button></div>}
       {!canQualifySuppliers && <p className="pr-note">Изменение статуса доступно пользователям с разрешением SUPPLIER_QUALIFY.</p>}
     </CardContent></Card>
-      <Card><CardHeader><CardTitle>Источники записи</CardTitle></CardHeader><CardContent className="pr-source-profiles">{supplier.sourceProfiles?.length ? supplier.sourceProfiles.map((profile, index) => <div key={`${profile.source}-${profile.identity}-${index}`}><div><strong>{profile.source}</strong><span>{profile.identity || 'Идентификатор не указан'}</span></div><StatusBadge status={profile.profileStatus} compact /></div>) : <EmptyState title="Источники не указаны" />}</CardContent></Card></div>
+      <Card className="pr-detail-grid__wide"><CardHeader><CardTitle>Источники записи</CardTitle></CardHeader><CardContent className="pr-source-profiles">{supplier.sourceProfiles?.length ? supplier.sourceProfiles.map((profile, index) => <div key={`${profile.source}-${profile.identity}-${index}`}><div><strong>{profile.source}</strong><span>{profile.identity || 'Идентификатор не указан'}</span></div><StatusBadge status={profile.profileStatus} compact /></div>) : <EmptyState title="Источники не указаны" />}</CardContent></Card></div>
 
     <div className="pr-detail-grid"><Card><CardHeader><CardTitle>Контакты</CardTitle></CardHeader><CardContent className="pr-contact-list">{supplier.contacts.length ? supplier.contacts.map(contact => <div key={contact.id}><div><strong>{contact.name || 'Контакт без имени'}</strong><span>{contact.role || contact.channel} · {contact.channel}{contact.formAdapterId ? ` · адаптер ${contact.formAdapterId}` : ''}</span><span>{contact.address || 'Адрес скрыт правами доступа'}</span></div><div><StatusBadge status={contact.active ? contact.verificationStatus : 'SUSPENDED'} compact />{canWriteSuppliers && <RouterLinkButton size="xs" variant="outline" to={`/procurement/suppliers/${supplier.id}/contacts/${contact.id}/edit`}>Изменить</RouterLinkButton>}</div></div>) : <EmptyState title="Контактов нет" />}</CardContent></Card>
       <Card><CardHeader><CardTitle>Предлагаемые вещества</CardTitle></CardHeader><CardContent className="pr-capabilities">{supplier.capabilities.length ? supplier.capabilities.map(item => <div key={`${item.casNumber}-${item.source}-${item.sourceProductId || ''}`}><div><strong>{item.productName || `CAS ${item.casNumber}`}</strong><span>CAS {item.casNumber}</span></div><StatusBadge status={item.verificationStatus} />{item.sourceUrl && <a href={item.sourceUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} />Источник</a>}<small>{item.source}{item.sourceProductId ? ` · ${item.sourceProductId}` : ''}</small></div>) : <EmptyState title="Capabilities не добавлены" />}</CardContent></Card></div>

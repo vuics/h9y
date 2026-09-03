@@ -122,6 +122,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/suppliers' },
   { method: 'GET', path: '/suppliers/{supplier_id}' },
   { method: 'PATCH', path: '/suppliers/{supplier_id}' },
+  { method: 'PATCH', path: '/suppliers/{supplier_id}/business-role' },
   { method: 'POST', path: '/suppliers/{supplier_id}/capabilities' },
   { method: 'POST', path: '/suppliers/{supplier_id}/contacts' },
   { method: 'PATCH', path: '/suppliers/{supplier_id}/contacts/{contact_id}' },

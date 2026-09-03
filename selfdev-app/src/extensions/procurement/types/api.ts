@@ -205,12 +205,33 @@ export interface SupplierDto {
   name: string
   country?: string
   qualificationStatus: string
+  /** What the company does with the goods — a separate question from how far
+   * it is trusted, which is what `qualificationStatus` answers. */
+  businessRole: 'MANUFACTURER' | 'DISTRIBUTOR' | 'BOTH' | 'UNKNOWN'
+  businessRoleSource: 'MANUAL' | 'SOURCING_REVIEW' | 'PLATFORM_PROFILE' | 'NONE'
+  businessRoleIsManual?: boolean
+  businessRoleNote?: string | null
+  businessRoleDecidedAt?: string | null
+  businessRoleConflict?: boolean
+  businessRoleSignals?: SupplierBusinessRoleSignalDto[]
+  website?: string
   qualificationUpdatedAt?: string
   qualificationHistory?: SupplierQualificationChangeDto[]
   sourceProfiles?: SupplierSourceProfileDto[]
   contacts: SupplierContactDto[]
   capabilities: SupplierCapabilityDto[]
   updatedAt?: string
+}
+
+export interface SupplierBusinessRoleSignalDto {
+  role: 'MANUFACTURER' | 'DISTRIBUTOR' | 'BOTH'
+  source: 'SOURCING_REVIEW' | 'PLATFORM_PROFILE'
+  detail?: string
+  casNumber?: string
+  productName?: string
+  platform?: string
+  selfDeclared?: boolean
+  observedAt?: string
 }
 
 export interface SupplierQualificationChangeDto {

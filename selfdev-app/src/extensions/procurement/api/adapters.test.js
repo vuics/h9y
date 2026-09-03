@@ -52,6 +52,26 @@ test('supplier adapter preserves contacts, capabilities and qualification audit 
   assert.equal(supplier.sourceProfiles[0].profileStatus, 'UNVERIFIED')
 })
 
+test('a supplier with no role signals reads as unresolved rather than blank', () => {
+  const plain = adaptSupplier({ _id: 'SUP-1', canonical_name: 'Supplier' })
+  assert.equal(plain.businessRole, 'UNKNOWN')
+  assert.equal(plain.businessRoleSource, 'NONE')
+  assert.equal(plain.businessRoleIsManual, false)
+  assert.deepEqual(plain.businessRoleSignals, [])
+
+  const marked = adaptSupplier({
+    _id: 'SUP-2', canonical_name: 'Supplier', businessRole: 'DISTRIBUTOR',
+    businessRoleSource: 'MANUAL', businessRoleIsManual: true, businessRoleNote: 'перепродаёт',
+    businessRoleConflict: true,
+    businessRoleSignals: [{ role: 'MANUFACTURER', source: 'PLATFORM_PROFILE', self_declared: true, cas_number: '71-43-2' }],
+  })
+  assert.equal(marked.businessRole, 'DISTRIBUTOR')
+  assert.equal(marked.businessRoleNote, 'перепродаёт')
+  assert.equal(marked.businessRoleConflict, true)
+  assert.equal(marked.businessRoleSignals[0].selfDeclared, true)
+  assert.equal(marked.businessRoleSignals[0].casNumber, '71-43-2')
+})
+
 test('page adapter and detail states expose empty and error views', () => {
   assert.deepEqual(adaptPage({ items: [], page: 2, page_size: 25 }), { items: [], page: 2, pageSize: 25, total: undefined, hasMore: false })
   assert.equal(detailViewState({ loading: true }), 'loading')
