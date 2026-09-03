@@ -410,6 +410,13 @@
 .pr-echemi-directory ul { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .pr-echemi-directory li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--pr-border); border-radius: 7px; padding: 7px 11px; }
 .pr-echemi-directory li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* One line per Echemi inquiry we have collected offers from: what the platform
+   publishes against what we filed, so a gap between them is visible. */
+.pr-echemi-quotations { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pr-echemi-quotations li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; border: 1px solid var(--pr-border); border-radius: 7px; padding: 7px 11px; }
+.pr-echemi-quotations li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pr-echemi-quotations li > small { color: var(--pr-muted); white-space: nowrap; }
 .pr-echemi-directory a { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .pr-echemi-directory small { color: var(--pr-muted); white-space: nowrap; }
 

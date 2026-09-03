@@ -18,6 +18,10 @@ export const echemiEndpoints = {
     request(`/cards/${id(cardId)}/echemi/inquiries/${id(inquiryId)}/approve`, { method: 'post' })),
   submitEchemiInquiry: mutation((cardId, inquiryId) =>
     request(`/cards/${id(cardId)}/echemi/inquiries/${id(inquiryId)}/submit`, { method: 'post' })),
+  // Reading offers the marketplace already holds. Slow by nature: every
+  // collected offer goes through the same extraction as a supplier's email.
+  collectEchemiQuotations: mutation((cardId, force = false) =>
+    request(`/cards/${id(cardId)}/echemi/quotations/collect${force ? '?force=true' : ''}`, { method: 'post' })),
 }
 
 export const sourcingEndpoints = {

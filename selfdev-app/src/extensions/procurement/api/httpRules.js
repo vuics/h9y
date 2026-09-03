@@ -11,6 +11,11 @@
 export const TIMEOUTS = [
   { ms: 180000, matches: path => path.includes('/responses') || path.includes('/sourcing') },
   { ms: 120000, matches: path => path.startsWith('/card-imports') || path.startsWith('/communication/imports') },
+  // Collecting marketplace offers runs every one of them through the same
+  // extraction model a supplier's email goes through, so it is minutes rather
+  // than the seconds a browser action takes. Ahead of the general Echemi rule,
+  // which would abandon a request the server is still working on.
+  { ms: 900000, matches: path => path.includes('/echemi/quotations/collect') },
   { ms: 90000, matches: path => path.includes('/echemi') || path.includes('/web-form/') },
   // A rehearsal waits on the same model the rest of the contour uses, and the
   // gateway allows it 180s: giving the browser less would abandon a request the

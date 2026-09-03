@@ -13,6 +13,12 @@ test('slow backend operations keep their long timeouts', () => {
   assert.equal(timeoutFor('/negotiations/NEG-1/web-form/preview'), 90000)
 })
 
+test('collecting marketplace offers is allowed far longer than an Echemi action', () => {
+  // Every collected offer goes through the extraction model, so the general
+  // Echemi timeout would abandon a request the server is still honouring.
+  assert.equal(timeoutFor('/cards/1/echemi/quotations/collect'), 900000)
+})
+
 test('ordinary reads use the short default timeout', () => {
   assert.equal(timeoutFor('/cards'), DEFAULT_TIMEOUT_MS)
   assert.equal(timeoutFor('/suppliers/SUP-1'), DEFAULT_TIMEOUT_MS)

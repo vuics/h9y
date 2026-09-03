@@ -130,6 +130,16 @@ test('every slow endpoint family has its own timeout rule', () => {
   assert.equal(timeoutFor('/negotiations/NEG-1/responses'), conf.procurement.responseTimeoutMs)
   assert.equal(timeoutFor('/card-imports'), conf.procurement.importTimeoutMs)
   assert.equal(timeoutFor('/negotiations/NEG-1/web-form/preview'), conf.procurement.echemiTimeoutMs)
+  // Collection runs each offer through the extraction model, so it needs its
+  // own budget and must win over the general Echemi rule it sits inside.
+  assert.equal(
+    timeoutFor('/cards/1/echemi/quotations/collect'),
+    conf.procurement.echemiQuoteCollectionTimeoutMs,
+  )
+  assert.notEqual(
+    conf.procurement.echemiQuoteCollectionTimeoutMs,
+    conf.procurement.echemiTimeoutMs,
+  )
   assert.equal(timeoutFor('/cards'), conf.procurement.timeoutMs)
 })
 

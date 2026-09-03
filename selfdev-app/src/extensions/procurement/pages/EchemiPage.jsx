@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertTriangle, Building, Check, ExternalLink, FileCheck, Search } from '../components/icons'
+import { AlertTriangle, Building, Check, ExternalLink, FileCheck, Inbox, Search } from '../components/icons'
 import { SelectField } from '../components/SelectField'
 
 export default function EchemiPage() {
@@ -56,6 +56,16 @@ export default function EchemiPage() {
     }),
     onSuccess: accept,
   })
+  const collectQuotations = useMutation({
+    mutationFn: () => procurementApi.collectEchemiQuotations(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: procurementKeys.echemi(requestId) })
+      // Collected offers are supplier responses like any other, so the card's
+      // own comparison is what actually changed.
+      queryClient.invalidateQueries({ queryKey: procurementKeys.card(requestId) })
+      queryClient.invalidateQueries({ queryKey: [...procurementKeys.all, 'responses'] })
+    },
+  })
   const lifecycle = useMutation({
     mutationFn: ({ action, inquiryId }) => ({
       preview: procurementApi.previewEchemiInquiry,
@@ -85,8 +95,9 @@ export default function EchemiPage() {
   if (!query.data) return <EmptyState title="Карточка не найдена" />
 
   const state = query.data
+  const quotations = state.quotations || {}
   const { searchReady, inquiryReady } = echemiReadiness(state.cardStatus, state.rfqStatus)
-  const pendingError = search.error || prepare.error || lifecycle.error || registerSeller.error
+  const pendingError = search.error || prepare.error || lifecycle.error || registerSeller.error || collectQuotations.error
   const quantityCheck = quantityMatchesCard(state.target, delivery.quantity, delivery.unit)
   // Refusing here costs a click; refusing on the server costs a round trip and
   // an error the specialist has to decode.
@@ -140,6 +151,31 @@ export default function EchemiPage() {
         </div>
         {!state.submissionEnabled && ['APPROVED', 'HUMAN_ACTION_REQUIRED'].includes(inquiry.status) && <p className="pr-note">Отправка заблокирована сервером. Для её включения задайте <code>ECHEMI_ENABLE_SUBMISSION=true</code> и перезапустите h9y-procurement.</p>}
       </CardContent></Card>)}</section>}
+
+      <Card><CardHeader><CardTitle>Предложения продавцов с Echemi</CardTitle></CardHeader><CardContent>
+        <p className="pr-note">Площадка показывает наш запрос всем продавцам, поэтому отвечают и те, кого не было в поиске. Сбор идёт по расписанию сам; кнопка нужна, когда ждать очередного прохода не хочется. Сами предложения читаются там же, где ответы из почты — в <Link to={`/procurement/requests/${requestId}`}>карточке</Link>, вместе со сравнением.</p>
+        <div className="pr-echemi-toolbar">
+          <DefinitionGrid items={[
+            { label: 'Последний сбор', value: quotations.lastCollectedAt ? new Date(quotations.lastCollectedAt).toLocaleString('ru-RU') : 'Не запускался' },
+            { label: 'Предложений на площадке', value: quotations.publishedCount ? String(quotations.publishedCount) : '—' },
+            { label: 'Заведено в систему', value: quotations.ingestedCount ? String(quotations.ingestedCount) : '—' },
+          ]} />
+          <Button variant="outline" isDisabled={!canOperateEchemi || collectQuotations.isPending} onPress={() => { setOperation(null); collectQuotations.mutate() }}>
+            <Inbox />{collectQuotations.isPending ? 'Собираем…' : 'Собрать предложения'}
+          </Button>
+        </div>
+        {collectQuotations.isPending && <p className="pr-note">Каждое предложение разбирается той же моделью, что и письмо поставщика, поэтому сбор занимает минуты.</p>}
+        {collectQuotations.data && <Alert><Check /><AlertTitle>Сбор завершён</AlertTitle><AlertDescription>
+          Заведено предложений: {collectQuotations.data.quotationsIngested}. Прочитано запросов: {collectQuotations.data.inquiriesRead}.
+          {collectQuotations.data.unmatched?.length > 0 && <div>Не удалось соотнести с карточками: {collectQuotations.data.unmatched.map(item => `${item.productName || item.inquiryId} (${item.casNumber || 'без CAS'})`).join(', ')}. Такие запросы отправлены не из системы или их карточка изменилась — предложения по ним не заводятся, чтобы чужая цена не попала в сравнение.</div>}
+          {collectQuotations.data.stalled?.length > 0 && <div>Заведено, но не разобрано: {collectQuotations.data.stalled.length}. Разбор такого предложения прервался, и в сравнение оно не попало — повторный сбор его не восстановит, нужна переобработка ответа.</div>}
+          {collectQuotations.data.failures?.length > 0 && <div>Не прочитано: {collectQuotations.data.failures.length}. Следующий проход повторит их.</div>}
+        </AlertDescription></Alert>}
+        {quotations.inquiries?.length > 0 && <ul className="pr-echemi-quotations">{quotations.inquiries.map(item => <li key={item.inquiryId}>
+          <span>{item.inquiryId}</span>
+          <small>{item.ingestedCount} из {item.publishedCount ?? '—'} · {item.collectedAt ? new Date(item.collectedAt).toLocaleString('ru-RU') : 'не собиралось'}</small>
+        </li>)}</ul>}
+      </CardContent></Card>
     </div>
   </DetailLayout>
 }

@@ -40,6 +40,9 @@ export const TIMEOUT_RULES = [
   { key: 'responseTimeoutMs', matches: path => path.endsWith('/responses') },
   { key: 'importTimeoutMs', matches: path => path.startsWith('/card-imports') },
   { key: 'sourcingTimeoutMs', matches: path => path.includes('/sourcing') },
+  // Ahead of the general Echemi rule: collection runs each offer through the
+  // extraction model, so it is minutes of honest work rather than a hung call.
+  { key: 'echemiQuoteCollectionTimeoutMs', matches: path => path.includes('/echemi/quotations/collect') },
   { key: 'echemiTimeoutMs', matches: path => path.includes('/echemi') || path.includes('/web-form/') },
   // A rehearsal waits on the same model the sourcing extraction waits on, so it
   // needs the same order of magnitude rather than the interactive default.
