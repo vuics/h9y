@@ -960,3 +960,14 @@
 .pr-review-rfq__approve { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 12px; cursor: pointer; }
 
 @media (max-width: 760px) { .pr-review-verdicts label { white-space: normal; } }
+
+/* Depth is one ordered choice, drawn like the reach ladder it sits next to. */
+.pr-depth-picker { border: 0; margin: 0 0 12px; padding: 0; }
+.pr-depth-picker legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 650; }
+.pr-depth-picker label { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 9px; align-items: start; border: 1px solid var(--pr-border); border-radius: 8px; background: var(--pr-card); padding: 8px 11px; cursor: pointer; }
+.pr-depth-picker label + label { margin-top: 6px; }
+.pr-depth-picker label.is-selected { border-color: var(--pr-accent); background: var(--pr-accent-soft); }
+.pr-depth-picker input { margin-top: 3px; }
+.pr-depth-picker strong { display: block; font-size: 12px; }
+.pr-depth-picker span { color: var(--pr-muted); font-size: 11px; }
+.pr-sourcing-cost-note { margin-top: 0; }

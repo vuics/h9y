@@ -5,8 +5,6 @@ import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import { EnginePicker } from './EnginePicker'
 import { QueryPlanPanel } from './QueryPlanPanel'
-import { SelectField } from './SelectField'
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 /** The settings a search runs with — the same ones for one card and for two hundred.
  *
@@ -22,28 +20,38 @@ import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/compone
  * these fields must not be.
  */
 
-const RESULT_LIMITS = ['1', '5', '10', '20', '50', '100', '200', '300']
+/** How deep each query goes, as a choice rather than a number.
+ *
+ * The setting used to be "Лимит результатов", a single number that meant two
+ * things at once: how many results each query asks each engine for, and how
+ * many sources the run will fetch and analyse in total. It was neither — 100
+ * did not mean a hundred of anything the reader could point at — and the
+ * caption under it did not rescue it.
+ *
+ * So depth is stated in the unit that is actually capped: results per query.
+ * Two to ten is the backend's own clamp, so every value here is one the run can
+ * really honour, and the analysis budget follows from it and the number of
+ * queries. Breadth is the query plan below; depth is this. Two levers, and each
+ * one means what it says.
+ */
+const DEPTHS = [
+  { id: 'FAST', perQuery: 2, label: 'Быстрый', detail: 'По 2 результата на запрос — хватает, чтобы увидеть, есть ли вообще кто-то.' },
+  { id: 'NORMAL', perQuery: 5, label: 'Обычный', detail: 'По 5 на запрос. Разумный выбор для кампании по длинному списку.' },
+  { id: 'MAX', perQuery: 10, label: 'Максимальный', detail: 'По 10 — это потолок, выше поисковые движки не отдают.' },
+]
 
-// Measured on this installation's own completed runs: 29-56 seconds per source,
-// which is one HTTP read plus one extraction-model call. Deliberately stated
-// rather than hidden — the limit is a wall-clock budget expressed in sources,
-// and an operator choosing the widest setting for two hundred substances is
-// choosing days rather than hours. A rough constant beats no number at all;
-// an installation on a hosted model will be faster than this says.
-const SECONDS_PER_SOURCE = 40
+const DEFAULT_DEPTH = 'NORMAL'
 
-// Mirrors the backend's own default (`PROCUREMENT_CAMPAIGN_CONCURRENCY`): two
-// substances are searched at once, so the campaign's wall-clock is the total
-// work halved. Wrong only if a deployment has retuned it, and wrong in the
-// direction that under-promises.
-const CAMPAIGN_CONCURRENCY = 2
+const depthOf = id => DEPTHS.find(item => item.id === id) || DEPTHS[1]
 
-const duration = seconds => {
-  const hours = seconds / 3600
-  if (hours < 1) return `${Math.max(1, Math.round(seconds / 60))} мин`
-  if (hours < 48) return `${Math.round(hours)} ч`
-  return `${Math.round(hours / 24)} сут`
-}
+/** The analysis budget one substance gets: depth spread over the queries.
+ *
+ * Mirrors the backend, which shares the number back out over the query plan and
+ * clamps the result — so sending the product of the two is what makes the
+ * chosen depth the depth actually used.
+ */
+export const sourcesPerSubstance = (depth, queryCount, ceiling = 300) =>
+  Math.max(1, Math.min(ceiling, depthOf(depth).perQuery * Math.max(1, queryCount)))
 
 const plural = (count, one, few, many) => {
   const mod10 = count % 10
@@ -53,12 +61,18 @@ const plural = (count, one, few, many) => {
   return many
 }
 
-// Mirrors the backend: the chosen number is a budget shared out over the
-// queries, then clamped, so the same choice means different things depending on
-// how many queries a run uses. Stating the result stops "10" reading as a
-// promise of ten sources when it produces about eighty.
-export const perQueryResults = (maxResults, queryCount) =>
-  Math.max(2, Math.min(10, Math.ceil(maxResults / queryCount)))
+const duration = seconds => {
+  const minutes = seconds / 60
+  if (minutes < 90) return `${Math.max(1, Math.round(minutes))} мин`
+  const hours = minutes / 60
+  return hours < 48 ? `${Math.round(hours)} ч` : `${Math.round(hours / 24)} сут`
+}
+
+// Mirrors the backend's own default (`PROCUREMENT_CAMPAIGN_CONCURRENCY`): two
+// substances are searched at once, so a campaign's wall-clock is the total work
+// halved. Wrong only if a deployment has retuned it, and wrong in the direction
+// that under-promises.
+const CAMPAIGN_CONCURRENCY = 2
 
 /** Everything the settings need from the server, fetched once per screen. */
 export function useSourcingSettings() {
@@ -82,6 +96,8 @@ export function useSourcingSettings() {
     templates,
     engineList,
     availableEngineIds,
+    secondsPerSource: engines.data?.analysisSecondsPerSource ?? null,
+    maxAnalysedSources: engines.data?.maxAnalysedSources ?? 300,
     defaultQueryIds: templates.filter(item => item.enabled).map(item => item.id),
     isDefault: queryTemplates.data?.isDefault,
     defaultTemplates: queryTemplates.data?.defaultTemplates || [],
@@ -119,30 +135,36 @@ export function SourcingSettings({
         Открывать каталог и страницу «О компании» у тех, кто заявил производство: каталог на тысячи веществ и описание вида «поставщик аналитических стандартов» видны только там. Читается правилами, без обращения к модели.
       </span>
     </label>
-    <div className="pr-sourcing-launch__controls">
-      <SelectField
-        label="Лимит результатов"
-        selectedKey={String(value.maxResults)}
-        onSelectionChange={selected => patch({ maxResults: String(selected) })}
-        isDisabled={disabled}
-      >
-        <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectContent>{RESULT_LIMITS.map(limit => <SelectItem key={limit} id={limit}>{limit}</SelectItem>)}</SelectContent>
-      </SelectField>
-    </div>
-    {queryIds.length > 0 && (() => {
-      const per = perQueryResults(Number(value.maxResults), queryIds.length)
-      return <p className="pr-note pr-sourcing-limit-note">
-        До {per} {plural(per, 'результата', 'результатов', 'результатов')}{queryIds.length === 1 ? ' для единственного запроса' : ` на каждый из ${queryIds.length} ${plural(queryIds.length, 'запроса', 'запросов', 'запросов')}`} — по каждому выбранному движку. Охват растёт от числа запросов, а не от этого лимита.
-      </p>
-    })()}
-    {substanceCount > 1 && (() => {
-      const perSubstance = Number(value.maxResults)
-      const total = perSubstance * substanceCount
-      return <p className="pr-note pr-sourcing-cost-note">
-        До {perSubstance} источников на вещество, около {total.toLocaleString('ru-RU')} на всю кампанию — столько же обращений к модели. Ориентировочно {duration(total * SECONDS_PER_SOURCE / Math.max(1, CAMPAIGN_CONCURRENCY))} при текущей скорости разбора. Ширину сильнее добавляют запросы и движки ниже, чем это число.
-      </p>
-    })()}
+    <fieldset className="pr-depth-picker">
+      <legend>Глубина поиска</legend>
+      {DEPTHS.map(depth => <label key={depth.id} className={value.depth === depth.id ? 'is-selected' : undefined}>
+        <input
+          type="radio"
+          name="sourcing-depth"
+          aria-label={`Глубина: ${depth.label}`}
+          checked={value.depth === depth.id}
+          disabled={disabled}
+          onChange={() => patch({ depth: depth.id })}
+        />
+        <span><strong>{depth.label}</strong>{depth.detail}</span>
+      </label>)}
+    </fieldset>
+    <p className="pr-note pr-sourcing-cost-note">
+      {(() => {
+        const perSubstance = sourcesPerSubstance(value.depth, queryIds.length, settings.maxAnalysedSources)
+        const count = Math.max(1, substanceCount || 1)
+        const total = perSubstance * count
+        const rate = settings.secondsPerSource
+        return <>
+          {queryIds.length} {plural(queryIds.length, 'запрос', 'запроса', 'запросов')} × {depthOf(value.depth).perQuery} = до {perSubstance} {plural(perSubstance, 'источника', 'источников', 'источников')} на вещество
+          {count > 1 && <>, около {total.toLocaleString('ru-RU')} на всю кампанию</>}.
+          {' '}Каждый источник — одно скачивание страницы и одно обращение к модели.
+          {rate
+            ? <> Ориентировочно {duration(total * rate / (count > 1 ? CAMPAIGN_CONCURRENCY : 1))} по скорости последних прогонов этой установки.</>
+            : <> Времени пока не по чему оценить — эта установка ещё не завершила ни одного поиска.</>}
+        </>
+      })()}
+    </p>
     <EnginePicker
       engines={engineList}
       selectedIds={engineIds}
@@ -192,7 +214,10 @@ export const canLaunch = (settings, value) =>
  * attention. The backend's own campaign default matches this number.
  */
 export const defaultSourcingValue = ({ campaign = false } = {}) => ({
-  maxResults: campaign ? '100' : '10',
+  // A campaign goes deeper by default: it is launched once and left, so it
+  // trades depth against wall-clock rather than against the operator's
+  // attention. A single card is usually a look, and a look should be quick.
+  depth: campaign ? DEFAULT_DEPTH : 'FAST',
   siteProbe: true,
   engineIds: null,
   queryIds: null,

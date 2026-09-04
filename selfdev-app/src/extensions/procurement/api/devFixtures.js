@@ -51,6 +51,10 @@ export const sourcingEngines = {
     { id: 'ddgs', label: 'DuckDuckGo (ddgs)', kind: 'WEB_SEARCH', available: true, detail: 'Не требует ключа API.' },
     { id: 'openserp', label: 'OpenSERP', kind: 'WEB_SEARCH', available: false, detail: 'Не задан OPENSERP_BASE_URL.' },
   ],
+  // Measured on the installation's own finished runs; the fixture states a
+  // plausible one so the cost note has something to render.
+  analysisSecondsPerSource: 12,
+  maxAnalysedSources: 300,
   configuredBy: 'SOURCING_SEARCH_ENGINES',
   scopeNote: 'Which engines exist is a deployment decision; which of them a run uses is chosen per run.',
 }

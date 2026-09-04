@@ -8,6 +8,7 @@ import {
   canLaunch,
   defaultSourcingValue,
   plural,
+  sourcesPerSubstance,
   useSourcingSettings,
 } from './SourcingSettings'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -82,7 +83,13 @@ export function CampaignLaunchPanel({
       channels,
       approveRfq,
       draftFirst,
-      maxResults: Number(sourcing.maxResults),
+      // Depth is chosen as results-per-query; the API takes the analysis
+      // budget, which is that spread back over the queries it will issue.
+      maxResults: sourcesPerSubstance(
+        sourcing.depth,
+        (sourcing.queryIds ?? settings.defaultQueryIds).length,
+        settings.maxAnalysedSources,
+      ),
       siteProbe: sourcing.siteProbe,
       ...(sourcing.queryIds ?? settings.defaultQueryIds).length
         ? { queryTemplateIds: sourcing.queryIds ?? settings.defaultQueryIds }
