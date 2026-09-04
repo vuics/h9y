@@ -9,6 +9,7 @@ import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { DataTable } from '../components/DataTable'
 import { StatusBadge } from '../components/StatusBadge'
 import { CopyableId } from '../components/CopyableId'
+import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from '../components/SourcingSettings'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -135,7 +136,10 @@ export default function CampaignPage() {
           <div><dt>Ждут решения</dt><dd>{progress.awaitingReview}</dd></div>
           <div><dt>С ошибкой</dt><dd>{progress.failed}</dd></div>
         </dl>
-        {progress.awaitingReview > 0 && <p className="pr-note">Кандидат становится поставщиком только после явного подтверждения специалиста — кампания не присваивает этот статус сама. Откройте вещество, чтобы подтвердить найденных производителей.</p>}
+        {progress.awaitingReview > 0 && <>
+          <p className="pr-note">Кандидат становится поставщиком только после явного подтверждения специалиста — кампания не присваивает этот статус сама. Согласование собрано на одном экране: кому пишем и что спрашиваем, по всем веществам сразу.</p>
+          <div className="pr-inline-actions"><RouterLinkButton to={`/procurement/campaigns/${campaignId}/review`}>Согласовать {progress.awaitingReview} {plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')}</RouterLinkButton></div>
+        </>}
       </CardContent></Card>
 
       <DataTable

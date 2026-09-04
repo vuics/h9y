@@ -936,3 +936,27 @@
 .pr-plain-list { margin: 0; padding-left: 16px; }
 
 @media (max-width: 760px) { .pr-selection-bar { flex-direction: column; align-items: stretch; } }
+
+/* ------------------------------------------------- campaign batch approval */
+
+.pr-review-block [data-slot="card-header"] { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pr-review-block [data-slot="card-header"] p { margin: 4px 0 0; color: var(--pr-muted); font-size: 11px; }
+.pr-review-candidates td { vertical-align: top; }
+.pr-review-candidates strong { display: block; }
+/* Two or three lines of why the score is what it is. A row showing only a
+   number would ask the specialist to trust it, which is the opposite of what
+   the rating is for. */
+.pr-review-signals { margin: 5px 0 0; padding-left: 15px; color: var(--pr-accent); font-size: 11px; }
+.pr-review-signals--risk { color: var(--pr-danger); }
+.pr-review-verdicts { display: flex; flex-direction: column; gap: 3px; }
+.pr-review-verdicts label { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; white-space: nowrap; cursor: pointer; }
+
+.pr-review-rfq { margin-top: 14px; border-top: 1px solid var(--pr-border); padding-top: 12px; }
+.pr-review-rfq header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 12px; }
+.pr-review-rfq header span { color: var(--pr-muted); font-size: 11px; }
+.pr-review-rfq__subject { margin: 6px 0 0; font-size: 12px; }
+.pr-review-rfq__toggle { float: right; border: 0; background: none; padding: 0; color: var(--pr-progress); font: inherit; font-size: 11px; text-decoration: underline; cursor: pointer; }
+.pr-review-rfq__body { max-height: 320px; overflow: auto; margin: 8px 0 0; border: 1px solid var(--pr-border); border-radius: 7px; background: var(--pr-surface-muted); padding: 10px; font-size: 11px; white-space: pre-wrap; }
+.pr-review-rfq__approve { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 12px; cursor: pointer; }
+
+@media (max-width: 760px) { .pr-review-verdicts label { white-space: normal; } }

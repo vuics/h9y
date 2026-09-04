@@ -50,6 +50,7 @@ const REACH_STEPS = [
 
 const CHANNELS = [
   ['EMAIL', 'Email'],
+  ['WHATSAPP', 'WhatsApp'],
   ['ECHEMI', 'Echemi'],
   ['WEB_FORM', 'Формы на сайтах'],
 ]
@@ -67,9 +68,9 @@ export function CampaignLaunchPanel({
 }) {
   const navigate = useNavigate()
   const settings = useSourcingSettings()
-  const [sourcing, setSourcing] = useState(defaultSourcingValue)
+  const [sourcing, setSourcing] = useState(() => defaultSourcingValue({ campaign: true }))
   const [reach, setReach] = useState('OUTREACH')
-  const [channels, setChannels] = useState(['EMAIL', 'ECHEMI', 'WEB_FORM'])
+  const [channels, setChannels] = useState(['EMAIL', 'WHATSAPP', 'ECHEMI', 'WEB_FORM'])
   const [approveRfq, setApproveRfq] = useState(true)
   const [draftFirst, setDraftFirst] = useState(false)
 
@@ -157,6 +158,7 @@ export function CampaignLaunchPanel({
       canEdit={canEdit}
       cas={cas}
       substanceName={substanceName}
+      substanceCount={cardIds.length}
     />
 
     <div className="pr-sourcing-launch__controls">

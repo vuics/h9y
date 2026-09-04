@@ -105,6 +105,53 @@ export const campaignList = {
   })),
 }
 
+export function campaignReviewFixture(campaignId) {
+  const campaign = campaigns.find(item => item.campaignId === String(campaignId))
+  if (!campaign) return null
+  const candidate = (suffix, role, score, decision = 'UNREVIEWED') => ({
+    candidateId: `CAND-${suffix}`,
+    name: `Zhejiang ${suffix} Chemical Co.`,
+    country: 'CN',
+    website: `https://${suffix.toLowerCase()}.example.invalid`,
+    role,
+    score,
+    preliminaryStatus: score >= 70 ? 'GREEN' : 'YELLOW',
+    reviewDecision: decision,
+    promotedSupplierId: null,
+    contactCount: score >= 70 ? 2 : 0,
+    signals: ['Продукт подтверждён на официальном сайте', 'Роль производителя заявлена на сайте'],
+    risks: score >= 70 ? [] : ['Источники содержат противоречивые сведения'],
+  })
+  return {
+    campaignId: campaign.campaignId,
+    title: campaign.title,
+    status: campaign.status,
+    approveRfq: true,
+    pendingCandidates: 4,
+    pendingRfq: 2,
+    items: campaign.members.map(member => ({
+      cardId: member.cardId,
+      title: member.title,
+      casNumber: member.casNumber,
+      stage: member.stage,
+      sourcingRunId: member.sourcingRunId,
+      blockedBy: member.stage === 'FAILED' ? member.errorCode : null,
+      candidates: member.stage === 'AWAITING_REVIEW'
+        ? [candidate(`${member.cardId}A`, 'MANUFACTURER', 78), candidate(`${member.cardId}B`, 'UNKNOWN', 54)]
+        : [],
+      rfq: member.stage === 'AWAITING_REVIEW'
+        ? {
+          status: 'PREPARED',
+          documentFingerprint: 'a'.repeat(64),
+          approvedAt: null,
+          subject: `Request for quotation — ${member.title} (CAS ${member.casNumber})`,
+          bodyMarkdown: `Dear Sir or Madam,\n\nWe are sourcing ${member.title}, CAS ${member.casNumber}.`,
+        }
+        : null,
+    })),
+  }
+}
+
 export function campaignFixtureById(campaignId) {
   return campaigns.find(item => item.campaignId === String(campaignId)) || null
 }

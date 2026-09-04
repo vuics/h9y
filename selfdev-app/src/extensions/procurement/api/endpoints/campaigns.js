@@ -23,4 +23,12 @@ export const campaignEndpoints = {
     request(`/campaigns/${id(campaignId)}/cancel`, { method: 'post' })),
   resumeCampaign: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/resume`, { method: 'post' })),
+  campaignReview: read(
+    (campaignId, signal) => request(`/campaigns/${id(campaignId)}/review`, { signal }),
+    async campaignId => (await fixtures()).campaignReviewFixture(campaignId),
+  ),
+  prepareCampaignRfqs: mutation(campaignId =>
+    request(`/campaigns/${id(campaignId)}/review/prepare`, { method: 'post' })),
+  applyCampaignReview: mutation((campaignId, decisions) =>
+    request(`/campaigns/${id(campaignId)}/review`, { method: 'post', data: { decisions } })),
 }

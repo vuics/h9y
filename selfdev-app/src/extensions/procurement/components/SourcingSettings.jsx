@@ -22,7 +22,28 @@ import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/compone
  * these fields must not be.
  */
 
-const RESULT_LIMITS = ['1', '5', '10', '20', '50', '100']
+const RESULT_LIMITS = ['1', '5', '10', '20', '50', '100', '200', '300']
+
+// Measured on this installation's own completed runs: 29-56 seconds per source,
+// which is one HTTP read plus one extraction-model call. Deliberately stated
+// rather than hidden — the limit is a wall-clock budget expressed in sources,
+// and an operator choosing the widest setting for two hundred substances is
+// choosing days rather than hours. A rough constant beats no number at all;
+// an installation on a hosted model will be faster than this says.
+const SECONDS_PER_SOURCE = 40
+
+// Mirrors the backend's own default (`PROCUREMENT_CAMPAIGN_CONCURRENCY`): two
+// substances are searched at once, so the campaign's wall-clock is the total
+// work halved. Wrong only if a deployment has retuned it, and wrong in the
+// direction that under-promises.
+const CAMPAIGN_CONCURRENCY = 2
+
+const duration = seconds => {
+  const hours = seconds / 3600
+  if (hours < 1) return `${Math.max(1, Math.round(seconds / 60))} мин`
+  if (hours < 48) return `${Math.round(hours)} ч`
+  return `${Math.round(hours / 24)} сут`
+}
 
 const plural = (count, one, few, many) => {
   const mod10 = count % 10
@@ -78,6 +99,7 @@ export function SourcingSettings({
   cas,
   substanceName,
   onTemplatesSaved,
+  substanceCount,
 }) {
   const { templates, engineList, availableEngineIds, defaultQueryIds, saveTemplates } = settings
   const queryIds = (value.queryIds ?? defaultQueryIds)
@@ -112,6 +134,13 @@ export function SourcingSettings({
       const per = perQueryResults(Number(value.maxResults), queryIds.length)
       return <p className="pr-note pr-sourcing-limit-note">
         До {per} {plural(per, 'результата', 'результатов', 'результатов')}{queryIds.length === 1 ? ' для единственного запроса' : ` на каждый из ${queryIds.length} ${plural(queryIds.length, 'запроса', 'запросов', 'запросов')}`} — по каждому выбранному движку. Охват растёт от числа запросов, а не от этого лимита.
+      </p>
+    })()}
+    {substanceCount > 1 && (() => {
+      const perSubstance = Number(value.maxResults)
+      const total = perSubstance * substanceCount
+      return <p className="pr-note pr-sourcing-cost-note">
+        До {perSubstance} источников на вещество, около {total.toLocaleString('ru-RU')} на всю кампанию — столько же обращений к модели. Ориентировочно {duration(total * SECONDS_PER_SOURCE / Math.max(1, CAMPAIGN_CONCURRENCY))} при текущей скорости разбора. Ширину сильнее добавляют запросы и движки ниже, чем это число.
       </p>
     })()}
     <EnginePicker
@@ -156,8 +185,14 @@ export const canLaunch = (settings, value) =>
   (value.queryIds ?? settings.defaultQueryIds).length > 0 &&
   (value.engineIds ?? settings.availableEngineIds).filter(id => settings.availableEngineIds.includes(id)).length > 0
 
-export const defaultSourcingValue = () => ({
-  maxResults: '10',
+/** Starting settings.
+ *
+ * A campaign defaults wider than a single card: it is launched once and left,
+ * so it trades breadth against wall-clock rather than against the operator's
+ * attention. The backend's own campaign default matches this number.
+ */
+export const defaultSourcingValue = ({ campaign = false } = {}) => ({
+  maxResults: campaign ? '100' : '10',
   siteProbe: true,
   engineIds: null,
   queryIds: null,
