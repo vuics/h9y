@@ -23,15 +23,13 @@ function message(error) {
   return error?.response?.data?.message || error?.message || 'Операция с RFQ не выполнена.'
 }
 
-// The short versions are what a marketplace form can hold; the long ones are
-// written for email. Both are kept so neither has to be truncated on the way out.
-// Short first, deliberately: the buyer asked for shorter openers, so the version
-// that actually goes out on first contact is the one a specialist sees first.
+// One document per language. There used to be a long version beside each of
+// these; it was never sent on purpose, but it was the fallback wherever the
+// short one was missing and it was what this page showed first — eighteen
+// suppliers received it that way.
 const VERSIONS = [
-  { key: 'russianShort', tab: 'ru-short', label: 'Русская, короткая', kind: 'short' },
-  { key: 'englishShort', tab: 'en-short', label: 'English, short', kind: 'short' },
-  { key: 'russian', tab: 'ru', label: 'Русская, полная', kind: 'long' },
-  { key: 'english', tab: 'en', label: 'English, full', kind: 'long' },
+  { key: 'russian', tab: 'ru', label: 'Русская', kind: 'short' },
+  { key: 'english', tab: 'en', label: 'English', kind: 'short' },
 ]
 
 const DEFAULT_TAB = VERSIONS[0].tab

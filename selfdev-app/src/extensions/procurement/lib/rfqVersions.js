@@ -1,23 +1,21 @@
-/** The four RFQ documents a card carries, and how to read one out of a bundle.
+/** The RFQ a card carries, in each language, and how to read one out of a bundle.
  *
- * Long and short versions exist because the customer asked for a shorter first
- * message but the full document is still the right thing to send once a
- * conversation is established. Which one to rehearse against is therefore a real
- * choice, not a default.
+ * There used to be a long version beside the short one. Nothing sent it on
+ * purpose, but it was the fallback wherever the short one was missing and it
+ * was what every screen showed — eighteen suppliers received it that way. One
+ * document per language removes the choice, and with it the mistake.
  */
 
 export const RFQ_VERSIONS = [
-  ['english_short', 'EN короткий'],
-  ['russian_short', 'RU короткий'],
-  ['english', 'EN полный'],
-  ['russian', 'RU полный'],
+  ['english', 'EN'],
+  ['russian', 'RU'],
 ]
 
 const CANDIDATE_KEYS = {
-  english_short: ['englishShort', 'english_short'],
-  russian_short: ['russianShort', 'russian_short'],
-  english: ['english'],
-  russian: ['russian'],
+  // The short keys are still read: a bundle migrated by an older build, or one
+  // being looked at mid-migration, carries the text under its former name.
+  english: ['english', 'englishShort', 'english_short'],
+  russian: ['russian', 'russianShort', 'russian_short'],
 }
 
 /** The message body of one version, or '' when the card has not got it yet.
