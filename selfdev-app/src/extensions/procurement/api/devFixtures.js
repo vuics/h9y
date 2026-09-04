@@ -169,14 +169,51 @@ export const suppliers = [
 export const negotiations = [
   { id: 'NEG-1042-A1', cardId: 1042, cardTitle: cards[0].title, supplierId: 'SUP-A19F', supplierName: suppliers[0].name, contactId: 'CONTACT-91', contactName: 'Lin Wei', channel: 'email', status: 'WAITING_SUPPLIER', nextAction: 'FOLLOW_UP', nextActionAt: ago(-18), lastDispatchStatus: 'DELIVERED', requiresHuman: false, updatedAt: ago(7) },
   { id: 'NEG-1042-B2', cardId: 1042, cardTitle: cards[0].title, supplierId: 'SUP-B72D', supplierName: suppliers[1].name, contactId: 'CONTACT-27', contactName: 'Mei Chen', channel: 'whatsapp', status: 'ESCALATED', nextAction: 'FOLLOW_UP', lastDispatchStatus: 'DELIVERED', requiresHuman: true, updatedAt: ago(2) },
+  // Paused because the card moved under it: the conversation is alive, and one
+  // decision — continue, restart, stop — is owed by a person.
+  { id: 'NEG-1042-C3', cardId: 1042, cardTitle: cards[0].title, supplierId: 'SUP-A19F', supplierName: suppliers[0].name, contactId: 'CONTACT-91', contactName: 'Lin Wei', channel: 'email', status: 'PAUSED_BY_CHANGE', nextAction: 'FOLLOW_UP', lastDispatchStatus: 'DELIVERED', requiresHuman: false, updatedAt: ago(1), cardChange: { detectedAt: ago(1), previousRfqId: 'RFQ-1042', currentRfqId: 'RFQ-1042', rfqStatus: 'DRAFT', rfqApproved: false, changedFields: [{ field: 'target_volume', before: '20 MT', after: '35 MT' }, { field: 'purity', before: '99.5%', after: '99.7%' }], draftStatus: 'PREPARING', draftCompositionId: null, resolution: null } },
   { id: 'NEG-1024-A3', cardId: 1024, cardTitle: cards[3].title, supplierId: 'SUP-A19F', supplierName: suppliers[0].name, contactId: 'CONTACT-91', contactName: 'Lin Wei', channel: 'email', status: 'FAILED', nextAction: 'SEND_INITIAL_RFQ', lastDispatchStatus: 'FAILED', lastWorkerError: 'Почтовый шлюз отклонил сообщение после последней попытки.', requiresHuman: true, updatedAt: ago(13) },
 ]
 
 export const messages = [
   { id: 'MSG-1', kind: 'system_outbound', author: 'Procurement Agent', text: 'RFQ-1042 отправлен: запрошены цена, MOQ, CoA/TDS, сроки и условия оплаты.', createdAt: ago(30), status: 'DELIVERED' },
-  { id: 'MSG-2', kind: 'supplier', author: 'Lin Wei', text: 'Предлагаем 1,3-бутадиен 99,5%. Цена — 1 240 USD/MT, FCA Shanghai. MOQ 18 MT.', createdAt: ago(9), status: 'RECEIVED' },
+  { id: 'MSG-2', kind: 'supplier', author: 'Lin Wei', channel: 'email', text: 'Предлагаем 1,3-бутадиен 99,5%. Цена — 1 240 USD/MT, FCA Shanghai. MOQ 18 MT.', createdAt: ago(9), status: 'RECEIVED', sourceId: 'SRC-1042-01', spans: [
+    { field: 'purity', label: 'Чистота', value: '99.5%', status: 'PRESENT', start: 24, end: 29, quote: '99,5%' },
+    { field: 'price', label: 'Цена', value: '1240', status: 'PRESENT', start: 38, end: 50, quote: '1 240 USD/MT' },
+    { field: 'incoterm', label: 'Базис', value: 'FCA', status: 'PRESENT', start: 52, end: 64, quote: 'FCA Shanghai' },
+    { field: 'moq', label: 'MOQ', value: '18 MT', status: 'PRESENT', start: 66, end: 75, quote: 'MOQ 18 MT' },
+  ] },
   { id: 'MSG-3', kind: 'interpretation', author: 'Supplier Response Intelligence', text: 'Извлечены цена, валюта, базис и MOQ. Не подтверждены CoA, TDS, срок поставки и условия оплаты.', createdAt: ago(8), status: 'PROCESSED' },
   { id: 'MSG-4', kind: 'human', author: 'Специалист закупок', text: 'Проверить, входит ли экспортное оформление в FCA, и запросить образец.', createdAt: ago(6), status: 'RECORDED' },
+]
+
+/** Contacts the demonstration supplier can actually be written to. */
+export const negotiationContacts = [
+  { contactId: 'CONTACT-91', name: 'Lin Wei', channel: 'email', address: 'lin.wei@qingdao-nova.example', verificationStatus: 'VERIFIED', active: true, usable: true, workerDispatch: true, isCurrent: true },
+  { contactId: 'CONTACT-92', name: 'Lin Wei', channel: 'whatsapp', address: '+8613800138000', verificationStatus: 'VERIFIED', active: true, usable: true, workerDispatch: true, isCurrent: false },
+  { contactId: 'CONTACT-93', name: 'Форма на сайте', channel: 'web_form', address: 'https://qingdao-nova.example/rfq', verificationStatus: 'UNVERIFIED', active: true, usable: true, workerDispatch: false, isCurrent: false },
+]
+
+/** The quotation the demonstration reply produced, tied to that reply. */
+export const negotiationQuotes = [
+  {
+    responseId: 'RESP-1042-01', revision: 2, isLatest: true, communicationId: 'MSG-2',
+    channel: 'email', receivedAt: ago(9), completeness: 'NEEDS_CLARIFICATION',
+    productIdentityStatus: 'MATCHED', conflictingFields: [], missingFields: ['payment_terms'],
+    fields: [
+      { key: 'price', label: 'Цена', value: '1 240 USD/MT', status: 'PRESENT' },
+      { key: 'quoted_quantity', label: 'Количество', value: '20 MT', status: 'PRESENT' },
+      { key: 'moq', label: 'MOQ', value: '18 MT', status: 'PRESENT' },
+      { key: 'incoterm', label: 'Базис', value: 'FCA Shanghai', status: 'PRESENT' },
+      { key: 'lead_time', label: 'Срок', value: null, status: 'UNKNOWN' },
+      { key: 'payment_terms', label: 'Оплата', value: null, status: 'UNKNOWN' },
+      { key: 'purity', label: 'Чистота', value: '99.5%', status: 'PRESENT' },
+      { key: 'grade', label: 'Грейд', value: 'Industrial', status: 'PRESENT' },
+      { key: 'manufacturer', label: 'Производитель', value: null, status: 'UNKNOWN' },
+      { key: 'offered_product', label: 'Предложено', value: '1,3-бутадиен', status: 'PRESENT' },
+      { key: 'sample_available', label: 'Образец', value: null, status: 'UNKNOWN' },
+    ],
+  },
 ]
 
 export const proposals = [
@@ -186,7 +223,7 @@ export const proposals = [
 ]
 
 export const escalations = [
-  { id: 'ESC-1042-77', cardId: 1042, cardTitle: cards[0].title, supplierId: 'SUP-B72D', supplierName: suppliers[1].name, contactId: 'CONTACT-27', status: 'OPEN', priority: 88, title: 'Не подтверждена идентичность продукта', recommendation: 'Сверить CAS и спецификацию до продолжения переговоров.', risks: [{ category: 'PRODUCT_IDENTITY', code: 'product_identity_unverified', reason: 'В ответе поставщика нет CAS-номера.', evidence: ['We can offer polymerization grade material.'] }], assignedTo: 'Мария Соколова', createdAt: ago(3), updatedAt: ago(2) },
+  { id: 'ESC-1042-77', cardId: 1042, negotiationId: 'NEG-1042-B2', cardTitle: cards[0].title, supplierId: 'SUP-B72D', supplierName: suppliers[1].name, contactId: 'CONTACT-27', status: 'OPEN', priority: 88, title: 'Не подтверждена идентичность продукта', recommendation: 'Сверить CAS и спецификацию до продолжения переговоров.', risks: [{ category: 'PRODUCT_IDENTITY', code: 'product_identity_unverified', reason: 'В ответе поставщика нет CAS-номера.', evidence: ['We can offer polymerization grade material.'] }], assignedTo: 'Мария Соколова', createdAt: ago(3), updatedAt: ago(2) },
   { id: 'ESC-1038-12', cardId: 1038, cardTitle: cards[1].title, supplierId: 'SUP-A19F', supplierName: suppliers[0].name, status: 'IN_REVIEW', priority: 72, title: 'Требуется выбор аналога и грейда', recommendation: 'Специалисту сопоставить техническую спецификацию с областью применения.', risks: [{ category: 'GRADE_SELECTION', code: 'grade_ambiguity', reason: 'Найдено несколько несовпадающих силиконовых формул.', evidence: [] }], assignedTo: 'Алексей Орлов', createdAt: ago(22), updatedAt: ago(4) },
 ]
 

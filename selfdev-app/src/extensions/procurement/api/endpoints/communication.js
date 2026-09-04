@@ -63,6 +63,11 @@ export const communicationEndpoints = {
       method: 'post',
       data: { editedText },
     })),
+  setCompositionChannel: mutation((compositionId, contactId) =>
+    request(`/communication/compositions/${id(compositionId)}/channel`, {
+      method: 'post',
+      data: { contactId },
+    })),
   rejectComposition: mutation((compositionId, note) =>
     request(`/communication/compositions/${id(compositionId)}/reject`, {
       method: 'post',

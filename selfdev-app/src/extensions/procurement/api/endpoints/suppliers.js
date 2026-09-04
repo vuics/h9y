@@ -69,6 +69,12 @@ export const negotiationEndpoints = {
       return {
         ...negotiation,
         messages: fixture.messages,
+        contacts: fixture.negotiationContacts,
+        quotes: fixture.negotiationQuotes,
+        escalations: fixture.escalations.filter(item => item.negotiationId === negotiation.id),
+        peers: fixture.negotiations
+          .filter(item => item.cardId === negotiation.cardId && item.id !== negotiation.id)
+          .map(item => ({ id: item.id, supplierId: item.supplierId, supplierName: item.supplierName, status: item.status })),
         proposal: fixture.proposals.find(item =>
           item.cardId === negotiation.cardId && item.supplierId === negotiation.supplierId),
       }
@@ -81,6 +87,19 @@ export const negotiationEndpoints = {
     request(`/negotiations/${id(negotiationId)}/follow-up`, { method: 'post', data: { when } })),
   ingestSupplierResponse: mutation((negotiationId, payload) =>
     request(`/negotiations/${id(negotiationId)}/responses`, { method: 'post', data: payload })),
+  // What a paused negotiation does about the requirement that moved under it.
+  resolveNegotiationCardChange: mutation((negotiationId, action) =>
+    request(`/negotiations/${id(negotiationId)}/card-change/resolve`, {
+      method: 'post', data: { action },
+    })),
+  prepareNegotiationChangeDraft: mutation(negotiationId =>
+    request(`/negotiations/${id(negotiationId)}/card-change/draft`, { method: 'post' })),
+  setNegotiationChannel: mutation((negotiationId, contactId) =>
+    request(`/negotiations/${id(negotiationId)}/channel`, {
+      method: 'post', data: { contactId },
+    })),
+  createNegotiationDraft: mutation((negotiationId, payload) =>
+    request(`/negotiations/${id(negotiationId)}/drafts`, { method: 'post', data: payload })),
 }
 
 export const proposalEndpoints = {

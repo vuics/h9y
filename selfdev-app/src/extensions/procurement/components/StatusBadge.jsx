@@ -10,7 +10,7 @@ const labels = {
   CREATED: 'Создана', SKIPPED: 'Пропущена', NOT_FOUND: 'Не найдено в PubChem',
   AWAITING_APPROVAL: 'Ждёт согласования', APPROVED: 'Согласовано',
   SOURCING: 'Поиск', NEGOTIATION: 'Переговоры', WAITING_SUPPLIER: 'Ждём поставщика', COMPARISON: 'Сравнение',
-  READY: 'Готово', QUEUED: 'В очереди', IN_PROGRESS: 'В работе', COMPLETE: 'Завершено', FAILED: 'Ошибка', ESCALATED: 'Эскалация', STALE: 'Устарело', CANCELLED: 'Остановлено',
+  READY: 'Готово', QUEUED: 'В очереди', IN_PROGRESS: 'В работе', COMPLETE: 'Завершено', FAILED: 'Ошибка', ESCALATED: 'Эскалация', STALE: 'Устарело', CANCELLED: 'Остановлено', PAUSED_BY_CHANGE: 'Карточка изменилась',
   UNVERIFIED: 'Не проверен', UNDER_REVIEW: 'На проверке', QUALIFIED: 'Квалифицирован', SUSPENDED: 'Приостановлен', REJECTED: 'Отклонён',
   NEEDS_CLARIFICATION: 'Нужно уточнение', CONFLICTING: 'Противоречия', NEEDS_HUMAN_REVIEW: 'Нужен специалист',
   OPEN: 'Открыта', IN_REVIEW: 'На рассмотрении', RECOMMENDED: 'Есть рекомендация', RESOLVED: 'Решена',
@@ -30,7 +30,7 @@ const labels = {
 }
 
 const complete = new Set(['NORMALIZED', 'APPROVED', 'COMPLETE', 'COMPLETED', 'QUALIFIED', 'RESOLVED', 'MATCHED', 'PRESENT', 'PROVIDED', 'DELIVERED', 'PROCESSED', 'GREEN', 'VERIFIED_MANUFACTURER', 'VERIFIED_DISTRIBUTOR', 'POSITIVE', 'ANALYZED', 'CREATED', 'READY', 'SENT'])
-const warning = new Set(['NEEDS_REVIEW', 'AWAITING_APPROVAL', 'NEEDS_CLARIFICATION', 'UNDER_REVIEW', 'CLAIMED_ATTACHED', 'CLAIMED_AVAILABLE', 'AMBIGUOUS', 'YELLOW', 'NEEDS_MORE_EVIDENCE', 'EXTRACTION_TIMEOUT', 'BUDGET_EXHAUSTED', 'DRAFT', 'DUPLICATE', 'AWAITING_CONFIRMATION'])
+const warning = new Set(['PAUSED_BY_CHANGE', 'NEEDS_REVIEW', 'AWAITING_APPROVAL', 'NEEDS_CLARIFICATION', 'UNDER_REVIEW', 'CLAIMED_ATTACHED', 'CLAIMED_AVAILABLE', 'AMBIGUOUS', 'YELLOW', 'NEEDS_MORE_EVIDENCE', 'EXTRACTION_TIMEOUT', 'BUDGET_EXHAUSTED', 'DRAFT', 'DUPLICATE', 'AWAITING_CONFIRMATION'])
 const danger = new Set(['FAILED', 'ESCALATED', 'CONFLICTING', 'NEEDS_HUMAN_REVIEW', 'MISMATCH', 'CONFLICT', 'INVALID', 'REJECTED', 'RED', 'NEGATIVE', 'EXTRACTION_FAILED', 'UNIDENTIFIED', 'BLOCKED'])
 const waiting = new Set(['WAITING_SUPPLIER', 'QUEUED', 'OPEN', 'IN_REVIEW', 'PENDING', 'ANALYZING', 'CREATING', 'NORMALIZING'])
 

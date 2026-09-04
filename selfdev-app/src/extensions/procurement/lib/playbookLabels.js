@@ -48,7 +48,8 @@ export const TRIGGER_LABELS = {
   FIRST_CONTACT: 'первое обращение',
   INBOUND_MESSAGE: 'ответ поставщика',
   SCHEDULED_FOLLOW_UP: 'запланированное напоминание',
-  MANUAL: 'ручной запуск',
+  CARD_CHANGE: 'изменение параметров карточки',
+  MANUAL: 'написано специалистом',
 }
 
 export const COMPOSITION_STATUS_LABELS = {
@@ -65,6 +66,7 @@ export const CHECK_LABELS = {
   VERBATIM_BLOCKS_PRESENT: 'Дословные блоки не изменены',
   NO_FORBIDDEN_DISCLOSURE: 'Закрытые данные не раскрыты',
   NO_UNFILLED_PLACEHOLDER: 'Нет незаполненных заготовок',
+  RFQ_APPROVED: 'Новый RFQ утверждён',
 }
 
 export const label = (dictionary, value) => dictionary[value] || value

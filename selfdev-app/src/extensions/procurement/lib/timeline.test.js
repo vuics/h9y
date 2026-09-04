@@ -2,7 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
-  attributionByCommunication, buildTimeline, conversationPulse, pendingDecisions,
+  attributionByCommunication, buildTimeline, collapseStatusRuns, conversationPulse,
+  latestUnlinked, pendingDecisions, plannedAction, quotesByMessage, splitFuture,
 } from './timeline.js'
 
 const sent = {
@@ -88,4 +89,82 @@ test('a pending decision outranks every other conversation state', () => {
     conversationPulse({ negotiation: { status: 'WAITING_SUPPLIER' }, timeline: [] }).tone,
     'waiting',
   )
+})
+
+test('a quotation is attached to the message it was extracted from', () => {
+  const timeline = buildTimeline({
+    messages: [{ id: 'COMM-1', kind: 'supplier', createdAt: '2026-08-01T10:00:00Z' }],
+    quotes: [{ responseId: 'RESP-1', revision: 2, communicationId: 'COMM-1' }],
+  })
+
+  assert.equal(timeline[0].quotes[0].revision, 2)
+  assert.equal(quotesByMessage([{ revision: 1 }]).size, 0)
+})
+
+test('the requirement change and the open escalation are events in the thread', () => {
+  const timeline = buildTimeline({
+    messages: [{ id: 'COMM-1', createdAt: '2026-08-01T10:00:00Z' }],
+    escalations: [{ id: 'ESC-1', createdAt: '2026-08-01T11:00:00Z' }],
+    cardChange: { detectedAt: '2026-09-04T12:41:00Z' },
+  })
+
+  assert.deepEqual(
+    timeline.map(entry => entry.kind),
+    ['message', 'escalation', 'cardChange'],
+  )
+})
+
+test('what has not been sent yet sits below the now line, in send order', () => {
+  const negotiation = {
+    id: 'NEG-1', status: 'QUEUED', nextAction: 'FOLLOW_UP', channel: 'whatsapp',
+    nextActionAt: '2026-09-06T10:00:00Z',
+  }
+  const timeline = buildTimeline({
+    messages: [{ id: 'COMM-1', createdAt: '2026-08-01T10:00:00Z' }],
+    compositions: [
+      { compositionId: 'CMP-2', status: 'DRAFT', communicationId: null, createdAt: '2026-08-01T12:00:00Z' },
+      { compositionId: 'CMP-9', status: 'REJECTED', communicationId: null, createdAt: '2026-08-02T12:00:00Z' },
+    ],
+  })
+
+  const { past, future } = splitFuture(timeline, negotiation)
+
+  assert.deepEqual(past.map(entry => entry.id), ['COMM-1', 'CMP-9'])
+  assert.deepEqual(future.map(entry => entry.id), ['CMP-2', 'planned:NEG-1'])
+  assert.equal(future[1].channel, 'whatsapp')
+})
+
+test('a conversation with nothing scheduled plans nothing', () => {
+  assert.equal(plannedAction({ status: 'ESCALATED', nextActionAt: '2026-09-06T10:00:00Z' }), null)
+  assert.equal(plannedAction({ status: 'QUEUED' }), null)
+})
+
+test('a run of machine status changes folds into one entry', () => {
+  const entries = [
+    { kind: 'status', id: 's1', at: '1', event: { toStatus: 'QUEUED' } },
+    { kind: 'status', id: 's2', at: '2', event: { toStatus: 'WAITING_SUPPLIER' } },
+    { kind: 'status', id: 's3', at: '3', event: { toStatus: 'QUEUED' } },
+    { kind: 'message', id: 'COMM-1', at: '4' },
+    { kind: 'status', id: 's4', at: '5', event: { toStatus: 'ACTIVE' } },
+  ]
+
+  const folded = collapseStatusRuns(entries)
+
+  assert.deepEqual(folded.map(entry => entry.kind), ['statusGroup', 'message', 'status'])
+  assert.equal(folded[0].events.length, 3)
+})
+
+test('an unlinked response contributes its newest revision once, not five times', () => {
+  const quotes = [
+    { responseId: 'RESP-1', revision: 1, communicationId: null, receivedAt: '2026-08-01T10:00:00Z' },
+    { responseId: 'RESP-1', revision: 3, communicationId: null, receivedAt: '2026-08-02T10:00:00Z' },
+    { responseId: 'RESP-2', revision: 1, communicationId: 'COMM-1', receivedAt: '2026-08-03T10:00:00Z' },
+  ]
+
+  const unlinked = latestUnlinked(quotes)
+
+  assert.deepEqual(unlinked.map(item => [item.responseId, item.revision, item.revisionCount]),
+    [['RESP-1', 3, 2]])
+  const timeline = buildTimeline({ quotes })
+  assert.deepEqual(timeline.map(entry => entry.kind), ['quote'])
 })

@@ -24,6 +24,7 @@ const KPI = [
   ['quarantine', 'Не опознано'],
   ['waitingSupplier', 'Ждём поставщика'],
   ['escalated', 'У специалиста'],
+  ['pausedByChange', 'Карточка изменилась'],
   ['queued', 'В очереди'],
 ]
 
