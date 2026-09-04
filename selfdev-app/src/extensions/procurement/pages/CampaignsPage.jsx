@@ -50,6 +50,7 @@ export default function CampaignsPage() {
     </div></div>
     <DataTable
       rows={items}
+      rowKey="campaignId"
       onRowClick={row => navigate(`/procurement/campaigns/${row.campaignId}`)}
       emptyTitle="Кампаний ещё не было"
       emptyDescription="Загрузите список веществ файлом или отметьте карточки в реестре и запустите поиск по всем сразу."

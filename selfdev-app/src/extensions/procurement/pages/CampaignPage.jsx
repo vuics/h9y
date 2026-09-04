@@ -144,6 +144,7 @@ export default function CampaignPage() {
 
       <DataTable
         rows={members}
+        rowKey="cardId"
         onRowClick={row => navigate(row.sourcingRunId
           ? `/procurement/requests/${row.cardId}/sourcing`
           : `/procurement/requests/${row.cardId}`)}
