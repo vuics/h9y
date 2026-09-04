@@ -316,7 +316,7 @@ export interface ProposalDto {
   cardId: number
   supplierId?: string
   supplierName: string
-  /** Only on comparison rows: the site the supplier card holds, if any. */
+  /** The site the supplier card holds, if any: set on list and comparison rows. */
   supplierWebsite?: string | null
   revision: number
   completeness: CompletenessState

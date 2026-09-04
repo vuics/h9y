@@ -11,6 +11,8 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { StatusBadge } from '../components/StatusBadge'
 import { CopyableId } from '../components/CopyableId'
 import { CardIdentity } from '../components/CardIdentity'
+import { ExternalLink } from '../components/icons'
+import { siteHostLabel } from '../lib/supplierWeb'
 
 export default function ProposalsPage() {
   const navigate = useNavigate()
@@ -19,6 +21,9 @@ export default function ProposalsPage() {
   return <div className="pr-stack"><div className="pr-section-heading"><div><h2>Предложения</h2><p>Нормализованные коммерческие условия с исходными значениями и признаками качества.</p><CardIdentity cardId={filters.cardId} /></div>{filters.cardId && <RouterLinkButton to={`/procurement/proposals/compare?cardId=${filters.cardId}`}>Сравнить предложения</RouterLinkButton>}</div><ListFilters filters={filters} onChange={setFilters} statuses={[{ value: 'COMPLETE', label: 'Готово' }, { value: 'NEEDS_CLARIFICATION', label: 'Нужно уточнение' }, { value: 'CONFLICTING', label: 'Противоречия' }, { value: 'NEEDS_HUMAN_REVIEW', label: 'Нужен специалист' }]} placeholder="Поставщик, валюта, Incoterm или RESP-ID" />
     {query.isLoading ? <LoadingState /> : query.isError ? <ErrorState error={query.error} onRetry={query.refetch} /> : <><DataTable rows={query.data.items} onRowClick={row => navigate(`/procurement/proposals/${row.id}`)} emptyTitle="Предложений пока нет" columns={[
       { id: 'supplierName', header: 'Поставщик', cell: row => <div className="pr-primary-cell"><strong>{row.supplierName}</strong><div className="pr-primary-meta"><CopyableId value={row.id} /><span>· рев. {row.revision}</span></div></div> },
+      { id: 'supplierWebsite', header: 'Сайт', cell: row => row.supplierWebsite
+        ? <a className="pr-supplier-site" href={row.supplierWebsite} target="_blank" rel="noreferrer" title={row.supplierWebsite}><ExternalLink size={13} />{siteHostLabel(row.supplierWebsite)}</a>
+        : <span className="pr-muted">—</span> },
       { id: 'price', header: 'Цена', cell: row => row.price ? <strong>{row.price} {row.currency}/{row.priceUnit}</strong> : <StatusBadge status="UNKNOWN" /> },
       { id: 'basis', header: 'Базис', cell: row => row.incoterm ? `${row.incoterm} ${row.namedPlace || ''}` : <StatusBadge status="UNKNOWN" /> },
       { id: 'quantity', header: 'Количество / MOQ', cell: row => <span>{row.quantity || '—'} / {row.moq || '—'}</span> },

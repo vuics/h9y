@@ -13,16 +13,7 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Building, ExternalLink } from '../components/icons'
 import { BusinessRoleBadge } from '../components/BusinessRole'
-
-// The whole URL turns the column into a wall of protocol and tracking tail, so
-// the row shows the host and keeps the full address in the link's title.
-function siteHost(website) {
-  try {
-    return new URL(website).host.replace(/^www\./, '')
-  } catch {
-    return website
-  }
-}
+import { siteHostLabel } from '../lib/supplierWeb'
 
 export default function SuppliersPage() {
   const navigate = useNavigate()
@@ -34,7 +25,7 @@ export default function SuppliersPage() {
       { id: 'name', header: 'Поставщик', cell: row => <div className="pr-primary-cell"><strong>{row.name}</strong><CopyableId value={row.id} /></div> },
       { id: 'businessRole', header: 'Тип', cell: row => <BusinessRoleBadge role={row.businessRole} source={row.businessRoleSource} conflict={row.businessRoleConflict} /> },
       { id: 'website', header: 'Сайт', cell: row => row.website
-        ? <a className="pr-supplier-site" href={row.website} target="_blank" rel="noreferrer" title={row.website}><ExternalLink size={13} />{siteHost(row.website)}</a>
+        ? <a className="pr-supplier-site" href={row.website} target="_blank" rel="noreferrer" title={row.website}><ExternalLink size={13} />{siteHostLabel(row.website)}</a>
         : <span className="pr-muted">—</span> },
       { id: 'country', header: 'Страна', cell: row => row.country || 'Не указана' },
       { id: 'qualificationStatus', header: 'Квалификация', cell: row => <StatusBadge status={row.qualificationStatus} /> },

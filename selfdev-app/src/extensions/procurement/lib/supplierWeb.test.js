@@ -2,8 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
-  emailDomain, isFreeMailDomain, registrableDomain, supplierLinkLabel,
-  websiteCandidates, websiteDomainMismatch,
+  emailDomain, isFreeMailDomain, registrableDomain, siteHostLabel,
+  supplierLinkLabel, websiteCandidates, websiteDomainMismatch,
 } from './supplierWeb.js'
 
 const email = (address, extra = {}) => ({ channel: 'email', address, ...extra })
@@ -76,4 +76,14 @@ test('the mismatch flag stays quiet where it could only mislead', () => {
   )
   // Subdomains and www are the same company.
   assert.deepEqual(websiteDomainMismatch('https://www.dideu.com/en/', [email('s@mail.dideu.com')]), [])
+})
+
+
+test('a site link in a table reads as the host, not as the whole URL', () => {
+  assert.equal(siteHostLabel('https://www.dideu.com/en/products?utm_source=x'), 'dideu.com')
+  assert.equal(siteHostLabel('http://SHANDONG.example.CN/'), 'shandong.example.cn')
+  // Whatever is on the card is shown as it stands rather than dropped: a value
+  // that is not a URL is still what somebody typed there.
+  assert.equal(siteHostLabel('dideu.com'), 'dideu.com')
+  assert.equal(siteHostLabel(null), '')
 })

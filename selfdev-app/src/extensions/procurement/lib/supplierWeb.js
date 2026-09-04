@@ -63,6 +63,16 @@ export function isFreeMailDomain(domain) {
   return FREE_MAIL.has(value) || FREE_MAIL.has(registrableDomain(value) || '')
 }
 
+/** What a site link should read as in a table: no protocol, no `www.`.
+ *
+ * The whole URL turns a column into a wall of protocol and tracking tail, so
+ * the cell shows the host and the full address stays in the link's title.
+ */
+export function siteHostLabel(url) {
+  const host = hostOf(url)
+  return host ? host.replace(/^www\./, '') : String(url || '')
+}
+
 export function supplierLinkLabel(url) {
   const host = hostOf(url)
   if (!host) return 'Сайт поставщика'
