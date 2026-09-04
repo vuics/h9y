@@ -1082,7 +1082,14 @@
 .pr-composer__foot > [data-slot="button"] { margin-left: auto; }
 .pr-check-line--failed { color: var(--pr-danger); }
 
-@media (max-width: 1100px) { .pr-thread-layout { grid-template-columns: 1fr; } .pr-thread-rail { position: static; } .pr-row > * { max-width: 100%; } }
+/* Narrow: the summary goes *above* the conversation, not below it. Stacked
+   underneath, the current price and the supplier's channels sat past the end
+   of a long thread — further away than they were before this page existed. */
+@media (max-width: 1100px) {
+  .pr-thread-layout { grid-template-columns: 1fr; }
+  .pr-thread-rail { position: static; order: -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); align-items: start; }
+  .pr-row > * { max-width: 100%; }
+}
 
 /* Evidence, where a number is asserted: the quote it was read from, and the
    whole source one disclosure away. */
@@ -1116,3 +1123,7 @@
 
 .pr-nextbar--held { border-style: dashed; }
 .pr-nextbar__toggle { margin-left: auto; }
+
+/* A refused or delivered draft: history, not a decision waiting to be taken. */
+.pr-draft--closed { border-style: solid; border-color: var(--pr-border); opacity: .72; }
+.pr-draft--closed .pr-msg__text { color: var(--pr-muted); }

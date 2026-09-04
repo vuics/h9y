@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Attribution } from './ThreadMessage'
 import { StatusBadge } from './StatusBadge'
-import { checkSummary, finalText, hasUnsavedEdit } from '../lib/compositions'
+import { checkSummary, finalText, hasUnsavedEdit, isPending } from '../lib/compositions'
 import {
   channelLabel, contactWarning, holdReason, relativeTime, selectableContacts,
   supplierLocalTime,
@@ -87,8 +87,19 @@ export function ThreadDraft({
   const approved = record.status === 'APPROVED'
   const held = approved ? holdReason(negotiation) : null
   const pending = actions.pendingComposition === record.compositionId
+  // A rejected or already delivered draft is history. It stays in the thread —
+  // it is why the next one exists — but nothing about it is still decidable,
+  // and offering the buttons made a dead message look like a live one.
+  const open = isPending(record.status)
+  const editable = canDecide && open
   return (
-    <article className={`pr-draft${record.status === 'BLOCKED' ? ' pr-draft--blocked' : ''}`}>
+    <article
+      className={[
+        'pr-draft',
+        record.status === 'BLOCKED' ? 'pr-draft--blocked' : '',
+        open || approved ? '' : 'pr-draft--closed',
+      ].filter(Boolean).join(' ')}
+    >
       <header>
         <StatusBadge status={record.status} label={COMPOSITION_STATUS_LABELS[record.status]} compact />
         <span className="pr-eyebrow">{TRIGGER_LABELS[record.trigger] || record.trigger}</span>
@@ -100,11 +111,11 @@ export function ThreadDraft({
         <time>{formatDate(record.createdAt)}</time>
       </header>
 
-      <div className="pr-draft__bar">
+      {(open || approved) && <div className="pr-draft__bar">
         <ChannelPicker
           contacts={contacts}
           value={record.contactId || negotiation?.contactId}
-          disabled={!canDecide || approved || pending}
+          disabled={!editable || pending}
           onChange={contactId => actions.setCompositionChannel(record.compositionId, contactId)}
         />
         {approved && (
@@ -126,15 +137,21 @@ export function ThreadDraft({
             <SupplierClock contacts={contacts} contactId={record.contactId || negotiation?.contactId} />
           </label>
         )}
-      </div>
+      </div>}
 
-      {canDecide && !approved ? (
+      {editable ? (
         <Textarea rows={9} value={text} onChange={event => setText(event.target.value)} />
       ) : (
         <p className="pr-msg__text">{finalText(record)}</p>
       )}
 
-      {summary.blocking.length > 0 && (
+      {/* Why this one is out of the way: the reason was recorded when it was
+          refused, and without it a struck-through draft is a mystery. */}
+      {!open && record.decisionNote && (
+        <p className="pr-muted">{record.decisionNote}</p>
+      )}
+
+      {open && summary.blocking.length > 0 && (
         <Alert variant="destructive">
           <AlertTriangle />
           <AlertTitle>Не уйдёт, пока это не решено</AlertTitle>
@@ -149,7 +166,7 @@ export function ThreadDraft({
         </Alert>
       )}
 
-      {canDecide && !approved && (
+      {editable && (
         <div className="pr-inline-actions">
           <Button
             size="sm"

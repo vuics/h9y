@@ -105,7 +105,10 @@ export function NegotiationThread({
         }
       }
       if (event.key === '/') { event.preventDefault(); searchRef.current?.focus() }
-      if (event.key === 'n') { event.preventDefault(); composerRef.current?.focus() }
+      if (event.key === 'n') {
+        event.preventDefault()
+        composerRef.current?.querySelector('textarea')?.focus()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -279,7 +282,7 @@ export function NegotiationThread({
       )}
 
       {canDecide && (
-        <div className="pr-composer">
+        <div className="pr-composer" ref={composerRef}>
           <div className="pr-composer__intents">
             {INTENTS.map(([label, body]) => (
               <button key={label} type="button" className="pr-chip" onClick={() => setDraft(body)}>
@@ -287,8 +290,9 @@ export function NegotiationThread({
               </button>
             ))}
           </div>
+          {/* The shared Textarea is a plain function component, so the ref
+              lives on the container and finds the field inside it. */}
           <Textarea
-            ref={composerRef}
             rows={3}
             value={draft}
             placeholder="Написать поставщику… Текст пройдёт те же проверки и станет черновиком — он не уйдёт без подтверждения."
