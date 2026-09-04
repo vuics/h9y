@@ -144,6 +144,22 @@ export function supplierLocalTime(timezone, now = new Date()) {
   }
 }
 
+/** Why an approved message is still sitting here, if it is.
+ *
+ * Approval queues the assignment on a best-effort basis: an escalated or paused
+ * conversation refuses the queue, and the draft then waits with nothing on
+ * screen saying so — it reads as sent-any-moment when it is not going anywhere.
+ */
+export function holdReason(negotiation) {
+  if (!negotiation) return null
+  if (negotiation.automationPaused) return 'автодействия приостановлены — возобновите их вверху страницы'
+  if (negotiation.status === 'PAUSED_BY_CHANGE') return 'переговоры на паузе: сначала решите, что делать с изменением карточки'
+  if (negotiation.status === 'ESCALATED') return 'открыта эскалация: сообщения не отправляются до решения'
+  if (negotiation.status === 'STALE') return 'задание устарело и больше ничего не отправит'
+  if (negotiation.status === 'CANCELLED') return 'переговоры остановлены'
+  return null
+}
+
 /** How long the supplier has been silent, when that is the live question. */
 export function silenceSince(negotiation, now = Date.now()) {
   const messages = negotiation?.messages || []

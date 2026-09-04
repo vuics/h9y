@@ -4,7 +4,8 @@ import { Attribution } from './ThreadMessage'
 import { StatusBadge } from './StatusBadge'
 import { checkSummary, finalText, hasUnsavedEdit } from '../lib/compositions'
 import {
-  channelLabel, contactWarning, relativeTime, selectableContacts, supplierLocalTime,
+  channelLabel, contactWarning, holdReason, relativeTime, selectableContacts,
+  supplierLocalTime,
 } from '../lib/thread'
 import { COMPOSITION_STATUS_LABELS, TRIGGER_LABELS } from '../lib/playbookLabels'
 import { negotiationNextActionLabel } from '../api/negotiations'
@@ -84,6 +85,7 @@ export function ThreadDraft({
   const summary = checkSummary(record.checks)
   const unsaved = hasUnsavedEdit(record, text)
   const approved = record.status === 'APPROVED'
+  const held = approved ? holdReason(negotiation) : null
   const pending = actions.pendingComposition === record.compositionId
   return (
     <article className={`pr-draft${record.status === 'BLOCKED' ? ' pr-draft--blocked' : ''}`}>
@@ -137,6 +139,13 @@ export function ThreadDraft({
           <AlertTriangle />
           <AlertTitle>Не уйдёт, пока это не решено</AlertTitle>
           <AlertDescription>{summary.blocking.map(check => check.detail).join(' ')}</AlertDescription>
+        </Alert>
+      )}
+      {held && (
+        <Alert>
+          <AlertTriangle />
+          <AlertTitle>Подтверждено, но пока не отправляется</AlertTitle>
+          <AlertDescription>{held}</AlertDescription>
         </Alert>
       )}
 

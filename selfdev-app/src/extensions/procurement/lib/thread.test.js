@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
-  channelLabel, contactWarning, highlightSegments, isLongText, relativeTime,
+  channelLabel, contactWarning, highlightSegments, holdReason, isLongText, relativeTime,
   selectableContacts, silenceSince, supplierLocalTime, textPreview, threadSide,
 } from './thread.js'
 
@@ -108,4 +108,11 @@ test('the hour at the supplier\'s end is shown when the directory knows it', () 
   assert.equal(supplierLocalTime(null, noon), null)
   // A broken zone in the directory must not take the page down with it.
   assert.equal(supplierLocalTime('Not/AZone', noon), null)
+})
+
+test('an approved message that cannot be queued says which gate holds it', () => {
+  assert.match(holdReason({ status: 'ESCALATED' }), /эскалация/)
+  assert.match(holdReason({ status: 'PAUSED_BY_CHANGE' }), /изменением карточки/)
+  assert.match(holdReason({ status: 'QUEUED', automationPaused: true }), /автодействия/)
+  assert.equal(holdReason({ status: 'QUEUED' }), null)
 })
