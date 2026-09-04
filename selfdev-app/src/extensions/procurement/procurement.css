@@ -1090,3 +1090,29 @@
 .pr-source-text { margin-top: 7px; }
 .pr-source-text > summary { cursor: pointer; color: var(--pr-muted); font-size: 12px; }
 .pr-source-text pre { margin: 7px 0 0; max-height: 320px; overflow: auto; }
+
+.pr-quote__compare { margin: 0; padding: 6px 10px; border-bottom: 1px solid var(--pr-border); display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.pr-quote__moved { display: flex; flex-direction: column; gap: 2px; }
+.pr-quote__moved s { color: var(--pr-muted); }
+
+/* Files the supplier actually sent, with what happened to each. */
+.pr-attachment-strip { display: flex; gap: 7px; flex-wrap: wrap; }
+.pr-attachment-strip a { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--pr-border); border-radius: 8px; padding: 5px 9px; font-size: 12px; color: inherit; background: var(--pr-card); }
+.pr-attachment-strip a:hover { text-decoration: none; border-color: var(--pr-accent); }
+.pr-attachment-strip small { color: var(--pr-muted); }
+
+/* Signing the RFQ where it is holding a conversation up. */
+.pr-rfq-inline { border: 1px solid var(--pr-border); border-radius: 10px; background: var(--pr-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.pr-rfq-inline header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; }
+.pr-rfq-inline header a { margin-left: auto; }
+.pr-rfq-inline__version > summary { cursor: pointer; font-size: 12px; color: var(--pr-muted); display: flex; align-items: center; gap: 5px; }
+.pr-rfq-inline__version .pr-msg__text { max-height: 320px; overflow: auto; border: 1px solid var(--pr-border); border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 12.5px; }
+
+/* Reading the thread: search, and where the keyboard is. */
+.pr-thread__search { font: inherit; font-size: 12px; border: 1px solid var(--pr-border); border-radius: 999px; padding: 3px 11px; background: var(--pr-card); color: var(--pr-text); min-width: 190px; }
+.pr-row--found > * { outline: 2px solid color-mix(in oklch, var(--pr-accent) 45%, transparent); outline-offset: 3px; }
+.pr-row--focused > * { outline: 2px solid var(--pr-accent); outline-offset: 3px; }
+.pr-thread__hint { margin: 0; color: var(--pr-muted); font-size: 11px; }
+
+.pr-nextbar--held { border-style: dashed; }
+.pr-nextbar__toggle { margin-left: auto; }

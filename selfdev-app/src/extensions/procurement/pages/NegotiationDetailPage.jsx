@@ -9,7 +9,7 @@ import {
   negotiationNextActionLabel, toApiDateTime,
 } from '../api/negotiations'
 import { approvalPayload } from '../lib/compositions'
-import { channelLabel, relativeTime, silenceSince } from '../lib/thread'
+import { channelLabel, relativeTime, silenceSince, supplierLocalTime } from '../lib/thread'
 import { DetailLayout } from '../components/DetailLayout'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
@@ -20,7 +20,8 @@ import { SupplierWebsite } from '../components/SupplierLink'
 import { WebFormRfq } from '../components/WebFormRfq'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Clock, FileCheck, MessageSquare } from '../components/icons'
+import { Button } from '@/components/ui/button'
+import { AlertTriangle, Clock, FileCheck, MessageSquare, Pause, Play } from '../components/icons'
 
 const formatDate = value => (value ? new Date(value).toLocaleString('ru-RU') : '—')
 
@@ -120,6 +121,17 @@ export default function NegotiationDetailPage() {
     onSuccess: refresh,
     onError: error => onError(error, 'Эскалация не взята в работу'),
   }))
+  const automation = run(useMutation({
+    mutationFn: paused => procurementApi.setNegotiationAutomation(negotiationId, paused),
+    onSuccess: refresh,
+    onError: error => onError(error, 'Переключение автодействий'),
+  }))
+  const translate = run(useMutation({
+    mutationFn: ({ communicationId }) =>
+      procurementApi.translateNegotiationMessage(negotiationId, communicationId, 'ru'),
+    onSuccess: (_data, variables) => { variables.onDone?.(); refresh() },
+    onError: error => onError(error, 'Перевод'),
+  }))
   const resolveEscalation = run(useMutation({
     mutationFn: ({ escalationId, payload }) =>
       procurementApi.resolveEscalation(escalationId, payload),
@@ -136,6 +148,12 @@ export default function NegotiationDetailPage() {
   const paused = negotiation.status === 'PAUSED_BY_CHANGE'
   const silence = silenceSince(negotiation)
   const canQueue = canQueueNegotiations && isQueueableNegotiationStatus(negotiation.status)
+  const peers = negotiation.peers || []
+  // No natural order between conversations on one card, so this is "somewhere
+  // else to go", not "next": one hop plus the full list in the rail.
+  const nextPeer = peers[0]
+  const contact = (negotiation.contacts || []).find(item => item.isCurrent)
+  const supplierTime = supplierLocalTime(contact?.timezone)
 
   const actions = {
     approve: (record, text) => approve.mutate({ record, text }),
@@ -150,6 +168,8 @@ export default function NegotiationDetailPage() {
     prepareDraft: () => prepareDraft.mutate(),
     createDraft: (text, onDone) => createDraft.mutate({ text, onDone }),
     claim: escalationId => claimEscalation.mutate(escalationId),
+    translate: (communicationId, onDone) => translate.mutate({ communicationId, onDone }),
+    pendingTranslation: translate.isPending ? translate.variables?.communicationId : null,
     resolve: (escalationId, payload) => resolveEscalation.mutate({ escalationId, payload }),
     pendingComposition: approve.isPending || saveEdit.isPending || reject.isPending
       ? approve.variables?.record?.compositionId
@@ -209,6 +229,13 @@ export default function NegotiationDetailPage() {
         <SupplierWebsite supplierId={negotiation.supplierId} />
       </>}
       actions={<>
+        {/* The specialist works a card, not a page: the other suppliers asked
+            the same question are one hop away, and the rest are in the rail. */}
+        {nextPeer && (
+          <RouterLinkButton variant="outline" to={`/procurement/negotiations/${nextPeer.id}`}>
+            {nextPeer.supplierName}{peers.length > 1 ? ` и ещё ${peers.length - 1}` : ''} →
+          </RouterLinkButton>
+        )}
         {canWriteSupplierResponses && (
           <RouterLinkButton variant="outline" to={`/procurement/negotiations/${negotiation.id}/responses/new`}>
             <FileCheck />Обработать ответ
@@ -222,7 +249,7 @@ export default function NegotiationDetailPage() {
     >
       {/* One line for the question the page is opened with: what happens next,
           when, and through which channel. */}
-      <div className="pr-nextbar">
+      <div className={`pr-nextbar${negotiation.automationPaused ? ' pr-nextbar--held' : ''}`}>
         <StatusBadge status={negotiation.status} compact />
         <span>
           Следующее действие: <strong>{negotiationNextActionLabel(negotiation.nextAction)}</strong>
@@ -230,10 +257,27 @@ export default function NegotiationDetailPage() {
             ? <> · {formatDate(negotiation.nextActionAt)} ({relativeTime(negotiation.nextActionAt)})</>
             : ' · время не назначено'}
           {' · '}{channelLabel(negotiation.channel)}
+          {supplierTime && <> · {supplierTime} у поставщика</>}
         </span>
+        {negotiation.automationPaused && (
+          <StatusBadge status="PENDING" label="Агент на паузе" compact />
+        )}
         {silence && <span className="pr-muted"><Clock size={13} /> поставщик молчит {silence} дн.</span>}
         {negotiation.escalations?.length > 0 && (
           <span className="pr-muted">открытых эскалаций: {negotiation.escalations.length}</span>
+        )}
+        {canQueueNegotiations && (
+          <Button
+            className="pr-nextbar__toggle"
+            variant="outline"
+            size="sm"
+            isDisabled={automation.isPending}
+            onPress={() => automation.mutate(!negotiation.automationPaused)}
+          >
+            {negotiation.automationPaused
+              ? <><Play size={14} />Возобновить автодействия</>
+              : <><Pause size={14} />Приостановить автодействия</>}
+          </Button>
         )}
       </div>
 

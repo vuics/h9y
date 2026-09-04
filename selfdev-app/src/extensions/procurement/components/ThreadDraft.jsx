@@ -3,7 +3,9 @@ import React, { useEffect, useState } from 'react'
 import { Attribution } from './ThreadMessage'
 import { StatusBadge } from './StatusBadge'
 import { checkSummary, finalText, hasUnsavedEdit } from '../lib/compositions'
-import { channelLabel, contactWarning, relativeTime, selectableContacts } from '../lib/thread'
+import {
+  channelLabel, contactWarning, relativeTime, selectableContacts, supplierLocalTime,
+} from '../lib/thread'
 import { COMPOSITION_STATUS_LABELS, TRIGGER_LABELS } from '../lib/playbookLabels'
 import { negotiationNextActionLabel } from '../api/negotiations'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -59,6 +61,15 @@ export function ChannelPicker({ contacts = [], value, onChange, disabled = false
  * belongs to were on two different pages, and deciding about one without
  * reading the other is how a wrong message gets approved.
  */
+function SupplierClock({ contacts, contactId }) {
+  const contact = (contacts || []).find(item => item.contactId === contactId)
+  const at = supplierLocalTime(contact?.timezone)
+  if (!at) return null
+  // A follow-up delivered at three in the morning is a lost day, and the
+  // person scheduling it is looking at their own clock.
+  return <small className="pr-muted">сейчас у поставщика {at}</small>
+}
+
 export function ThreadDraft({
   record, contacts, negotiation, actions, canDecide = false,
 }) {
@@ -110,6 +121,7 @@ export function ThreadDraft({
                 }
               }}
             />
+            <SupplierClock contacts={contacts} contactId={record.contactId || negotiation?.contactId} />
           </label>
         )}
       </div>
@@ -212,6 +224,7 @@ export function PlannedAction({ entry, contacts, actions, canDecide = false }) {
               }
             }}
           />
+          <SupplierClock contacts={contacts} contactId={negotiation.contactId} />
         </label>
         {canDecide && (
           <Button size="sm" variant="outline" onPress={() => actions.sendNow()}>

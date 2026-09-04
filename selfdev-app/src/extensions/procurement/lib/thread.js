@@ -127,6 +127,23 @@ export function relativeTime(value, now = Date.now()) {
   return ahead ? `через ${text}` : `${text} назад`
 }
 
+/** What time it is where the supplier is, when the directory knows.
+ *
+ * A follow-up that lands at three in the morning in Shandong is a lost day, so
+ * the hour at the other end belongs next to the field that schedules it.
+ */
+export function supplierLocalTime(timezone, now = new Date()) {
+  if (!timezone) return null
+  try {
+    return new Intl.DateTimeFormat('ru-RU', {
+      timeZone: timezone, hour: '2-digit', minute: '2-digit',
+    }).format(now)
+  } catch {
+    // An unknown zone in the directory must not take the page down with it.
+    return null
+  }
+}
+
 /** How long the supplier has been silent, when that is the live question. */
 export function silenceSince(negotiation, now = Date.now()) {
   const messages = negotiation?.messages || []

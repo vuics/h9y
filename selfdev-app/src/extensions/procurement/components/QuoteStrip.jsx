@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { StatusBadge } from './StatusBadge'
@@ -12,8 +12,12 @@ import { channelLabel } from '../lib/thread'
  * about payment terms is a fact about the quotation.
  */
 export function QuoteStrip({ quote, previous = null }) {
+  const [comparing, setComparing] = useState(false)
   if (!quote) return null
   const before = new Map((previous?.fields || []).map(field => [field.key, field.value]))
+  const moved = (quote.fields || []).filter(
+    field => before.has(field.key) && before.get(field.key) !== field.value,
+  )
   return (
     <section className="pr-quote">
       <header>
@@ -33,6 +37,27 @@ export function QuoteStrip({ quote, previous = null }) {
         )}
         <Link to={`/procurement/proposals/${quote.responseId}`}>Открыть предложение</Link>
       </header>
+      {/* Two answers with different numbers is the negotiation itself, and the
+          movement between them is easier to judge than either row alone. */}
+      {previous && (
+        <p className="pr-quote__compare">
+          <button type="button" className="pr-link-button" onClick={() => setComparing(current => !current)}>
+            {comparing ? 'Скрыть сравнение' : `Сравнить с ревизией ${previous.revision}`}
+          </button>
+          {comparing && (moved.length > 0 ? (
+            <span className="pr-quote__moved">
+              {moved.map(field => (
+                <span key={field.key}>
+                  {field.label}: <s>{before.get(field.key) || 'не указано'}</s>{' → '}
+                  <b>{field.value || 'не указано'}</b>
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span className="pr-muted">Коммерческие поля не изменились.</span>
+          ))}
+        </p>
+      )}
       <div className="pr-quote__grid">
         {quote.fields.map(field => {
           const changed = previous && before.has(field.key) && before.get(field.key) !== field.value

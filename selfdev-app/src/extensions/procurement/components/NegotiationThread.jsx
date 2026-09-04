@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { EmptyState } from './AsyncState'
+import { StatusBadge } from './StatusBadge'
 import { ChannelPicker, PlannedAction, ThreadDraft } from './ThreadDraft'
 import { CardChangeEvent, EscalationEvent, StatusGroup, StatusLine } from './ThreadEvents'
 import { QuoteStrip } from './QuoteStrip'
@@ -21,6 +22,24 @@ const INTENTS = [
 
 const CHANNEL_FILTERS = ['email', 'whatsapp', 'web_form', 'xmpp']
 
+/** Everything in one entry a search should be able to find. */
+function entryText(entry) {
+  if (entry.kind === 'message') {
+    return [entry.message.subject, entry.message.text, entry.message.author].join(' ')
+  }
+  if (entry.kind === 'composition') {
+    return entry.composition.editedText || entry.composition.draftText || ''
+  }
+  if (entry.kind === 'escalation') {
+    return [entry.escalation.title, entry.escalation.recommendation].join(' ')
+  }
+  if (entry.kind === 'quote') {
+    return (entry.quote.fields || []).map(field => `${field.label} ${field.value || ''}`).join(' ')
+  }
+  if (entry.kind === 'cardChange') return 'параметры карточки изменились'
+  return ''
+}
+
 /** The conversation, everything scheduled on it, and the box to add to it.
  *
  * One column, in order: what the supplier said, what we said, what the system
@@ -35,6 +54,10 @@ export function NegotiationThread({
   const [highlight, setHighlight] = useState(true)
   const [channel, setChannel] = useState('all')
   const [draft, setDraft] = useState('')
+  const [search, setSearch] = useState('')
+  const [focused, setFocused] = useState(-1)
+  const searchRef = useRef(null)
+  const composerRef = useRef(null)
 
   const canDecide = permissions.canQueueNegotiations
   const timeline = useMemo(() => buildTimeline({
@@ -51,13 +74,53 @@ export function NegotiationThread({
     ? past
     : past.filter(entry => entry.kind !== 'message' || entry.message.channel === channel)
   const folded = collapseStatusRuns(visible)
+  const needle = search.trim().toLowerCase()
+  const matches = useMemo(
+    () => (needle ? folded.filter(entry => entryText(entry).toLowerCase().includes(needle)) : []),
+    [folded, needle],
+  )
+  const matchIds = new Set(matches.map(entry => entry.id))
   const counts = (negotiation.messages || []).reduce((totals, message) => ({
     ...totals, [message.channel]: (totals[message.channel] || 0) + 1,
   }), {})
 
+  // j/k walk the conversation, "/" jumps to search, "n" to the message box.
+  // A long thread is read like a mailbox, and reaching for the mouse for every
+  // step is what makes people stop reading it to the end.
+  useEffect(() => {
+    const onKey = event => {
+      const tag = event.target?.tagName
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || event.target?.isContentEditable) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const list = needle ? matches : folded
+      if (event.key === 'j' || event.key === 'k') {
+        event.preventDefault()
+        const step = event.key === 'j' ? 1 : -1
+        const next = Math.min(Math.max(focused + step, 0), list.length - 1)
+        setFocused(next)
+        const target = list[next]
+        if (target) {
+          window.document.getElementById(`entry-${target.id}`)
+            ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }
+      }
+      if (event.key === '/') { event.preventDefault(); searchRef.current?.focus() }
+      if (event.key === 'n') { event.preventDefault(); composerRef.current?.focus() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [folded, matches, needle, focused])
+
   const renderEntry = entry => {
     if (entry.kind === 'message') {
-      return <ThreadMessage entry={entry} highlight={highlight} negotiationId={negotiation.id} />
+      return (
+        <ThreadMessage
+          entry={entry}
+          highlight={highlight}
+          actions={actions}
+          canAct={canDecide}
+        />
+      )
     }
     if (entry.kind === 'composition') {
       return (
@@ -96,6 +159,7 @@ export function NegotiationThread({
           negotiation={negotiation}
           actions={actions}
           canDecide={permissions.canManageNegotiations}
+          canApproveRfq={permissions.canWriteCards}
         />
       )
     }
@@ -127,6 +191,15 @@ export function NegotiationThread({
           </button>
         ))}
         <span className="pr-thread__spacer" />
+        <input
+          ref={searchRef}
+          className="pr-thread__search"
+          type="search"
+          value={search}
+          placeholder="Поиск по переписке  ·  /"
+          onChange={event => { setSearch(event.target.value); setFocused(-1) }}
+        />
+        {needle && <span className="pr-muted">найдено: {matches.length}</span>}
         <button
           type="button"
           className="pr-chip"
@@ -144,9 +217,32 @@ export function NegotiationThread({
         />
       )}
 
+      {negotiation.attachments?.length > 0 && (
+        <div className="pr-attachment-strip">
+          {negotiation.attachments.map(file => (
+            <a key={file.id} href={`/api/procurement/v1/supplier-response-attachments/${file.id}`} target="_blank" rel="noreferrer">
+              <strong>{file.filename}</strong>
+              <small>{Math.round((file.size || 0) / 1024)} КБ</small>
+              <StatusBadge status={file.status} compact />
+            </a>
+          ))}
+        </div>
+      )}
+
       <div className="pr-thread__entries">
-        {folded.map(entry => (
-          <div key={entry.id} className={`pr-row pr-row--${threadSide(entry)}`}>{renderEntry(entry)}</div>
+        {folded.map((entry, index) => (
+          <div
+            key={entry.id}
+            id={`entry-${entry.id}`}
+            className={[
+              'pr-row',
+              `pr-row--${threadSide(entry)}`,
+              matchIds.has(entry.id) ? 'pr-row--found' : '',
+              (needle ? matches : folded)[focused]?.id === entry.id ? 'pr-row--focused' : '',
+            ].filter(Boolean).join(' ')}
+          >
+            {renderEntry(entry, index)}
+          </div>
         ))}
       </div>
 
@@ -192,6 +288,7 @@ export function NegotiationThread({
             ))}
           </div>
           <Textarea
+            ref={composerRef}
             rows={3}
             value={draft}
             placeholder="Написать поставщику… Текст пройдёт те же проверки и станет черновиком — он не уйдёт без подтверждения."

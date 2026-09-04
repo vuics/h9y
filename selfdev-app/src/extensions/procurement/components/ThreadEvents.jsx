@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { RfqApproval } from './RfqApproval'
 import { StatusBadge, statusLabel } from './StatusBadge'
 import { escalationActions, escalationOutcomes } from '../api/escalations'
 import { CHANGE_FIELD_LABELS } from '../lib/thread'
@@ -110,7 +111,9 @@ export function EscalationEvent({ escalation, actions, permissions }) {
  * The negotiation is not over — the supplier, the history and the contact are
  * all still here — so this asks one question instead of silently ending it.
  */
-export function CardChangeEvent({ change, negotiation, actions, canDecide = false }) {
+export function CardChangeEvent({
+  change, negotiation, actions, canDecide = false, canApproveRfq = false,
+}) {
   const decided = Boolean(change.resolution)
   const preparing = change.draftStatus === 'PREPARING'
   const pending = actions.pendingCardChange
@@ -142,11 +145,20 @@ export function CardChangeEvent({ change, negotiation, actions, canDecide = fals
       )}
       <p>
         Переговоры приостановлены: сообщения по прежним требованиям не отправляются, а
-        полученные ранее предложения помечены как данные по старым условиям.{' '}
-        <Link to={`/procurement/requests/${negotiation.cardId}/rfq`}>
-          RFQ {change.currentRfqId || ''} · {change.rfqApproved ? 'утверждён' : 'не утверждён'}
-        </Link>
+        полученные ранее предложения помечены как данные по старым условиям.
       </p>
+      {/* The RFQ is what is actually holding this up, so it is signed here
+          rather than on a page the specialist has to go and find. */}
+      {!change.rfqApproved && !decided && (
+        <RfqApproval cardId={negotiation.cardId} canApprove={canApproveRfq} />
+      )}
+      {change.rfqApproved && (
+        <p className="pr-muted">
+          <Link to={`/procurement/requests/${negotiation.cardId}/rfq`}>
+            RFQ {change.currentRfqId || negotiation.rfqId} утверждён
+          </Link>{' '}— переговоры можно продолжать.
+        </p>
+      )}
       {preparing && (
         <p className="pr-muted pr-tevent__preparing">
           <Clock size={13} /> Черновик уведомления готовится — он появится ниже, в

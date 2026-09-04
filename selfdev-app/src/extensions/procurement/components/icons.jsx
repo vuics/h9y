@@ -24,4 +24,6 @@ export const RotateBack = props => <Icon {...props}><path d="M3 12a9 9 0 1 0 3-6
 export const Activity = props => <Icon {...props}><path d="M3 12h4l3 8 4-16 3 8h4"/></Icon>
 export const ArrowUp = props => <Icon {...props}><path d="M12 20V4M6 10l6-6 6 6"/></Icon>
 export const ArrowDown = props => <Icon {...props}><path d="M12 4v16M6 14l6 6 6-6"/></Icon>
+export const Pause = props => <Icon {...props}><path d="M9 5v14M15 5v14" /></Icon>
+export const Play = props => <Icon {...props}><path d="M7 4v16l13-8Z" /></Icon>
 export const Pencil = props => <Icon {...props}><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="m14 6 4 4"/></Icon>

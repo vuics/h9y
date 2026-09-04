@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 
 import {
   channelLabel, contactWarning, highlightSegments, isLongText, relativeTime,
-  selectableContacts, silenceSince, textPreview, threadSide,
+  selectableContacts, silenceSince, supplierLocalTime, textPreview, threadSide,
 } from './thread.js'
 
 const text = 'Price is USD 415.00 per kg, MOQ 25 kg.'
@@ -99,4 +99,13 @@ test('channels are named as the specialist knows them', () => {
   assert.equal(channelLabel('whatsapp'), 'WhatsApp')
   assert.equal(channelLabel('web_form'), 'Веб-форма')
   assert.equal(channelLabel(undefined), 'Канал не указан')
+})
+
+test('the hour at the supplier\'s end is shown when the directory knows it', () => {
+  const noon = new Date('2026-09-04T12:00:00Z')
+
+  assert.equal(supplierLocalTime('Asia/Shanghai', noon), '20:00')
+  assert.equal(supplierLocalTime(null, noon), null)
+  // A broken zone in the directory must not take the page down with it.
+  assert.equal(supplierLocalTime('Not/AZone', noon), null)
 })

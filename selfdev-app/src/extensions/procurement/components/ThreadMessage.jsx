@@ -115,9 +115,16 @@ const AUTHOR_KIND = {
   human: 'Действие специалиста',
 }
 
+const FAILED_DELIVERY = new Set(['FAILED', 'REJECTED', 'BOUNCED', 'UNDELIVERED'])
+
 /** One delivered message, with everything that was made of it underneath. */
-export function ThreadMessage({ entry, highlight = true, negotiationId }) {
+export function ThreadMessage({ entry, highlight = true, actions = null, canAct = false }) {
   const { message, attribution, quotes = [] } = entry
+  const [translated, setTranslated] = useState(false)
+  const translation = message.translations?.ru
+  const inbound = message.kind === 'supplier'
+  const failed = message.kind === 'system_error' || FAILED_DELIVERY.has(message.status)
+  const body = translated && translation ? translation : message.text
   return (
     <article className={`pr-msg pr-msg--${message.kind}`} id={`msg-${message.id}`}>
       <header>
@@ -129,13 +136,43 @@ export function ThreadMessage({ entry, highlight = true, negotiationId }) {
         <time>{formatDate(message.createdAt)}</time>
       </header>
       {message.subject && <p className="pr-msg__subject">{message.subject}</p>}
-      <FoldedText text={message.text} spans={message.spans} highlight={highlight} />
+      {/* Marks belong on the original: they are character ranges into the text
+          the extractor read, and a translation is a different string. */}
+      <FoldedText
+        text={body}
+        spans={translated ? [] : message.spans}
+        highlight={highlight && !translated}
+      />
+      {translated && (
+        <p className="pr-muted">
+          Перевод. Оригинал — то, что было получено, и именно он остаётся доказательством.
+        </p>
+      )}
       <div className="pr-msg__foot">
         <StatusBadge status={message.status} label={deliveryLabel(message.status)} compact />
         {message.attachments?.length > 0 && message.attachments.map(url => (
           <a key={url} href={url} target="_blank" rel="noreferrer">Вложение <ExternalLink size={12} /></a>
         ))}
         {message.sourceId && <Badge variant="outline" title="Источник извлечения">{message.sourceId}</Badge>}
+        {inbound && (translation ? (
+          <button type="button" className="pr-link-button" onClick={() => setTranslated(current => !current)}>
+            {translated ? 'Показать оригинал' : 'Показать перевод'}
+          </button>
+        ) : canAct && (
+          <button
+            type="button"
+            className="pr-link-button"
+            disabled={actions?.pendingTranslation === message.id}
+            onClick={() => actions?.translate(message.id, () => setTranslated(true))}
+          >
+            {actions?.pendingTranslation === message.id ? 'Перевод…' : 'Перевести на русский'}
+          </button>
+        ))}
+        {failed && canAct && (
+          <button type="button" className="pr-link-button" onClick={() => actions?.sendNow()}>
+            Повторить отправку
+          </button>
+        )}
       </div>
       <Attribution record={attribution} />
       {quotes.map((quote, index) => (
@@ -145,10 +182,11 @@ export function ThreadMessage({ entry, highlight = true, negotiationId }) {
           previous={quotes[index - 1] || entry.previousQuote || null}
         />
       ))}
-      {message.kind === 'system_error' && (
+      {failed && (
         <p className="pr-msg__error">
-          Сообщение не ушло. Проверьте канал и повторите отправку из очереди —{' '}
-          <Link to={`/procurement/negotiations/${negotiationId}`}>задание</Link> остаётся в работе.
+          Сообщение не ушло: канал вернул «{deliveryLabel(message.status)}». Проверьте
+          адрес контакта или отправьте через другой канал — переписка остаётся здесь,
+          сменить канал можно у запланированного сообщения ниже.
         </p>
       )}
     </article>

@@ -100,6 +100,15 @@ export const negotiationEndpoints = {
     })),
   createNegotiationDraft: mutation((negotiationId, payload) =>
     request(`/negotiations/${id(negotiationId)}/drafts`, { method: 'post', data: payload })),
+  // Hold the agent on one conversation without cancelling it.
+  setNegotiationAutomation: mutation((negotiationId, paused) =>
+    request(`/negotiations/${id(negotiationId)}/automation`, {
+      method: 'post', data: { paused },
+    })),
+  translateNegotiationMessage: mutation((negotiationId, communicationId, language = 'ru') =>
+    request(`/negotiations/${id(negotiationId)}/messages/${id(communicationId)}/translation`, {
+      method: 'post', data: { language },
+    })),
 }
 
 export const proposalEndpoints = {
