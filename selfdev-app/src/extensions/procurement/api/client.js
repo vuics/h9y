@@ -8,6 +8,7 @@
 
 import { accessEndpoints } from './endpoints/access'
 import { analyticsEndpoints } from './endpoints/analytics'
+import { campaignEndpoints } from './endpoints/campaigns'
 import {
   communicationEndpoints,
   negotiatorActivityEndpoints,
@@ -36,6 +37,7 @@ export const procurementApi = {
   ...analyticsEndpoints,
   ...cardEndpoints,
   ...cardImportEndpoints,
+  ...campaignEndpoints,
   ...rfqEndpoints,
   ...echemiEndpoints,
   ...sourcingEndpoints,

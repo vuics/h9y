@@ -63,6 +63,52 @@ export function sourcingFixtureById(runId) {
   return String(runId) === sourcingRun.id ? sourcingRun : null
 }
 
+// One campaign in each state a reader needs to recognise: a run still going,
+// and a finished one whose remaining work is a decision rather than a search.
+const campaigns = [
+  {
+    campaignId: 'CMP-FIXTURE01',
+    title: '1,3-Бутадиен и ещё 3',
+    status: 'AWAITING_REVIEW',
+    reach: 'OUTREACH',
+    importId: 'IMP-FIXTURE01',
+    progress: { total: 4, settled: 4, awaitingReview: 3, failed: 1, byStage: { AWAITING_REVIEW: 3, FAILED: 1 }, candidateTotal: 27, contactTotal: 19 },
+    createdAt: ago(4),
+    updatedAt: ago(2),
+    completedAt: ago(2),
+    plan: { reach: 'OUTREACH', channels: ['EMAIL', 'ECHEMI', 'WEB_FORM'], approveRfq: true, draftFirst: false, maxResults: 10, engineIds: null, queryTemplateIds: null, siteProbe: true },
+    errors: [],
+    cancelRequested: false,
+    members: [
+      { cardId: 90001, title: '1,3-Бутадиен', casNumber: '106-99-0', stage: 'AWAITING_REVIEW', sourcingRunId: 'SRC-RUN-90001', candidateCount: 9, contactCount: 7, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: 'CANDIDATE_REVIEW', startedAt: ago(4), finishedAt: ago(3) },
+      { cardId: 90002, title: 'Ксилит', casNumber: '87-99-0', stage: 'AWAITING_REVIEW', sourcingRunId: 'SRC-RUN-90002', candidateCount: 11, contactCount: 8, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: 'CANDIDATE_REVIEW', startedAt: ago(4), finishedAt: ago(3) },
+      { cardId: 90003, title: 'Глицин', casNumber: '56-40-6', stage: 'AWAITING_REVIEW', sourcingRunId: 'SRC-RUN-90003', candidateCount: 7, contactCount: 4, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: 'CANDIDATE_REVIEW', startedAt: ago(4), finishedAt: ago(2) },
+      { cardId: 90004, title: 'Бензол', casNumber: '71-43-2', stage: 'FAILED', sourcingRunId: null, candidateCount: 0, contactCount: 0, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: 'CARD_NOT_NORMALIZED', waitingFor: null, startedAt: ago(4), finishedAt: ago(4) },
+    ],
+  },
+]
+
+// The list carries the summary only, exactly as the API's own list route does:
+// a fixture that returned members would hide a page reading a field the real
+// response never sends.
+export const campaignList = {
+  items: campaigns.map(item => ({
+    campaignId: item.campaignId,
+    title: item.title,
+    status: item.status,
+    reach: item.reach,
+    importId: item.importId,
+    progress: item.progress,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    completedAt: item.completedAt,
+  })),
+}
+
+export function campaignFixtureById(campaignId) {
+  return campaigns.find(item => item.campaignId === String(campaignId)) || null
+}
+
 export const suppliers = [
   { id: 'SUP-A19F', name: 'Qingdao Nova Chemical Co.', country: 'CN', qualificationStatus: 'UNDER_REVIEW', contacts: [{ id: 'CONTACT-91', name: 'Lin Wei', role: 'Export manager', channel: 'email', address: 'lin.wei@fixture.invalid', verificationStatus: 'VERIFIED', active: true }], capabilities: [{ casNumber: '106-99-0', productName: '1,3-Butadiene', verificationStatus: 'CLAIMED', source: 'ECHEMI_MARKETPLACE_LISTING', sourceUrl: 'https://example.invalid/source/1' }], updatedAt: ago(1) },
   { id: 'SUP-B72D', name: 'Jiangsu Meridian Materials', country: 'CN', qualificationStatus: 'QUALIFIED', contacts: [{ id: 'CONTACT-27', name: 'Mei Chen', role: 'International sales', channel: 'whatsapp', address: '+86 •••• 1842', verificationStatus: 'VERIFIED', active: true }], capabilities: [{ casNumber: '106-99-0', productName: 'Butadiene, polymerization grade', verificationStatus: 'VERIFIED', source: 'OFFICIAL_CATALOGUE', sourceUrl: 'https://example.invalid/source/2' }], updatedAt: ago(3) },

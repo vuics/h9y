@@ -902,3 +902,37 @@
 .pr-handover > div { border: 1px solid var(--pr-border); border-radius: 8px; padding: 12px; background: #fff; }
 .pr-handover strong { display: block; font-size: 22px; line-height: 1.2; }
 .pr-handover span { display: block; margin-top: 4px; color: var(--pr-muted); font-size: 12px; }
+
+/* ---------------------------------------------------------------- campaigns */
+
+/* The reach control is one ordered choice, not a row of switches: the steps
+   depend on each other, so they are drawn as a ladder the eye reads downwards. */
+.pr-reach-ladder, .pr-campaign-channels, .pr-campaign-approval { border: 0; margin: 0 0 16px; padding: 0; }
+.pr-reach-ladder legend, .pr-campaign-channels legend, .pr-campaign-approval legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 650; }
+.pr-reach-ladder label { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 9px; align-items: start; border: 1px solid var(--pr-border); border-radius: 8px; background: var(--pr-card); padding: 9px 11px; cursor: pointer; }
+.pr-reach-ladder label + label { margin-top: 6px; }
+.pr-reach-ladder label.is-selected { border-color: var(--pr-accent); background: var(--pr-accent-soft); }
+.pr-reach-ladder input { margin-top: 3px; }
+.pr-reach-ladder strong { display: block; font-size: 12px; }
+.pr-reach-ladder span { color: var(--pr-muted); font-size: 11px; }
+.pr-campaign-channels { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.pr-campaign-channels legend { width: 100%; margin-bottom: 0; }
+.pr-campaign-channels label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+.pr-campaign-channels .pr-note { width: 100%; margin: 0; }
+.pr-campaign-approval label { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 9px; align-items: start; cursor: pointer; }
+.pr-campaign-approval label + label { margin-top: 8px; }
+.pr-campaign-approval input { margin-top: 2px; }
+.pr-campaign-approval strong { display: block; font-size: 12px; }
+.pr-campaign-approval span { color: var(--pr-muted); font-size: 11px; }
+
+/* Sticky so the count and the launch button stay reachable while the operator
+   scrolls a long register ticking substances. */
+.pr-selection-bar { position: sticky; top: 6px; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--pr-accent); border-radius: 9px; background: var(--pr-accent-soft); padding: 9px 12px; font-size: 12px; }
+.pr-table__select { width: 34px; }
+.pr-table__select label { display: block; line-height: 0; }
+
+.pr-campaign-bar { height: 8px; overflow: hidden; border-radius: 999px; background: var(--pr-surface-muted, #eef1f4); margin-bottom: 13px; }
+.pr-campaign-bar span { display: block; height: 100%; border-radius: 999px; background: var(--pr-signal-green); transition: width .4s ease; }
+.pr-plain-list { margin: 0; padding-left: 16px; }
+
+@media (max-width: 760px) { .pr-selection-bar { flex-direction: column; align-items: stretch; } }

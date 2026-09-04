@@ -10,9 +10,13 @@ import { StatusBadge, statusLabel } from '../components/StatusBadge'
 import { businessRoleLabel, businessRoleSourceLabels } from '../components/BusinessRole'
 import { ContactScanProgress, SourcingProgress } from '../components/SourcingProgress'
 import { SourcingSourceTable } from '../components/SourcingSourceTable'
-import { QueryPlanPanel } from '../components/QueryPlanPanel'
-import { EnginePicker } from '../components/EnginePicker'
 import { SelectField } from '../components/SelectField'
+import {
+  SourcingSettings,
+  canLaunch,
+  defaultSourcingValue,
+  useSourcingSettings,
+} from '../components/SourcingSettings'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -51,21 +55,6 @@ const externalUrl = value => {
     return null
   }
 }
-
-// Mirrors the backend: the chosen number is a budget shared out over the
-// queries, then clamped, so the same choice means different things depending on
-// how many queries a run uses. Stating the result stops "10" reading as a
-// promise of ten sources when it produces about eighty.
-const plural = (count, one, few, many) => {
-  const mod10 = count % 10
-  const mod100 = count % 100
-  if (mod10 === 1 && mod100 !== 11) return one
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
-  return many
-}
-
-const perQueryResults = (maxResults, queryCount) =>
-  Math.max(2, Math.min(10, Math.ceil(maxResults / queryCount)))
 
 function Score({ candidate }) {
   return <div className={`pr-sourcing-score pr-sourcing-score--${candidate.preliminaryStatus?.toLowerCase()}`} aria-label={`Оценка ${candidate.score} из 100`}><strong>{candidate.score}</strong><span>/100</span></div>
@@ -240,16 +229,17 @@ export default function SourcingPage() {
   const { requestId } = useParams()
   const queryClient = useQueryClient()
   const { canResearchSourcing, canReviewSourcing, canOperateEchemi } = useProcurementPermissions()
-  const [maxResults, setMaxResults] = useState('10')
-  const [siteProbe, setSiteProbe] = useState(true)
+  // The same settings object the campaign launch sends. Shared so a search on
+  // one card and a search on two hundred cannot quietly use different engines,
+  // queries or limits — results that were produced differently must not end up
+  // in one comparison table.
+  const [sourcing, setSourcing] = useState(defaultSourcingValue)
   const [sourceUrl, setSourceUrl] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [reviewDecision, setReviewDecision] = useState('UNDER_REVIEW')
   const [reviewNote, setReviewNote] = useState('')
   const [promotionCandidateId, setPromotionCandidateId] = useState('')
-  const [selectedQueryIds, setSelectedQueryIds] = useState(null)
   const [retryingSourceId, setRetryingSourceId] = useState('')
-  const [selectedEngineIds, setSelectedEngineIds] = useState(null)
 
   const card = useQuery({ queryKey: procurementKeys.card(requestId), queryFn: ({ signal }) => procurementApi.card(requestId, signal) })
   const query = useQuery({
@@ -268,28 +258,12 @@ export default function SourcingPage() {
     if (run?.id) queryClient.setQueryData(procurementKeys.sourcingRun(run.id), run)
     queryClient.invalidateQueries({ queryKey: procurementKeys.card(requestId) })
   }
-  const queryTemplates = useQuery({
-    queryKey: procurementKeys.sourcingQueryTemplates(),
-    queryFn: ({ signal }) => procurementApi.sourcingQueryTemplates(signal),
-  })
-  const templates = queryTemplates.data?.templates || []
-  const effectiveQueryIds = selectedQueryIds ?? templates.filter(item => item.enabled).map(item => item.id)
-  const saveTemplates = useMutation({
-    mutationFn: payload => procurementApi.saveSourcingQueryTemplates(payload),
-    onSuccess: data => {
-      queryClient.setQueryData(procurementKeys.sourcingQueryTemplates(), data)
-      setSelectedQueryIds(null)
-    },
-  })
-  const engines = useQuery({
-    queryKey: procurementKeys.sourcingEngines(),
-    queryFn: ({ signal }) => procurementApi.sourcingEngines(signal),
-  })
-  const engineList = engines.data?.engines || []
-  const availableEngineIds = engineList.filter(item => item.available).map(item => item.id)
-  const effectiveEngineIds = (selectedEngineIds ?? availableEngineIds).filter(id => availableEngineIds.includes(id))
+  const settings = useSourcingSettings()
+  const effectiveQueryIds = sourcing.queryIds ?? settings.defaultQueryIds
+  const effectiveEngineIds = (sourcing.engineIds ?? settings.availableEngineIds)
+    .filter(id => settings.availableEngineIds.includes(id))
   const start = useMutation({
-    mutationFn: () => procurementApi.startSourcing(requestId, Number(maxResults), effectiveQueryIds, effectiveEngineIds, siteProbe),
+    mutationFn: () => procurementApi.startSourcing(requestId, Number(sourcing.maxResults), effectiveQueryIds, effectiveEngineIds, sourcing.siteProbe),
     onSuccess: accept,
   })
   const cancel = useMutation({
@@ -364,25 +338,23 @@ export default function SourcingPage() {
   </>}>
     <div className="pr-stack">
       <Card className="pr-sourcing-launch"><CardHeader><div><CardTitle>Открытый поиск</CardTitle><p>Сайты производителей, регуляторы, разрешения, мощности, инвестпроекты, новости, каталоги и B2B-площадки.</p></div></CardHeader><CardContent>
-        <label className="pr-sourcing-probe">
-          <input type="checkbox" checked={siteProbe} onChange={event => setSiteProbe(event.target.checked)} disabled={isBusy} />
-          <span>
-            <strong>Проверять сайт кандидата</strong>
-            Открывать каталог и страницу «О компании» у тех, кто заявил производство: каталог на тысячи веществ и описание вида «поставщик аналитических стандартов» видны только там. Читается правилами, без обращения к модели.
-          </span>
-        </label>
-        <div className="pr-sourcing-launch__controls"><SelectField label="Лимит результатов" selectedKey={maxResults} onSelectionChange={value => setMaxResults(String(value))} isDisabled={isBusy}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{['1', '5', '10', '20', '50', '100'].map(value => <SelectItem key={value} id={value}>{value}</SelectItem>)}</SelectContent></SelectField><Button isDisabled={!normalized || !canResearchSourcing || isBusy || !effectiveQueryIds.length || !effectiveEngineIds.length} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button>{isRunning && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить поиск'}</Button>}{run && !isRunning && canResearchSourcing && (collectingContacts
-          ? <Button variant="outline" isDisabled={stopContacts.isPending} onPress={() => stopContacts.mutate()}><CircleAlert />{stopContacts.isPending ? 'Останавливаем…' : 'Остановить сбор'}</Button>
-          : <Button variant="outline" isDisabled={collectContacts.isPending} onPress={() => collectContacts.mutate()}><Refresh className={collectContacts.isPending ? 'pr-spin' : undefined} />{collectContacts.isPending ? 'Запускаем…' : 'Собрать контакты'}</Button>)}</div>
+        <SourcingSettings
+          settings={settings}
+          value={sourcing}
+          onChange={setSourcing}
+          disabled={isBusy}
+          canEdit={canReviewSourcing}
+          cas={card.data?.casNumber}
+          substanceName={card.data?.substanceName}
+        />
+        <div className="pr-sourcing-launch__controls">
+          <Button isDisabled={!normalized || !canResearchSourcing || isBusy || !canLaunch(settings, sourcing)} onPress={() => start.mutate()}>{run ? <Refresh className={isBusy ? 'pr-spin' : undefined} /> : <Search className={isBusy ? 'pr-spin' : undefined} />}{isBusy ? 'Поиск выполняется…' : run ? 'Запустить новый поиск' : 'Начать поиск'}</Button>
+          {isRunning && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить поиск'}</Button>}
+          {run && !isRunning && canResearchSourcing && (collectingContacts
+            ? <Button variant="outline" isDisabled={stopContacts.isPending} onPress={() => stopContacts.mutate()}><CircleAlert />{stopContacts.isPending ? 'Останавливаем…' : 'Остановить сбор'}</Button>
+            : <Button variant="outline" isDisabled={collectContacts.isPending} onPress={() => collectContacts.mutate()}><Refresh className={collectContacts.isPending ? 'pr-spin' : undefined} />{collectContacts.isPending ? 'Запускаем…' : 'Собрать контакты'}</Button>)}
+        </div>
         {run && !isRunning && <p className="pr-note">«Собрать контакты» перечитывает сайты найденных компаний и карточки в отраслевых каталогах. Доказательства и решения специалиста не затрагиваются — адрес устаревает сам по себе, и обновить его можно, не переискивая заново.</p>}
-        {effectiveQueryIds.length > 0 && (() => {
-          const per = perQueryResults(Number(maxResults), effectiveQueryIds.length)
-          return <p className="pr-note pr-sourcing-limit-note">
-            До {per} {plural(per, 'результата', 'результатов', 'результатов')}{effectiveQueryIds.length === 1 ? ' для единственного запроса' : ` на каждый из ${effectiveQueryIds.length} ${plural(effectiveQueryIds.length, 'запроса', 'запросов', 'запросов')}`} — по каждому выбранному движку. Охват растёт от числа запросов, а не от этого лимита.
-          </p>
-        })()}
-        <EnginePicker engines={engineList} selectedIds={effectiveEngineIds} disabled={isBusy} onToggle={(id, checked) => setSelectedEngineIds(current => { const base = current ?? availableEngineIds; return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} />
-        <QueryPlanPanel templates={templates} isDefault={queryTemplates.data?.isDefault} selectedIds={effectiveQueryIds} onSelectionChange={(id, checked) => setSelectedQueryIds(current => { const base = current ?? templates.filter(item => item.enabled).map(item => item.id); return checked ? [...new Set([...base, id])] : base.filter(value => value !== id) })} onSave={async payload => { try { await saveTemplates.mutateAsync(payload); return true } catch { return false } }} onReset={() => saveTemplates.mutate((queryTemplates.data?.defaultTemplates || []).map(template => ({ template, enabled: true })))} isSaving={saveTemplates.isPending} saveError={saveTemplates.error} canEdit={canReviewSourcing} disabled={isBusy} cas={card.data?.casNumber} substanceName={card.data?.substanceName} />
         <p className="pr-note">Новый запуск создаёт отдельный снимок результатов. Система не присваивает статус производителя автоматически.</p>
         {canOperateEchemi && <details className="pr-sourcing-manual">
           {/* Collapsed by default: the unified run already covers Echemi as an
@@ -426,7 +398,7 @@ export default function SourcingPage() {
 
         <Card><CardHeader><div><CardTitle>Источники поиска</CardTitle><p>Сохранённые URL и время получения обеспечивают трассируемость оценки.</p></div><span>{run.sources?.length || 0}</span></CardHeader><CardContent>
           {canResearchSourcing && <form className="pr-sourcing-add-source" onSubmit={event => { event.preventDefault(); if (sourceUrl.trim() && !isRunning) addSource.mutate() }}><label className="pr-form-field"><span>Добавить официальный документ или страницу</span><Input type="url" value={sourceUrl} onChange={event => setSourceUrl(event.target.value)} placeholder="https://company.example/permits/..." isDisabled={isRunning} required /></label><Button type="submit" variant="outline" isDisabled={!sourceUrl.trim() || addSource.isPending || isRunning}>{addSource.isPending ? 'Добавление…' : isRunning ? 'Дождитесь завершения поиска' : 'Добавить и проанализировать'}</Button>{isRunning && <p className="pr-note">Ручной источник можно добавить после текущего запуска, чтобы результаты не перезаписали друг друга.</p>}</form>}
-          <SourcingSourceTable sources={run.sources} engines={engineList} onRetry={sourceId => { setRetryingSourceId(sourceId); retrySource.mutate(sourceId) }} retryingId={retryingSourceId} canRetry={canResearchSourcing} isRunning={isRunning} />
+          <SourcingSourceTable sources={run.sources} engines={settings.engineList} onRetry={sourceId => { setRetryingSourceId(sourceId); retrySource.mutate(sourceId) }} retryingId={retryingSourceId} canRetry={canResearchSourcing} isRunning={isRunning} />
           {run.queryPlan?.length > 0 && <details className="pr-sourcing-query-plan"><summary>Запросы, использованные в этом прогоне ({run.queryPlan.length})</summary><ol>{run.queryPlan.map(queryText => <li key={queryText}><code>{queryText}</code></li>)}</ol></details>}
         </CardContent></Card>
       </>}

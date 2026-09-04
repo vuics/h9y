@@ -19,6 +19,8 @@ import { RecentImports } from '../components/ImportRecentList'
 import { SummaryChips } from '../components/ImportSummary'
 import { UploadPanel } from '../components/ImportUploadPanel'
 import { NormalizationPanel } from '../components/NormalizationPanel'
+import { CampaignLaunchPanel } from '../components/CampaignLaunchPanel'
+import { plural } from '../components/SourcingSettings'
 import { StatusBadge } from '../components/StatusBadge'
 import { CopyableId } from '../components/CopyableId'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
@@ -26,7 +28,7 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, CircleAlert, Plus, Refresh } from '../components/icons'
+import { ArrowLeft, CircleAlert, Plus, Refresh, Search } from '../components/icons'
 
 // With a 300-row file, rendering every row at once is neither fast nor readable.
 const VISIBLE_ROW_STEP = 50
@@ -43,6 +45,7 @@ export default function CardImportPage() {
   const [visibleRows, setVisibleRows] = useState(VISIBLE_ROW_STEP)
   const [deselected, setDeselected] = useState(() => new Set())
   const [duplicatePolicy, setDuplicatePolicy] = useState('SKIP')
+  const [launching, setLaunching] = useState(false)
 
   const query = useQuery({
     queryKey: procurementKeys.cardImport(importId),
@@ -110,6 +113,13 @@ export default function CardImportPage() {
   const selectable = selectableRows(run, duplicatePolicy)
   const normalizationRunning = run?.normalization?.state === 'RUNNING'
   const selectedCount = selectable.filter(row => !deselected.has(row.rowNumber)).length
+  // The cards this file actually produced, in file order, so a campaign
+  // launched from here covers exactly what was just imported — not every draft
+  // in the register, and not a row that failed to become a card.
+  const createdCardIds = useMemo(
+    () => (run?.rows || []).map(row => row.createdCardId).filter(id => id != null),
+    [run?.rows],
+  )
 
   if (!importId) {
     return (
@@ -225,12 +235,31 @@ export default function CardImportPage() {
         onFilterOutcome={outcome => setStatusFilter(`NORMALIZATION:${outcome}`)}
       />
 
-      {run.summary.created > 0 && (
+      {createdCardIds.length > 0 && (
         <div className="pr-inline-actions">
-          <RouterLinkButton to="/procurement/requests?status=DRAFT">
+          {canWriteCards && !launching && (
+            <Button onPress={() => setLaunching(true)}>
+              <Search size={15} />
+              Запустить поиск по {createdCardIds.length} {plural(createdCardIds.length, 'веществу', 'веществам', 'веществам')}
+            </Button>
+          )}
+          <RouterLinkButton to="/procurement/requests?status=DRAFT" variant="outline">
             Открыть черновики карточек
           </RouterLinkButton>
         </div>
+      )}
+
+      {/* Offered here rather than only in the register: the file has just
+          become two hundred cards, and asking the operator to go and find them
+          again to do the one thing they uploaded the file for is the step the
+          batch launch exists to remove. */}
+      {launching && createdCardIds.length > 0 && (
+        <CampaignLaunchPanel
+          cardIds={createdCardIds}
+          importId={run.id}
+          canEdit={canWriteCards}
+          onCancel={() => setLaunching(false)}
+        />
       )}
 
       <ImportRowsTable
