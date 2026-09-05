@@ -212,7 +212,7 @@ export default function RFQPage() {
       </Tabs>
 
       {!isApproved && <Card className="pr-rfq-approval"><CardHeader><CardTitle>Явное согласование</CardTitle></CardHeader><CardContent>
-        <p>Откройте и проверьте каждую версию, начиная с коротких — именно они уходят первым письмом поставщику и в формы на сайтах. Кнопка согласует только показанный документ; если RFQ изменится, сервер отклонит запрос.</p>
+        <p>Откройте и проверьте обе версии — именно этот текст уходит первым письмом поставщику и в формы на сайтах. Кнопка согласует только показанный документ; если RFQ изменится, сервер отклонит запрос.</p>
         <div className="pr-rfq-review-state">{available.map(meta => (
           <span key={meta.tab} className={reviewed.has(meta.tab) ? 'is-reviewed' : ''}><Check />{meta.label}</span>
         ))}</div>
