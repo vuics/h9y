@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
@@ -177,6 +177,9 @@ const errorText = code => ERROR_LABEL[code] || code
 
 export default function CampaignPage() {
   const { campaignId } = useParams()
+  // Two presses for the irreversible one, held in the page rather than in a
+  // native dialog the browser is free to suppress.
+  const [confirmSend, setConfirmSend] = useState(false)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const {
@@ -407,6 +410,9 @@ export default function CampaignPage() {
           {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере — ссылка и пароль ниже — и запустите ещё раз.</>}
         </AlertDescription></Alert>}
         {marketplaceAwaiting > 0 && !marketplaceView?.running && <p className="pr-note">Формы заполнены и ждут вас. Отправка необратима: заявку видят все продавцы Echemi, и отозвать её из системы нельзя — на площадке она снимается вручную.</p>}
+        {confirmSend && <Alert><AlertTriangle /><AlertTitle>Отправка необратима</AlertTitle><AlertDescription>
+          {marketplaceAwaiting} {plural(marketplaceAwaiting, 'заявка уйдёт', 'заявки уйдут', 'заявок уйдут')} на Echemi и станут видны всем продавцам площадки. Формы уже заполнены и проверены — перед отправкой каждая согласуется тем же порядком, что и на карточке.
+        </AlertDescription></Alert>}
         {marketplaceView?.running && <p className="pr-note">Идёт выставление: заявки уходят по одной через общий браузер, это занимает минуты на вещество. Страница обновляется сама.</p>}
         {canOperateEchemi && <EchemiBrowserAccess
           access={browser.data}
@@ -428,18 +434,27 @@ export default function CampaignPage() {
               forms because it is the irreversible half, and confirmed once for
               the batch rather than once per substance: a campaign of a hundred
               is a hundred identical decisions the specialist already made when
-              they approved the RFQ. */}
-          {marketplaceAwaiting > 0 && canSubmitEchemi && <Button
-            isDisabled={busyMarketplace}
-            onPress={() => {
-              if (window.confirm(`Отправить ${marketplaceAwaiting} ${plural(marketplaceAwaiting, 'заявку', 'заявки', 'заявок')} на Echemi? Заявка становится видна всем продавцам площадки, отозвать её из системы нельзя.`)) {
-                submitMarketplace.mutate()
-              }
-            }}
-          >
-            <Send className={busyMarketplace ? 'pr-spin' : undefined} />
-            {marketplaceView?.running ? 'Отправляем…' : `Согласовать и отправить (${marketplaceAwaiting})`}
-          </Button>}
+              they approved the RFQ.
+
+              Confirmed in the page, the way the single-card screen does it,
+              and not with `window.confirm`: a native dialog is suppressible by
+              the browser, and when it is suppressed the press silently does
+              nothing — which is exactly what happened the first time this
+              button was used. */}
+          {marketplaceAwaiting > 0 && canSubmitEchemi && (confirmSend
+            ? <>
+                <Button variant="outline" isDisabled={busyMarketplace} onPress={() => setConfirmSend(false)}>
+                  Отмена
+                </Button>
+                <Button isDisabled={busyMarketplace} onPress={() => { setConfirmSend(false); submitMarketplace.mutate() }}>
+                  <Send className={busyMarketplace ? 'pr-spin' : undefined} />
+                  {marketplaceView?.running ? 'Отправляем…' : `Да, отправить ${marketplaceAwaiting}`}
+                </Button>
+              </>
+            : <Button isDisabled={busyMarketplace} onPress={() => setConfirmSend(true)}>
+                <Send className={busyMarketplace ? 'pr-spin' : undefined} />
+                {marketplaceView?.running ? 'Отправляем…' : `Согласовать и отправить (${marketplaceAwaiting})`}
+              </Button>)}
         </div>}
 
         <ul className="pr-campaign-threads">
