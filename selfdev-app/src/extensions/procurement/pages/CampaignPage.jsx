@@ -110,7 +110,7 @@ const MARKETPLACE_STATUS = {
   APPROVED: 'согласована, не отправлена',
   SUBMITTING: 'отправляется',
   SUBMITTED: 'размещена на площадке',
-  NEEDS_REVIEW: 'площадка не подтвердила — проверьте вручную',
+  NEEDS_REVIEW: 'площадка не подтвердила — закончите в браузере',
   HUMAN_ACTION_REQUIRED: 'площадка просит пройти проверку',
   STALE: 'устарела: карточка или RFQ изменились',
   FAILED: 'не выставлена',
@@ -180,6 +180,10 @@ export default function CampaignPage() {
   // Two presses for the irreversible one, held in the page rather than in a
   // native dialog the browser is free to suppress.
   const [confirmSend, setConfirmSend] = useState(false)
+  // A request the platform would not confirm to the browser, but a person saw
+  // go through. Keyed by card so two substances can be settled one after the
+  // other without the note of one landing on the other.
+  const [vouch, setVouch] = useState({})
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const {
@@ -237,6 +241,14 @@ export default function CampaignPage() {
     onSuccess: result => {
       queryClient.setQueryData(procurementKeys.campaignConversations(campaignId), result.conversations)
       queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
+    },
+  })
+  const confirmMarketplace = useMutation({
+    mutationFn: ({ cardId, inquiryId, note }) =>
+      procurementApi.confirmEchemiSubmission(cardId, inquiryId, note),
+    onSuccess: (_data, variables) => {
+      setVouch(current => ({ ...current, [variables.cardId]: undefined }))
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaignMarketplace(campaignId) })
     },
   })
   const submitMarketplace = useMutation({
@@ -297,6 +309,9 @@ export default function CampaignPage() {
   // Filled, checked, and one press from the platform. A different question
   // from `pending`: those still need the browser to go and fill a form.
   const marketplaceAwaiting = marketplaceView?.awaitingApproval || 0
+  const marketplaceNeedsReview = marketplaceItems.filter(
+    item => item.status === 'NEEDS_REVIEW',
+  ).length
   const busyMarketplace = postToMarketplace.isPending
     || submitMarketplace.isPending
     || Boolean(marketplaceView?.running)
@@ -400,6 +415,7 @@ export default function CampaignPage() {
         <CardTitle>Заявки на площадку</CardTitle>
         <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
       </div></CardHeader><CardContent>
+        {confirmMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Не записано</AlertTitle><AlertDescription>{mutationMessage(confirmMarketplace.error)}</AlertDescription></Alert>}
         {(postToMarketplace.error || submitMarketplace.error) && <Alert><AlertTriangle /><AlertTitle>Заявки не выставлены</AlertTitle><AlertDescription>{mutationMessage(postToMarketplace.error || submitMarketplace.error)}</AlertDescription></Alert>}
         {/* One browser fills one form at a time, so a run that meets a
             verification page or a dead worker stops there rather than driving
@@ -409,6 +425,7 @@ export default function CampaignPage() {
           {marketplaceStopped.message}
           {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере — ссылка и пароль ниже — и запустите ещё раз.</>}
         </AlertDescription></Alert>}
+        {marketplaceNeedsReview > 0 && <p className="pr-note">Площадка иногда просит подтвердить, что заявку отправляет человек. Пройти эту проверку за вас агент не может и не должен, поэтому он останавливается и оставляет форму открытой: пройдите проверку в браузере, отправьте заявку там же — и нажмите «Заявка ушла — записать», чтобы кампания перестала считать её неотправленной.</p>}
         {marketplaceAwaiting > 0 && !marketplaceView?.running && <p className="pr-note">Формы заполнены и ждут вас. Отправка необратима: заявку видят все продавцы Echemi, и отозвать её из системы нельзя — на площадке она снимается вручную.</p>}
         {confirmSend && <Alert><AlertTriangle /><AlertTitle>Отправка необратима</AlertTitle><AlertDescription>
           {marketplaceAwaiting} {plural(marketplaceAwaiting, 'заявка уйдёт', 'заявки уйдут', 'заявок уйдут')} на Echemi и станут видны всем продавцам площадки. Формы уже заполнены и проверены — перед отправкой каждая согласуется тем же порядком, что и на карточке.
@@ -467,6 +484,37 @@ export default function CampaignPage() {
                 label={MARKETPLACE_STATUS[item.status] || item.status}
               />
             </div>
+            {/* Echemi asks a person to pass its check, and the automation is
+                not allowed to answer that for them — so the request is left
+                exactly where it stopped and this is the way back. Sending it
+                by hand in noVNC is the specialist's job; recording that it
+                went is what stops the campaign from showing a live request as
+                a failure for ever. */}
+            {item.status === 'NEEDS_REVIEW' && canSubmitEchemi && item.inquiryId && <div className="pr-inline-actions">
+              {vouch[item.cardId] === undefined
+                ? <Button size="sm" variant="outline" onPress={() => setVouch(current => ({
+                    ...current, [item.cardId]: 'Отправлено вручную через noVNC, площадка подтвердила заявку.',
+                  }))}>Заявка ушла — записать</Button>
+                : <>
+                    <input
+                      className="pr-thread__search"
+                      value={vouch[item.cardId]}
+                      placeholder="Что вы увидели на площадке"
+                      onChange={event => setVouch(current => ({ ...current, [item.cardId]: event.target.value }))}
+                    />
+                    <Button size="sm" variant="outline" onPress={() => setVouch(current => ({ ...current, [item.cardId]: undefined }))}>Отмена</Button>
+                    <Button
+                      size="sm"
+                      isDisabled={confirmMarketplace.isPending || (vouch[item.cardId] || '').trim().length < 8}
+                      onPress={() => confirmMarketplace.mutate({
+                        cardId: item.cardId,
+                        inquiryId: item.inquiryId,
+                        note: vouch[item.cardId].trim(),
+                      })}
+                    >Записать</Button>
+                  </>}
+              <Link to={`/procurement/requests/${item.cardId}/echemi`}>открыть карточку</Link>
+            </div>}
             {(item.platformInquiryId || item.error) && <ul>
               <li>
                 {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}

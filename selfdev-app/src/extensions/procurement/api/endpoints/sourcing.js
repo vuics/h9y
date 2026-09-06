@@ -22,6 +22,11 @@ export const echemiEndpoints = {
     request(`/cards/${id(cardId)}/echemi/inquiries/${id(inquiryId)}/approve`, { method: 'post' })),
   submitEchemiInquiry: mutation((cardId, inquiryId) =>
     request(`/cards/${id(cardId)}/echemi/inquiries/${id(inquiryId)}/submit`, { method: 'post' })),
+  // What a person saw that the browser could not: the platform confirmed a
+  // request our automation was unable to read a confirmation for. The note is
+  // stored with their name against it, so the record says who vouched for it.
+  confirmEchemiSubmission: mutation((cardId, inquiryId, note) =>
+    request(`/cards/${id(cardId)}/echemi/inquiries/${id(inquiryId)}/confirm`, { method: 'post', data: { note } })),
   // Reading offers the marketplace already holds. Slow by nature: every
   // collected offer goes through the same extraction as a supplier's email.
   collectEchemiQuotations: mutation((cardId, force = false) =>
