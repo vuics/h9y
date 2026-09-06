@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 
@@ -24,6 +24,15 @@ export default function EchemiPage() {
   const { canOperateEchemi, canSubmitEchemi, canWriteSuppliers } = useProcurementPermissions()
   const [delivery, setDelivery] = useState(initialEchemiDelivery())
   const [operation, setOperation] = useState(null)
+  // The buttons are down the page and the answer to them is rendered at the
+  // top, so an answer nobody scrolls back to is an answer nobody reads: a
+  // request refused as already posted looked like a button that did nothing.
+  const operationRef = useRef(null)
+  useEffect(() => {
+    if (operation && operationRef.current) {
+      operationRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [operation])
   const [approveConfirmed, setApproveConfirmed] = useState('')
   const [submitConfirmed, setSubmitConfirmed] = useState('')
   const query = useQuery({ queryKey: procurementKeys.echemi(requestId), queryFn: ({ signal }) => procurementApi.echemi(requestId, signal) })
@@ -108,6 +117,7 @@ export default function EchemiPage() {
     {searchReady && !inquiryReady && <Alert><AlertTriangle /><AlertTitle>Можно искать, но нельзя готовить inquiry</AlertTitle><AlertDescription>Поиск кандидатов уже доступен. Для подготовки формы требуется отдельно сформировать и явно согласовать RFQ.</AlertDescription></Alert>}
     {!canOperateEchemi && <Alert><AlertTriangle /><AlertTitle>Недостаточно прав</AlertTitle><AlertDescription>Для операций Echemi требуется разрешение ECHEMI_OPERATE.</AlertDescription></Alert>}
     {pendingError && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{pendingError.response?.data?.message || pendingError.message}</AlertDescription></Alert>}
+    <div ref={operationRef} />
     {operation && <Alert><AlertTriangle /><AlertTitle>{echemiOperationIsError(operation) ? 'Операция остановлена' : operation.humanActionRequired ? 'Требуется ручная проверка' : 'Готово'}</AlertTitle><AlertDescription>{echemiOperationLabel(operation)}{operation.humanActionRequired && <div className="pr-echemi-alert-actions"><a href={state.noVncUrl} target="_blank" rel="noreferrer"><ExternalLink />Открыть проверку Echemi</a></div>}</AlertDescription></Alert>}
   </>}>
     <div className="pr-stack">
