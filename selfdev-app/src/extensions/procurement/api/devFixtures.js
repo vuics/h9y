@@ -187,9 +187,23 @@ export function campaignConversationsFixture(campaignId) {
   return {
     campaignId: campaign.campaignId,
     draftFirst: true,
+    channels: ['EMAIL', 'WEB_FORM'],
     items,
     total: items.length,
     awaitingPerson: items.length,
+    // The other half of the story the screen tells: verified companies the
+    // campaign has no allowed way to write to.
+    unreachable: campaign.members.slice(0, 1).map(member => ({
+      cardId: member.cardId,
+      title: member.title,
+      casNumber: member.casNumber,
+      suppliers: [{
+        supplierId: suppliers[1].id,
+        name: suppliers[1].name,
+        otherChannels: ['whatsapp'],
+      }],
+    })),
+    unreachableTotal: 1,
   }
 }
 

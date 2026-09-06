@@ -457,6 +457,17 @@
 .pr-normalization__override strong { display: flex; align-items: center; gap: 6px; font-size: 12px; }
 .pr-normalization__override p { margin: 6px 0 0; font-size: 12px; }
 
+/* What the campaign is waiting on a person for. Deliberately the densest
+   block on the page: it is read first and acted on, not studied. */
+.pr-campaign-asks__list { list-style: none; margin: 0; padding: 0; }
+.pr-campaign-asks__list li { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; }
+.pr-campaign-asks__list li + li { border-top: 1px solid var(--pr-border); }
+.pr-campaign-asks__list li > svg { flex: none; color: var(--pr-muted); }
+.pr-campaign-asks__list li.is-blocked > svg { color: var(--pr-danger); }
+.pr-campaign-asks__list li > span { color: var(--pr-muted); font-size: 11px; }
+.pr-campaign-asks__list li > b { margin-left: auto; font-weight: 600; }
+.pr-campaign-asks__all { font-weight: 650; color: inherit !important; }
+
 /* The campaign's conversations, grouped by substance. A list rather than a
    table: the row that matters is "this company is waiting for you to send",
    and a table would spend its width on columns that repeat. */

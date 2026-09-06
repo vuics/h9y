@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, CircleAlert, Pause, Play, Refresh, Send } from '../components/icons'
+import { AlertTriangle, Check, CircleAlert, Clock, Pause, Play, Refresh, Send } from '../components/icons'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -54,6 +54,13 @@ const WAITING_FOR = {
   MESSAGE_APPROVAL: 'отправить письма вручную',
 }
 
+const CHANNEL_LABEL = {
+  EMAIL: 'почта',
+  WHATSAPP: 'WhatsApp',
+  ECHEMI: 'Echemi',
+  WEB_FORM: 'формы на сайтах',
+}
+
 const REACH_LABEL = {
   SOURCING: 'только поиск',
   CONTACTS: 'поиск и контакты',
@@ -87,6 +94,55 @@ const THREAD_STATUS = {
 }
 
 const ACTIVE = new Set(['RUNNING'])
+
+// What each kind of wait is called when it is addressed to the specialist
+// rather than described in a table cell, and where pressing it takes them.
+const ASKS = {
+  CANDIDATE_REVIEW: {
+    label: 'подтвердить кандидатов',
+    to: campaignId => `/procurement/campaigns/${campaignId}/review`,
+  },
+  RFQ_APPROVAL: {
+    label: 'подготовить и согласовать RFQ',
+    to: (campaignId, cardId) => `/procurement/requests/${cardId}/rfq`,
+  },
+  MESSAGE_APPROVAL: {
+    label: 'отправить подготовленные письма',
+    to: (campaignId, cardId) => `/procurement/requests/${cardId}`,
+  },
+}
+
+/** Everything the campaign is waiting on a person for, in one list.
+ *
+ * The information was on the page already — spread across a status badge, a
+ * table column and an error code — which meant reading the whole table to find
+ * out whether anything was owed at all. A campaign of two hundred substances
+ * makes that impossible rather than tedious.
+ */
+function asksOf(members, campaignId) {
+  return members.flatMap(member => {
+    if (member.errorCode) {
+      return [{
+        key: `err-${member.cardId}`,
+        cardId: member.cardId,
+        title: member.title,
+        text: errorText(member.errorCode),
+        to: `/procurement/requests/${member.cardId}`,
+        blocking: true,
+      }]
+    }
+    const ask = ASKS[member.waitingFor]
+    if (!ask) return []
+    return [{
+      key: `${member.waitingFor}-${member.cardId}`,
+      cardId: member.cardId,
+      title: member.title,
+      text: ask.label,
+      to: ask.to(campaignId, member.cardId),
+      blocking: false,
+    }]
+  })
+}
 const mutationMessage = error => error?.response?.data?.message || error?.message
 const errorText = code => ERROR_LABEL[code] || code
 
@@ -164,6 +220,9 @@ export default function CampaignPage() {
   const threadsView = threads.data
   const conversations = threadsView?.items || []
   const awaitingPerson = threadsView?.awaitingPerson || 0
+  const unreachable = threadsView?.unreachable || []
+  const channelsLabel = (threadsView?.channels || []).map(item => CHANNEL_LABEL[item] || item).join(', ')
+  const asks = asksOf(members, campaignId)
 
   return <DetailLayout
     backTo="/procurement/campaigns"
@@ -217,6 +276,47 @@ export default function CampaignPage() {
           </div>
         </>}
       </CardContent></Card>
+
+      {asks.length > 0 && <Card className="pr-campaign-asks"><CardHeader><div>
+        <CardTitle>Ждут вас</CardTitle>
+        <p>Пока эти решения не приняты, кампания по ним не двинется. Всё остальное она делает сама.</p>
+      </div></CardHeader><CardContent>
+        <ul className="pr-campaign-asks__list">
+          {asks.map(ask => <li key={ask.key} className={ask.blocking ? 'is-blocked' : undefined}>
+            {ask.blocking ? <CircleAlert size={13} /> : <Clock size={13} />}
+            <Link to={ask.to}>{ask.title}</Link>
+            <span>#{ask.cardId}</span>
+            <b>{ask.text}</b>
+          </li>)}
+          {awaitingPerson > 0 && <li>
+            <Clock size={13} />
+            <span className="pr-campaign-asks__all">Подготовленные письма</span>
+            <b>{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки — ниже</b>
+          </li>}
+        </ul>
+      </CardContent></Card>}
+
+      {unreachable.length > 0 && <Card><CardHeader><div>
+        <CardTitle>Некому написать</CardTitle>
+        <p>Эти компании вы подтвердили, но кампания не нашла у них адреса в разрешённых каналах{channelsLabel ? ` (${channelsLabel})` : ''}. Допишите контакт на карточке поставщика — и запустите рассылку ещё раз.</p>
+      </div></CardHeader><CardContent>
+        <ul className="pr-campaign-threads">
+          {unreachable.map(entry => <li key={entry.cardId}>
+            <div className="pr-campaign-threads__head">
+              <Link to={`/procurement/requests/${entry.cardId}`}>{entry.title}</Link>
+              <span>#{entry.cardId}</span>
+            </div>
+            <ul>
+              {entry.suppliers.map(supplier => <li key={supplier.supplierId}>
+                <Link to={`/procurement/suppliers/${supplier.supplierId}`}>{supplier.name}</Link>
+                <span className="pr-primary-meta">{supplier.otherChannels?.length
+                  ? `отвечает в других каналах: ${supplier.otherChannels.join(', ')}`
+                  : 'контактов нет вовсе'}</span>
+              </li>)}
+            </ul>
+          </li>)}
+        </ul>
+      </CardContent></Card>}
 
       {conversations.length > 0 && <Card><CardHeader><div>
         <CardTitle>Переписки кампании</CardTitle>
