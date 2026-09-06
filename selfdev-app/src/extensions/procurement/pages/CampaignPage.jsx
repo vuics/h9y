@@ -258,6 +258,12 @@ export default function CampaignPage() {
       queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
     },
   })
+  const resendMarketplace = useMutation({
+    mutationFn: cardId => procurementApi.resendCampaignMarketplace(campaignId, cardId),
+    onSuccess: result => queryClient.setQueryData(
+      procurementKeys.campaignMarketplace(campaignId), result,
+    ),
+  })
   const confirmMarketplace = useMutation({
     mutationFn: ({ cardId, inquiryId, note }) =>
       procurementApi.confirmEchemiSubmission(cardId, inquiryId, note),
@@ -430,6 +436,8 @@ export default function CampaignPage() {
         <CardTitle>Заявки на площадку</CardTitle>
         <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
       </div></CardHeader><CardContent>
+        {resendMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Не отправлено</AlertTitle><AlertDescription>{mutationMessage(resendMarketplace.error)}</AlertDescription></Alert>}
+        {resendMarketplace.data?.confirmed && <Alert><Check /><AlertTitle>Заявка уже была на площадке</AlertTitle><AlertDescription>Список заявок Echemi показывает её по этому CAS, поэтому второй раз она не отправлялась — запись просто догнала действительность.</AlertDescription></Alert>}
         {confirmMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Не записано</AlertTitle><AlertDescription>{mutationMessage(confirmMarketplace.error)}</AlertDescription></Alert>}
         {(postToMarketplace.error || submitMarketplace.error) && <Alert><AlertTriangle /><AlertTitle>Заявки не выставлены</AlertTitle><AlertDescription>{mutationMessage(postToMarketplace.error || submitMarketplace.error)}</AlertDescription></Alert>}
         {/* One browser fills one form at a time, so a run that meets a
@@ -440,7 +448,7 @@ export default function CampaignPage() {
           {marketplaceStopped.message}
           {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере — ссылка и пароль ниже — и запустите ещё раз.</>}
         </AlertDescription></Alert>}
-        {marketplaceNeedsReview > 0 && <p className="pr-note">Площадка иногда просит подтвердить, что заявку отправляет человек. Пройти эту проверку за вас агент не может и не должен, поэтому он останавливается и оставляет форму открытой: пройдите проверку в браузере, отправьте заявку там же — и нажмите «Заявка ушла — записать», чтобы кампания перестала считать её неотправленной. Кнопки «отправить заново» здесь намеренно нет: кнопку Submit уже нажимали, и снаружи не видно, засчитала площадка тот клик или нет — повтор рискует второй заявкой по тому же веществу.</p>}
+        {marketplaceNeedsReview > 0 && <p className="pr-note">Площадка иногда просит подтвердить, что заявку отправляет человек. Пройти эту проверку за вас агент не может и не должен, поэтому он останавливается и оставляет форму открытой: пройдите проверку в браузере, отправьте заявку там же — и нажмите «Заявка ушла — записать», чтобы кампания перестала считать её неотправленной. Если проверку вы уже прошли и не уверены, ушла заявка или нет, — нажмите «Проверить и отправить»: система спросит у самой площадки, есть ли там заявка по этому CAS, и либо запишет её как размещённую, либо отправит заново. Вслепую повторять отправку она не станет — это был бы риск второй заявки по тому же веществу.</p>}
         {marketplaceAwaiting > 0 && !marketplaceView?.running && <p className="pr-note">Формы заполнены и ждут вас. Отправка необратима: заявку видят все продавцы Echemi, и отозвать её из системы нельзя — на площадке она снимается вручную.</p>}
         {confirmSend && <Alert><AlertTriangle /><AlertTitle>Отправка необратима</AlertTitle><AlertDescription>
           {marketplaceAwaiting} {plural(marketplaceAwaiting, 'заявка уйдёт', 'заявки уйдут', 'заявок уйдут')} на Echemi и станут видны всем продавцам площадки. Формы уже заполнены и проверены — перед отправкой каждая согласуется тем же порядком, что и на карточке.
@@ -506,6 +514,21 @@ export default function CampaignPage() {
                 went is what stops the campaign from showing a live request as
                 a failure for ever. */}
             {item.status === 'NEEDS_REVIEW' && canSubmitEchemi && item.inquiryId && <div className="pr-inline-actions">
+              {/* The question the browser could not answer, put to the party
+                  that knows: Echemi lists every inquiry the account holds. It
+                  is there — the record catches up and nothing is sent twice.
+                  It is not — the click created nothing and the request goes
+                  out in the same press. */}
+              <Button
+                size="sm"
+                isDisabled={resendMarketplace.isPending}
+                onPress={() => resendMarketplace.mutate(item.cardId)}
+              >
+                <Send className={resendMarketplace.isPending && resendMarketplace.variables === item.cardId ? 'pr-spin' : undefined} />
+                {resendMarketplace.isPending && resendMarketplace.variables === item.cardId
+                  ? 'Проверяем на площадке…'
+                  : 'Проверить и отправить'}
+              </Button>
               {vouch[item.cardId] === undefined
                 ? <Button size="sm" variant="outline" onPress={() => setVouch(current => ({
                     ...current, [item.cardId]: 'Отправлено вручную через noVNC, площадка подтвердила заявку.',

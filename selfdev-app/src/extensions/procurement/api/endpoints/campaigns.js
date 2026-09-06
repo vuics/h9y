@@ -63,4 +63,8 @@ export const campaignEndpoints = {
   // platform instead of one approval per substance.
   submitCampaignMarketplace: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/marketplace/submit`, { method: 'post' })),
+  // One substance the platform never confirmed: ask its own list whether the
+  // request is there, then either record it or send it.
+  resendCampaignMarketplace: mutation((campaignId, cardId) =>
+    request(`/campaigns/${id(campaignId)}/marketplace/${id(cardId)}/resend`, { method: 'post' })),
 }
