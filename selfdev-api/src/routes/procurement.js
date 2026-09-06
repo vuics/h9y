@@ -47,6 +47,11 @@ export const TIMEOUT_RULES = [
   // A rehearsal waits on the same model the sourcing extraction waits on, so it
   // needs the same order of magnitude rather than the interactive default.
   { key: 'simulationTimeoutMs', matches: path => path === '/communication/simulate' },
+  // A campaign's approval and its dispatch are per-substance loops: two
+  // hundred cards is two hundred RFQ approvals and as many conversations
+  // opened, all inside one request. The interactive default would abandon it
+  // partway and leave the operator unable to tell what had already been done.
+  { key: 'campaignTimeoutMs', matches: path => path.startsWith('/campaigns/') },
 ]
 
 export function timeoutFor(path) {

@@ -27,3 +27,4 @@ export const ArrowDown = props => <Icon {...props}><path d="M12 4v16M6 14l6 6 6-
 export const Pause = props => <Icon {...props}><path d="M9 5v14M15 5v14" /></Icon>
 export const Play = props => <Icon {...props}><path d="M7 4v16l13-8Z" /></Icon>
 export const Pencil = props => <Icon {...props}><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="m14 6 4 4"/></Icon>
+export const Send = props => <Icon {...props}><path d="M21 3 3 10l7 3 3 7Z"/><path d="m10 13 5-5"/></Icon>

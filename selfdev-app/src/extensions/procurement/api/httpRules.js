@@ -21,6 +21,10 @@ export const TIMEOUTS = [
   // gateway allows it 180s: giving the browser less would abandon a request the
   // server is still honestly working on.
   { ms: 180000, matches: path => path === '/communication/simulate' },
+  // Approving a campaign also dispatches it, and both walk every substance in
+  // the run. The gateway allows five minutes; giving the browser less would
+  // abandon a request the server is still honestly working through.
+  { ms: 300000, matches: path => path.startsWith('/campaigns/') },
 ]
 
 export const DEFAULT_TIMEOUT_MS = 60000

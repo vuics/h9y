@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, CircleAlert, Refresh } from '../components/icons'
+import { AlertTriangle, CircleAlert, Refresh, Send } from '../components/icons'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -50,6 +50,7 @@ const MEMBER_STAGE = {
 const WAITING_FOR = {
   CANDIDATE_REVIEW: 'подтвердить кандидатов',
   RFQ_APPROVAL: 'согласовать RFQ',
+  MESSAGE_APPROVAL: 'отправить письма вручную',
 }
 
 const REACH_LABEL = {
@@ -65,6 +66,8 @@ const ERROR_LABEL = {
   SOURCING_RUN_FAILED: 'поиск прервался ошибкой',
   CAMPAIGN_DRIVER_FAILED: 'сбой в самой кампании',
   CARD_NOT_NORMALIZED: 'карточка не нормализована',
+  SOURCING_NOT_READY: 'поиск по карточке ещё не готов',
+  NO_USABLE_CONTACT: 'не нашли контакт в разрешённых каналах',
 }
 
 const ACTIVE = new Set(['RUNNING'])
@@ -75,7 +78,7 @@ export default function CampaignPage() {
   const { campaignId } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { canResearchSourcing } = useProcurementPermissions()
+  const { canResearchSourcing, canQueueNegotiations } = useProcurementPermissions()
 
   const query = useQuery({
     queryKey: procurementKeys.campaign(campaignId),
@@ -93,6 +96,10 @@ export default function CampaignPage() {
     mutationFn: () => procurementApi.cancelCampaign(campaignId),
     onSuccess: accept,
   })
+  const dispatch = useMutation({
+    mutationFn: () => procurementApi.dispatchCampaignOutreach(campaignId),
+    onSuccess: result => accept(result.campaign),
+  })
   const resume = useMutation({
     mutationFn: () => procurementApi.resumeCampaign(campaignId),
     onSuccess: accept,
@@ -108,6 +115,12 @@ export default function CampaignPage() {
   // repeating the raw code underneath adds jargon, not information.
   const errors = (campaign.errors || []).filter(code => code !== 'campaign:INTERRUPTED_BY_RESTART')
   const running = ACTIVE.has(campaign.status)
+  // Substances with a verified supplier that nothing has been sent to yet.
+  // The count is what makes the button honest: it says how much work is left,
+  // not merely that a button exists.
+  const undispatched = members.filter(
+    member => member.stage === 'AWAITING_REVIEW' && member.verifiedCount > 0 && !member.requestCount,
+  ).length
   const percent = progress.total ? Math.round((progress.settled / progress.total) * 100) : 0
 
   return <DetailLayout
@@ -119,7 +132,7 @@ export default function CampaignPage() {
     meta={`${progress.total} ${plural(progress.total, 'вещество', 'вещества', 'веществ')} · ${REACH_LABEL[plan.reach] || plan.reach}`}
     actions={running && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить'}</Button>}
     warnings={<>
-      {(cancel.error || resume.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error)}</AlertDescription></Alert>}
+      {(cancel.error || resume.error || dispatch.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error)}</AlertDescription></Alert>}
       {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Кампания прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}
       {errors.length > 0 && <Alert><CircleAlert /><AlertTitle>Замечания по запуску</AlertTitle><AlertDescription><ul className="pr-plain-list">{errors.map(code => <li key={code}>{code.startsWith('card:CARD_NOT_FOUND:') ? `Карточка #${code.split(':').pop()} не найдена и в кампанию не вошла` : errorText(code)}</li>)}</ul></AlertDescription></Alert>}
     </>}
@@ -133,12 +146,22 @@ export default function CampaignPage() {
         <dl className="pr-definitions">
           <div><dt>Найдено кандидатов</dt><dd>{progress.candidateTotal}</dd></div>
           <div><dt>Веществ с контактами</dt><dd>{progress.contactTotal}</dd></div>
+          <div><dt>Подтверждено поставщиков</dt><dd>{progress.verifiedTotal ?? 0}</dd></div>
+          <div><dt>Запросов отправлено</dt><dd>{progress.requestTotal ?? 0}</dd></div>
+          <div><dt>Ответов получено</dt><dd>{progress.responseTotal ?? 0}</dd></div>
           <div><dt>Ждут решения</dt><dd>{progress.awaitingReview}</dd></div>
           <div><dt>С ошибкой</dt><dd>{progress.failed}</dd></div>
         </dl>
         {progress.awaitingReview > 0 && <>
-          <p className="pr-note">Кандидат становится поставщиком только после явного подтверждения специалиста — кампания не присваивает этот статус сама. Согласование собрано на одном экране: кому пишем и что спрашиваем, по всем веществам сразу.</p>
-          <div className="pr-inline-actions"><RouterLinkButton to={`/procurement/campaigns/${campaignId}/review`}>Согласовать {progress.awaitingReview} {plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')}</RouterLinkButton></div>
+          <p className="pr-note">Кандидат становится поставщиком только после явного подтверждения специалиста — кампания не присваивает этот статус сама. Согласование собрано на одном экране: кому пишем и что спрашиваем, по всем веществам сразу. Запросы уходят сразу после согласования.</p>
+          <div className="pr-inline-actions">
+            <RouterLinkButton to={`/procurement/campaigns/${campaignId}/review`}>Согласовать {progress.awaitingReview} {plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')}</RouterLinkButton>
+            {/* For a campaign approved before dispatch existed, and for the
+                substances whose first attempt failed on one supplier. Opening a
+                conversation that exists returns the one that exists, so this is
+                safe to press twice. */}
+            {undispatched > 0 && canQueueNegotiations && <Button variant="outline" isDisabled={dispatch.isPending} onPress={() => dispatch.mutate()}><Send className={dispatch.isPending ? 'pr-spin' : undefined} />{dispatch.isPending ? 'Отправляем…' : `Отправить запросы (${undispatched})`}</Button>}
+          </div>
         </>}
       </CardContent></Card>
 
@@ -155,6 +178,7 @@ export default function CampaignPage() {
           { id: 'candidates', header: 'Кандидатов', cell: row => row.candidateCount || '—' },
           { id: 'contacts', header: 'С контактами', cell: row => row.contactCount || '—' },
           { id: 'verified', header: 'Подтверждено', cell: row => row.verifiedCount || '—' },
+          { id: 'requests', header: 'Запросов', cell: row => row.requestCount ? `${row.requestCount}${row.responseCount ? ` · ${row.responseCount} отв.` : ''}` : '—' },
           { id: 'waiting', header: 'Что дальше', cell: row => row.errorCode
             ? <span className="pr-import-missing">{errorText(row.errorCode)}</span>
             : row.waitingFor

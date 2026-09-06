@@ -175,6 +175,9 @@ const conf = {
     echemiQuoteCollectionTimeoutMs: num(process.env.PROCUREMENT_ECHEMI_QUOTE_COLLECTION_TIMEOUT_MS || 900000),
     simulationTimeoutMs: num(process.env.PROCUREMENT_SIMULATION_TIMEOUT_MS || 180000),
     responseTimeoutMs: num(process.env.PROCUREMENT_RESPONSE_TIMEOUT_MS || 180000),
+    // Approving a campaign and dispatching it walk every substance in one
+    // request; a run of two hundred needs minutes, not the interactive default.
+    campaignTimeoutMs: num(process.env.PROCUREMENT_CAMPAIGN_TIMEOUT_MS || 300000),
     // A bulk import uploads a whole spreadsheet; analysis and card creation run
     // in the background, so this covers only the upload itself.
     importTimeoutMs: num(process.env.PROCUREMENT_IMPORT_TIMEOUT_MS || 120000),

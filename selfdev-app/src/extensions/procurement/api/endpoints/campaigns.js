@@ -31,4 +31,8 @@ export const campaignEndpoints = {
     request(`/campaigns/${id(campaignId)}/review/prepare`, { method: 'post' })),
   applyCampaignReview: mutation((campaignId, decisions) =>
     request(`/campaigns/${id(campaignId)}/review`, { method: 'post', data: { decisions } })),
+  // Approving already dispatches. This is for the campaigns approved before it
+  // did, and for the substances whose first attempt failed on one supplier.
+  dispatchCampaignOutreach: mutation(campaignId =>
+    request(`/campaigns/${id(campaignId)}/outreach`, { method: 'post' })),
 }

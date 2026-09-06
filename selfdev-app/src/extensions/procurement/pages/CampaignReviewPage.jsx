@@ -51,6 +51,11 @@ const BLOCKED_LABEL = {
   RFQ_NOT_READY: 'карточка не нормализована',
   CARD_NOT_FOUND: 'карточка не найдена',
   SOURCING_ENGINE_UNAVAILABLE: 'ни один движок поиска не доступен',
+  SOURCING_NOT_READY: 'поиск по карточке ещё не готов',
+  CARD_NOT_NORMALIZED: 'карточка не нормализована',
+  NO_USABLE_CONTACT: 'у поставщика нет контакта в разрешённых каналах кампании',
+  STAGE_OUTREACH: 'запросы уже отправлены',
+  STAGE_NEGOTIATION: 'идут переговоры',
 }
 
 const RFQ_STATUS = {
@@ -61,6 +66,21 @@ const RFQ_STATUS = {
 
 const mutationMessage = error => error?.response?.data?.message || error?.message
 const blockedText = code => BLOCKED_LABEL[code] || code
+
+/** Every reason a substance was not written to, flattened for one list.
+ *
+ * Per substance rather than as one count: "не отправлено по 3" tells the
+ * specialist there is a problem and nothing about which substance has it.
+ */
+const dispatchProblems = outreach => (outreach.results || []).flatMap(result =>
+  (result.errors || []).map(error => ({ cardId: result.cardId, code: error.code })))
+
+const dispatchTitle = outreach => {
+  if (outreach.queued > 0) return `Запросы отправлены: ${outreach.queued}`
+  if (outreach.skipped === 'NEGOTIATION_QUEUE_REQUIRED') return 'Решения записаны, отправка ждёт прав'
+  if (outreach.skipped === 'REACH_BELOW_OUTREACH') return 'Этот запуск не предполагал рассылку'
+  return 'Отправлять было нечего'
+}
 
 export default function CampaignReviewPage() {
   const { campaignId } = useParams()
@@ -74,6 +94,7 @@ export default function CampaignReviewPage() {
   const [rfqs, setRfqs] = useState({})
   const [opened, setOpened] = useState({})
   const [applied, setApplied] = useState(null)
+  const [dispatched, setDispatched] = useState(null)
 
   const query = useQuery({
     queryKey: procurementKeys.campaignReview(campaignId),
@@ -93,6 +114,7 @@ export default function CampaignReviewPage() {
     onSuccess: data => {
       accept(data)
       setApplied(data.results || [])
+      setDispatched(data.outreach || null)
       setVerdicts({})
       setRfqs({})
     },
@@ -162,6 +184,11 @@ export default function CampaignReviewPage() {
       {apply.error && <Alert><AlertTriangle /><AlertTitle>Согласование не применено</AlertTitle><AlertDescription>{mutationMessage(apply.error)}</AlertDescription></Alert>}
       {prepare.error && <Alert><AlertTriangle /><AlertTitle>Не удалось подготовить RFQ</AlertTitle><AlertDescription>{mutationMessage(prepare.error)}</AlertDescription></Alert>}
       {!canReviewSourcing && <Alert><AlertTriangle /><AlertTitle>Согласование доступно только для чтения</AlertTitle><AlertDescription>Для подтверждения кандидатов требуется разрешение SOURCING_REVIEW.</AlertDescription></Alert>}
+      {dispatched && <Alert>{dispatched.queued > 0 ? <Check /> : <CircleAlert />}<AlertTitle>{dispatchTitle(dispatched)}</AlertTitle><AlertDescription>
+        {dispatched.queued > 0 && <p>Кампания перешла к рассылке — ход видно на странице кампании.</p>}
+        {dispatched.skipped === 'NEGOTIATION_QUEUE_REQUIRED' && <p>Решения записаны, но отправка требует разрешения NEGOTIATION_QUEUE. Запросы уйдут, когда её запустит сотрудник с этим правом.</p>}
+        {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}>#{problem.cardId} — {blockedText(problem.code)}</li>)}</ul>}
+      </AlertDescription></Alert>}
       {prepare.data?.failed?.length > 0 && <Alert><CircleAlert /><AlertTitle>RFQ подготовлен не по всем веществам</AlertTitle><AlertDescription><ul className="pr-plain-list">{prepare.data.failed.map(item => <li key={item.cardId}>#{item.cardId} — {blockedText(item.code)}</li>)}</ul></AlertDescription></Alert>}
     </>}
   >
