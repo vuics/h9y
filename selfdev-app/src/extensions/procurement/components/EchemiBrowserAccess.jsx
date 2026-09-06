@@ -27,6 +27,20 @@ export function EchemiBrowserAccess({ access, error, loading, compact = false })
 
   const body = <>
       {loading && <p className="pr-note">Получаем параметры доступа…</p>}
+      {/* Asked of the process that owns the browser, so it is the truth about
+          this deployment rather than about the API's environment. Shown before
+          anything is started: without it the only way to learn the browser
+          cannot sign in was to run something and read the failure two minutes
+          later. */}
+      {access?.accountConfigured === false && <Alert>
+        <AlertTriangle />
+        <AlertTitle>У браузера нет учётной записи Echemi</AlertTitle>
+        <AlertDescription>
+          Форму заявки заполнить не получится: площадка потребует вход, и агент остановится на странице логина.
+          Задайте агенту опции Procurement → Echemi Account (ключи Vault ECHEMI_ACCOUNT_EMAIL и ECHEMI_ACCOUNT_PASSWORD)
+          и перезапустите его — учётная запись читается один раз при старте.
+        </AlertDescription>
+      </Alert>}
       {error && <Alert><AlertTriangle /><AlertTitle>Параметры доступа недоступны</AlertTitle><AlertDescription>{error.response?.data?.message || error.message}</AlertDescription></Alert>}
       {access && <div className="pr-echemi-browser-access__content">
         <div>

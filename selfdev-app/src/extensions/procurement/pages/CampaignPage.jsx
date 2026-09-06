@@ -425,7 +425,9 @@ export default function CampaignPage() {
                     failed an hour ago is a thing that happened — the causes
                     the server can re-check it has already re-checked. */}
                 {item.error && <span className="pr-import-missing">
-                  {item.errorFromLastRun ? 'при последней попытке: ' : ''}{item.error}
+                  {item.errorFromLastRun
+                    ? `при попытке ${item.errorAt ? new Date(item.errorAt).toLocaleString('ru-RU') : '(время не записано)'}: `
+                    : ''}{item.error}
                 </span>}
               </li>
             </ul>}
