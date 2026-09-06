@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, CircleAlert, Refresh, Send } from '../components/icons'
+import { AlertTriangle, CircleAlert, Pause, Play, Refresh, Send } from '../components/icons'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -31,6 +31,7 @@ const CAMPAIGN_STATUS = {
   AWAITING_REVIEW: 'Ждёт согласования',
   COMPLETED: 'Завершена',
   FAILED: 'Не выполнена',
+  PAUSED: 'На паузе',
   CANCELLED: 'Остановлена',
   INTERRUPTED: 'Прервана перезапуском',
 }
@@ -104,6 +105,14 @@ export default function CampaignPage() {
     mutationFn: () => procurementApi.resumeCampaign(campaignId),
     onSuccess: accept,
   })
+  const hold = useMutation({
+    mutationFn: () => procurementApi.pauseCampaign(campaignId),
+    onSuccess: accept,
+  })
+  const carryOn = useMutation({
+    mutationFn: () => procurementApi.unpauseCampaign(campaignId),
+    onSuccess: accept,
+  })
 
   if (query.isLoading) return <LoadingState />
   if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
@@ -114,7 +123,8 @@ export default function CampaignPage() {
   // The restart already has its own explained alert with a button on it;
   // repeating the raw code underneath adds jargon, not information.
   const errors = (campaign.errors || []).filter(code => code !== 'campaign:INTERRUPTED_BY_RESTART')
-  const running = ACTIVE.has(campaign.status)
+  const holdable = ['RUNNING', 'AWAITING_REVIEW', 'INTERRUPTED'].includes(campaign.status)
+  const stoppable = holdable || campaign.status === 'PAUSED'
   // Substances with a verified supplier that nothing has been sent to yet.
   // The count is what makes the button honest: it says how much work is left,
   // not merely that a button exists.
@@ -130,9 +140,17 @@ export default function CampaignPage() {
     title={campaign.title}
     status={<Badge variant={campaign.status === 'AWAITING_REVIEW' ? 'secondary' : 'outline'}>{CAMPAIGN_STATUS[campaign.status] || campaign.status}</Badge>}
     meta={`${progress.total} ${plural(progress.total, 'вещество', 'вещества', 'веществ')} · ${REACH_LABEL[plan.reach] || plan.reach}`}
-    actions={running && canResearchSourcing && <Button variant="outline" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить'}</Button>}
+    actions={canResearchSourcing && <>
+      {/* Pausing sits before stopping, and stopping keeps the quieter variant:
+          ending a run of two hundred substances is not the button a hand should
+          land on when it meant "wait a moment". */}
+      {holdable && <Button variant="outline" isDisabled={hold.isPending} onPress={() => hold.mutate()}><Pause />{hold.isPending ? 'Останавливаем…' : 'Пауза'}</Button>}
+      {campaign.status === 'PAUSED' && <Button isDisabled={carryOn.isPending} onPress={() => carryOn.mutate()}><Play className={carryOn.isPending ? 'pr-spin' : undefined} />{carryOn.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
+      {stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
+    </>}
     warnings={<>
-      {(cancel.error || resume.error || dispatch.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error)}</AlertDescription></Alert>}
+      {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
+      {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Кампания на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не кампании, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
       {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Кампания прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}
       {errors.length > 0 && <Alert><CircleAlert /><AlertTitle>Замечания по запуску</AlertTitle><AlertDescription><ul className="pr-plain-list">{errors.map(code => <li key={code}>{code.startsWith('card:CARD_NOT_FOUND:') ? `Карточка #${code.split(':').pop()} не найдена и в кампанию не вошла` : errorText(code)}</li>)}</ul></AlertDescription></Alert>}
     </>}

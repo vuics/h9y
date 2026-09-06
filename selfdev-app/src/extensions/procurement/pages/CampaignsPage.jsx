@@ -15,6 +15,7 @@ const STATUS = {
   AWAITING_REVIEW: 'Ждёт согласования',
   COMPLETED: 'Завершена',
   FAILED: 'Не выполнена',
+  PAUSED: 'На паузе',
   CANCELLED: 'Остановлена',
   INTERRUPTED: 'Прервана перезапуском',
 }
@@ -60,6 +61,7 @@ export default function CampaignsPage() {
         { id: 'progress', header: 'Пройдено', cell: row => `${row.progress.settled} из ${row.progress.total}` },
         { id: 'awaiting', header: 'Ждут решения', cell: row => row.progress.awaitingReview || '—' },
         { id: 'candidates', header: 'Кандидатов', cell: row => row.progress.candidateTotal || '—' },
+        { id: 'requests', header: 'Запросов', cell: row => row.progress.requestTotal ? `${row.progress.requestTotal}${row.progress.responseTotal ? ` · ${row.progress.responseTotal} отв.` : ''}` : '—' },
         { id: 'createdAt', header: 'Запущена', cell: row => row.createdAt ? new Date(row.createdAt).toLocaleString('ru-RU') : '—' },
       ]}
     />

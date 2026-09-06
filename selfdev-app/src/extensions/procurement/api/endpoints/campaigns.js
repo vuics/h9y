@@ -23,6 +23,13 @@ export const campaignEndpoints = {
     request(`/campaigns/${id(campaignId)}/cancel`, { method: 'post' })),
   resumeCampaign: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/resume`, { method: 'post' })),
+  // Holding a run, as opposed to ending it. Cancelling is final, so it used to
+  // be the only way to make a campaign stand still and the only way cost the
+  // campaign.
+  pauseCampaign: mutation(campaignId =>
+    request(`/campaigns/${id(campaignId)}/pause`, { method: 'post' })),
+  unpauseCampaign: mutation(campaignId =>
+    request(`/campaigns/${id(campaignId)}/unpause`, { method: 'post' })),
   campaignReview: read(
     (campaignId, signal) => request(`/campaigns/${id(campaignId)}/review`, { signal }),
     async campaignId => (await fixtures()).campaignReviewFixture(campaignId),
