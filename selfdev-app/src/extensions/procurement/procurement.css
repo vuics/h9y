@@ -137,6 +137,10 @@
 .pr-echemi-alert-actions { margin-top: 9px; }
 .pr-echemi-browser-access__content { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
 .pr-echemi-browser-access__content > div { min-width: 0; }
+/* Inside a block that already has its own heading: the same link and password,
+   set off by a rule instead of by a card of their own. */
+.pr-echemi-browser-access.is-compact { border-top: 1px solid var(--pr-border); margin-top: 14px; padding-top: 12px; }
+.pr-echemi-browser-access.is-compact .pr-note { margin-top: 0; }
 .pr-echemi-password { display: flex; align-items: center; gap: 9px; margin-top: 12px; }
 .pr-echemi-password > span { color: var(--pr-muted); font-size: 12px; }
 .pr-echemi-password code { max-width: 320px; overflow-x: auto; border: 1px solid var(--pr-border); border-radius: 6px; background: var(--pr-surface-muted); padding: 7px 9px; color: var(--pr-text); }

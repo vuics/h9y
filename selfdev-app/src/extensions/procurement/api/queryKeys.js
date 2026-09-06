@@ -22,6 +22,7 @@ export const procurementKeys = {
   rfq: id => [...procurementKeys.all, 'rfq', String(id)],
   echemi: id => [...procurementKeys.all, 'echemi', String(id)],
   echemiBrowserAccess: id => [...procurementKeys.all, 'echemi-browser-access', String(id)],
+  echemiBrowserSession: () => [...procurementKeys.all, 'echemi-browser-session'],
   sourcing: id => [...procurementKeys.all, 'sourcing', String(id)],
   sourcingRun: runId => [...procurementKeys.all, 'sourcing-run', String(runId)],
   sourcingQueryTemplates: () => [...procurementKeys.all, 'sourcing-query-templates'],

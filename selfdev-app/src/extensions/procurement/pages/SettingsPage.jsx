@@ -204,6 +204,16 @@ export default function SettingsPage() {
   const dirty = JSON.stringify(draft) !== JSON.stringify(query.data)
   const setOrganization = change => setDraft(current => ({ ...current, organization: { ...current.organization, ...change } }))
   const orgInput = (name, label, props = {}) => <TextField name={name} label={label} value={organization[name]} onChange={setOrganization} disabled={!canManageBuyerSettings} {...props} />
+  // Delivery terms are not the organisation's legal identity, so they follow
+  // the sender permission rather than the administrator one: they say where a
+  // shipment goes, not which company is asking.
+  const delivery = draft.delivery || {}
+  const setDelivery = change => setDraft(current => ({
+    ...current, delivery: { ...(current.delivery || {}), ...change },
+  }))
+  const deliveryInput = (name, label, props = {}) => <TextField name={name} label={label} value={delivery[name] || ''} onChange={setDelivery} disabled={!canManageSenders} {...props} />
+  const deliveryIncomplete = !String(delivery.destination || '').trim()
+    || !String(delivery.destinationCountry || '').trim()
   const keptSenders = draft.senders.filter(item => item.removed !== true)
   const activeSenders = keptSenders.filter(item => item.active !== false)
   // A disabled Save button with no explanation reads as a broken page: the user
@@ -279,6 +289,23 @@ export default function SettingsPage() {
       {orgInput('address', 'Адрес организации', { wide: true })}
       <label className="pr-form-field pr-form-field--wide"><span>Описание компании</span><Textarea disabled={!canManageBuyerSettings} value={organization.description || ''} onChange={event => setOrganization({ description: event.target.value })} placeholder="Факты, которые допустимо использовать в сообщениях поставщикам" /></label>
     </div></CardContent></Card>
+
+    {/* Never editable from here until now, and only reachable through the API:
+        a marketplace form has one field for the destination and one for the
+        country, no RFQ text to read them out of, and a campaign that cannot
+        read them posts nothing. */}
+    <Card><CardHeader><CardTitle><Building /> Куда доставлять</CardTitle></CardHeader><CardContent>
+      <p className="pr-note">Один и тот же ответ для каждого запроса, поэтому он здесь, а не в карточке. В письме условия поставки называет текст RFQ; заявке на площадку читать их неоткуда — там по одному полю на каждое, и без них заявку не выставить.</p>
+      <div className="pr-card-form">
+        <label className="pr-form-field"><span>Условие поставки (Incoterms 2020)</span>
+          <select disabled={!canManageSenders} value={delivery.incoterm || 'CIF'} onChange={event => setDelivery({ incoterm: event.target.value })}>
+            {(draft.deliveryTerms || ['CIF']).map(term => <option key={term} value={term}>{term}</option>)}
+          </select></label>
+        {deliveryInput('destination', 'Пункт назначения', { placeholder: 'Санкт-Петербург' })}
+        {deliveryInput('destinationCountry', 'Страна назначения', { maxLength: 2, placeholder: 'RU' })}
+      </div>
+      {deliveryIncomplete && <p className="pr-note">Пока не заполнены пункт и страна назначения, кампания не выставит заявку на площадку — она откажется угадывать адрес за вас.</p>}
+    </CardContent></Card>
 
     <div className="pr-section-heading"><div><h3>Команда и отправители</h3><p>Каждый RFQ сохраняет выбранного отправителя как неизменяемый снимок: правка здесь меняет только будущие запросы и не затрагивает уже отправленные RFQ и идущие переговоры.</p></div>{canManageSenders && <Button variant="outline" onPress={() => setDraft(current => { const sender = newSender(); return { ...current, senders: [...current.senders, sender], defaultSenderId: current.defaultSenderId || sender.senderId } })}><Plus />Добавить отправителя</Button>}</div>
     <label className="pr-form-field"><span>Отправитель по умолчанию <b>*</b></span><select disabled={!canManageSenders} value={draft.defaultSenderId || ''} onChange={event => setDraft(current => ({ ...current, defaultSenderId: event.target.value }))}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName || sender.email || 'Без имени'}</option>)}</select></label>

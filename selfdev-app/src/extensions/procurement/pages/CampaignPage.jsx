@@ -12,6 +12,7 @@ import { CopyableId } from '../components/CopyableId'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from '../components/SourcingSettings'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
+import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -181,6 +182,17 @@ export default function CampaignPage() {
   const threads = useQuery({
     queryKey: procurementKeys.campaignConversations(campaignId),
     queryFn: ({ signal }) => procurementApi.campaignConversations(campaignId, signal),
+  })
+  // Where to watch what the agent is doing. Fetched with the block rather than
+  // only after a failure: a specialist who has just started a run wants to see
+  // the form being filled, not to find the window once something has gone
+  // wrong. The password comes with the link because it is asked for one second
+  // later, and hunting for it is what makes people give up on watching.
+  const browser = useQuery({
+    queryKey: procurementKeys.echemiBrowserSession(),
+    queryFn: ({ signal }) => procurementApi.echemiBrowserSession(signal),
+    enabled: canOperateEchemi,
+    retry: false,
   })
   const marketplace = useQuery({
     queryKey: procurementKeys.campaignMarketplace(campaignId),
@@ -369,9 +381,15 @@ export default function CampaignPage() {
             it stopped on is what makes the stop actionable. */}
         {marketplaceStopped && <Alert><CircleAlert /><AlertTitle>Выставление остановлено</AlertTitle><AlertDescription>
           {marketplaceStopped.message}
-          {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере: <a href={marketplaceStopped.noVncUrl} target="_blank" rel="noreferrer">окно площадки</a>, затем запустите ещё раз.</>}
+          {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере — ссылка и пароль ниже — и запустите ещё раз.</>}
         </AlertDescription></Alert>}
         {marketplaceView?.running && <p className="pr-note">Идёт выставление: заявки уходят по одной через общий браузер, это занимает минуты на вещество. Страница обновляется сама.</p>}
+        {canOperateEchemi && <EchemiBrowserAccess
+          access={browser.data}
+          error={browser.error}
+          loading={browser.isLoading}
+          compact
+        />}
 
         {marketplacePending > 0 && canOperateEchemi && <div className="pr-inline-actions">
           <Button isDisabled={postToMarketplace.isPending || marketplaceView?.running} onPress={() => postToMarketplace.mutate()}>

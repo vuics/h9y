@@ -6,7 +6,13 @@ import { Button, LinkButton } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, Check, Copy, ExternalLink } from './icons'
 
-export function EchemiBrowserAccess({ access, error, loading }) {
+/** The shared noVNC session: where to watch, and what it takes to get in.
+ *
+ * `compact` drops the card around it so the same link and the same password —
+ * one implementation, not two — can sit inside a block that already has its
+ * own heading, such as a campaign's marketplace requests.
+ */
+export function EchemiBrowserAccess({ access, error, loading, compact = false }) {
   const [copied, setCopied] = useState(false)
 
   const copyPassword = async () => {
@@ -19,20 +25,24 @@ export function EchemiBrowserAccess({ access, error, loading }) {
     }
   }
 
-  return <Card className="pr-echemi-browser-access">
-    <CardHeader><div><CardTitle>Ручной браузер Echemi</CardTitle><span>Общая noVNC-сессия для проверки страницы и формы</span></div></CardHeader>
-    <CardContent>
+  const body = <>
       {loading && <p className="pr-note">Получаем параметры доступа…</p>}
       {error && <Alert><AlertTriangle /><AlertTitle>Параметры доступа недоступны</AlertTitle><AlertDescription>{error.response?.data?.message || error.message}</AlertDescription></Alert>}
       {access && <div className="pr-echemi-browser-access__content">
         <div>
-          <p className="pr-note">Откройте noVNC в новой вкладке. Это общий пароль MVP; не пересылайте его пользователям без разрешения ECHEMI_OPERATE.</p>
+          <p className="pr-note">Откройте noVNC в новой вкладке, чтобы видеть, что агент делает в браузере прямо сейчас. Это общий пароль MVP; не пересылайте его пользователям без разрешения ECHEMI_OPERATE.</p>
           {access.passwordRequired
             ? <div className="pr-echemi-password"><span>Пароль x11vnc</span><code>{access.password}</code><Button variant="outline" onPress={copyPassword}>{copied ? <Check /> : <Copy />}{copied ? 'Скопировано' : 'Копировать'}</Button></div>
             : <Badge variant="outline">Пароль не требуется</Badge>}
         </div>
         <LinkButton href={access.url} target="_blank" rel="noreferrer"><ExternalLink />Открыть браузер Echemi</LinkButton>
       </div>}
-    </CardContent>
+  </>
+
+  if (compact) return <div className="pr-echemi-browser-access is-compact">{body}</div>
+
+  return <Card className="pr-echemi-browser-access">
+    <CardHeader><div><CardTitle>Ручной браузер Echemi</CardTitle><span>Общая noVNC-сессия для проверки страницы и формы</span></div></CardHeader>
+    <CardContent>{body}</CardContent>
   </Card>
 }

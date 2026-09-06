@@ -6,6 +6,10 @@ export const echemiEndpoints = {
   echemi: mutation((cardId, signal) => request(`/cards/${id(cardId)}/echemi`, { signal })),
   echemiBrowserAccess: mutation((cardId, signal) =>
     request(`/cards/${id(cardId)}/echemi/browser-access`, { signal })),
+  // The same single session, asked for without a card: a campaign drives the
+  // browser too and has no card of its own to ask on behalf of.
+  echemiBrowserSession: mutation(signal =>
+    request('/echemi/browser-access', { signal })),
   searchEchemi: mutation(cardId =>
     request(`/cards/${id(cardId)}/echemi/search`, { method: 'post' })),
   registerEchemiSeller: mutation((cardId, productId) =>

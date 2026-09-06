@@ -24,10 +24,22 @@ const payload = settings => ({
     active: sender.active !== false,
   })),
   default_sender_id: settings.defaultSenderId,
+  // Omitted rather than emptied when the page has not loaded it: the server
+  // reads an absent `delivery` as "leave as it was", so a save that forgot to
+  // restate it must not reset where the goods are going.
+  ...(settings.delivery ? {
+    delivery: {
+      incoterm: settings.delivery.incoterm,
+      destination: settings.delivery.destination || null,
+      destinationCountry: settings.delivery.destinationCountry || null,
+    },
+  } : {}),
 })
 
 const emptyFixture = {
   organization: { displayName: '', legalName: '', country: '', address: '', website: '', description: '' },
+  delivery: { incoterm: 'CIF', destination: '', destinationCountry: '' },
+  deliveryTerms: ['EXW', 'FCA', 'FOB', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'],
   senders: [], defaultSenderId: null, source: 'DEVELOPMENT_FIXTURE', revision: 0,
 }
 

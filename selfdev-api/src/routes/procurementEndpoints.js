@@ -93,6 +93,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'PUT', path: '/communication/policy' },
   { method: 'POST', path: '/communication/simulate' },
   { method: 'GET', path: '/communication/vocabulary' },
+  { method: 'GET', path: '/echemi/browser-access' },
   { method: 'GET', path: '/escalations' },
   { method: 'GET', path: '/escalations/{escalation_id}' },
   { method: 'POST', path: '/escalations/{escalation_id}/claim' },
