@@ -133,7 +133,11 @@ const ASKS = {
   },
   MESSAGE_APPROVAL: {
     label: 'отправить подготовленные письма',
-    to: (campaignId, cardId) => `/procurement/requests/${cardId}`,
+    // The letters, not the card. A specialist told to send something has to
+    // land where sending happens; the card is where the requirement is
+    // written, and from there they were on their own to find six threads in
+    // the negotiations list.
+    to: (campaignId, cardId) => `/procurement/negotiations?cardId=${cardId}`,
   },
 }
 
