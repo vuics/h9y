@@ -449,6 +449,14 @@
 .pr-synonyms > button { margin-top: 8px; border: 0; background: none; padding: 0; color: var(--pr-accent); font: inherit; font-size: 11.5px; font-weight: 650; cursor: pointer; }
 .pr-synonyms .pr-note, .pr-normalization__reasons { margin-top: 9px; }
 
+/* Waiving a PubChem objection, and the record of having waived it. Both sit
+   under the reasons they answer, so the objection and the answer are read
+   together rather than a green card claiming PubChem agreed. */
+.pr-normalization__confirm, .pr-normalization__override { border-top: 1px solid var(--pr-border); margin-top: 14px; padding-top: 12px; }
+.pr-normalization__confirm textarea { margin: 8px 0; min-height: 62px; }
+.pr-normalization__override strong { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.pr-normalization__override p { margin: 6px 0 0; font-size: 12px; }
+
 .pr-web-form [data-slot="card-header"] { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .pr-web-form [data-slot="card-header"] p { margin: 3px 0 0; color: var(--pr-muted); font-size: 11px; }
 .pr-web-form__request { border-top: 1px solid var(--pr-border); margin-top: 16px; padding-top: 14px; }

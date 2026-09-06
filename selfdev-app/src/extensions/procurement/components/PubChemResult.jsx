@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { DefinitionGrid } from './DetailLayout'
 import { StatusBadge } from './StatusBadge'
-import { ExternalLink } from './icons'
+import { Check, ExternalLink } from './icons'
 
 const SYNONYM_PREVIEW = 8
 
@@ -17,8 +19,22 @@ const resolvedByLabel = {
   substance_name: 'Найдено по названию',
 }
 
-export function PubChemResult({ normalization }) {
+/** The PubChem record, and the one way past it.
+ *
+ * PubChem is evidence, not the register. A technical grade, a polymer or a
+ * supplier's trade name can be a real, correctly numbered substance that no
+ * public record spells the way the customer does — and until confirmation
+ * existed such a card was blocked for good, because the only route out of
+ * "нужна проверка" was to edit the CAS or the name into something PubChem
+ * recognised, which is to say into a different substance.
+ *
+ * So the objection is waived on a named person's word and stays on screen
+ * afterwards: what was overruled, by whom and why. A card that simply went
+ * green would be claiming PubChem agreed.
+ */
+export function PubChemResult({ normalization, override, canConfirm, onConfirm, isConfirming }) {
   const [showAllSynonyms, setShowAllSynonyms] = useState(false)
+  const [reason, setReason] = useState('')
   const synonyms = normalization.synonyms || []
   const visible = showAllSynonyms ? synonyms : synonyms.slice(0, SYNONYM_PREVIEW)
   const isSubstance = normalization.recordType === 'SUBSTANCE'
@@ -83,9 +99,43 @@ export function PubChemResult({ normalization }) {
 
       {normalization.reviewReasons?.length > 0 && (
         <ul className="pr-normalization__reasons">
-          {normalization.reviewReasons.map(reason => <li key={reason}>{reason}</li>)}
+          {normalization.reviewReasons.map(item => <li key={item}>{item}</li>)}
         </ul>
       )}
+
+      {override
+        ? <div className="pr-normalization__override">
+          <strong><Check size={13} />Подтверждено вручную</strong>
+          <p>{override.reason}</p>
+          {override.waivedReasons?.length > 0 && <ul className="pr-normalization__reasons">
+            {override.waivedReasons.map(item => <li key={item}>{item}</li>)}
+          </ul>}
+          <p className="pr-note">
+            Подтвердил {override.confirmedBy || 'специалист'}
+            {override.confirmedAt && ` · ${new Date(override.confirmedAt).toLocaleString('ru-RU')}`}.
+            Изменение CAS-номера, наименования или повторная сверка снимут подтверждение.
+          </p>
+        </div>
+        : canConfirm && normalization.reviewReasons?.length > 0 && <div className="pr-normalization__confirm">
+          <p className="pr-note">
+            Если это техническая марка, полимер или торговое наименование — PubChem
+            может не подтвердить его никогда. Подтвердите вещество под свою
+            ответственность, и карточка пойдёт дальше.
+          </p>
+          <Textarea
+            value={reason}
+            aria-label="Основание для подтверждения"
+            placeholder="На чём основано: спецификация поставщика, CoA, реестр…"
+            onChange={event => setReason(event.target.value)}
+          />
+          <Button
+            variant="outline"
+            isDisabled={reason.trim().length < 3 || isConfirming}
+            onPress={() => onConfirm(reason.trim())}
+          >
+            <Check />{isConfirming ? 'Подтверждаем…' : 'Подтвердить под свою ответственность'}
+          </Button>
+        </div>}
 
       <p className="pr-note">Источник: {normalization.source}</p>
     </div>

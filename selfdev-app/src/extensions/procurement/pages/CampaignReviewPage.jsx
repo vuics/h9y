@@ -187,9 +187,9 @@ export default function CampaignReviewPage() {
       {dispatched && <Alert>{dispatched.queued > 0 ? <Check /> : <CircleAlert />}<AlertTitle>{dispatchTitle(dispatched)}</AlertTitle><AlertDescription>
         {dispatched.queued > 0 && <p>Кампания перешла к рассылке — ход видно на странице кампании.</p>}
         {dispatched.skipped === 'NEGOTIATION_QUEUE_REQUIRED' && <p>Решения записаны, но отправка требует разрешения NEGOTIATION_QUEUE. Запросы уйдут, когда её запустит сотрудник с этим правом.</p>}
-        {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}>#{problem.cardId} — {blockedText(problem.code)}</li>)}</ul>}
+        {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}><Link to={`/procurement/requests/${problem.cardId}`}>#{problem.cardId}</Link> — {blockedText(problem.code)}</li>)}</ul>}
       </AlertDescription></Alert>}
-      {prepare.data?.failed?.length > 0 && <Alert><CircleAlert /><AlertTitle>RFQ подготовлен не по всем веществам</AlertTitle><AlertDescription><ul className="pr-plain-list">{prepare.data.failed.map(item => <li key={item.cardId}>#{item.cardId} — {blockedText(item.code)}</li>)}</ul></AlertDescription></Alert>}
+      {prepare.data?.failed?.length > 0 && <Alert><CircleAlert /><AlertTitle>RFQ подготовлен не по всем веществам</AlertTitle><AlertDescription><ul className="pr-plain-list">{prepare.data.failed.map(item => <li key={item.cardId}><Link to={`/procurement/requests/${item.cardId}`}>#{item.cardId}</Link> — {blockedText(item.code)}</li>)}</ul></AlertDescription></Alert>}
     </>}
   >
     <div className="pr-stack">
@@ -211,7 +211,11 @@ export default function CampaignReviewPage() {
         const result = appliedById.get(item.cardId)
         return <Card key={item.cardId} className="pr-review-block"><CardHeader><div>
           <CardTitle>{item.title}</CardTitle>
-          <p><CopyableId value={item.cardId} displayValue={`#${item.cardId}`} /> · CAS {item.casNumber || 'не указан'}</p>
+          <p>
+            <CopyableId value={item.cardId} displayValue={`#${item.cardId}`} to={`/procurement/requests/${item.cardId}`} />
+            {' · CAS '}{item.casNumber || 'не указан'}
+            {' · '}<Link to={`/procurement/requests/${item.cardId}/sourcing`}>поиск кандидатов</Link>
+          </p>
         </div>{item.blockedBy
           ? <Badge variant="outline">{blockedText(item.blockedBy)}</Badge>
           : <Badge variant="secondary">{item.candidates.length} кандидатов</Badge>}

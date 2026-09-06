@@ -33,6 +33,11 @@ export const cardEndpoints = {
   }),
   normalizeCard: mutation(async cardId =>
     adaptCard(await request(`/cards/${id(cardId)}/normalize`, { method: 'post' }))),
+  // Vouching for an identity PubChem would not confirm. The reason is required
+  // by the API, because a waiver nobody can read afterwards is indistinguishable
+  // from the check never having run.
+  confirmCardNormalization: mutation(async (cardId, reason) =>
+    adaptCard(await request(`/cards/${id(cardId)}/normalize/confirm`, { method: 'post', data: { reason } }))),
   activity: read(
     async (filters = {}, signal) => adaptPage(await request('/activity', { params: filters, signal })),
     async (filters = {}) => fixturePage(

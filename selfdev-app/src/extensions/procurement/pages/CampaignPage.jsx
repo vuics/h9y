@@ -173,7 +173,7 @@ export default function CampaignPage() {
           : `/procurement/requests/${row.cardId}`)}
         emptyTitle="В кампании нет веществ"
         columns={[
-          { id: 'title', header: 'Вещество', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><div className="pr-primary-meta"><CopyableId value={row.cardId} displayValue={`#${row.cardId}`} /><span>· CAS {row.casNumber || 'не указан'}</span></div></div> },
+          { id: 'title', header: 'Вещество', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><div className="pr-primary-meta"><CopyableId value={row.cardId} displayValue={`#${row.cardId}`} to={`/procurement/requests/${row.cardId}`} /><span>· CAS {row.casNumber || 'не указан'}</span></div></div> },
           { id: 'stage', header: 'Этап', cell: row => <StatusBadge status={row.stage} label={MEMBER_STAGE[row.stage] || row.stage} /> },
           { id: 'candidates', header: 'Кандидатов', cell: row => row.candidateCount || '—' },
           { id: 'contacts', header: 'С контактами', cell: row => row.contactCount || '—' },

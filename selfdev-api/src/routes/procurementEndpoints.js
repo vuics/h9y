@@ -58,6 +58,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/cards/{card_id}/echemi/quotations/collect' },
   { method: 'POST', path: '/cards/{card_id}/echemi/search' },
   { method: 'POST', path: '/cards/{card_id}/normalize' },
+  { method: 'POST', path: '/cards/{card_id}/normalize/confirm' },
   { method: 'GET', path: '/cards/{card_id}/rfq' },
   { method: 'PATCH', path: '/cards/{card_id}/rfq' },
   { method: 'POST', path: '/cards/{card_id}/rfq/approve' },

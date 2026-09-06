@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -174,7 +174,7 @@ export default function RFQPage() {
     </CardContent></Card>}
     {!hasRFQ && <Card><CardHeader><CardTitle>RFQ будет создан в двух версиях</CardTitle></CardHeader><CardContent>
       <p className="pr-note">По одной на язык, русской и английской. Обе короткие: только ключевые вопросы, чтобы получить ответ, а не отпугнуть анкетой. Именно этот текст уходит первым письмом и в формы на сайтах, поэтому у него есть предел длины. Остальное дозапрашивается в переписке, когда поставщик ответил. Обе версии сохраняются как один документ и согласуются вместе.</p>
-      {!ready && <Alert><AlertTriangle /><AlertTitle>Карточка не готова</AlertTitle><AlertDescription>Перед подготовкой RFQ нормализуйте CAS-номер и наименование вещества.</AlertDescription></Alert>}
+      {!ready && <Alert><AlertTriangle /><AlertTitle>Карточка не готова</AlertTitle><AlertDescription>Перед подготовкой RFQ нормализуйте CAS-номер и наименование вещества. Если PubChem не подтверждает их — техническая марка, полимер или торговое наименование — вещество можно подтвердить под свою ответственность там же, <Link to={`/procurement/requests/${requestId}`}>на карточке</Link>.</AlertDescription></Alert>}
       {ready && canWriteCards && <Button isDisabled={prepare.isPending || !senderId || settings.isLoading || settings.isError} onPress={() => prepare.mutate()}><FileCheck />{prepare.isPending ? 'Формирование…' : 'Подготовить RFQ'}</Button>}
       {ready && !canWriteCards && <Alert><AlertTriangle /><AlertTitle>Недостаточно прав</AlertTitle><AlertDescription>Для подготовки RFQ требуется разрешение CARD_WRITE.</AlertDescription></Alert>}
     </CardContent></Card>}
