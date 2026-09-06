@@ -163,7 +163,10 @@ export default function CampaignPage() {
         <div className="pr-campaign-bar" role="img" aria-label={`Готово ${percent}%`}><span style={{ width: `${percent}%` }} /></div>
         <dl className="pr-definitions">
           <div><dt>Найдено кандидатов</dt><dd>{progress.candidateTotal}</dd></div>
-          <div><dt>Веществ с контактами</dt><dd>{progress.contactTotal}</dd></div>
+          {/* Companies, not substances. `contactTotal` sums each substance's
+              count of candidates we have an address for, so a run of two
+              substances can and does report twenty-six. */}
+          <div><dt>Кандидатов с контактами</dt><dd>{progress.contactTotal}</dd></div>
           <div><dt>Подтверждено поставщиков</dt><dd>{progress.verifiedTotal ?? 0}</dd></div>
           <div><dt>Запросов отправлено</dt><dd>{progress.requestTotal ?? 0}</dd></div>
           <div><dt>Ответов получено</dt><dd>{progress.responseTotal ?? 0}</dd></div>
@@ -194,7 +197,7 @@ export default function CampaignPage() {
           { id: 'title', header: 'Вещество', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><div className="pr-primary-meta"><CopyableId value={row.cardId} displayValue={`#${row.cardId}`} to={`/procurement/requests/${row.cardId}`} /><span>· CAS {row.casNumber || 'не указан'}</span></div></div> },
           { id: 'stage', header: 'Этап', cell: row => <StatusBadge status={row.stage} label={MEMBER_STAGE[row.stage] || row.stage} /> },
           { id: 'candidates', header: 'Кандидатов', cell: row => row.candidateCount || '—' },
-          { id: 'contacts', header: 'С контактами', cell: row => row.contactCount || '—' },
+          { id: 'contacts', header: 'Из них с контактами', cell: row => row.contactCount || '—' },
           { id: 'verified', header: 'Подтверждено', cell: row => row.verifiedCount || '—' },
           { id: 'requests', header: 'Запросов', cell: row => row.requestCount ? `${row.requestCount}${row.responseCount ? ` · ${row.responseCount} отв.` : ''}` : '—' },
           { id: 'waiting', header: 'Что дальше', cell: row => row.errorCode
