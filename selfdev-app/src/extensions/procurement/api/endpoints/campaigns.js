@@ -58,4 +58,9 @@ export const campaignEndpoints = {
   ),
   dispatchCampaignMarketplace: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/marketplace`, { method: 'post' })),
+  // The marketplace half of "отправить все подготовленные": the forms are
+  // filled and checked, and this is the one press that puts them on the
+  // platform instead of one approval per substance.
+  submitCampaignMarketplace: mutation(campaignId =>
+    request(`/campaigns/${id(campaignId)}/marketplace/submit`, { method: 'post' })),
 }

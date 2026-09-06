@@ -179,7 +179,9 @@ export default function CampaignPage() {
   const { campaignId } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { canResearchSourcing, canQueueNegotiations, canOperateEchemi } = useProcurementPermissions()
+  const {
+    canResearchSourcing, canQueueNegotiations, canOperateEchemi, canSubmitEchemi,
+  } = useProcurementPermissions()
 
   const query = useQuery({
     queryKey: procurementKeys.campaign(campaignId),
@@ -234,6 +236,12 @@ export default function CampaignPage() {
       queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
     },
   })
+  const submitMarketplace = useMutation({
+    mutationFn: () => procurementApi.submitCampaignMarketplace(campaignId),
+    onSuccess: result => queryClient.setQueryData(
+      procurementKeys.campaignMarketplace(campaignId), result,
+    ),
+  })
   const postToMarketplace = useMutation({
     mutationFn: () => procurementApi.dispatchCampaignMarketplace(campaignId),
     onSuccess: result => queryClient.setQueryData(
@@ -283,6 +291,12 @@ export default function CampaignPage() {
   // "выставить заявки" has to know whether that is one substance or ninety.
   const marketplacePending = marketplaceView?.pending || 0
   const marketplaceStopped = marketplaceView?.stopped
+  // Filled, checked, and one press from the platform. A different question
+  // from `pending`: those still need the browser to go and fill a form.
+  const marketplaceAwaiting = marketplaceView?.awaitingApproval || 0
+  const busyMarketplace = postToMarketplace.isPending
+    || submitMarketplace.isPending
+    || Boolean(marketplaceView?.running)
   const asks = asksOf(members, campaignId)
 
   return <DetailLayout
@@ -383,7 +397,7 @@ export default function CampaignPage() {
         <CardTitle>Заявки на площадку</CardTitle>
         <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
       </div></CardHeader><CardContent>
-        {postToMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Заявки не выставлены</AlertTitle><AlertDescription>{mutationMessage(postToMarketplace.error)}</AlertDescription></Alert>}
+        {(postToMarketplace.error || submitMarketplace.error) && <Alert><AlertTriangle /><AlertTitle>Заявки не выставлены</AlertTitle><AlertDescription>{mutationMessage(postToMarketplace.error || submitMarketplace.error)}</AlertDescription></Alert>}
         {/* One browser fills one form at a time, so a run that meets a
             verification page or a dead worker stops there rather than driving
             two hundred substances into the same wall. Saying which substance
@@ -392,6 +406,7 @@ export default function CampaignPage() {
           {marketplaceStopped.message}
           {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере — ссылка и пароль ниже — и запустите ещё раз.</>}
         </AlertDescription></Alert>}
+        {marketplaceAwaiting > 0 && !marketplaceView?.running && <p className="pr-note">Формы заполнены и ждут вас. Отправка необратима: заявку видят все продавцы Echemi, и отозвать её из системы нельзя — на площадке она снимается вручную.</p>}
         {marketplaceView?.running && <p className="pr-note">Идёт выставление: заявки уходят по одной через общий браузер, это занимает минуты на вещество. Страница обновляется сама.</p>}
         {canOperateEchemi && <EchemiBrowserAccess
           access={browser.data}
@@ -400,11 +415,31 @@ export default function CampaignPage() {
           compact
         />}
 
-        {marketplacePending > 0 && canOperateEchemi && <div className="pr-inline-actions">
-          <Button isDisabled={postToMarketplace.isPending || marketplaceView?.running} onPress={() => postToMarketplace.mutate()}>
-            <Send className={postToMarketplace.isPending || marketplaceView?.running ? 'pr-spin' : undefined} />
-            {marketplaceView?.running ? 'Выставляем…' : `Выставить заявки (${marketplacePending})`}
-          </Button>
+        {(marketplacePending > 0 || marketplaceAwaiting > 0) && canOperateEchemi && <div className="pr-inline-actions">
+          {marketplacePending > 0 && <Button
+            variant={marketplaceAwaiting > 0 ? 'outline' : 'default'}
+            isDisabled={busyMarketplace}
+            onPress={() => postToMarketplace.mutate()}
+          >
+            <Send className={busyMarketplace ? 'pr-spin' : undefined} />
+            {marketplaceView?.running ? 'Работаем…' : `Заполнить формы (${marketplacePending})`}
+          </Button>}
+          {/* The press that actually publishes. Separate from filling the
+              forms because it is the irreversible half, and confirmed once for
+              the batch rather than once per substance: a campaign of a hundred
+              is a hundred identical decisions the specialist already made when
+              they approved the RFQ. */}
+          {marketplaceAwaiting > 0 && canSubmitEchemi && <Button
+            isDisabled={busyMarketplace}
+            onPress={() => {
+              if (window.confirm(`Отправить ${marketplaceAwaiting} ${plural(marketplaceAwaiting, 'заявку', 'заявки', 'заявок')} на Echemi? Заявка становится видна всем продавцам площадки, отозвать её из системы нельзя.`)) {
+                submitMarketplace.mutate()
+              }
+            }}
+          >
+            <Send className={busyMarketplace ? 'pr-spin' : undefined} />
+            {marketplaceView?.running ? 'Отправляем…' : `Согласовать и отправить (${marketplaceAwaiting})`}
+          </Button>}
         </div>}
 
         <ul className="pr-campaign-threads">

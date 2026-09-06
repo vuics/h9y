@@ -228,7 +228,8 @@ export function campaignMarketplaceFixture(campaignId) {
     items,
     total: items.length,
     posted: items.filter(item => item.status === 'SUBMITTED').length,
-    pending: items.filter(item => item.status === 'AWAITING_APPROVAL').length,
+    pending: items.filter(item => item.status === 'PREPARED').length,
+    awaitingApproval: items.filter(item => item.status === 'AWAITING_APPROVAL').length,
     running: false,
   }
 }
