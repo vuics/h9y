@@ -1,6 +1,6 @@
 import React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, CircleAlert, Pause, Play, Refresh, Send } from '../components/icons'
+import { AlertTriangle, Check, CircleAlert, Pause, Play, Refresh, Send } from '../components/icons'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -71,6 +71,21 @@ const ERROR_LABEL = {
   NO_USABLE_CONTACT: 'не нашли контакт в разрешённых каналах',
 }
 
+// Only the statuses a campaign thread actually lands in; the negotiation page
+// itself is where the full lifecycle is read.
+const THREAD_STATUS = {
+  READY: 'подготовлен',
+  QUEUED: 'в очереди на отправку',
+  ACTIVE: 'агент работает',
+  WAITING_SUPPLIER: 'ждём поставщика',
+  FOLLOW_UP_DUE: 'пора напомнить',
+  COMPLETE: 'завершена',
+  ESCALATED: 'передана специалисту',
+  CANCELLED: 'отменена',
+  PAUSED_BY_CHANGE: 'пауза: карточка изменилась',
+  STALE: 'устарела',
+}
+
 const ACTIVE = new Set(['RUNNING'])
 const mutationMessage = error => error?.response?.data?.message || error?.message
 const errorText = code => ERROR_LABEL[code] || code
@@ -88,6 +103,10 @@ export default function CampaignPage() {
     // record, and re-reading it every three seconds tells nobody anything.
     refetchInterval: data => (ACTIVE.has(data?.status) ? 3000 : false),
   })
+  const threads = useQuery({
+    queryKey: procurementKeys.campaignConversations(campaignId),
+    queryFn: ({ signal }) => procurementApi.campaignConversations(campaignId, signal),
+  })
 
   const accept = campaign => {
     queryClient.setQueryData(procurementKeys.campaign(campaignId), campaign)
@@ -99,7 +118,17 @@ export default function CampaignPage() {
   })
   const dispatch = useMutation({
     mutationFn: () => procurementApi.dispatchCampaignOutreach(campaignId),
-    onSuccess: result => accept(result.campaign),
+    onSuccess: result => {
+      accept(result.campaign)
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaignConversations(campaignId) })
+    },
+  })
+  const sendPrepared = useMutation({
+    mutationFn: () => procurementApi.sendCampaignConversations(campaignId),
+    onSuccess: result => {
+      queryClient.setQueryData(procurementKeys.campaignConversations(campaignId), result.conversations)
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
+    },
   })
   const resume = useMutation({
     mutationFn: () => procurementApi.resumeCampaign(campaignId),
@@ -132,6 +161,9 @@ export default function CampaignPage() {
     member => member.stage === 'AWAITING_REVIEW' && member.verifiedCount > 0 && !member.requestCount,
   ).length
   const percent = progress.total ? Math.round((progress.settled / progress.total) * 100) : 0
+  const threadsView = threads.data
+  const conversations = threadsView?.items || []
+  const awaitingPerson = threadsView?.awaitingPerson || 0
 
   return <DetailLayout
     backTo="/procurement/campaigns"
@@ -185,6 +217,47 @@ export default function CampaignPage() {
           </div>
         </>}
       </CardContent></Card>
+
+      {conversations.length > 0 && <Card><CardHeader><div>
+        <CardTitle>Переписки кампании</CardTitle>
+        <p>{awaitingPerson > 0
+          ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
+          : 'Все запросы отправлены — переписки идут сами.'}
+          {threadsView?.draftFirst && ' Кампания запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
+      </div></CardHeader><CardContent>
+        {sendPrepared.error && <Alert><AlertTriangle /><AlertTitle>Отправка не выполнена</AlertTitle><AlertDescription>{mutationMessage(sendPrepared.error)}</AlertDescription></Alert>}
+        {sendPrepared.data && <Alert>{sendPrepared.data.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>Отправлено: {sendPrepared.data.sent?.length ?? 0}</AlertTitle><AlertDescription>
+          {sendPrepared.data.skipped?.length > 0 && <p>Пропущено по устаревшему RFQ: {sendPrepared.data.skipped.length}. Такой запрос написан по тексту, который с тех пор пересобрали — согласуйте RFQ заново.</p>}
+          {sendPrepared.data.errors?.length > 0 && <ul className="pr-plain-list">{sendPrepared.data.errors.map(item => <li key={item.assignmentId}><Link to={`/procurement/negotiations/${item.assignmentId}`}>{item.assignmentId}</Link> — {item.message}</li>)}</ul>}
+        </AlertDescription></Alert>}
+
+        {awaitingPerson > 0 && canQueueNegotiations && <div className="pr-inline-actions">
+          <Button isDisabled={sendPrepared.isPending} onPress={() => sendPrepared.mutate()}>
+            <Send className={sendPrepared.isPending ? 'pr-spin' : undefined} />
+            {sendPrepared.isPending ? 'Отправляем…' : `Отправить все подготовленные (${awaitingPerson})`}
+          </Button>
+        </div>}
+
+        {/* Grouped by substance and linked, because the number on its own sent
+            the specialist to the negotiations list to find these by hand. */}
+        <ul className="pr-campaign-threads">
+          {conversations.map(item => <li key={item.cardId}>
+            <div className="pr-campaign-threads__head">
+              <Link to={`/procurement/requests/${item.cardId}`}>{item.title}</Link>
+              <span>#{item.cardId}{item.casNumber ? ` · CAS ${item.casNumber}` : ''}</span>
+            </div>
+            <ul>
+              {item.conversations.map(thread => <li key={thread.assignmentId}>
+                <Link to={`/procurement/negotiations/${thread.assignmentId}`}>{thread.supplierName || thread.assignmentId}</Link>
+                <span className="pr-primary-meta">{thread.channel}{thread.answered ? ' · есть ответ' : ''}</span>
+                {thread.awaitingPerson
+                  ? <StatusBadge status="NEEDS_REVIEW" label={thread.automationPaused ? 'агент остановлен' : 'ждёт отправки'} />
+                  : <StatusBadge status={thread.status} label={THREAD_STATUS[thread.status] || thread.status} />}
+              </li>)}
+            </ul>
+          </li>)}
+        </ul>
+      </CardContent></Card>}
 
       <DataTable
         rows={members}

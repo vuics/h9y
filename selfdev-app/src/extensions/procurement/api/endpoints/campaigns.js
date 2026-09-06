@@ -42,4 +42,10 @@ export const campaignEndpoints = {
   // did, and for the substances whose first attempt failed on one supplier.
   dispatchCampaignOutreach: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/outreach`, { method: 'post' })),
+  campaignConversations: read(
+    (campaignId, signal) => request(`/campaigns/${id(campaignId)}/conversations`, { signal }),
+    async campaignId => (await fixtures()).campaignConversationsFixture(campaignId),
+  ),
+  sendCampaignConversations: mutation(campaignId =>
+    request(`/campaigns/${id(campaignId)}/conversations/send`, { method: 'post' })),
 }

@@ -30,6 +30,8 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/campaigns' },
   { method: 'GET', path: '/campaigns/{campaign_id}' },
   { method: 'POST', path: '/campaigns/{campaign_id}/cancel' },
+  { method: 'GET', path: '/campaigns/{campaign_id}/conversations' },
+  { method: 'POST', path: '/campaigns/{campaign_id}/conversations/send' },
   { method: 'POST', path: '/campaigns/{campaign_id}/outreach' },
   { method: 'POST', path: '/campaigns/{campaign_id}/pause' },
   { method: 'POST', path: '/campaigns/{campaign_id}/resume' },

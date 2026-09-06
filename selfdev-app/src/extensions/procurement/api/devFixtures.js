@@ -160,6 +160,39 @@ export function campaignFixtureById(campaignId) {
   return campaigns.find(item => item.campaignId === String(campaignId)) || null
 }
 
+export function campaignConversationsFixture(campaignId) {
+  const campaign = campaigns.find(item => item.campaignId === String(campaignId))
+  if (!campaign) return null
+  // Demonstration mode shows the case the screen exists for: requests prepared
+  // under draft-first, every one of them waiting for a person to send it.
+  const items = campaign.members
+    .filter(member => member.stage === 'AWAITING_REVIEW')
+    .map((member, index) => ({
+      cardId: member.cardId,
+      title: member.title,
+      casNumber: member.casNumber,
+      awaitingPerson: 1,
+      conversations: [{
+        assignmentId: `NEG-${member.cardId}-${index}F`,
+        supplierId: suppliers[index % suppliers.length].id,
+        supplierName: suppliers[index % suppliers.length].name,
+        channel: 'email',
+        status: 'READY',
+        nextAction: 'SEND_INITIAL_RFQ',
+        automationPaused: false,
+        answered: false,
+        awaitingPerson: true,
+      }],
+    }))
+  return {
+    campaignId: campaign.campaignId,
+    draftFirst: true,
+    items,
+    total: items.length,
+    awaitingPerson: items.length,
+  }
+}
+
 export const suppliers = [
   { id: 'SUP-A19F', name: 'Qingdao Nova Chemical Co.', country: 'CN', qualificationStatus: 'UNDER_REVIEW', contacts: [{ id: 'CONTACT-91', name: 'Lin Wei', role: 'Export manager', channel: 'email', address: 'lin.wei@fixture.invalid', verificationStatus: 'VERIFIED', active: true }], capabilities: [{ casNumber: '106-99-0', productName: '1,3-Butadiene', verificationStatus: 'CLAIMED', source: 'ECHEMI_MARKETPLACE_LISTING', sourceUrl: 'https://example.invalid/source/1' }], updatedAt: ago(1) },
   { id: 'SUP-B72D', name: 'Jiangsu Meridian Materials', country: 'CN', qualificationStatus: 'QUALIFIED', contacts: [{ id: 'CONTACT-27', name: 'Mei Chen', role: 'International sales', channel: 'whatsapp', address: '+86 •••• 1842', verificationStatus: 'VERIFIED', active: true }], capabilities: [{ casNumber: '106-99-0', productName: 'Butadiene, polymerization grade', verificationStatus: 'VERIFIED', source: 'OFFICIAL_CATALOGUE', sourceUrl: 'https://example.invalid/source/2' }], updatedAt: ago(3) },

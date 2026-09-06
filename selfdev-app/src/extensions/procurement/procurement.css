@@ -457,6 +457,19 @@
 .pr-normalization__override strong { display: flex; align-items: center; gap: 6px; font-size: 12px; }
 .pr-normalization__override p { margin: 6px 0 0; font-size: 12px; }
 
+/* The campaign's conversations, grouped by substance. A list rather than a
+   table: the row that matters is "this company is waiting for you to send",
+   and a table would spend its width on columns that repeat. */
+.pr-campaign-threads { list-style: none; margin: 12px 0 0; padding: 0; }
+.pr-campaign-threads > li + li { border-top: 1px solid var(--pr-border); margin-top: 10px; padding-top: 10px; }
+.pr-campaign-threads__head { display: flex; align-items: baseline; gap: 8px; }
+.pr-campaign-threads__head a { font-weight: 650; font-size: 12.5px; }
+.pr-campaign-threads__head span { color: var(--pr-muted); font-size: 11px; }
+.pr-campaign-threads ul { list-style: none; margin: 6px 0 0; padding: 0; }
+.pr-campaign-threads ul li { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+.pr-campaign-threads ul li > a { flex: 0 1 auto; }
+.pr-campaign-threads ul li .pr-primary-meta { flex: 1 1 auto; }
+
 .pr-web-form [data-slot="card-header"] { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .pr-web-form [data-slot="card-header"] p { margin: 3px 0 0; color: var(--pr-muted); font-size: 11px; }
 .pr-web-form__request { border-top: 1px solid var(--pr-border); margin-top: 16px; padding-top: 14px; }
