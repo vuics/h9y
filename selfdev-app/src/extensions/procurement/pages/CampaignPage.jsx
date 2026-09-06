@@ -222,6 +222,7 @@ export default function CampaignPage() {
   const awaitingPerson = threadsView?.awaitingPerson || 0
   const unreachable = threadsView?.unreachable || []
   const channelsLabel = (threadsView?.channels || []).map(item => CHANNEL_LABEL[item] || item).join(', ')
+  const hasEchemi = (threadsView?.channels || []).includes('ECHEMI')
   const asks = asksOf(members, campaignId)
 
   return <DetailLayout
@@ -324,6 +325,10 @@ export default function CampaignPage() {
           ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
           : 'Все запросы отправлены — переписки идут сами.'}
           {threadsView?.draftFirst && ' Кампания запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
+        {/* Selecting Echemi at launch and silently doing nothing with it is
+            the campaign ignoring an instruction. It is a marketplace enquiry,
+            not a conversation with a contact, and it has its own page. */}
+        {hasEchemi && <p className="pr-note">В каналах выбран Echemi, но заявки на площадку кампания не выставляет — это отдельное действие на карточке вещества, со своей формой и подтверждением. Здесь только переписка с контактами.</p>}
       </div></CardHeader><CardContent>
         {sendPrepared.error && <Alert><AlertTriangle /><AlertTitle>Отправка не выполнена</AlertTitle><AlertDescription>{mutationMessage(sendPrepared.error)}</AlertDescription></Alert>}
         {sendPrepared.data && <Alert>{sendPrepared.data.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>Отправлено: {sendPrepared.data.sent?.length ?? 0}</AlertTitle><AlertDescription>
