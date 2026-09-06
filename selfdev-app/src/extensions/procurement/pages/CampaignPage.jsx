@@ -150,6 +150,21 @@ const ASKS = {
  */
 function asksOf(members, campaignId) {
   return members.flatMap(member => {
+    // The platform stopped and asked for a person. That ask belongs in the
+    // list of things waiting for one, not only in the marketplace block
+    // further down the page: a specialist scanning "Ждут вас" is scanning for
+    // exactly this, and a request stuck behind a check nobody is told about is
+    // a request that never goes out.
+    if (member.marketplaceStatus === 'NEEDS_REVIEW') {
+      return [{
+        key: `mkt-${member.cardId}`,
+        cardId: member.cardId,
+        title: member.title,
+        text: 'закончить заявку на площадке',
+        to: `/procurement/requests/${member.cardId}/echemi`,
+        blocking: true,
+      }]
+    }
     if (member.errorCode) {
       return [{
         key: `err-${member.cardId}`,
