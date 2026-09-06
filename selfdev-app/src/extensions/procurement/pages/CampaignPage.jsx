@@ -101,6 +101,11 @@ const THREAD_STATUS = {
 const MARKETPLACE_STATUS = {
   NOT_PREPARED: 'заявки нет',
   RFQ_APPROVAL: 'ждёт согласования RFQ',
+  // Written but never carried to the form: the platform calls this
+  // AWAITING_APPROVAL from the moment the record exists, and saying "форма
+  // заполнена" about it turns a preview that failed into a request that looks
+  // ready to send.
+  PREPARED: 'черновик заявки создан, форму не заполняли',
   AWAITING_APPROVAL: 'форма заполнена, ждёт вашего согласования',
   APPROVED: 'согласована, не отправлена',
   SUBMITTING: 'отправляется',
@@ -411,7 +416,13 @@ export default function CampaignPage() {
             {(item.platformInquiryId || item.error) && <ul>
               <li>
                 {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}
-                {item.error && <span className="pr-import-missing">{item.error}</span>}
+                {/* Said in the past tense when it is in the past. "Не
+                    выставить" reads as a standing verdict, and a run that
+                    failed an hour ago is a thing that happened — the causes
+                    the server can re-check it has already re-checked. */}
+                {item.error && <span className="pr-import-missing">
+                  {item.errorFromLastRun ? 'при последней попытке: ' : ''}{item.error}
+                </span>}
               </li>
             </ul>}
           </li>)}
