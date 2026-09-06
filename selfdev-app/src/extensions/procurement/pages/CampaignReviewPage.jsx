@@ -82,6 +82,18 @@ const dispatchTitle = outreach => {
   return 'Отправлять было нечего'
 }
 
+/** Why the marketplace requests did or did not start on this approval.
+ *
+ * Reported rather than assumed: posting goes through one shared browser and
+ * runs behind the response, so the approval screen can only say that it
+ * started — the campaign page is where it is watched.
+ */
+const MARKETPLACE_SKIPPED = {
+  ECHEMI_NOT_IN_PLAN: 'Канал Echemi при запуске не выбирали — заявки на площадку по этой кампании не выставляются.',
+  ECHEMI_OPERATE_REQUIRED: 'Заявки на площадку требуют разрешения ECHEMI_OPERATE. Решения записаны; выставить их сможет сотрудник с этим правом — со страницы кампании.',
+  BUYER_DELIVERY_INCOMPLETE: 'Заявки на площадку не начаты: в настройках закупщика не хватает условий поставки. Заполните их и запустите со страницы кампании.',
+}
+
 export default function CampaignReviewPage() {
   const { campaignId } = useParams()
   const queryClient = useQueryClient()
@@ -95,6 +107,7 @@ export default function CampaignReviewPage() {
   const [opened, setOpened] = useState({})
   const [applied, setApplied] = useState(null)
   const [dispatched, setDispatched] = useState(null)
+  const [posted, setPosted] = useState(null)
 
   const query = useQuery({
     queryKey: procurementKeys.campaignReview(campaignId),
@@ -115,6 +128,7 @@ export default function CampaignReviewPage() {
       accept(data)
       setApplied(data.results || [])
       setDispatched(data.outreach || null)
+      setPosted(data.marketplace || null)
       setVerdicts({})
       setRfqs({})
     },
@@ -184,6 +198,11 @@ export default function CampaignReviewPage() {
       {apply.error && <Alert><AlertTriangle /><AlertTitle>Согласование не применено</AlertTitle><AlertDescription>{mutationMessage(apply.error)}</AlertDescription></Alert>}
       {prepare.error && <Alert><AlertTriangle /><AlertTitle>Не удалось подготовить RFQ</AlertTitle><AlertDescription>{mutationMessage(prepare.error)}</AlertDescription></Alert>}
       {!canReviewSourcing && <Alert><AlertTriangle /><AlertTitle>Согласование доступно только для чтения</AlertTitle><AlertDescription>Для подтверждения кандидатов требуется разрешение SOURCING_REVIEW.</AlertDescription></Alert>}
+      {posted && <Alert>{posted.started ? <Check /> : <CircleAlert />}<AlertTitle>{posted.started ? 'Заявки на площадку выставляются' : 'Заявки на площадку не начаты'}</AlertTitle><AlertDescription>
+        {posted.started
+          ? <>Заявки уходят по одной через общий браузер — это минуты на вещество. Ход видно на странице кампании.</>
+          : MARKETPLACE_SKIPPED[posted.skipped] || posted.message || posted.skipped}
+      </AlertDescription></Alert>}
       {dispatched && <Alert>{dispatched.queued > 0 ? <Check /> : <CircleAlert />}<AlertTitle>{dispatchTitle(dispatched)}</AlertTitle><AlertDescription>
         {dispatched.queued > 0 && <p>Кампания перешла к рассылке — ход видно на странице кампании.</p>}
         {dispatched.skipped === 'NEGOTIATION_QUEUE_REQUIRED' && <p>Решения записаны, но отправка требует разрешения NEGOTIATION_QUEUE. Запросы уйдут, когда её запустит сотрудник с этим правом.</p>}

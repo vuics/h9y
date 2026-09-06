@@ -18,6 +18,7 @@ export const procurementKeys = {
   campaign: id => [...procurementKeys.all, 'campaign', String(id)],
   campaignReview: id => [...procurementKeys.all, 'campaign-review', String(id)],
   campaignConversations: id => [...procurementKeys.all, 'campaign-conversations', String(id)],
+  campaignMarketplace: id => [...procurementKeys.all, 'campaign-marketplace', String(id)],
   rfq: id => [...procurementKeys.all, 'rfq', String(id)],
   echemi: id => [...procurementKeys.all, 'echemi', String(id)],
   echemiBrowserAccess: id => [...procurementKeys.all, 'echemi-browser-access', String(id)],

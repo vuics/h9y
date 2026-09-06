@@ -48,4 +48,14 @@ export const campaignEndpoints = {
   ),
   sendCampaignConversations: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/conversations/send`, { method: 'post' })),
+  // Requests on the marketplace, which are not conversations: one per
+  // substance, published to every seller, with no contact behind them. The
+  // read answers from the cards, so it still works while the browser worker
+  // that posts them is down.
+  campaignMarketplace: read(
+    (campaignId, signal) => request(`/campaigns/${id(campaignId)}/marketplace`, { signal }),
+    async campaignId => (await fixtures()).campaignMarketplaceFixture(campaignId),
+  ),
+  dispatchCampaignMarketplace: mutation(campaignId =>
+    request(`/campaigns/${id(campaignId)}/marketplace`, { method: 'post' })),
 }

@@ -93,6 +93,25 @@ const THREAD_STATUS = {
   STALE: 'устарела',
 }
 
+// What one marketplace request's state is called. The platform's own words
+// for a request nobody has posted yet ("NOT_PREPARED") say nothing to a
+// specialist; what they need is whether it is out there and, if not, who is
+// holding it.
+const MARKETPLACE_STATUS = {
+  NOT_PREPARED: 'заявки нет',
+  RFQ_APPROVAL: 'ждёт согласования RFQ',
+  AWAITING_APPROVAL: 'форма заполнена, ждёт вашего согласования',
+  APPROVED: 'согласована, не отправлена',
+  SUBMITTING: 'отправляется',
+  SUBMITTED: 'размещена на площадке',
+  NEEDS_REVIEW: 'площадка не подтвердила — проверьте вручную',
+  HUMAN_ACTION_REQUIRED: 'площадка просит пройти проверку',
+  STALE: 'устарела: карточка или RFQ изменились',
+  FAILED: 'не выставлена',
+}
+
+const MARKETPLACE_POSTED = new Set(['SUBMITTED', 'SUBMITTING', 'NEEDS_REVIEW'])
+
 const ACTIVE = new Set(['RUNNING'])
 
 // What each kind of wait is called when it is addressed to the specialist
@@ -150,7 +169,7 @@ export default function CampaignPage() {
   const { campaignId } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { canResearchSourcing, canQueueNegotiations } = useProcurementPermissions()
+  const { canResearchSourcing, canQueueNegotiations, canOperateEchemi } = useProcurementPermissions()
 
   const query = useQuery({
     queryKey: procurementKeys.campaign(campaignId),
@@ -162,6 +181,14 @@ export default function CampaignPage() {
   const threads = useQuery({
     queryKey: procurementKeys.campaignConversations(campaignId),
     queryFn: ({ signal }) => procurementApi.campaignConversations(campaignId, signal),
+  })
+  const marketplace = useQuery({
+    queryKey: procurementKeys.campaignMarketplace(campaignId),
+    queryFn: ({ signal }) => procurementApi.campaignMarketplace(campaignId, signal),
+    // Posting runs behind the response — one browser, one form at a time — so
+    // the page comes back for the result while a run is going, and stops the
+    // moment it is not.
+    refetchInterval: data => (data?.running ? 5000 : false),
   })
 
   const accept = campaign => {
@@ -185,6 +212,12 @@ export default function CampaignPage() {
       queryClient.setQueryData(procurementKeys.campaignConversations(campaignId), result.conversations)
       queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
     },
+  })
+  const postToMarketplace = useMutation({
+    mutationFn: () => procurementApi.dispatchCampaignMarketplace(campaignId),
+    onSuccess: result => queryClient.setQueryData(
+      procurementKeys.campaignMarketplace(campaignId), result,
+    ),
   })
   const resume = useMutation({
     mutationFn: () => procurementApi.resumeCampaign(campaignId),
@@ -223,6 +256,12 @@ export default function CampaignPage() {
   const unreachable = threadsView?.unreachable || []
   const channelsLabel = (threadsView?.channels || []).map(item => CHANNEL_LABEL[item] || item).join(', ')
   const hasEchemi = (threadsView?.channels || []).includes('ECHEMI')
+  const marketplaceView = postToMarketplace.data || marketplace.data
+  const marketplaceItems = marketplaceView?.items || []
+  // What is left to post, not merely that something is: a specialist reading
+  // "выставить заявки" has to know whether that is one substance or ninety.
+  const marketplacePending = marketplaceView?.pending || 0
+  const marketplaceStopped = marketplaceView?.stopped
   const asks = asksOf(members, campaignId)
 
   return <DetailLayout
@@ -319,16 +358,57 @@ export default function CampaignPage() {
         </ul>
       </CardContent></Card>}
 
+      {marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
+        <CardTitle>Заявки на площадку</CardTitle>
+        <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
+      </div></CardHeader><CardContent>
+        {postToMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Заявки не выставлены</AlertTitle><AlertDescription>{mutationMessage(postToMarketplace.error)}</AlertDescription></Alert>}
+        {/* One browser fills one form at a time, so a run that meets a
+            verification page or a dead worker stops there rather than driving
+            two hundred substances into the same wall. Saying which substance
+            it stopped on is what makes the stop actionable. */}
+        {marketplaceStopped && <Alert><CircleAlert /><AlertTitle>Выставление остановлено</AlertTitle><AlertDescription>
+          {marketplaceStopped.message}
+          {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере: <a href={marketplaceStopped.noVncUrl} target="_blank" rel="noreferrer">окно площадки</a>, затем запустите ещё раз.</>}
+        </AlertDescription></Alert>}
+        {marketplaceView?.running && <p className="pr-note">Идёт выставление: заявки уходят по одной через общий браузер, это занимает минуты на вещество. Страница обновляется сама.</p>}
+
+        {marketplacePending > 0 && canOperateEchemi && <div className="pr-inline-actions">
+          <Button isDisabled={postToMarketplace.isPending || marketplaceView?.running} onPress={() => postToMarketplace.mutate()}>
+            <Send className={postToMarketplace.isPending || marketplaceView?.running ? 'pr-spin' : undefined} />
+            {marketplaceView?.running ? 'Выставляем…' : `Выставить заявки (${marketplacePending})`}
+          </Button>
+        </div>}
+
+        <ul className="pr-campaign-threads">
+          {marketplaceItems.map(item => <li key={item.cardId}>
+            <div className="pr-campaign-threads__head">
+              <Link to={`/procurement/requests/${item.cardId}`}>{item.title}</Link>
+              <span>#{item.cardId}{item.casNumber ? ` · CAS ${item.casNumber}` : ''}</span>
+              <StatusBadge
+                status={MARKETPLACE_POSTED.has(item.status) ? 'SUBMITTED' : item.status}
+                label={MARKETPLACE_STATUS[item.status] || item.status}
+              />
+            </div>
+            {(item.platformInquiryId || item.error) && <ul>
+              <li>
+                {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}
+                {item.error && <span className="pr-import-missing">{item.error}</span>}
+              </li>
+            </ul>}
+          </li>)}
+        </ul>
+      </CardContent></Card>}
+
       {conversations.length > 0 && <Card><CardHeader><div>
         <CardTitle>Переписки кампании</CardTitle>
         <p>{awaitingPerson > 0
           ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
           : 'Все запросы отправлены — переписки идут сами.'}
           {threadsView?.draftFirst && ' Кампания запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
-        {/* Selecting Echemi at launch and silently doing nothing with it is
-            the campaign ignoring an instruction. It is a marketplace enquiry,
-            not a conversation with a contact, and it has its own page. */}
-        {hasEchemi && <p className="pr-note">В каналах выбран Echemi, но заявки на площадку кампания не выставляет — это отдельное действие на карточке вещества, со своей формой и подтверждением. Здесь только переписка с контактами.</p>}
+        {/* A marketplace request is not in this list on purpose: it has no
+            contact behind it and no thread. It has its own block above. */}
+        {hasEchemi && <p className="pr-note">Заявки на площадку Echemi — отдельным блоком выше: у них нет адресата и переписки, одна заявка на вещество видна всем продавцам сразу. Здесь только переписка с контактами.</p>}
       </div></CardHeader><CardContent>
         {sendPrepared.error && <Alert><AlertTriangle /><AlertTitle>Отправка не выполнена</AlertTitle><AlertDescription>{mutationMessage(sendPrepared.error)}</AlertDescription></Alert>}
         {sendPrepared.data && <Alert>{sendPrepared.data.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>Отправлено: {sendPrepared.data.sent?.length ?? 0}</AlertTitle><AlertDescription>

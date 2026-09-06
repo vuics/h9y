@@ -207,6 +207,32 @@ export function campaignConversationsFixture(campaignId) {
   }
 }
 
+export function campaignMarketplaceFixture(campaignId) {
+  const campaign = campaigns.find(item => item.campaignId === String(campaignId))
+  if (!campaign) return null
+  // One request per substance, in the three states the block has to explain:
+  // posted, waiting for the specialist's approval, and blocked on an RFQ.
+  const states = ['SUBMITTED', 'AWAITING_APPROVAL', 'RFQ_APPROVAL']
+  const items = campaign.members.map((member, index) => ({
+    cardId: member.cardId,
+    title: member.title,
+    casNumber: member.casNumber,
+    status: states[index % states.length],
+    inquiryId: `ECHEMI-${member.cardId}-4F2A`,
+    platformInquiryId: index % states.length === 0 ? 'RFQ2043117' : null,
+    error: null,
+  }))
+  return {
+    campaignId: campaign.campaignId,
+    enabled: true,
+    items,
+    total: items.length,
+    posted: items.filter(item => item.status === 'SUBMITTED').length,
+    pending: items.filter(item => item.status === 'AWAITING_APPROVAL').length,
+    running: false,
+  }
+}
+
 export const suppliers = [
   { id: 'SUP-A19F', name: 'Qingdao Nova Chemical Co.', country: 'CN', qualificationStatus: 'UNDER_REVIEW', contacts: [{ id: 'CONTACT-91', name: 'Lin Wei', role: 'Export manager', channel: 'email', address: 'lin.wei@fixture.invalid', verificationStatus: 'VERIFIED', active: true }], capabilities: [{ casNumber: '106-99-0', productName: '1,3-Butadiene', verificationStatus: 'CLAIMED', source: 'ECHEMI_MARKETPLACE_LISTING', sourceUrl: 'https://example.invalid/source/1' }], updatedAt: ago(1) },
   { id: 'SUP-B72D', name: 'Jiangsu Meridian Materials', country: 'CN', qualificationStatus: 'QUALIFIED', contacts: [{ id: 'CONTACT-27', name: 'Mei Chen', role: 'International sales', channel: 'whatsapp', address: '+86 •••• 1842', verificationStatus: 'VERIFIED', active: true }], capabilities: [{ casNumber: '106-99-0', productName: 'Butadiene, polymerization grade', verificationStatus: 'VERIFIED', source: 'OFFICIAL_CATALOGUE', sourceUrl: 'https://example.invalid/source/2' }], updatedAt: ago(3) },
