@@ -1,0 +1,18 @@
+# Canonical author identities.
+#
+# The entries below map identities that were recorded by mistake — commits made
+# on machines where `git config user.name` / `user.email` had not been set, and
+# commits tagged with the name of the tool that produced them — onto the single
+# canonical identity of this repository's author.
+#
+# These are all the same person. No authorship is reassigned here: every commit
+# listed on the right was written by Artem Arakcheev. Git history itself is
+# unmodified; this file only affects how names are displayed by git log,
+# git shortlog and git blame.
+#
+# Format: Canonical Name <canonical@email> Recorded Name <recorded@email>
+
+Artem Arakcheev <artarakcheev@gmail.com> Your Name <you@example.com>
+Artem Arakcheev <artarakcheev@gmail.com> Your Name (aider) <you@example.com>
+Artem Arakcheev <artarakcheev@gmail.com> Artem Arakcheev (aider) <artarakcheev@gmail.com>
+Artem Arakcheev <artarakcheev@gmail.com> Artem Arakcheev <aaar@mail.ru>
