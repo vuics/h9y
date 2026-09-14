@@ -37,7 +37,7 @@ export function EchemiBrowserAccess({ access, error, loading, compact = false })
         <AlertTitle>У браузера нет учётной записи Echemi</AlertTitle>
         <AlertDescription>
           Форму заявки заполнить не получится: площадка потребует вход, и агент остановится на странице логина.
-          Задайте агенту опции Procurement → Echemi Account (ключи Vault ECHEMI_ACCOUNT_EMAIL и ECHEMI_ACCOUNT_PASSWORD)
+          Задайте агенту опции Procurement → Echemi Account (email учётной записи и ключ Vault пароля ECHEMI_ACCOUNT_PASSWORD)
           и перезапустите его — учётная запись читается один раз при старте.
         </AlertDescription>
       </Alert>}

@@ -1258,20 +1258,13 @@ const archetypes = {
               }
             },
             // The marketplace account the browser signs in as, to read the
-            // quotations sellers leave against inquiries we posted. Both
-            // fields come from the Vault: the email identifies the account and
-            // is as much a credential as the password here.
+            // quotations sellers leave against inquiries we posted. The email
+            // is written here as is; only the password comes from the Vault.
             echemi: {
               type: 'object',
               title: 'Echemi Account',
               properties: {
-                email: {
-                  type: 'object',
-                  title: 'Account Email',
-                  properties: {
-                    valueFromVault: { type: 'string', title: 'Value From Vault Key', default: 'ECHEMI_ACCOUNT_EMAIL' },
-                  },
-                },
+                email: { type: 'string', title: 'Account Email', format: 'email', default: '' },
                 password: {
                   type: 'object',
                   title: 'Account Password',

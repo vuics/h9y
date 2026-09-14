@@ -352,6 +352,16 @@ export default mongoose.model(
             valueFromVault: String,
           },
         },
+        // Declared here or strict mode drops it on every save: the Hive form
+        // showed the Vault keys as schema defaults while Update wiped them.
+        // The email is written in the form as is; only the password comes
+        // from the Vault.
+        echemi: {
+          email: String,
+          password: {
+            valueFromVault: String,
+          },
+        },
       },
 
       negotiator: {
