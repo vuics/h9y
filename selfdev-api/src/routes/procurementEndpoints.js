@@ -55,6 +55,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/cards' },
   { method: 'GET', path: '/cards/{card_id}' },
   { method: 'PATCH', path: '/cards/{card_id}' },
+  { method: 'POST', path: '/cards/{card_id}/delete' },
   { method: 'GET', path: '/cards/{card_id}/echemi' },
   { method: 'GET', path: '/cards/{card_id}/echemi/browser-access' },
   { method: 'POST', path: '/cards/{card_id}/echemi/inquiries' },

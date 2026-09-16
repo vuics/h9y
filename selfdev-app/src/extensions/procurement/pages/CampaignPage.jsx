@@ -13,6 +13,7 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from '../components/SourcingSettings'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
+import { CampaignMemberProgress } from '../components/CampaignMemberProgress'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -624,7 +625,16 @@ export default function CampaignPage() {
         emptyTitle="В кампании нет веществ"
         columns={[
           { id: 'title', header: 'Вещество', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><div className="pr-primary-meta"><CopyableId value={row.cardId} displayValue={`#${row.cardId}`} to={`/procurement/requests/${row.cardId}`} /><span>· CAS {row.casNumber || 'не указан'}</span></div></div> },
-          { id: 'stage', header: 'Этап', cell: row => <StatusBadge status={row.stage} label={MEMBER_STAGE[row.stage] || row.stage} /> },
+          { id: 'stage', header: 'Этап', cell: row => <div className="pr-member-stage-cell">
+            <StatusBadge status={row.stage} label={MEMBER_STAGE[row.stage] || row.stage} />
+            <CampaignMemberProgress
+              stage={row.stage}
+              stepProgress={row.stepProgress}
+              waitingFor={row.waitingFor}
+              errorCode={row.errorCode}
+              paused={campaign.status === 'PAUSED'}
+            />
+          </div> },
           { id: 'candidates', header: 'Кандидатов', cell: row => row.candidateCount || '—' },
           { id: 'contacts', header: 'Из них с контактами', cell: row => row.contactCount || '—' },
           { id: 'verified', header: 'Подтверждено', cell: row => row.verifiedCount || '—' },

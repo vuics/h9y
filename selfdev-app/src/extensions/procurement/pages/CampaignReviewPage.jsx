@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 
@@ -34,11 +34,39 @@ const VERDICTS = [
 
 // What the evidence already concluded, offered as the default verdict. The
 // operator confirms or overrides it; nothing is submitted without them picking.
+//
+// `UNKNOWN` is a statement about our evidence, not about the company: the role
+// extractor did not settle it, and on this campaign that is 51 of 121 rows —
+// BOC Sciences, Lookchem, Fisher Scientific among them. So it defaults to
+// "needs evidence" rather than to a rejection. The two are identical in what
+// they permit — `require_promotable_candidate` writes to a supplier only on
+// VERIFIED_MANUFACTURER or VERIFIED_DISTRIBUTOR — and differ only in whether a
+// real company is thrown away on no grounds, recorded under the specialist's
+// own name. A verdict can be revised later; only the way back to UNREVIEWED is
+// closed.
 const SUGGESTED = {
   MANUFACTURER: 'VERIFIED_MANUFACTURER',
   BOTH: 'VERIFIED_MANUFACTURER',
   DISTRIBUTOR: 'VERIFIED_DISTRIBUTOR',
+  UNKNOWN: 'NEEDS_MORE_EVIDENCE',
 }
+
+// Only where the evidence actually concluded something. The rest are parked,
+// and the row has to say so: marking all 121 "рекомендую" would erase the one
+// distinction the screen exists to preserve — where there is a finding and
+// where there is only an absence — and turn the preselect from saved clicks
+// into a way to record decisions nobody read.
+const CONCLUDED = new Set(['MANUFACTURER', 'BOTH', 'DISTRIBUTOR'])
+
+/** One decision is a candidate *under one substance*, never a candidate.
+ *
+ * The same company found for several substances carries the same
+ * `SRC-CAND-…` id in every one of them — on this campaign 14 of 99 ids repeat
+ * across the four blocks. Keyed by the id alone, one verdict stood for three
+ * separate decisions and, because the radio `name` collided too, picking a
+ * role for Dayang Chem under one substance visibly cleared it under another.
+ */
+const verdictKey = (cardId, candidateId) => `${cardId}:${candidateId}`
 
 const BLOCKED_LABEL = {
   STAGE_QUEUED: 'ещё не искали',
@@ -141,10 +169,10 @@ export default function CampaignReviewPage() {
 
   const decisions = useMemo(() => actionable.map(item => {
     const candidates = item.candidates
-      .filter(candidate => verdicts[candidate.candidateId])
+      .filter(candidate => verdicts[verdictKey(item.cardId, candidate.candidateId)])
       .map(candidate => ({
         candidateId: candidate.candidateId,
-        decision: verdicts[candidate.candidateId],
+        decision: verdicts[verdictKey(item.cardId, candidate.candidateId)],
       }))
     const fingerprint = rfqs[item.cardId] ? item.rfq?.documentFingerprint : null
     return { cardId: item.cardId, candidates, ...(fingerprint ? { rfqFingerprint: fingerprint } : {}) }
@@ -161,6 +189,34 @@ export default function CampaignReviewPage() {
     [decisions],
   )
 
+  // The suggestion is the starting position, not a hidden default: the dots
+  // arrive already on what the evidence concluded, so the specialist spends
+  // their time on the rows they disagree with instead of re-entering the ones
+  // they agree with. Only rows the evidence actually concluded something about
+  // are filled — an unknown role is precisely the one that needs a human, so
+  // it stays blank. Seeded into `verdicts` rather than painted on at render
+  // time so that the counter on "Согласовать" and what is submitted are the
+  // same thing the operator can see.
+  useEffect(() => {
+    if (!actionable.length) return
+    setVerdicts(current => {
+      const next = { ...current }
+      let changed = false
+      for (const item of actionable) {
+        for (const candidate of item.candidates) {
+          if (candidate.reviewDecision !== 'UNREVIEWED') continue
+          const key = verdictKey(item.cardId, candidate.candidateId)
+          if (key in next) continue
+          const suggested = SUGGESTED[candidate.role]
+          if (!suggested) continue
+          next[key] = suggested
+          changed = true
+        }
+      }
+      return changed ? next : current
+    })
+  }, [actionable])
+
   const acceptAllSuggested = () => {
     const next = {}
     const nextRfqs = {}
@@ -171,7 +227,7 @@ export default function CampaignReviewPage() {
         // Only where the evidence actually concluded something. A candidate
         // whose role is unknown is exactly the one a person has to look at,
         // so "accept all" deliberately leaves it blank rather than guessing.
-        if (suggested) next[candidate.candidateId] = suggested
+        if (suggested) next[verdictKey(item.cardId, candidate.candidateId)] = suggested
       }
       if (item.rfq?.documentFingerprint && item.rfq.status !== 'APPROVED') nextRfqs[item.cardId] = true
     }
@@ -262,20 +318,38 @@ export default function CampaignReviewPage() {
                   <td>{candidate.contactCount || <span className="pr-import-missing">нет</span>}</td>
                   <td>{candidate.reviewDecision !== 'UNREVIEWED'
                     ? <StatusBadge status={candidate.reviewDecision} />
-                    : <div className="pr-review-verdicts">{VERDICTS.map(([value, label]) => <label key={value}>
-                      <input
-                        type="radio"
-                        name={`verdict-${candidate.candidateId}`}
-                        // Named in full because the page holds dozens of these
-                        // and a reader hearing only "Производитель" would have
-                        // no idea which company the verdict lands on.
-                        aria-label={`${candidate.name}: ${label}`}
-                        checked={verdicts[candidate.candidateId] === value}
-                        disabled={!canReviewSourcing || apply.isPending}
-                        onChange={() => setVerdicts(current => ({ ...current, [candidate.candidateId]: value }))}
-                      />
-                      <span>{label}</span>
-                    </label>)}</div>}</td>
+                    : <div className="pr-review-verdicts">{VERDICTS.map(([value, label]) => {
+                      const key = verdictKey(item.cardId, candidate.candidateId)
+                      const suggested = SUGGESTED[candidate.role] === value
+                      const concluded = CONCLUDED.has(candidate.role)
+                      // Falls back to the suggestion while the operator has not
+                      // touched this row, so the page opens already filled in
+                      // and only the disagreements cost a click. `verdicts` is
+                      // still what gets submitted — `acceptAllSuggested` writes
+                      // the same values into it — so nothing is sent on the
+                      // strength of a preselected dot the operator never saw.
+                      const current = verdicts[key]
+                      return <label key={value}>
+                        <input
+                          type="radio"
+                          // Scoped to the substance: the id alone repeats across
+                          // blocks, and a shared name makes those rows one radio
+                          // group, so choosing here would clear the other block.
+                          name={`verdict-${item.cardId}-${candidate.candidateId}`}
+                          // Named in full because the page holds dozens of these
+                          // and a reader hearing only "Производитель" would have
+                          // no idea which company the verdict lands on.
+                          aria-label={`${candidate.name}: ${label}`}
+                          checked={current === value}
+                          disabled={!canReviewSourcing || apply.isPending}
+                          onChange={() => setVerdicts(cur => ({ ...cur, [key]: value }))}
+                        />
+                        <span>{label}</span>
+                        {suggested && (concluded
+                          ? <em className="pr-review-suggested">рекомендую</em>
+                          : <em className="pr-review-suggested pr-review-suggested--unknown">нет данных</em>)}
+                      </label>
+                    })}</div>}</td>
                 </tr>)}</tbody></table>}
 
               <div className="pr-review-rfq">

@@ -986,6 +986,15 @@
 .pr-review-signals--risk { color: var(--pr-danger); }
 .pr-review-verdicts { display: flex; flex-direction: column; gap: 3px; }
 .pr-review-verdicts label { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; white-space: nowrap; cursor: pointer; }
+/* The row arrives on the machine's reading, so the mark has to say which dot
+   that was — otherwise a pre-filled choice looks like the operator's own and
+   there is nothing to disagree with. Green rather than the warning colour:
+   this is the suggested path, not a caution. */
+.pr-review-suggested { font-style: normal; font-size: 10px; font-weight: 600; letter-spacing: .01em; color: #2f6b45; background: #eaf5ee; border-radius: 10px; padding: 1px 6px; }
+/* Grey, deliberately not green: the row is parked because the role was never
+   established, and reading it as a recommendation would hide the difference
+   between a finding and an absence of one. */
+.pr-review-suggested--unknown { color: var(--pr-muted); background: var(--pr-surface-muted); font-weight: 500; }
 
 .pr-review-rfq { margin-top: 14px; border-top: 1px solid var(--pr-border); padding-top: 12px; }
 .pr-review-rfq header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 12px; }
@@ -1163,3 +1172,28 @@
 /* A refused or delivered draft: history, not a decision waiting to be taken. */
 .pr-draft--closed { border-style: solid; border-color: var(--pr-border); opacity: .72; }
 .pr-draft--closed .pr-msg__text { color: var(--pr-muted); }
+
+/* ── How far the current step has got, where that is measurable ───────────
+   Drawn only when the service counts its own work; the component returns
+   nothing otherwise, so the cell falls back to the stage name rather than to a
+   bar stuck at zero. Motion marks the one state where the machine is working —
+   a step waiting for a specialist stays still, or the operator learns to
+   ignore movement everywhere. */
+.pr-member-progress { display: flex; align-items: center; gap: 6px; min-width: 116px; }
+.pr-member-progress__track { flex: 1; height: 4px; border-radius: 3px; background: var(--pr-border); overflow: hidden; min-width: 48px; }
+.pr-member-progress__fill { display: block; height: 100%; border-radius: 3px; background: var(--pr-progress); transition: width .4s ease; }
+.pr-member-progress__figure { font-size: 10px; font-variant-numeric: tabular-nums; color: var(--pr-muted); white-space: nowrap; }
+.pr-member-progress__figure i { font-style: normal; opacity: .7; margin-left: 4px; }
+
+.pr-member-progress.is-working .pr-member-progress__fill { animation: pr-member-progress-pulse 1.4s ease-in-out infinite; }
+.pr-member-progress.is-working .pr-member-progress__figure { color: var(--pr-progress); font-weight: 650; }
+/* Amber, not red: a decision is owed, nothing has gone wrong. */
+.pr-member-progress.is-waiting .pr-member-progress__fill { background: var(--pr-warning); }
+.pr-member-progress.is-failed .pr-member-progress__fill { background: var(--pr-danger); }
+
+@keyframes pr-member-progress-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) {
+  .pr-member-progress.is-working .pr-member-progress__fill { animation: none; }
+  .pr-member-progress__fill { transition: none; }
+}
+.pr-member-stage-cell { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }

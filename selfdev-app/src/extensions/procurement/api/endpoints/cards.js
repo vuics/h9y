@@ -31,6 +31,11 @@ export const cardEndpoints = {
     const response = await request(`/cards/${id(cardId)}`, { method: 'patch', data: payload })
     return { card: adaptCard(response.card), effects: response.effects }
   }),
+  // Refused rather than cascaded when anything still points at the card; the
+  // error carries `blockers`, which is what the screen shows instead of a
+  // generic failure.
+  deleteCard: mutation(async cardId =>
+    request(`/cards/${id(cardId)}/delete`, { method: 'post' })),
   normalizeCard: mutation(async cardId =>
     adaptCard(await request(`/cards/${id(cardId)}/normalize`, { method: 'post' }))),
   // Vouching for an identity PubChem would not confirm. The reason is required
