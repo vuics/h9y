@@ -14,9 +14,10 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { AlertTriangle, ExternalLink, MessageSquare } from '../components/icons'
+import { formatPrice } from '../lib/price'
 
 const fields = [
-  ['price', 'Цена', value => value.price ? `${value.price} ${value.currency}/${value.priceUnit}` : null],
+  ['price', 'Цена', formatPrice],
   ['quantity', 'Количество', value => value.quantity], ['moq', 'MOQ', value => value.moq],
   ['incoterm', 'Базис поставки', value => value.incoterm ? `${value.incoterm} ${value.namedPlace || ''}` : null],
   ['leadTime', 'Срок поставки', value => value.leadTime], ['paymentTerms', 'Условия оплаты', value => value.paymentTerms],

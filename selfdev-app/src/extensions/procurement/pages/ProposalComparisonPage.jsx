@@ -14,9 +14,10 @@ import { Button } from '@/components/ui/button'
 import { downloadBlob } from '../api/responses'
 import { ArrowLeft, CircleAlert, ExternalLink, FileCheck } from '../components/icons'
 import { siteHostLabel } from '../lib/supplierWeb'
+import { formatPrice } from '../lib/price'
 
 const comparisonFields = [
-  ['price', 'Цена', row => row.price ? `${row.price} ${row.currency}/${row.priceUnit}` : null],
+  ['price', 'Цена', formatPrice],
   ['quantity', 'Количество', row => row.quantity], ['moq', 'MOQ', row => row.moq],
   ['basis', 'Базис поставки', row => row.incoterm ? `${row.incoterm} ${row.namedPlace || ''}` : null, row => row.incoterm],
   ['grade', 'Грейд', row => row.grade], ['purity', 'Чистота', row => row.purity],
