@@ -110,6 +110,8 @@ const KINDS = {
   CONTACTS_FAILED: { main: false, text: event => `${substance(event)}: сбор контактов не удался (${event.data?.code})` },
   AWAITING_REVIEW: { main: false, text: event => `${substance(event)}: ждёт решения на экране согласования` },
   MEMBER_DONE: { main: false, text: event => `${substance(event)}: готово` },
+  SEARCH_RESUMED: { main: false, text: event => `${substance(event)}: поиск продолжен с места обрыва (прочитано ${event.data?.read ?? 0} из ${event.data?.total ?? '?'} источников)` },
+  WORKER_BLOCKED: { main: true, text: event => `Кампанию некому вести: ${event.data?.code === 'DRIVER_PRINCIPAL_UNKNOWN' ? 'не найден пользователь, от имени которого она запущена' : event.data?.code === 'SOURCING_MODEL_NOT_CONFIGURED' ? 'у запустившего нет развёрнутого агента закупок' : event.data?.code}` },
 }
 
 export const historyLine = event => {
