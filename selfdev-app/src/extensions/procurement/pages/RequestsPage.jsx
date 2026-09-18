@@ -7,6 +7,7 @@ import { useUrlFilters } from '../hooks/useUrlFilters'
 import { useInfiniteList } from '../hooks/useInfiniteList'
 import { DataTable, InfiniteListFooter } from '../components/DataTable'
 import { CampaignLaunchPanel } from '../components/CampaignLaunchPanel'
+import { CampaignAddPanel } from '../components/CampaignAddPanel'
 import { ListFilters } from '../components/ListFilters'
 import { LoadingState, ErrorState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
@@ -32,6 +33,7 @@ export default function RequestsPage() {
   const [selecting, setSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState([])
   const [launching, setLaunching] = useState(false)
+  const [adding, setAdding] = useState(false)
   const ascending = filters.order === 'asc'
   const query = useInfiniteList({
     queryKey: procurementKeys.cards(filters),
@@ -89,9 +91,12 @@ export default function RequestsPage() {
       <span>{selected.length ? `Выбрано ${selected.length} из ${visibleIds.length} загруженных` : 'Отметьте вещества, по которым запустить поиск'}</span>
       <div className="pr-inline-actions">
         <Button variant="outline" size="sm" isDisabled={!selected.length} onPress={() => setSelectedIds([])}>Снять выбор</Button>
-        <Button size="sm" isDisabled={!selected.length || launching} onPress={() => setLaunching(true)}><Search size={15} />Запустить поиск</Button>
+        <Button variant="outline" size="sm" isDisabled={!selected.length || adding} onPress={() => { setAdding(true); setLaunching(false) }}>Добавить в кампанию</Button>
+        <Button size="sm" isDisabled={!selected.length || launching} onPress={() => { setLaunching(true); setAdding(false) }}><Search size={15} />Запустить поиск</Button>
       </div>
     </div>}
+
+    {selecting && adding && selected.length > 0 && <CampaignAddPanel cardIds={selected} onCancel={() => setAdding(false)} />}
 
     {selecting && launching && selected.length > 0 && <CampaignLaunchPanel
       cardIds={selected}

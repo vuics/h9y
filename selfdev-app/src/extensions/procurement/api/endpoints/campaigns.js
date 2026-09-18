@@ -23,6 +23,14 @@ export const campaignEndpoints = {
   // duplicates a repeated launch leaves. The server refuses anything else.
   deleteCampaign: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/delete`, { method: 'post' })),
+  // Changes how the rest of the campaign runs; the answer carries `effects`:
+  // substances picked up again, and approval steps now taken by the campaign.
+  changeCampaignSettings: mutation((campaignId, payload) =>
+    request(`/campaigns/${id(campaignId)}/settings`, { method: 'post', data: payload })),
+  addCampaignCards: mutation((campaignId, cardIds) =>
+    request(`/campaigns/${id(campaignId)}/members`, { method: 'post', data: { cardIds } })),
+  removeCampaignCard: mutation((campaignId, cardId) =>
+    request(`/campaigns/${id(campaignId)}/members/${id(cardId)}/remove`, { method: 'post' })),
   cancelCampaign: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/cancel`, { method: 'post' })),
   resumeCampaign: mutation(campaignId =>

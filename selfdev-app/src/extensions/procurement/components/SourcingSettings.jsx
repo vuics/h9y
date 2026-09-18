@@ -223,4 +223,22 @@ export const defaultSourcingValue = ({ campaign = false } = {}) => ({
   queryIds: null,
 })
 
+/** The panel's value for a plan already stored on a campaign.
+ *
+ * The plan keeps the analysis budget, not the depth it came from; the depth is
+ * the one whose per-query count, spread over the plan's queries, is nearest.
+ */
+export const sourcingValueFromPlan = (plan, settings) => {
+  const queryCount = Math.max(1, (plan?.queryTemplateIds ?? settings.defaultQueryIds).length)
+  const perQuery = (plan?.maxResults || 0) / queryCount
+  const depth = DEPTHS.reduce((best, item) =>
+    Math.abs(item.perQuery - perQuery) < Math.abs(best.perQuery - perQuery) ? item : best).id
+  return {
+    depth,
+    siteProbe: plan?.siteProbe ?? true,
+    engineIds: plan?.engineIds ?? null,
+    queryIds: plan?.queryTemplateIds ?? null,
+  }
+}
+
 export { plural }

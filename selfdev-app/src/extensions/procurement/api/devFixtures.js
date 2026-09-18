@@ -82,6 +82,17 @@ const campaigns = [
     completedAt: ago(2),
     plan: { reach: 'OUTREACH', channels: ['EMAIL', 'ECHEMI', 'WEB_FORM'], approveRfq: true, draftFirst: false, maxResults: 10, engineIds: null, queryTemplateIds: null, siteProbe: true },
     errors: [],
+    // Newest first, as the API sends it.
+    events: [
+      { at: ago(2), kind: 'STATUS', actor: null, cardId: null, data: { status: 'AWAITING_REVIEW' } },
+      { at: ago(2.2), kind: 'AWAITING_REVIEW', actor: null, cardId: 90003, data: { title: 'Глицин' } },
+      { at: ago(2.4), kind: 'CONTACTS_FINISHED', actor: null, cardId: 90003, data: { title: 'Глицин', contacts: 4 } },
+      { at: ago(2.8), kind: 'PLAN_CHANGED', actor: 'user:demo', cardId: null, data: { changes: { approve_rfq: { from: true, to: false } }, requeued: 0 } },
+      { at: ago(3), kind: 'SEARCH_FINISHED', actor: null, cardId: 90003, data: { title: 'Глицин', candidates: 7 } },
+      { at: ago(3.5), kind: 'SEARCH_FAILED', actor: null, cardId: 90004, data: { title: 'Бензол', code: 'CARD_NOT_NORMALIZED' } },
+      { at: ago(3.9), kind: 'SEARCH_STARTED', actor: null, cardId: 90003, data: { title: 'Глицин' } },
+      { at: ago(4), kind: 'CREATED', actor: 'user:demo', cardId: null, data: { cards: 4, plan: { reach: 'OUTREACH' } } },
+    ],
     cancelRequested: false,
     members: [
       { cardId: 90001, title: '1,3-Бутадиен', casNumber: '106-99-0', stage: 'AWAITING_REVIEW', sourcingRunId: 'SRC-RUN-90001', candidateCount: 9, contactCount: 7, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: 'CANDIDATE_REVIEW', startedAt: ago(4), finishedAt: ago(3) },

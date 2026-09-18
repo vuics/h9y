@@ -1230,3 +1230,19 @@
 .pr-case-card__number { color: var(--pr-status-green); font-weight: 600; text-decoration: none; }
 .pr-case-card__number:hover { text-decoration: underline; }
 .pr-case-card:focus-visible { outline: 2px solid var(--pr-status-green); outline-offset: 2px; }
+.pr-campaign-row-progress { display: flex; flex-direction: column; gap: 4px; min-width: 110px; }
+.pr-campaign-row-progress__track { height: 6px; border-radius: 3px; background: var(--pr-status-grey-soft); overflow: hidden; }
+.pr-campaign-row-progress__track > span { display: block; height: 100%; border-radius: 3px; background: var(--pr-status-green); }
+.pr-campaign-row-progress__track > span[data-status="AWAITING_REVIEW"], .pr-campaign-row-progress__track > span[data-status="INTERRUPTED"] { background: var(--pr-status-amber); }
+.pr-campaign-row-progress__track > span[data-status="FAILED"] { background: var(--pr-status-red); }
+.pr-campaign-row-progress__track > span[data-status="PAUSED"], .pr-campaign-row-progress__track > span[data-status="CANCELLED"] { background: var(--pr-status-grey); }
+.pr-campaign-history__filters label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--pr-border); border-radius: 999px; padding: 4px 10px; cursor: pointer; font-size: 12px; }
+.pr-campaign-history__filters label.is-selected { border-color: var(--pr-status-green); color: var(--pr-status-green); }
+.pr-campaign-history__filters input { position: absolute; opacity: 0; pointer-events: none; }
+.pr-campaign-history__list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+.pr-campaign-history__list li { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--pr-border); font-size: 13px; }
+.pr-campaign-history__list li:last-child { border-bottom: 0; }
+.pr-campaign-history__list time { color: var(--pr-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pr-campaign-history__list em { color: var(--pr-muted); font-style: normal; font-size: 11px; }
+.pr-campaign-history__list li.is-problem span { color: var(--pr-status-red); }
+@media (max-width: 760px) { .pr-campaign-history__list li { grid-template-columns: 1fr; gap: 2px; } }

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,7 @@ import {
   defaultSourcingValue,
   plural,
   sourcesPerSubstance,
+  sourcingValueFromPlan,
   useSourcingSettings,
 } from './SourcingSettings'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -76,14 +77,19 @@ async function findLaunched(importId, startedAt) {
 }
 
 export function CampaignLaunchPanel({
-  cardIds,
+  cardIds = [],
   importId,
   substanceName,
   cas,
   canEdit,
   onLaunched,
   onCancel,
+  // An existing campaign: the panel edits its plan instead of launching one.
+  campaign,
+  onSaved,
 }) {
+  const editing = Boolean(campaign)
+  const plan = campaign?.plan
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const settings = useSourcingSettings()
@@ -91,37 +97,51 @@ export function CampaignLaunchPanel({
   // in the same frame still sees `isPending` false and would launch again.
   const inFlight = useRef(false)
   const [sourcing, setSourcing] = useState(() => defaultSourcingValue({ campaign: true }))
-  const [reach, setReach] = useState('OUTREACH')
-  const [channels, setChannels] = useState(['EMAIL', 'WHATSAPP', 'ECHEMI', 'WEB_FORM'])
-  const [approveRfq, setApproveRfq] = useState(true)
-  const [draftFirst, setDraftFirst] = useState(false)
-  const [confirmCandidates, setConfirmCandidates] = useState(true)
+  const [reach, setReach] = useState(plan?.reach || 'OUTREACH')
+  const [channels, setChannels] = useState(plan?.channels || ['EMAIL', 'WHATSAPP', 'ECHEMI', 'WEB_FORM'])
+  const [approveRfq, setApproveRfq] = useState(plan?.approveRfq ?? true)
+  const [draftFirst, setDraftFirst] = useState(plan?.draftFirst ?? false)
+  const [confirmCandidates, setConfirmCandidates] = useState(plan?.confirmCandidates ?? true)
+  // The stored plan's search settings can only be read once the query and
+  // engine lists have loaded; seeded then, once.
+  const seeded = useRef(false)
+  useEffect(() => {
+    if (!editing || seeded.current || settings.isLoading) return
+    seeded.current = true
+    setSourcing(sourcingValueFromPlan(plan, settings))
+  }, [editing, plan, settings])
+
+  // The plan as the API takes it, for a launch and for a change alike.
+  const planPayload = () => ({
+    reach,
+    channels,
+    approveRfq,
+    draftFirst,
+    confirmCandidates,
+    // Depth is chosen as results-per-query; the API takes the analysis
+    // budget, which is that spread back over the queries it will issue.
+    maxResults: sourcesPerSubstance(
+      sourcing.depth,
+      (sourcing.queryIds ?? settings.defaultQueryIds).length,
+      settings.maxAnalysedSources,
+    ),
+    siteProbe: sourcing.siteProbe,
+    ...(sourcing.queryIds ?? settings.defaultQueryIds).length
+      ? { queryTemplateIds: sourcing.queryIds ?? settings.defaultQueryIds }
+      : {},
+    ...(sourcing.engineIds ?? settings.availableEngineIds).length
+      ? { engineIds: sourcing.engineIds ?? settings.availableEngineIds }
+      : {},
+  })
 
   const start = useMutation({
     mutationFn: () => {
       const startedAt = Date.now()
+      if (editing) return procurementApi.changeCampaignSettings(campaign.campaignId, planPayload())
       return procurementApi.startCampaign({
         cardIds,
         ...(importId ? { importId } : {}),
-        reach,
-        channels,
-        approveRfq,
-        draftFirst,
-        confirmCandidates,
-        // Depth is chosen as results-per-query; the API takes the analysis
-        // budget, which is that spread back over the queries it will issue.
-        maxResults: sourcesPerSubstance(
-          sourcing.depth,
-          (sourcing.queryIds ?? settings.defaultQueryIds).length,
-          settings.maxAnalysedSources,
-        ),
-        siteProbe: sourcing.siteProbe,
-        ...(sourcing.queryIds ?? settings.defaultQueryIds).length
-          ? { queryTemplateIds: sourcing.queryIds ?? settings.defaultQueryIds }
-          : {},
-        ...(sourcing.engineIds ?? settings.availableEngineIds).length
-          ? { engineIds: sourcing.engineIds ?? settings.availableEngineIds }
-          : {},
+        ...planPayload(),
       }).catch(async error => {
         // A refusal is a refusal; only a lost answer may hide a launch.
         const status = error?.response?.status
@@ -131,15 +151,20 @@ export function CampaignLaunchPanel({
         throw error
       })
     },
-    onSuccess: campaign => {
+    onSuccess: result => {
       queryClient.invalidateQueries({ queryKey: procurementKeys.campaigns() })
-      onLaunched?.(campaign)
-      navigate(`/procurement/campaigns/${campaign.campaignId}`)
+      if (editing) {
+        onSaved?.(result)
+        return
+      }
+      onLaunched?.(result)
+      navigate(`/procurement/campaigns/${result.campaignId}`)
     },
-    onSettled: (_campaign, error) => {
-      // Released only on failure: after a success the page is leaving, and a
-      // button that comes back to life for that moment invites a second press.
-      if (error) inFlight.current = false
+    onSettled: (_result, error) => {
+      // Released only on failure when launching: after a success the page is
+      // leaving, and a button that comes back to life for that moment invites
+      // a second press. Settings stay on the page, so they are released.
+      if (error || editing) inFlight.current = false
     },
   })
 
@@ -148,14 +173,25 @@ export function CampaignLaunchPanel({
     inFlight.current = true
     start.mutate()
   }
-  const busy = start.isPending || start.isSuccess
+  const busy = start.isPending || (!editing && start.isSuccess)
 
   const sendsAnything = reach !== 'SOURCING' && reach !== 'CONTACTS'
-  const ready = cardIds.length > 0 && canLaunch(settings, sourcing) && (!sendsAnything || channels.length > 0)
+  const ready = (editing || cardIds.length > 0) && canLaunch(settings, sourcing) && (!sendsAnything || channels.length > 0)
+
+  const members = campaign?.members || []
+  const notSearched = members.filter(member => member.stage === 'QUEUED').length
+  const waiting = members.filter(member => member.stage === 'AWAITING_REVIEW').length
 
   return <Card className="pr-sourcing-launch"><CardHeader><div>
-    <CardTitle>Запуск по {cardIds.length} {plural(cardIds.length, 'веществу', 'веществам', 'веществам')}</CardTitle>
-    <p>Те же настройки, что и у поиска по одной карточке — результат можно сравнивать с исследованными вручную.</p>
+    {editing
+      ? <>
+        <CardTitle>Настройки кампании</CardTitle>
+        <p>Изменения действуют на то, что ещё впереди; сделанное не переделывается. Поиск — для {notSearched} {plural(notSearched, 'вещества', 'веществ', 'веществ')}, которые ещё не искали. Снятая проверка сразу применится и к {waiting} {plural(waiting, 'веществу', 'веществам', 'веществам')}, ждущим согласования. Более далёкая ступень «Довести до» продолжит остановленные вещества с их готовым поиском.</p>
+      </>
+      : <>
+        <CardTitle>Запуск по {cardIds.length} {plural(cardIds.length, 'веществу', 'веществам', 'веществам')}</CardTitle>
+        <p>Те же настройки, что и у поиска по одной карточке — результат можно сравнивать с исследованными вручную.</p>
+      </>}
   </div></CardHeader><CardContent>
     {start.error && <Alert><AlertTriangle /><AlertTitle>Запуск не выполнен</AlertTitle><AlertDescription>{mutationMessage(start.error)}</AlertDescription></Alert>}
 
@@ -216,13 +252,15 @@ export function CampaignLaunchPanel({
       canEdit={canEdit}
       cas={cas}
       substanceName={substanceName}
-      substanceCount={cardIds.length}
+      substanceCount={editing ? Math.max(1, notSearched) : cardIds.length}
     />
 
     <div className="pr-sourcing-launch__controls">
       <Button isDisabled={!ready || busy} onPress={launch}>
         <Search className={busy ? 'pr-spin' : undefined} />
-        {start.isSuccess ? 'Запущено, открываем кампанию…' : start.isPending ? 'Запускаем…' : `Запустить по ${cardIds.length}`}
+        {editing
+          ? (start.isPending ? 'Сохраняем…' : 'Сохранить настройки')
+          : start.isSuccess ? 'Запущено, открываем кампанию…' : start.isPending ? 'Запускаем…' : `Запустить по ${cardIds.length}`}
       </Button>
       {onCancel && <Button variant="outline" isDisabled={busy} onPress={onCancel}>Отмена</Button>}
     </div>

@@ -15,10 +15,12 @@ import { plural } from '../components/SourcingSettings'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
 import { CampaignMemberProgress } from '../components/CampaignMemberProgress'
+import { CampaignLaunchPanel } from '../components/CampaignLaunchPanel'
+import { CampaignHistory } from '../components/CampaignHistory'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, CircleAlert, Clock, Pause, Play, Refresh, Send, Trash } from '../components/icons'
+import { AlertTriangle, Check, CircleAlert, Clock, Pause, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -212,6 +214,13 @@ const campaignDeletable = campaign => DELETABLE_STATUSES.has(campaign?.status)
   && (campaign.members || []).every(member => member.stage === 'QUEUED'
     && !member.sourcingRunId && !member.requestCount && !member.marketplaceInquiryId)
 
+// The server's rule for taking a substance out, so the button appears only
+// where it will work.
+const removable = (member, campaign) =>
+  !['OUTREACH', 'NEGOTIATION'].includes(member.stage)
+  && !member.requestCount && !member.marketplaceInquiryId
+  && (!['SOURCING', 'CONTACTS'].includes(member.stage) || campaign.status === 'PAUSED')
+
 const deleteMessage = error => {
   const status = error?.response?.status
   const data = error?.response?.data
@@ -282,6 +291,12 @@ export default function CampaignPage() {
     onSuccess: accept,
   })
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [editingSettings, setEditingSettings] = useState(false)
+  const [savedEffects, setSavedEffects] = useState(null)
+  const removeCard = useMutation({
+    mutationFn: cardId => procurementApi.removeCampaignCard(campaignId, cardId),
+    onSuccess: accept,
+  })
   const remove = useMutation({
     mutationFn: () => procurementApi.deleteCampaign(campaignId),
     onSuccess: () => {
@@ -392,6 +407,7 @@ export default function CampaignPage() {
     status={<CampaignStatusBadge status={campaign.status} />}
     meta={`${progress.total} ${plural(progress.total, 'вещество', 'вещества', 'веществ')} · ${REACH_LABEL[plan.reach] || plan.reach}`}
     actions={canResearchSourcing && <>
+      {campaign.status !== 'CANCELLED' && <Button variant="outline" onPress={() => { setEditingSettings(value => !value); setSavedEffects(null) }}><Sliders />{editingSettings ? 'Скрыть настройки' : 'Настройки кампании'}</Button>}
       {/* Pausing sits before stopping, and stopping keeps the quieter variant:
           ending a run of two hundred substances is not the button a hand should
           land on when it meant "wait a moment". */}
@@ -406,6 +422,12 @@ export default function CampaignPage() {
         : <Button variant="ghost" onPress={() => setConfirmDelete(true)}><Trash />Удалить</Button>)}
     </>}
     warnings={<>
+      {removeCard.error && <Alert><AlertTriangle /><AlertTitle>Вещество не убрано</AlertTitle><AlertDescription>{removeCard.error?.response?.data?.detail?.message || mutationMessage(removeCard.error)}</AlertDescription></Alert>}
+      {savedEffects && <Alert><Check /><AlertTitle>Настройки сохранены</AlertTitle><AlertDescription>
+        Действуют на то, что ещё впереди.
+        {savedEffects.requeued?.length > 0 && <> Продолжено веществ с их готовым поиском: {savedEffects.requeued.length}.</>}
+        {savedEffects.released?.length > 0 && <> Снятые проверки выполняются для веществ, ждущих согласования, — ход будет виден в истории ниже.</>}
+      </AlertDescription></Alert>}
       {remove.error && <Alert><AlertTriangle /><AlertTitle>Кампания не удалена</AlertTitle><AlertDescription>{deleteMessage(remove.error)}</AlertDescription></Alert>}
       {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
       {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Кампания на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не кампании, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
@@ -414,6 +436,16 @@ export default function CampaignPage() {
     </>}
   >
     <div className="pr-stack">
+      {editingSettings && <CampaignLaunchPanel
+        campaign={campaign}
+        canEdit={canResearchSourcing}
+        onCancel={() => setEditingSettings(false)}
+        onSaved={result => {
+          accept(result)
+          setSavedEffects(result.effects || null)
+          setEditingSettings(false)
+        }}
+      />}
       <Card><CardHeader><div>
         <CardTitle>Ход кампании</CardTitle>
         <p>Пройдено {progress.settled} из {progress.total}. Вещество считается пройденным и тогда, когда оно ждёт решения: машина по нему свою работу закончила.</p>
@@ -697,8 +729,22 @@ export default function CampaignPage() {
             : row.waitingFor
               ? WAITING_FOR[row.waitingFor] || row.waitingFor
               : '—' },
+          ...(canResearchSourcing && campaign.status !== 'CANCELLED' ? [{
+            id: 'remove',
+            header: '',
+            // Offered only where the server would allow it: nothing sent, and
+            // not in the middle of a search unless the campaign is held.
+            cell: row => removable(row, campaign) && <Button
+              variant="ghost"
+              size="sm"
+              aria-label={`Убрать ${row.title} из кампании`}
+              isDisabled={removeCard.isPending}
+              onPress={() => removeCard.mutate(row.cardId)}
+            >Убрать</Button>,
+          }] : []),
         ]}
       />
+      <CampaignHistory events={campaign.events || []} members={members} />
     </div>
   </DetailLayout>
 }

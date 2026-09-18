@@ -54,7 +54,15 @@ export default function CampaignsPage() {
       columns={[
         { id: 'title', header: 'Кампания', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><div className="pr-primary-meta"><CopyableId value={row.campaignId} /><span>· {REACH[row.reach] || row.reach}</span></div></div> },
         { id: 'status', header: 'Состояние', cell: row => <CampaignStatusBadge status={row.status} /> },
-        { id: 'progress', header: 'Пройдено', cell: row => `${row.progress.settled} из ${row.progress.total}` },
+        { id: 'progress', header: 'Пройдено', cell: row => {
+          const percent = row.progress.total ? Math.round(row.progress.settled / row.progress.total * 100) : 0
+          return <div className="pr-campaign-row-progress" title={`${percent}%`}>
+            <span>{row.progress.settled} из {row.progress.total}</span>
+            <div className="pr-campaign-row-progress__track" role="img" aria-label={`Пройдено ${percent}%`}>
+              <span data-status={row.status} style={{ width: `${percent}%` }} />
+            </div>
+          </div>
+        } },
         { id: 'awaiting', header: 'Ждут решения', cell: row => row.progress.awaitingReview || '—' },
         { id: 'candidates', header: 'Кандидатов', cell: row => row.progress.candidateTotal || '—' },
         { id: 'requests', header: 'Запросов', cell: row => row.progress.requestTotal ? `${row.progress.requestTotal}${row.progress.responseTotal ? ` · ${row.progress.responseTotal} отв.` : ''}` : '—' },
