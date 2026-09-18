@@ -18,7 +18,7 @@ import { CampaignMemberProgress } from '../components/CampaignMemberProgress'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, CircleAlert, Clock, Pause, Play, Refresh, Send } from '../components/icons'
+import { AlertTriangle, Check, CircleAlert, Clock, Pause, Play, Refresh, Send, Trash } from '../components/icons'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -179,6 +179,22 @@ function asksOf(members, campaignId) {
   })
 }
 const mutationMessage = error => error?.response?.data?.message || error?.message
+
+// The server's own rule, repeated so the button is offered only where it can
+// work: held or stopped, and not one substance started.
+const DELETABLE_STATUSES = new Set(['PAUSED', 'CANCELLED', 'FAILED', 'INTERRUPTED'])
+const campaignDeletable = campaign => DELETABLE_STATUSES.has(campaign?.status)
+  && (campaign.members || []).every(member => member.stage === 'QUEUED'
+    && !member.sourcingRunId && !member.requestCount && !member.marketplaceInquiryId)
+
+const deleteMessage = error => {
+  const status = error?.response?.status
+  if (status === 405) return 'Удаление кампаний заработает после обновления сервера. Пока кампанию можно остановить кнопкой «Остановить совсем» — остановленные скрыты из списка кампаний.'
+  const detail = error?.response?.data?.detail
+  if (detail?.code === 'CAMPAIGN_HAS_WORK') return 'По кампании уже шла работа — её можно только остановить.'
+  if (detail?.code === 'CAMPAIGN_NOT_DELETABLE') return 'Идущую кампанию сначала поставьте на паузу.'
+  return detail?.message || mutationMessage(error)
+}
 const errorText = code => ERROR_LABEL[code] || code
 
 export default function CampaignPage() {
@@ -234,6 +250,15 @@ export default function CampaignPage() {
   const cancel = useMutation({
     mutationFn: () => procurementApi.cancelCampaign(campaignId),
     onSuccess: accept,
+  })
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const remove = useMutation({
+    mutationFn: () => procurementApi.deleteCampaign(campaignId),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: procurementKeys.campaign(campaignId) })
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaigns() })
+      navigate('/procurement/campaigns')
+    },
   })
   const dispatch = useMutation({
     mutationFn: () => procurementApi.dispatchCampaignOutreach(campaignId),
@@ -343,8 +368,15 @@ export default function CampaignPage() {
       {holdable && <Button variant="outline" isDisabled={hold.isPending} onPress={() => hold.mutate()}><Pause />{hold.isPending ? 'Останавливаем…' : 'Пауза'}</Button>}
       {campaign.status === 'PAUSED' && <Button isDisabled={carryOn.isPending} onPress={() => carryOn.mutate()}><Play className={carryOn.isPending ? 'pr-spin' : undefined} />{carryOn.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
       {stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
+      {campaignDeletable(campaign) && (confirmDelete
+        ? <>
+          <Button variant="destructive" isDisabled={remove.isPending} onPress={() => remove.mutate()}><Trash />{remove.isPending ? 'Удаляем…' : 'Удалить кампанию навсегда'}</Button>
+          <Button variant="outline" isDisabled={remove.isPending} onPress={() => { setConfirmDelete(false); remove.reset() }}>Отмена</Button>
+        </>
+        : <Button variant="ghost" onPress={() => setConfirmDelete(true)}><Trash />Удалить</Button>)}
     </>}
     warnings={<>
+      {remove.error && <Alert><AlertTriangle /><AlertTitle>Кампания не удалена</AlertTitle><AlertDescription>{deleteMessage(remove.error)}</AlertDescription></Alert>}
       {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
       {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Кампания на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не кампании, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
       {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Кампания прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}

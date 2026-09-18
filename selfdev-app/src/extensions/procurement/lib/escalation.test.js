@@ -33,3 +33,11 @@ test('the substance leads, with the card number when the title is missing', () =
   assert.equal(escalationSubject({ cardTitle: '2-Этилгексанол', cardId: 359 }), '2-Этилгексанол')
   assert.equal(escalationSubject({ cardId: 359 }), 'Карточка #359')
 })
+
+test('a card waiting for a specialist opens its escalation', async () => {
+  const { escalationTarget } = await import('./escalation.js')
+  assert.equal(escalationTarget(333, [{ id: 'ESC-1', status: 'OPEN' }, { id: 'ESC-0', status: 'RESOLVED' }]), '/procurement/escalations/ESC-1')
+  assert.equal(escalationTarget(333, [{ id: 'ESC-1', status: 'OPEN' }, { id: 'ESC-2', status: 'IN_REVIEW' }]), '/procurement/escalations?cardId=333')
+  assert.equal(escalationTarget(333, [{ id: 'ESC-0', status: 'RESOLVED' }]), '/procurement/requests/333')
+  assert.equal(escalationTarget(333), '/procurement/requests/333')
+})

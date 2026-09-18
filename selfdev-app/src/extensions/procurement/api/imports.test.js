@@ -22,6 +22,7 @@ test('every importable card field has a Russian label', () => {
     'purity',
     'application_area',
     'target_volume',
+    'volume_unit',
     'price_guideline',
     'specialist_comments',
   ])

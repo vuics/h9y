@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { procurementApi } from '../api/client'
 import { StatusBadge } from '../components/StatusBadge'
+import { escalationTarget } from '../lib/escalation'
 import { AlertTriangle, CircleAlert, Refresh } from './icons'
 
 // Which registry filter a column's "open all" link should apply.
@@ -57,6 +58,17 @@ export function StageBoard({ stages, truncated }) {
   const [error, setError] = useState(null)
 
   const open = useCallback(id => navigate(`/procurement/requests/${id}`), [navigate])
+  // A card in "Требует специалиста" is there because of an escalation; the
+  // card page only points at it, so go to the decision itself.
+  const openEscalated = useCallback(async id => {
+    let items = []
+    try {
+      items = (await procurementApi.escalations({ cardId: id, pageSize: 20 })).items
+    } catch {
+      // The card page still leads to the escalation; better than nothing.
+    }
+    navigate(escalationTarget(id, items))
+  }, [navigate])
 
   const loadMore = async stage => {
     setLoading(stage.id)
@@ -120,7 +132,7 @@ export function StageBoard({ stages, truncated }) {
 
             <div className="pr-stage__cards" tabIndex={stage.count ? 0 : -1}>
               {stage.loaded.map(card => (
-                <StageCard key={card.id} card={card} onOpen={open} />
+                <StageCard key={card.id} card={card} onOpen={stage.id === 'ESCALATED' ? openEscalated : open} />
               ))}
 
               {stage.hasMore && (

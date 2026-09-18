@@ -19,6 +19,10 @@ export const campaignEndpoints = {
   ),
   startCampaign: mutation(payload =>
     request('/campaigns', { method: 'post', data: payload })),
+  // Only for a held or stopped campaign that never started a substance: the
+  // duplicates a repeated launch leaves. The server refuses anything else.
+  deleteCampaign: mutation(campaignId =>
+    request(`/campaigns/${id(campaignId)}`, { method: 'delete' })),
   cancelCampaign: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/cancel`, { method: 'post' })),
   resumeCampaign: mutation(campaignId =>

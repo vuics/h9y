@@ -52,3 +52,18 @@ export function escalationKind(escalation) {
 export function escalationSubject(escalation) {
   return escalation?.cardTitle || (escalation?.cardId ? `Карточка #${escalation.cardId}` : 'Вещество не указано')
 }
+
+const OPEN_STATUSES = new Set(['OPEN', 'IN_REVIEW', 'RECOMMENDED'])
+
+/** Where a card that waits for a specialist should open.
+ *
+ * The decision lives on the escalation, not on the card: one open case opens
+ * directly, several open the queue filtered to the card, none falls back to the
+ * card itself.
+ */
+export function escalationTarget(cardId, escalations = []) {
+  const open = escalations.filter(item => OPEN_STATUSES.has(item?.status))
+  if (open.length === 1) return `/procurement/escalations/${open[0].id}`
+  if (open.length > 1) return `/procurement/escalations?cardId=${cardId}`
+  return `/procurement/requests/${cardId}`
+}

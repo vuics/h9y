@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 
@@ -9,6 +9,7 @@ import { LoadingState, ErrorState } from '../components/AsyncState'
 import { CopyableId } from '../components/CopyableId'
 import { CampaignStatusBadge } from '../components/CampaignStatusBadge'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
+import { Button } from '@/components/ui/button'
 
 const REACH = {
   SOURCING: 'только поиск',
@@ -19,6 +20,7 @@ const REACH = {
 
 export default function CampaignsPage() {
   const navigate = useNavigate()
+  const [showStopped, setShowStopped] = useState(false)
   const query = useQuery({
     queryKey: procurementKeys.campaigns(),
     queryFn: ({ signal }) => procurementApi.campaigns(signal),
@@ -29,7 +31,11 @@ export default function CampaignsPage() {
 
   if (query.isLoading) return <LoadingState />
   if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
-  const items = query.data?.items || []
+  const all = query.data?.items || []
+  // A stopped campaign is history, not work: with the duplicates of one list
+  // stopped, the list is back to the campaigns someone is acting on.
+  const stoppedCount = all.filter(item => item.status === 'CANCELLED').length
+  const items = showStopped ? all : all.filter(item => item.status !== 'CANCELLED')
 
   return <div className="pr-stack">
     <div className="pr-section-heading"><div>
@@ -55,5 +61,10 @@ export default function CampaignsPage() {
         { id: 'createdAt', header: 'Запущена', cell: row => row.createdAt ? new Date(row.createdAt).toLocaleString('ru-RU') : '—' },
       ]}
     />
+    {stoppedCount > 0 && <div className="pr-inline-actions">
+      <Button variant="ghost" size="sm" onPress={() => setShowStopped(value => !value)}>
+        {showStopped ? 'Скрыть остановленные' : `Показать остановленные (${stoppedCount})`}
+      </Button>
+    </div>}
   </div>
 }
