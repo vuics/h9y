@@ -22,7 +22,7 @@ export const campaignEndpoints = {
   // Only for a held or stopped campaign that never started a substance: the
   // duplicates a repeated launch leaves. The server refuses anything else.
   deleteCampaign: mutation(campaignId =>
-    request(`/campaigns/${id(campaignId)}`, { method: 'delete' })),
+    request(`/campaigns/${id(campaignId)}/delete`, { method: 'post' })),
   cancelCampaign: mutation(campaignId =>
     request(`/campaigns/${id(campaignId)}/cancel`, { method: 'post' })),
   resumeCampaign: mutation(campaignId =>

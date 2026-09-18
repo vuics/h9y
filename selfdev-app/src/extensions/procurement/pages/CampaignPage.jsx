@@ -109,6 +109,25 @@ const MARKETPLACE_STATUS = {
 
 const MARKETPLACE_POSTED = new Set(['SUBMITTED', 'SUBMITTING', 'NEEDS_REVIEW'])
 
+// Coloured by who has to act, not left to the shared map: these are the
+// platform's own states, and an unknown one there reads as green "in progress"
+// — which is how a request blocked by a card with no unit looked fine.
+const MARKETPLACE_TONE = {
+  RFQ_APPROVAL: 'warning',
+  PREPARED: 'warning',
+  AWAITING_APPROVAL: 'warning',
+  APPROVED: 'waiting',
+  SUBMITTING: 'progress',
+  SUBMITTED: 'complete',
+  NEEDS_REVIEW: 'warning',
+  HUMAN_ACTION_REQUIRED: 'warning',
+  STALE: 'warning',
+  FAILED: 'danger',
+}
+const marketplaceTone = item => item.status === 'NOT_PREPARED'
+  ? (item.error ? 'danger' : 'muted')
+  : MARKETPLACE_TONE[item.status]
+
 const ACTIVE = new Set(['RUNNING'])
 
 // What each kind of wait is called when it is addressed to the specialist
@@ -189,7 +208,12 @@ const campaignDeletable = campaign => DELETABLE_STATUSES.has(campaign?.status)
 
 const deleteMessage = error => {
   const status = error?.response?.status
-  if (status === 405) return 'Удаление кампаний заработает после обновления сервера. Пока кампанию можно остановить кнопкой «Остановить совсем» — остановленные скрыты из списка кампаний.'
+  const data = error?.response?.data
+  // Not deployed yet: the gateway does not list the route, or the service
+  // answers with FastAPI's bare "Not Found".
+  const missing = status === 405 || data?.code === 'ENDPOINT_NOT_ALLOWED'
+    || (status === 404 && data?.detail === 'Not Found')
+  if (missing) return 'Удаление кампаний заработает после обновления сервера. Пока кампанию можно остановить кнопкой «Остановить совсем» — остановленные скрыты из списка кампаний.'
   const detail = error?.response?.data?.detail
   if (detail?.code === 'CAMPAIGN_HAS_WORK') return 'По кампании уже шла работа — её можно только остановить.'
   if (detail?.code === 'CAMPAIGN_NOT_DELETABLE') return 'Идущую кампанию сначала поставьте на паузу.'
@@ -528,6 +552,7 @@ export default function CampaignPage() {
               <StatusBadge
                 status={MARKETPLACE_POSTED.has(item.status) ? 'SUBMITTED' : item.status}
                 label={MARKETPLACE_STATUS[item.status] || item.status}
+                tone={marketplaceTone(item)}
               />
             </div>
             {/* Echemi asks a person to pass its check, and the automation is

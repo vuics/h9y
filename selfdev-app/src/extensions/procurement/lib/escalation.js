@@ -25,6 +25,15 @@ const MANUAL_PREFIX = /^\s*Ручная оценка\s*:\s*/i
 
 const categoryLabel = code => ESCALATION_CATEGORY_LABELS[code] || null
 
+const REASON_MAX = 90
+
+function firstSentence(text) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim()
+  if (!clean) return null
+  const sentence = clean.split(/(?<=[.!?])\s/)[0].replace(/[.!?]$/, '')
+  return sentence.length > REASON_MAX ? `${sentence.slice(0, REASON_MAX - 1).trimEnd()}…` : sentence
+}
+
 /** The categories, from the risks when present and from the title otherwise. */
 function categories(escalation) {
   const fromRisks = (escalation?.risks || []).map(risk => risk?.category).filter(Boolean)
@@ -38,6 +47,12 @@ function categories(escalation) {
 export function escalationKind(escalation) {
   const title = (escalation?.title || '').trim()
   const codes = categories(escalation)
+  // "Other" names nothing; the risk's own reason, written in Russian by the
+  // negotiator, says what is actually being asked.
+  if (codes.length && codes.every(code => code === 'OTHER')) {
+    const reason = firstSentence((escalation?.risks || []).find(risk => risk?.reason)?.reason)
+    if (reason) return reason
+  }
   // "Needs a specialist" says nothing once a concrete reason is named.
   const specific = codes.filter(code => code !== 'HUMAN_REVIEW')
   const shown = (specific.length ? specific : codes)
@@ -64,6 +79,12 @@ const OPEN_STATUSES = new Set(['OPEN', 'IN_REVIEW', 'RECOMMENDED'])
 export function escalationTarget(cardId, escalations = []) {
   const open = escalations.filter(item => OPEN_STATUSES.has(item?.status))
   if (open.length === 1) return `/procurement/escalations/${open[0].id}`
-  if (open.length > 1) return `/procurement/escalations?cardId=${cardId}`
+  if (open.length > 1) {
+    // The queue filters by one status only; when the open cases share one,
+    // use it so the resolved history of the card does not bury them.
+    const statuses = new Set(open.map(item => item.status))
+    const status = statuses.size === 1 ? `&status=${[...statuses][0]}` : ''
+    return `/procurement/escalations?cardId=${cardId}${status}`
+  }
   return `/procurement/requests/${cardId}`
 }

@@ -38,6 +38,16 @@ test('a card waiting for a specialist opens its escalation', async () => {
   const { escalationTarget } = await import('./escalation.js')
   assert.equal(escalationTarget(333, [{ id: 'ESC-1', status: 'OPEN' }, { id: 'ESC-0', status: 'RESOLVED' }]), '/procurement/escalations/ESC-1')
   assert.equal(escalationTarget(333, [{ id: 'ESC-1', status: 'OPEN' }, { id: 'ESC-2', status: 'IN_REVIEW' }]), '/procurement/escalations?cardId=333')
+  assert.equal(escalationTarget(331, [{ id: 'ESC-1', status: 'OPEN' }, { id: 'ESC-2', status: 'OPEN' }, { id: 'ESC-0', status: 'RESOLVED' }]), '/procurement/escalations?cardId=331&status=OPEN')
   assert.equal(escalationTarget(333, [{ id: 'ESC-0', status: 'RESOLVED' }]), '/procurement/requests/333')
   assert.equal(escalationTarget(333), '/procurement/requests/333')
+})
+
+test('an escalation filed under OTHER is described by its reason', () => {
+  const item = {
+    title: 'Ручная оценка: OTHER',
+    risks: [{ category: 'OTHER', reason: 'Сообщение поставщику подготовлено и ожидает подтверждения специалиста. Дальше текст.' }],
+  }
+  assert.equal(escalationKind(item), 'Сообщение поставщику подготовлено и ожидает подтверждения специалиста')
+  assert.equal(escalationKind({ title: 'Ручная оценка: OTHER', risks: [{ category: 'OTHER' }] }), 'Прочее')
 })
