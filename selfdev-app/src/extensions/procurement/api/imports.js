@@ -9,6 +9,7 @@ export const importFieldLabels = {
   purity: 'Чистота',
   application_area: 'Область применения',
   target_volume: 'Целевой объём',
+  volume_unit: 'Единица объёма',
   price_guideline: 'Ориентир цены',
   specialist_comments: 'Комментарий специалиста',
 }
