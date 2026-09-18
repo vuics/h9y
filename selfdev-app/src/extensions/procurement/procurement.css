@@ -1287,9 +1287,11 @@
 .pr-purchase__state--muted { color: var(--pr-muted); font-weight: 500; }.pr-purchase__state--muted i { background: #a0a8b3; }
 .pr-purchase__open { color: var(--pr-muted); }
 @media (max-width: 760px) {
-  .procurement-shell a.pr-purchase { grid-template-columns: 1fr 16px; }
-  .pr-purchase > .pr-campaign-row-progress, .pr-purchase > div:empty { display: none; }
-  .pr-purchase__state { grid-column: 1; }
+  /* On a phone the bar goes under the name rather than away: progress is
+     what the list is opened for. */
+  .procurement-shell a.pr-purchase { grid-template-columns: 1fr 16px; gap: 8px; }
+  .pr-purchase > div:empty { display: none; }
+  .pr-purchase > .pr-campaign-row-progress, .pr-purchase__state { grid-column: 1; }
   .pr-purchase__open { grid-row: 1; grid-column: 2; }
 }
 .pr-launch-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--pr-border); border-radius: 8px; background: var(--pr-surface-muted); margin-bottom: 12px; }
