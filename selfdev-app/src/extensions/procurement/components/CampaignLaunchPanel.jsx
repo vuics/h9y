@@ -60,6 +60,25 @@ const CHANNELS = [
 
 const mutationMessage = error => error?.response?.data?.message || error?.message
 
+// The last launch's choices become the next launch's defaults, so a
+// purchaser who settled on "no approvals, e-mail and Echemi" sets it once.
+const LAST_PLAN_KEY = 'procurement.lastCampaignPlan'
+
+function readLastPlan() {
+  try { return JSON.parse(window.localStorage.getItem(LAST_PLAN_KEY) || 'null') || {} } catch { return {} }
+}
+
+function rememberPlan(plan) {
+  try { window.localStorage.setItem(LAST_PLAN_KEY, JSON.stringify(plan)) } catch { /* defaults stay as shipped */ }
+}
+
+const REACH_SHORT = {
+  SOURCING: 'только поиск',
+  CONTACTS: 'поиск и контакты',
+  OUTREACH: 'до рассылки запросов',
+  NEGOTIATION: 'до сравнимых предложений',
+}
+
 // A launch that timed out on the way back may still have created the campaign.
 // Looked for by the file it came from, and only among campaigns started since
 // the press, so an older run from the same file is never mistaken for it.
@@ -87,9 +106,13 @@ export function CampaignLaunchPanel({
   // An existing campaign: the panel edits its plan instead of launching one.
   campaign,
   onSaved,
+  // One summary line and the launch button; the full form opens on request.
+  compact = false,
 }) {
   const editing = Boolean(campaign)
-  const plan = campaign?.plan
+  const [last] = useState(() => (editing ? {} : readLastPlan()))
+  const plan = campaign?.plan || last
+  const [expanded, setExpanded] = useState(!compact)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const settings = useSourcingSettings()
@@ -157,6 +180,7 @@ export function CampaignLaunchPanel({
         onSaved?.(result)
         return
       }
+      rememberPlan({ reach, channels, approveRfq, draftFirst, confirmCandidates })
       onLaunched?.(result)
       navigate(`/procurement/campaigns/${result.campaignId}`)
     },
@@ -195,6 +219,16 @@ export function CampaignLaunchPanel({
   </div></CardHeader><CardContent>
     {start.error && <Alert><AlertTriangle /><AlertTitle>Запуск не выполнен</AlertTitle><AlertDescription>{mutationMessage(start.error)}</AlertDescription></Alert>}
 
+    {!expanded && <div className="pr-launch-summary">
+      <p>
+        <strong>{REACH_SHORT[reach]}</strong>
+        {sendsAnything && <> · {channels.map(id => CHANNELS.find(([value]) => value === id)?.[1] || id).join(', ') || 'нет каналов'}</>}
+        {sendsAnything && <> · {[confirmCandidates && 'проверка поставщиков', approveRfq && 'согласование RFQ', draftFirst && 'каждое письмо'].filter(Boolean).join(', ') || 'без согласований'}</>}
+      </p>
+      <Button variant="ghost" size="sm" onPress={() => setExpanded(true)}>Изменить параметры</Button>
+    </div>}
+
+    {expanded && <>
     <fieldset className="pr-reach-ladder">
       <legend>Довести до</legend>
       {REACH_STEPS.map(step => <label key={step.id} className={reach === step.id ? 'is-selected' : undefined}>
@@ -254,6 +288,7 @@ export function CampaignLaunchPanel({
       substanceName={substanceName}
       substanceCount={editing ? Math.max(1, notSearched) : cardIds.length}
     />
+    </>}
 
     <div className="pr-sourcing-launch__controls">
       <Button isDisabled={!ready || busy} onPress={launch}>

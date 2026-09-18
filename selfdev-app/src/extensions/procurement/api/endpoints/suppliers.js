@@ -114,9 +114,16 @@ export const negotiationEndpoints = {
 export const proposalEndpoints = {
   proposals: read(
     async (filters = {}, signal) => adaptPage(await request('/proposals', { params: filters, signal })),
-    async (filters = {}) => fixturePage(
-      (await fixtures()).proposals, filters, ['id', 'supplierName', 'currency', 'incoterm'],
-    ),
+    async (filters = {}) => {
+      const fixture = await fixtures()
+      // The API names each offer's substance; the fixtures take it from the card.
+      const named = fixture.proposals.map(item => ({
+        ...item,
+        cardTitle: item.cardTitle ?? fixture.cards.find(card => card.id === item.cardId)?.title,
+        cardCas: item.cardCas ?? fixture.cards.find(card => card.id === item.cardId)?.casNumber,
+      }))
+      return fixturePage(named, filters, ['id', 'supplierName', 'currency', 'incoterm'])
+    },
   ),
   proposal: read(
     (responseId, signal) => request(`/proposals/${id(responseId)}`, { signal }),
@@ -155,11 +162,18 @@ export const proposalEndpoints = {
 export const escalationEndpoints = {
   escalations: read(
     async (filters = {}, signal) => adaptPage(await request('/escalations', { params: filters, signal })),
-    async (filters = {}) => fixturePage(
-      (await fixtures()).escalations, filters,
-      ['id', 'title', 'cardId', 'cardTitle', 'supplierId', 'supplierName',
-       'negotiationId', 'proposalId', 'assignedTo'],
-    ),
+    async (filters = {}) => {
+      // The API reads ACTIVE as every open status and ALL as no filter.
+      const status = String(filters.status || '').toUpperCase()
+      const open = new Set(['OPEN', 'IN_REVIEW', 'RECOMMENDED'])
+      const items = (await fixtures()).escalations
+        .filter(item => status !== 'ACTIVE' || open.has(item.status))
+      return fixturePage(
+        items, ['ACTIVE', 'ALL'].includes(status) ? { ...filters, status: '' } : filters,
+        ['id', 'title', 'cardId', 'cardTitle', 'supplierId', 'supplierName',
+         'negotiationId', 'proposalId', 'assignedTo'],
+      )
+    },
   ),
   escalation: read(
     (escalationId, signal) => request(`/escalations/${id(escalationId)}`, { signal }),

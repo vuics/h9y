@@ -185,7 +185,7 @@ export default function NegotiatorActivityPage() {
         <Card>
           <CardHeader>
             <CardTitle><Clock size={15} />Пора действовать</CardTitle>
-            <p className="pr-note">Срок наступил, ожидают ближайшего прохода worker&apos;а.</p>
+            <p className="pr-note">Срок наступил, ожидают ближайшего прохода фонового обработчика.</p>
           </CardHeader>
           <CardContent>
             <AssignmentList

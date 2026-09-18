@@ -51,7 +51,7 @@ export function PubChemResult({ normalization, override, canConfirm, onConfirm, 
       </h3>
 
       <DefinitionGrid items={[
-        { label: 'Preferred name', value: normalization.preferredName },
+        { label: 'Основное название', value: normalization.preferredName },
         { label: 'IUPAC', value: normalization.iupacName },
         { label: 'PubChem CID', value: normalization.cid },
         { label: 'PubChem SID', value: normalization.sid },

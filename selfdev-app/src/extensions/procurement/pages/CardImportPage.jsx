@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -40,6 +40,10 @@ const mutationMessage = error =>
 export default function CardImportPage() {
   const { importId } = useParams()
   const navigate = useNavigate()
+  // Set by the purchases home: 'text' for substances typed into its field,
+  // 'file' for a file dropped on it. Either way the purchaser already said
+  // what to search for, so the page moves on to the launch by itself.
+  const quickStart = useLocation().state?.quickStart
   const queryClient = useQueryClient()
   const { canWriteCards } = useProcurementPermissions()
   const [statusFilter, setStatusFilter] = useState('all')
@@ -141,6 +145,35 @@ export default function CardImportPage() {
     () => (run?.rows || []).map(row => row.createdCardId).filter(id => id != null),
     [run?.rows],
   )
+  // A typed substance that is already in the register is searched on its
+  // existing card: typing "Toluene" again means "find Toluene", not "make a
+  // second Toluene card" — and not "nothing to do".
+  const launchCardIds = useMemo(() => {
+    if (!quickStart) return createdCardIds
+    const existing = (run?.rows || [])
+      .filter(row => row.status === 'DUPLICATE' && row.duplicateCardId != null)
+      .map(row => row.duplicateCardId)
+    return [...new Set([...createdCardIds, ...existing])]
+  }, [quickStart, createdCardIds, run?.rows])
+
+  // Typed substances need no column mapping or row selection: the list is
+  // what the purchaser just wrote. Confirmed once, with duplicates skipped.
+  const autoConfirmed = useRef(false)
+  useEffect(() => {
+    if (quickStart !== 'text' || autoConfirmed.current || !canWriteCards) return
+    if (run?.status !== 'AWAITING_CONFIRMATION' || !selectable.length) return
+    autoConfirmed.current = true
+    confirm.mutate()
+  }, [quickStart, run?.status, selectable.length, canWriteCards, confirm])
+
+  const autoLaunch = useRef(false)
+  useEffect(() => {
+    if (!quickStart || autoLaunch.current || !canWriteCards || campaigns.isLoading) return
+    if (isImportRunning(run) || confirm.isPending || !launchCardIds.length || launchedFromHere.length) return
+    if (run?.status === 'AWAITING_CONFIRMATION' && selectable.length) return
+    autoLaunch.current = true
+    setLaunching(true)
+  }, [quickStart, canWriteCards, campaigns.isLoading, run, confirm.isPending, launchCardIds.length, launchedFromHere.length, selectable.length])
 
   if (!importId) {
     return (
@@ -281,7 +314,7 @@ export default function CardImportPage() {
         </Alert>
       )}
 
-      {createdCardIds.length > 0 && (
+      {launchCardIds.length > 0 && (
         <div className="pr-inline-actions">
           {launchedFromHere.length > 0 && (
             <RouterLinkButton to={`/procurement/campaigns/${launchedFromHere[0].campaignId}`}>
@@ -297,7 +330,7 @@ export default function CardImportPage() {
               <Search size={15} />
               {launchedFromHere.length
                 ? 'Запустить ещё одну кампанию'
-                : `Запустить поиск по ${createdCardIds.length} ${plural(createdCardIds.length, 'веществу', 'веществам', 'веществам')}`}
+                : `Запустить поиск по ${launchCardIds.length} ${plural(launchCardIds.length, 'веществу', 'веществам', 'веществам')}`}
             </Button>
           )}
           <RouterLinkButton to="/procurement/requests?status=DRAFT" variant="outline">
@@ -310,9 +343,10 @@ export default function CardImportPage() {
           become two hundred cards, and asking the operator to go and find them
           again to do the one thing they uploaded the file for is the step the
           batch launch exists to remove. */}
-      {launching && createdCardIds.length > 0 && (
+      {launching && launchCardIds.length > 0 && (
         <div ref={launchPanel}><CampaignLaunchPanel
-          cardIds={createdCardIds}
+          compact={Boolean(quickStart)}
+          cardIds={launchCardIds}
           importId={run.id}
           canEdit={canWriteCards}
           onCancel={() => setLaunching(false)}

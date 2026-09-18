@@ -1,15 +1,15 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
-import { DataTable } from '../components/DataTable'
-import { LoadingState, ErrorState } from '../components/AsyncState'
-import { CopyableId } from '../components/CopyableId'
-import { CampaignStatusBadge } from '../components/CampaignStatusBadge'
-import { RouterLinkButton } from '../../../components/RouterLinkButton'
+import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
+import { PurchaseStart } from '../components/PurchaseStart'
+import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
+import { purchaseSentence, purchaseSize } from '../lib/purchases'
 import { Button } from '@/components/ui/button'
+import { ChevronRight } from '../components/icons'
 
 const REACH = {
   SOURCING: 'только поиск',
@@ -18,8 +18,33 @@ const REACH = {
   NEGOTIATION: 'до сравнимых предложений',
 }
 
+/** One purchase as a line: what it is, how far it got, what it is doing. */
+function PurchaseRow({ row }) {
+  const sentence = purchaseSentence(row)
+  const size = purchaseSize(row)
+  const total = row.progress?.total || 0
+  const percent = total ? Math.round((row.progress?.settled || 0) / total * 100) : 0
+  const cas = row.substance?.casNumber
+  return <Link to={`/procurement/campaigns/${row.campaignId}`} className="pr-purchase" data-status={row.status}>
+    <div className="pr-purchase__name">
+      <strong>{row.title}</strong>
+      <span>{[cas && `CAS ${cas}`, size, REACH[row.reach], row.createdAt && new Date(row.createdAt).toLocaleDateString('ru-RU')].filter(Boolean).join(' · ')}</span>
+    </div>
+    {total > 1
+      ? <div className="pr-campaign-row-progress" title={`${percent}%`}>
+        <span>{row.progress.settled} из {total}</span>
+        <div className="pr-campaign-row-progress__track" role="img" aria-label={`Пройдено ${percent}%`}>
+          <span data-status={row.status} style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+      : <div />}
+    <div className={`pr-purchase__state pr-purchase__state--${sentence.tone}`}><i aria-hidden="true" />{sentence.text}</div>
+    <ChevronRight size={16} className="pr-purchase__open" />
+  </Link>
+}
+
 export default function CampaignsPage() {
-  const navigate = useNavigate()
+  const { canWriteCards } = useProcurementPermissions()
   const [showStopped, setShowStopped] = useState(false)
   const query = useQuery({
     queryKey: procurementKeys.campaigns(),
@@ -29,50 +54,28 @@ export default function CampaignsPage() {
     refetchInterval: data => (data?.items || []).some(item => item.status === 'RUNNING') ? 5000 : false,
   })
 
-  if (query.isLoading) return <LoadingState />
-  if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
   const all = query.data?.items || []
   // A stopped campaign is history, not work: with the duplicates of one list
   // stopped, the list is back to the campaigns someone is acting on.
   const stoppedCount = all.filter(item => item.status === 'CANCELLED').length
   const items = showStopped ? all : all.filter(item => item.status !== 'CANCELLED')
 
-  return <div className="pr-stack">
-    <div className="pr-section-heading"><div>
-      <h2>Кампании</h2>
-      <p>Один запуск по списку веществ: поиск, контакты и рассылка идут сами, а решения собираются в одном месте.</p>
-    </div><div className="pr-inline-actions">
-      <RouterLinkButton to="/procurement/requests/import" variant="outline">Загрузить список</RouterLinkButton>
-      <RouterLinkButton to="/procurement/requests">Выбрать карточки</RouterLinkButton>
-    </div></div>
-    <DataTable
-      rows={items}
-      rowKey="campaignId"
-      onRowClick={row => navigate(`/procurement/campaigns/${row.campaignId}`)}
-      emptyTitle="Кампаний ещё не было"
-      emptyDescription="Загрузите список веществ файлом или отметьте карточки в реестре и запустите поиск по всем сразу."
-      columns={[
-        { id: 'title', header: 'Кампания', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><div className="pr-primary-meta"><CopyableId value={row.campaignId} /><span>· {REACH[row.reach] || row.reach}</span></div></div> },
-        { id: 'status', header: 'Состояние', cell: row => <CampaignStatusBadge status={row.status} /> },
-        { id: 'progress', header: 'Пройдено', cell: row => {
-          const percent = row.progress.total ? Math.round(row.progress.settled / row.progress.total * 100) : 0
-          return <div className="pr-campaign-row-progress" title={`${percent}%`}>
-            <span>{row.progress.settled} из {row.progress.total}</span>
-            <div className="pr-campaign-row-progress__track" role="img" aria-label={`Пройдено ${percent}%`}>
-              <span data-status={row.status} style={{ width: `${percent}%` }} />
-            </div>
-          </div>
-        } },
-        { id: 'awaiting', header: 'Ждут решения', cell: row => row.progress.awaitingReview || '—' },
-        { id: 'candidates', header: 'Кандидатов', cell: row => row.progress.candidateTotal || '—' },
-        { id: 'requests', header: 'Запросов', cell: row => row.progress.requestTotal ? `${row.progress.requestTotal}${row.progress.responseTotal ? ` · ${row.progress.responseTotal} отв.` : ''}` : '—' },
-        { id: 'createdAt', header: 'Запущена', cell: row => row.createdAt ? new Date(row.createdAt).toLocaleString('ru-RU') : '—' },
-      ]}
-    />
-    {stoppedCount > 0 && <div className="pr-inline-actions">
-      <Button variant="ghost" size="sm" onPress={() => setShowStopped(value => !value)}>
-        {showStopped ? 'Скрыть остановленные' : `Показать остановленные (${stoppedCount})`}
-      </Button>
-    </div>}
+  return <div className="pr-stack pr-stack--lg">
+    <PurchaseStart canWrite={canWriteCards} />
+    <section className="pr-stack">
+      <h2>Ваши закупки</h2>
+      {query.isLoading
+        ? <LoadingState />
+        : query.isError && !query.data
+          ? <ErrorState error={query.error} onRetry={query.refetch} />
+          : items.length
+            ? <div className="pr-purchase-list">{items.map(row => <PurchaseRow key={row.campaignId} row={row} />)}</div>
+            : <EmptyState title="Закупок ещё не было" description="Введите вещество или список выше — поиск, контакты и рассылка пойдут сами, а решения соберутся во вкладке «Эскалации»." />}
+      {stoppedCount > 0 && <div className="pr-inline-actions">
+        <Button variant="ghost" size="sm" onPress={() => setShowStopped(value => !value)}>
+          {showStopped ? 'Скрыть остановленные' : `Показать остановленные (${stoppedCount})`}
+        </Button>
+      </div>}
+    </section>
   </div>
 }

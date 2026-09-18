@@ -273,10 +273,10 @@ export default function SettingsPage() {
   const valid = blockers.length === 0
 
   return <div className="pr-stack">
-    <div className="pr-section-heading"><div><h2>Настройки Procurement</h2><p>Реквизиты, которые видят поставщики. Они отделены от персонального профиля входа в HyperAgency.</p></div></div>
+    <div className="pr-section-heading"><div><h2>Настройки закупок</h2><p>Реквизиты, которые видят поставщики. Они отделены от персонального профиля входа в HyperAgency.</p></div></div>
     {draft.usedByAgent === false && <Alert><AlertTriangle /><AlertTitle>Эти настройки не использует ни один агент</AlertTitle><AlertDescription>{draft.scopeNote} Чтобы они попали в RFQ, войдите под учётной записью, которой принадлежит развёрнутый Procurement Agent, и задайте отправителя там — или разверните агента под этой учётной записью.</AlertDescription></Alert>}
     {draft.usedByAgent && <p className="pr-note">Рабочее место: <code>{draft.scope}</code>. {draft.scopeNote}</p>}
-    {draft.source === 'ENV_LEGACY' && <Alert><AlertTriangle /><AlertTitle>Импортировано из окружения</AlertTitle><AlertDescription>Текущие значения показаны из PROCUREMENT_* переменных. После сохранения Procurement и Negotiator начнут использовать эту запись.</AlertDescription></Alert>}
+    {draft.source === 'ENV_LEGACY' && <Alert><AlertTriangle /><AlertTitle>Импортировано из окружения</AlertTitle><AlertDescription>Текущие значения взяты из переменных окружения PROCUREMENT_*. После сохранения сервис закупок и агент переговоров начнут использовать эту запись.</AlertDescription></Alert>}
     {!canManageSenders && <Alert><AlertTriangle /><AlertTitle>Только просмотр</AlertTitle><AlertDescription>Изменять отправителей может пользователь с разрешением SENDER_MANAGE, реквизиты организации — с BUYER_SETTINGS_MANAGE.</AlertDescription></Alert>}
     {canManageSenders && !canManageBuyerSettings && <Alert><AlertTriangle /><AlertTitle>Реквизиты организации меняет администратор</AlertTitle><AlertDescription>Вы можете добавлять и править отправителей и выбирать отправителя по умолчанию. Название и юридические реквизиты компании-покупателя изменяются с разрешением BUYER_SETTINGS_MANAGE, потому что ими определяется, от какого юрлица уходит запрос.</AlertDescription></Alert>}
     {profileError && <Alert><AlertTriangle /><AlertTitle>Профиль не загружен</AlertTitle><AlertDescription>{profileError}</AlertDescription></Alert>}

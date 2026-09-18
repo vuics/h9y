@@ -291,6 +291,7 @@ export default function CampaignPage() {
     onSuccess: accept,
   })
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [moreActions, setMoreActions] = useState(false)
   const [editingSettings, setEditingSettings] = useState(false)
   const [savedEffects, setSavedEffects] = useState(null)
   const removeCard = useMutation({
@@ -400,8 +401,8 @@ export default function CampaignPage() {
   const asks = asksOf(members, campaignId)
 
   return <DetailLayout
-    backTo="/procurement/campaigns"
-    backLabel="К кампаниям"
+    backTo="/procurement"
+    backLabel="К закупкам"
     eyebrow={<CopyableId value={campaign.campaignId} />}
     title={campaign.title}
     status={<CampaignStatusBadge status={campaign.status} />}
@@ -413,8 +414,9 @@ export default function CampaignPage() {
           land on when it meant "wait a moment". */}
       {holdable && <Button variant="outline" isDisabled={hold.isPending} onPress={() => hold.mutate()}><Pause />{hold.isPending ? 'Останавливаем…' : 'Пауза'}</Button>}
       {campaign.status === 'PAUSED' && <Button isDisabled={carryOn.isPending} onPress={() => carryOn.mutate()}><Play className={carryOn.isPending ? 'pr-spin' : undefined} />{carryOn.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
-      {stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
-      {campaignDeletable(campaign) && (confirmDelete
+      {(stoppable || campaignDeletable(campaign)) && !moreActions && <Button variant="ghost" onPress={() => setMoreActions(true)}>Ещё…</Button>}
+      {moreActions && stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
+      {moreActions && campaignDeletable(campaign) && (confirmDelete
         ? <>
           <Button variant="destructive" isDisabled={remove.isPending} onPress={() => remove.mutate()}><Trash />{remove.isPending ? 'Удаляем…' : 'Удалить кампанию навсегда'}</Button>
           <Button variant="outline" isDisabled={remove.isPending} onPress={() => { setConfirmDelete(false); remove.reset() }}>Отмена</Button>
@@ -446,6 +448,25 @@ export default function CampaignPage() {
           setEditingSettings(false)
         }}
       />}
+      {asks.length > 0 && <Card className="pr-campaign-asks"><CardHeader><div>
+        <CardTitle>Ждут вас</CardTitle>
+        <p>Пока эти решения не приняты, кампания по ним не двинется. Всё остальное она делает сама.</p>
+      </div></CardHeader><CardContent>
+        <ul className="pr-campaign-asks__list">
+          {asks.map(ask => <li key={ask.key} className={ask.blocking ? 'is-blocked' : undefined}>
+            {ask.blocking ? <CircleAlert size={13} /> : <Clock size={13} />}
+            <Link to={ask.to}>{ask.title}</Link>
+            <span>#{ask.cardId}</span>
+            <b>{ask.text}</b>
+          </li>)}
+          {awaitingPerson > 0 && <li>
+            <Clock size={13} />
+            <span className="pr-campaign-asks__all">Подготовленные письма</span>
+            <b>{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки — ниже</b>
+          </li>}
+        </ul>
+      </CardContent></Card>}
+
       <Card><CardHeader><div>
         <CardTitle>Ход кампании</CardTitle>
         <p>Пройдено {progress.settled} из {progress.total}. Вещество считается пройденным и тогда, когда оно ждёт решения: машина по нему свою работу закончила.</p>
@@ -475,47 +496,6 @@ export default function CampaignPage() {
           </div>
         </>}
       </CardContent></Card>
-
-      {asks.length > 0 && <Card className="pr-campaign-asks"><CardHeader><div>
-        <CardTitle>Ждут вас</CardTitle>
-        <p>Пока эти решения не приняты, кампания по ним не двинется. Всё остальное она делает сама.</p>
-      </div></CardHeader><CardContent>
-        <ul className="pr-campaign-asks__list">
-          {asks.map(ask => <li key={ask.key} className={ask.blocking ? 'is-blocked' : undefined}>
-            {ask.blocking ? <CircleAlert size={13} /> : <Clock size={13} />}
-            <Link to={ask.to}>{ask.title}</Link>
-            <span>#{ask.cardId}</span>
-            <b>{ask.text}</b>
-          </li>)}
-          {awaitingPerson > 0 && <li>
-            <Clock size={13} />
-            <span className="pr-campaign-asks__all">Подготовленные письма</span>
-            <b>{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки — ниже</b>
-          </li>}
-        </ul>
-      </CardContent></Card>}
-
-      {unreachable.length > 0 && <Card><CardHeader><div>
-        <CardTitle>Некому написать</CardTitle>
-        <p>Эти компании вы подтвердили, но кампания не нашла у них адреса в разрешённых каналах{channelsLabel ? ` (${channelsLabel})` : ''}. Допишите контакт на карточке поставщика — и запустите рассылку ещё раз.</p>
-      </div></CardHeader><CardContent>
-        <ul className="pr-campaign-threads">
-          {unreachable.map(entry => <li key={entry.cardId}>
-            <div className="pr-campaign-threads__head">
-              <Link to={`/procurement/requests/${entry.cardId}`}>{entry.title}</Link>
-              <span>#{entry.cardId}</span>
-            </div>
-            <ul>
-              {entry.suppliers.map(supplier => <li key={supplier.supplierId}>
-                <Link to={`/procurement/suppliers/${supplier.supplierId}`}>{supplier.name}</Link>
-                <span className="pr-primary-meta">{supplier.otherChannels?.length
-                  ? `отвечает в других каналах: ${supplier.otherChannels.join(', ')}`
-                  : 'контактов нет вовсе'}</span>
-              </li>)}
-            </ul>
-          </li>)}
-        </ul>
-      </CardContent></Card>}
 
       {marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
         <CardTitle>Заявки на площадку</CardTitle>
@@ -744,7 +724,36 @@ export default function CampaignPage() {
           }] : []),
         ]}
       />
+      {/* What explains the run rather than asks for anything: kept, one click
+          away, so the page opens on what needs a person and what came in. */}
+      <details className="pr-more-details">
+        <summary>Подробнее: история кампании{unreachable.length > 0 ? ' и компании без адреса' : ''}</summary>
+        <div className="pr-stack">
+      {unreachable.length > 0 && <Card><CardHeader><div>
+        <CardTitle>Некому написать</CardTitle>
+        <p>Эти компании вы подтвердили, но кампания не нашла у них адреса в разрешённых каналах{channelsLabel ? ` (${channelsLabel})` : ''}. Допишите контакт на карточке поставщика — и запустите рассылку ещё раз.</p>
+      </div></CardHeader><CardContent>
+        <ul className="pr-campaign-threads">
+          {unreachable.map(entry => <li key={entry.cardId}>
+            <div className="pr-campaign-threads__head">
+              <Link to={`/procurement/requests/${entry.cardId}`}>{entry.title}</Link>
+              <span>#{entry.cardId}</span>
+            </div>
+            <ul>
+              {entry.suppliers.map(supplier => <li key={supplier.supplierId}>
+                <Link to={`/procurement/suppliers/${supplier.supplierId}`}>{supplier.name}</Link>
+                <span className="pr-primary-meta">{supplier.otherChannels?.length
+                  ? `отвечает в других каналах: ${supplier.otherChannels.join(', ')}`
+                  : 'контактов нет вовсе'}</span>
+              </li>)}
+            </ul>
+          </li>)}
+        </ul>
+      </CardContent></Card>}
+
       <CampaignHistory events={campaign.events || []} members={members} />
+        </div>
+      </details>
     </div>
   </DetailLayout>
 }

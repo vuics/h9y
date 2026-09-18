@@ -1,13 +1,16 @@
-import React from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Menubar from '../../components/Menubar'
 import { RouterLinkButton } from '../../components/RouterLinkButton'
 import { useExtensions } from '../registry/ExtensionContext'
 import { useProcurementPermissions } from './hooks/useProcurementPermissions'
 import { ProcurementErrorBoundary } from './components/ProcurementErrorBoundary'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MessageSquare, Sliders, Building } from './components/icons'
+import { MessageSquare } from './components/icons'
+import { AllSectionsMenu } from './components/AllSectionsMenu'
+import { procurementApi } from './api/client'
+import { procurementKeys } from './api/queryKeys'
+import { CLASSIC_SECTIONS, MORE_SECTIONS, PRIMARY_SECTIONS, sectionLabel, sectionOf } from './lib/navigation'
 import DashboardPage from './pages/DashboardPage'
 import OverviewPage from './pages/OverviewPage'
 import RequestsPage from './pages/RequestsPage'
@@ -55,37 +58,52 @@ const queryClient = new QueryClient({
   },
 })
 
-const sections = [
-  ['dashboard', 'Дашборд', '/procurement/dashboard'],
-  ['overview', 'Обзор', '/procurement'],
-  ['requests', 'Карточки закупок', '/procurement/requests'],
-  ['campaigns', 'Кампании', '/procurement/campaigns'],
-  ['suppliers', 'Поставщики', '/procurement/suppliers'],
-  ['negotiations', 'Переговоры', '/procurement/negotiations'],
-  ['proposals', 'Предложения', '/procurement/proposals'],
-  ['escalations', 'Требует внимания', '/procurement/escalations'],
-  ['communication', 'Коммуникация', '/procurement/communication'],
-  ['activity', 'Активность и ошибки', '/procurement/activity'],
-]
+const CLASSIC_KEY = 'procurement.classicMenu'
 
-function activeSection(pathname) {
-  if (pathname === '/procurement' || pathname === '/procurement/') return 'overview'
-  if (pathname.startsWith('/procurement/settings')) return 'settings'
-  if (pathname.startsWith('/procurement/access')) return 'access'
-  return sections.find(([, , path]) => path !== '/procurement' && pathname.startsWith(path))?.[0] || 'overview'
+function readClassic() {
+  try { return window.localStorage.getItem(CLASSIC_KEY) === 'true' } catch { return false }
+}
+
+function writeClassic(value) {
+  try { window.localStorage.setItem(CLASSIC_KEY, String(value)) } catch { /* the choice lasts this visit */ }
+}
+
+/** The counts the tabs carry: what waits for a person, and the offers in hand.
+ *
+ * Read from queries the pages already make, so a badge and the page it opens
+ * never disagree. A figure the server does not report yet is left off rather
+ * than shown as zero.
+ */
+function useTabCounts() {
+  const overview = useQuery({ queryKey: procurementKeys.overview(), queryFn: ({ signal }) => procurementApi.overview({ signal }), staleTime: 30000, retry: 1 })
+  const campaigns = useQuery({ queryKey: procurementKeys.campaigns(), queryFn: ({ signal }) => procurementApi.campaigns(signal), staleTime: 30000, retry: 1 })
+  const kpis = overview.data?.kpis || {}
+  const approvals = (campaigns.data?.items || []).filter(item => item.status !== 'CANCELLED' && item.progress?.awaitingReview > 0).length
+  return {
+    escalations: kpis.needsSpecialist == null ? null : kpis.needsSpecialist + approvals,
+    proposals: kpis.pricedProposals ?? null,
+  }
 }
 
 function Workspace() {
   const location = useLocation()
-  const navigate = useNavigate()
   const { usingDevelopmentFixtures } = useExtensions()
   const { canManageAccess } = useProcurementPermissions()
-  const tab = activeSection(location.pathname)
+  const [classic, setClassic] = useState(readClassic)
+  const counts = useTabCounts()
+  const section = sectionOf(location.pathname)
+  const tabs = classic ? CLASSIC_SECTIONS : PRIMARY_SECTIONS
+  const selected = tabs.some(([id]) => id === section) ? section : null
+  const changeClassic = value => { setClassic(value); writeClassic(value) }
   return <div className="procurement-host"><div className="pr-host-menu"><Menubar /></div><main className="procurement-shell">
-    <header className="pr-workspace-header"><div><div className="pr-eyebrow">AI Sourcing Agent</div><h1>Procurement</h1><p>Операционный контур поиска, проверки поставщиков и сбора предложений.</p></div><div className="pr-inline-actions">{canManageAccess && <RouterLinkButton to="/procurement/access" variant="outline"><Building size={16} />Доступ</RouterLinkButton>}<RouterLinkButton to="/procurement/settings" variant="outline"><Sliders size={16} />Настройки</RouterLinkButton><RouterLinkButton to="/chat?context=procurement"><MessageSquare size={16} />Спросить Procurement Agent</RouterLinkButton></div></header>
+    <header className="pr-workspace-header pr-workspace-header--compact"><div><h1>ИИ-ассистент закупок</h1></div><div className="pr-inline-actions"><RouterLinkButton to="/chat?context=procurement" variant="outline"><MessageSquare size={16} />Спросить агента</RouterLinkButton><AllSectionsMenu canManageAccess={canManageAccess} classic={classic} onClassicChange={changeClassic} /></div></header>
     {usingDevelopmentFixtures && <div className="pr-fixture-banner" role="status">Режим визуальной разработки: показаны явно включённые демонстрационные данные, не данные production.</div>}
-    <Tabs selectedKey={tab} onSelectionChange={value => navigate(sections.find(item => item[0] === value)[2])}><TabsList variant="line" aria-label="Разделы Procurement">{sections.map(([value, label]) => <TabsTrigger key={value} id={value}>{label}</TabsTrigger>)}</TabsList></Tabs>
-    <div className="pr-page"><Routes><Route index element={<OverviewPage />} /><Route path="dashboard" element={<DashboardPage />} /><Route path="requests" element={<RequestsPage />} /><Route path="requests/new" element={<CardFormPage />} /><Route path="requests/import" element={<CardImportPage />} /><Route path="requests/import/:importId" element={<CardImportPage />} /><Route path="requests/:requestId/edit" element={<CardFormPage />} /><Route path="requests/:requestId/rfq" element={<RFQPage />} /><Route path="requests/:requestId/echemi" element={<EchemiPage />} /><Route path="requests/:requestId/sourcing" element={<SourcingPage />} /><Route path="requests/:requestId" element={<RequestDetailPage />} /><Route path="campaigns" element={<CampaignsPage />} /><Route path="campaigns/:campaignId/review" element={<CampaignReviewPage />} /><Route path="campaigns/:campaignId" element={<CampaignPage />} /><Route path="suppliers" element={<SuppliersPage />} /><Route path="suppliers/new" element={<SupplierFormPage />} /><Route path="suppliers/:supplierId/capabilities/new" element={<SupplierCapabilityFormPage />} /><Route path="suppliers/:supplierId/contacts/new" element={<SupplierContactFormPage />} /><Route path="suppliers/:supplierId/contacts/:contactId/edit" element={<SupplierContactFormPage />} /><Route path="suppliers/:supplierId" element={<SupplierDetailPage />} /><Route path="negotiations" element={<NegotiationsPage />} /><Route path="negotiations/agent" element={<NegotiatorActivityPage />} /><Route path="negotiations/new" element={<NegotiationFormPage />} /><Route path="negotiations/:negotiationId/responses/new" element={<SupplierResponseFormPage />} /><Route path="negotiations/:negotiationId" element={<NegotiationDetailPage />} /><Route path="proposals" element={<ProposalsPage />} /><Route path="proposals/compare" element={<ProposalComparisonPage />} /><Route path="proposals/:proposalId" element={<ProposalDetailPage />} /><Route path="escalations" element={<EscalationsPage />} /><Route path="escalations/:escalationId" element={<EscalationDetailPage />} /><Route path="communication" element={<PlaybookPage />} /><Route path="communication/policy" element={<CommunicationPolicyPage />} /><Route path="communication/performance" element={<VariantPerformancePage />} /><Route path="communication/drafts" element={<CompositionsPage />} /><Route path="communication/drafts/:compositionId" element={<CompositionDetailPage />} /><Route path="communication/imports" element={<PlaybookImportPage />} /><Route path="communication/imports/:importId" element={<PlaybookImportPage />} /><Route path="communication/playbook/new" element={<PlaybookItemPage />} /><Route path="communication/playbook/:itemId" element={<PlaybookItemPage />} /><Route path="activity" element={<ActivityPage />} /><Route path="settings" element={<SettingsPage />} /><Route path="access" element={<AccessPage />} /><Route path="*" element={<Navigate to="/procurement" replace />} /></Routes></div>
+    {/* Links rather than a tab widget: a screen from «Все разделы» selects no
+        tab, and a widget that must always select one kept jumping back to the
+        first, looping. A link is also what a middle-click can open aside. */}
+    <nav className={classic ? 'pr-tabs pr-tabs--classic' : 'pr-tabs'} aria-label="Разделы закупок">{tabs.map(([value, label, to]) => <Link key={value} to={to} className="pr-tab" aria-current={value === selected ? 'page' : undefined}>{label}{!classic && counts[value] > 0 && <span className="pr-tab-count">{counts[value]}</span>}</Link>)}</nav>
+    {!selected && sectionLabel(section) && <nav className="pr-section-trail" aria-label="Где вы"><span>Все разделы</span><span aria-hidden="true">›</span><Link to={MORE_SECTIONS.find(([id]) => id === section)?.[2] || '/procurement'}>{sectionLabel(section)}</Link></nav>}
+    <div className="pr-page"><Routes><Route index element={<CampaignsPage />} /><Route path="overview" element={<OverviewPage />} /><Route path="dashboard" element={<DashboardPage />} /><Route path="requests" element={<RequestsPage />} /><Route path="requests/new" element={<CardFormPage />} /><Route path="requests/import" element={<CardImportPage />} /><Route path="requests/import/:importId" element={<CardImportPage />} /><Route path="requests/:requestId/edit" element={<CardFormPage />} /><Route path="requests/:requestId/rfq" element={<RFQPage />} /><Route path="requests/:requestId/echemi" element={<EchemiPage />} /><Route path="requests/:requestId/sourcing" element={<SourcingPage />} /><Route path="requests/:requestId" element={<RequestDetailPage />} /><Route path="campaigns" element={<CampaignsPage />} /><Route path="campaigns/:campaignId/review" element={<CampaignReviewPage />} /><Route path="campaigns/:campaignId" element={<CampaignPage />} /><Route path="suppliers" element={<SuppliersPage />} /><Route path="suppliers/new" element={<SupplierFormPage />} /><Route path="suppliers/:supplierId/capabilities/new" element={<SupplierCapabilityFormPage />} /><Route path="suppliers/:supplierId/contacts/new" element={<SupplierContactFormPage />} /><Route path="suppliers/:supplierId/contacts/:contactId/edit" element={<SupplierContactFormPage />} /><Route path="suppliers/:supplierId" element={<SupplierDetailPage />} /><Route path="negotiations" element={<NegotiationsPage />} /><Route path="negotiations/agent" element={<NegotiatorActivityPage />} /><Route path="negotiations/new" element={<NegotiationFormPage />} /><Route path="negotiations/:negotiationId/responses/new" element={<SupplierResponseFormPage />} /><Route path="negotiations/:negotiationId" element={<NegotiationDetailPage />} /><Route path="proposals" element={<ProposalsPage />} /><Route path="proposals/compare" element={<ProposalComparisonPage />} /><Route path="proposals/:proposalId" element={<ProposalDetailPage />} /><Route path="escalations" element={<EscalationsPage />} /><Route path="escalations/:escalationId" element={<EscalationDetailPage />} /><Route path="communication" element={<PlaybookPage />} /><Route path="communication/policy" element={<CommunicationPolicyPage />} /><Route path="communication/performance" element={<VariantPerformancePage />} /><Route path="communication/drafts" element={<CompositionsPage />} /><Route path="communication/drafts/:compositionId" element={<CompositionDetailPage />} /><Route path="communication/imports" element={<PlaybookImportPage />} /><Route path="communication/imports/:importId" element={<PlaybookImportPage />} /><Route path="communication/playbook/new" element={<PlaybookItemPage />} /><Route path="communication/playbook/:itemId" element={<PlaybookItemPage />} /><Route path="activity" element={<ActivityPage />} /><Route path="settings" element={<SettingsPage />} /><Route path="access" element={<AccessPage />} /><Route path="*" element={<Navigate to="/procurement" replace />} /></Routes></div>
   </main></div>
 }
 

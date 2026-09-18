@@ -101,6 +101,26 @@ const campaigns = [
       { cardId: 90004, title: 'Бензол', casNumber: '71-43-2', stage: 'FAILED', sourcingRunId: null, candidateCount: 0, contactCount: 0, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: 'CARD_NOT_NORMALIZED', waitingFor: null, startedAt: ago(4), finishedAt: ago(4) },
     ],
   },
+  // A purchase of one substance: the list names it by its CAS, not "0 из 1".
+  {
+    campaignId: 'CMP-FIXTURE02',
+    title: 'Toluene',
+    status: 'RUNNING',
+    reach: 'OUTREACH',
+    importId: 'IMP-FIXTURE02',
+    progress: { total: 1, settled: 0, awaitingReview: 0, failed: 0, byStage: { SOURCING: 1 }, candidateTotal: 0, contactTotal: 0, requestTotal: 0, responseTotal: 0 },
+    substance: { cardId: 376, title: 'Toluene', casNumber: '108-88-3', stage: 'SOURCING', waitingFor: null },
+    createdAt: ago(0.2),
+    updatedAt: ago(0.1),
+    completedAt: null,
+    plan: { reach: 'OUTREACH', channels: ['EMAIL', 'ECHEMI'], approveRfq: true, draftFirst: false, maxResults: 10, engineIds: null, queryTemplateIds: null, siteProbe: true },
+    errors: [],
+    events: [{ at: ago(0.2), kind: 'CREATED', actor: 'user:demo', cardId: null, data: { cards: 1, plan: { reach: 'OUTREACH' } } }],
+    cancelRequested: false,
+    members: [
+      { cardId: 376, title: 'Toluene', casNumber: '108-88-3', stage: 'SOURCING', sourcingRunId: 'SRC-RUN-376', candidateCount: 0, contactCount: 0, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: null, startedAt: ago(0.2), finishedAt: null },
+    ],
+  },
 ]
 
 // The list carries the summary only, exactly as the API's own list route does:
@@ -114,6 +134,7 @@ export const campaignList = {
     reach: item.reach,
     importId: item.importId,
     progress: item.progress,
+    ...(item.substance ? { substance: item.substance } : {}),
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     completedAt: item.completedAt,
@@ -339,7 +360,7 @@ export const activity = [
 
 export function overviewFixture() {
   return {
-    kpis: { activeCards: 4, waitingSupplier: 2, needsSpecialist: 3, readyProposals: 1, failures: 2 },
+    kpis: { activeCards: 4, waitingSupplier: 2, needsSpecialist: 3, readyProposals: 1, pricedProposals: 3, failures: 2 },
     stages: [
       { id: 'SOURCING', label: 'Поиск и проверка', count: 1, cards: cards.filter(item => item.stage === 'SOURCING') },
       { id: 'NEGOTIATION', label: 'Переговоры', count: 2, cards: cards.filter(item => ['NEGOTIATION', 'WAITING_SUPPLIER'].includes(item.stage)) },

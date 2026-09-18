@@ -18,7 +18,10 @@ const kpis = [
   ['activeCards', 'Активные карточки', Flask, 'progress'],
   ['waitingSupplier', 'Ждём поставщика', Clock, 'waiting'],
   ['needsSpecialist', 'Нужен специалист', AlertTriangle, 'warning', '/procurement/escalations'],
-  ['readyProposals', 'Готовые предложения', FileCheck, 'complete'],
+  // Offers with a price, currency and unit: comparable already. "Complete"
+  // needs every field and three documents, which a first answer rarely has,
+  // so it is said beside the figure instead of being the figure.
+  ['pricedProposals', 'Предложения с ценой', FileCheck, 'complete', '/procurement/proposals'],
   ['failures', 'Ошибки обработки', Inbox, 'danger', '/procurement/activity?level=error'],
 ]
 
@@ -38,10 +41,15 @@ export default function OverviewPage() {
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   const data = query.data
   if (!data) return <EmptyState />
+  // A server that does not count priced offers yet keeps its old tile.
+  const tiles = data.kpis?.pricedProposals == null
+    ? kpis.map(tile => (tile[0] === 'pricedProposals' ? ['readyProposals', 'Готовые предложения', FileCheck, 'complete'] : tile))
+    : kpis
+  const detail = key => (key === 'pricedProposals' ? `${data.kpis.readyProposals ?? 0} полных · по остальным агент уточняет` : null)
   return <div className="pr-stack pr-stack--lg">
-    <section className="pr-kpis" aria-label="Ключевые показатели">{kpis.map(([key, label, KpiIcon, tone, to]) => {
+    <section className="pr-kpis" aria-label="Ключевые показатели">{tiles.map(([key, label, KpiIcon, tone, to]) => {
       const series = trends.data?.series?.[key]
-      const tile = <Card key={key} className={to ? 'pr-kpi pr-kpi--link' : 'pr-kpi'}><CardContent><div className={`pr-kpi__icon pr-kpi__icon--${tone}`}><KpiIcon /></div><div className="pr-kpi__body"><strong>{data.kpis?.[key] ?? '—'}</strong><span>{label}</span>{series && <>
+      const tile = <Card key={key} className={to ? 'pr-kpi pr-kpi--link' : 'pr-kpi'}><CardContent><div className={`pr-kpi__icon pr-kpi__icon--${tone}`}><KpiIcon /></div><div className="pr-kpi__body"><strong>{data.kpis?.[key] ?? '—'}</strong><span>{label}</span>{detail(key) && <small className="pr-kpi__detail">{detail(key)}</small>}{series && <>
         <Sparkline points={series.points} label={series.label} kind={series.kind} tone={tone} />
         <small>{series.label}</small>
       </>}{to && <em className="pr-kpi__open">Открыть →</em>}</div></CardContent></Card>
@@ -51,7 +59,7 @@ export default function OverviewPage() {
         multiplied by four is noise, which is the mistake the benchmark card
         already taught. */}
     {trends.data?.note && <p className="pr-kpis__note">{trends.data.note}</p>}
-    <section><div className="pr-section-heading"><div><h2>Активные закупки по этапам</h2><p>Счётчик каждой колонки — точное число карточек на этапе, а не размер первой страницы.</p></div><Link to="/procurement/requests">Все карточки</Link></div>
+    <section><div className="pr-section-heading"><div><h2>Активные закупки по этапам</h2></div><Link to="/procurement/requests">Все карточки</Link></div>
       <StageBoard stages={data.stages} truncated={data.truncated} />
     </section>
     <div className="pr-overview-grid"><Card><CardHeader><CardTitle>Требует внимания</CardTitle><CardAction><Link to="/procurement/escalations">Вся очередь</Link></CardAction></CardHeader><CardContent className="pr-attention-list">{data.attention?.length ? data.attention.slice(0, 4).map(item => <Link to={`/procurement/escalations?selected=${item.id}`} key={item.id} className="pr-attention"><div className="pr-attention__priority">{item.priority}</div><div><strong>{escalationSubject(item)}</strong><span>{escalationKind(item)} · {item.supplierName}</span></div><StatusBadge status={item.status} compact /></Link>) : <EmptyState title="Очередь пуста" description="Открытых эскалаций нет." />}</CardContent></Card>

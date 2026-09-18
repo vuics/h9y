@@ -39,7 +39,7 @@ export default function SupplierCapabilityFormPage() {
   const statuses = canQualifySuppliers ? ['UNVERIFIED', 'CLAIMED', 'VERIFIED', 'REJECTED'] : ['UNVERIFIED', 'CLAIMED']
   return <div className="pr-card-form-page">
     <Button variant="ghost" size="sm" onPress={() => navigate(`/procurement/suppliers/${supplierId}`)}><ArrowLeft />К поставщику</Button>
-    <div className="pr-section-heading"><div><h2>Новая capability</h2><p>Зафиксируйте заявленный продукт, CAS и источник подтверждения без автоматической квалификации поставщика.</p></div></div>
+    <div className="pr-section-heading"><div><h2>Новая позиция в ассортименте</h2><p>Зафиксируйте заявленный продукт, CAS и источник подтверждения без автоматической квалификации поставщика.</p></div></div>
     {mutation.isError && <Alert><AlertTriangle /><AlertTitle>Capability не сохранена</AlertTitle><AlertDescription>{mutation.error?.response?.data?.message || mutation.error?.message}</AlertDescription></Alert>}
     <Card><CardHeader><CardTitle>Продуктовая возможность</CardTitle></CardHeader><CardContent><form className="pr-card-form" onSubmit={event => { event.preventDefault(); if (valid) mutation.mutate() }}>
       <label className="pr-form-field"><span>CAS-номер <b>*</b></span><Input value={values.casNumber} onChange={set('casNumber')} placeholder="71-43-2" required /></label>

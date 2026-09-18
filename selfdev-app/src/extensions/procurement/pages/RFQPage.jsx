@@ -29,7 +29,7 @@ function message(error) {
 // suppliers received it that way.
 const VERSIONS = [
   { key: 'russian', tab: 'ru', label: 'Русская', kind: 'short' },
-  { key: 'english', tab: 'en', label: 'English', kind: 'short' },
+  { key: 'english', tab: 'en', label: 'Английская', kind: 'short' },
 ]
 
 const DEFAULT_TAB = VERSIONS[0].tab
@@ -170,7 +170,7 @@ export default function RFQPage() {
     {!hasRFQ && <Card><CardHeader><CardTitle>Кто представляет покупателя</CardTitle></CardHeader><CardContent>
       {settings.isError && <Alert><AlertTriangle /><AlertTitle>Реквизиты недоступны</AlertTitle><AlertDescription>{message(settings.error)}</AlertDescription></Alert>}
       {!settings.isError && <label className="pr-form-field pr-form-field--wide"><span>Отправитель RFQ <b>*</b></span><select value={senderId} onChange={event => setSenderId(event.target.value)} disabled={settings.isLoading}>{activeSenders.map(sender => <option key={sender.senderId} value={sender.senderId}>{sender.displayName} · {sender.email}</option>)}</select><small>Имя, компания и контакты сохранятся вместе с RFQ и не изменятся в уже созданных переговорах.</small></label>}
-      {!settings.isLoading && activeSenders.length === 0 && <Alert><AlertTriangle /><AlertTitle>Нет активного отправителя</AlertTitle><AlertDescription>Сначала заполните раздел «Настройки» Procurement.</AlertDescription></Alert>}
+      {!settings.isLoading && activeSenders.length === 0 && <Alert><AlertTriangle /><AlertTitle>Нет активного отправителя</AlertTitle><AlertDescription>Сначала заполните раздел «Настройки» закупок.</AlertDescription></Alert>}
     </CardContent></Card>}
     {!hasRFQ && <Card><CardHeader><CardTitle>RFQ будет создан в двух версиях</CardTitle></CardHeader><CardContent>
       <p className="pr-note">По одной на язык, русской и английской. Обе короткие: только ключевые вопросы, чтобы получить ответ, а не отпугнуть анкетой. Именно этот текст уходит первым письмом и в формы на сайтах, поэтому у него есть предел длины. Остальное дозапрашивается в переписке, когда поставщик ответил. Обе версии сохраняются как один документ и согласуются вместе.</p>

@@ -109,6 +109,7 @@ const DELIVERY_LABELS = {
   DELIVERED: 'Доставлено',
   RECEIVED: 'Получено',
   RECORDED: 'Зафиксировано',
+  PROCESSED: 'Обработано',
   FAILED: 'Не доставлено',
 }
 
