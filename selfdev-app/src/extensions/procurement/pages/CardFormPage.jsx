@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
@@ -29,7 +29,7 @@ const fields = [
   ['substanceName', 'Наименование вещества', 'Бензол / Benzene', 'text'],
   ['purity', 'Чистота или грейд', 'Например, ≥ 99.9%', 'text'],
   ['applicationArea', 'Область применения', 'Для чего закупается вещество', 'textarea'],
-  ['targetVolume', 'Целевой объём', 'Например, 25 KG', 'text'],
+  ['targetVolume', 'Целевой объём', 'Например, 25 кг; без единицы — считаем в кг', 'text'],
   ['priceGuideline', 'Ориентир цены', 'Опционально; не передаётся поставщику без отдельного разрешения', 'text'],
   ['specialistComments', 'Комментарий специалиста', 'Внутренние замечания', 'textarea'],
 ]
@@ -56,7 +56,15 @@ export default function CardFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { canWriteCards } = useProcurementPermissions()
-  const [values, setValues] = useState(emptyCard)
+  // Opened from the purchases search: the name or CAS already typed there
+  // fills the form, and saving goes back to launch the search on the card.
+  const [searchParams] = useSearchParams()
+  const fromSearch = !editing && searchParams.get('then') === 'search'
+  const [values, setValues] = useState(() => ({
+    ...emptyCard,
+    substanceName: searchParams.get('substanceName') || '',
+    casNumber: searchParams.get('casNumber') || '',
+  }))
   const [serverNotice, setServerNotice] = useState(null)
   const query = useQuery({
     queryKey: procurementKeys.card(requestId),
@@ -87,7 +95,8 @@ export default function CardFormPage() {
       queryClient.setQueryData(procurementKeys.card(card.id), card)
       queryClient.invalidateQueries({ queryKey: procurementKeys.all })
       if (!editing) {
-        navigate(`/procurement/requests/${card.id}`, { replace: true })
+        if (fromSearch) navigate('/procurement', { replace: true, state: { launchCard: card } })
+        else navigate(`/procurement/requests/${card.id}`, { replace: true })
         return
       }
       const effects = result.effects || {}

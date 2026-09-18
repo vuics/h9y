@@ -117,7 +117,9 @@ export default function CardImportPage() {
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: procurementKeys.cardImport(importId) })
       queryClient.invalidateQueries({ queryKey: procurementKeys.cardImports() })
-      navigate('/procurement', { replace: true })
+      // Back to the list of uploads, where the removal shows and the next
+      // unwanted one is a click away.
+      navigate('/procurement/requests/import', { replace: true })
     },
   })
 

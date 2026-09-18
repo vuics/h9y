@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -30,7 +30,9 @@ export function PurchaseStart({ canWrite }) {
   const fileInput = useRef(null)
   const [text, setText] = useState('')
   const [fileError, setFileError] = useState(null)
-  const [chosen, setChosen] = useState(null)
+  // A card just made in the form comes back here with its launch open.
+  const created = useLocation().state?.launchCard || null
+  const [chosen, setChosen] = useState(created)
   const query = classifyQuery(text)
   const typed = parseSubstances(text)
 
@@ -63,6 +65,14 @@ export function PurchaseStart({ canWrite }) {
     },
   })
 
+  // One new substance is a card with its own required fields (purity,
+  // application, volume), so it opens the form, filled with what was typed.
+  const openCardForm = () => {
+    const params = new URLSearchParams({ then: 'search' })
+    if (typed[0]?.name) params.set('substanceName', typed[0].name)
+    if (typed[0]?.cas) params.set('casNumber', typed[0].cas)
+    navigate(`/procurement/requests/new?${params}`)
+  }
   const createFromText = () => {
     if (!typed.length || start.isPending) return
     start.mutate({ source: 'text', payload: { filename: typedListFilename(typed), data_base64: utf8ToBase64(substancesToCsv(typed)) } })
@@ -79,7 +89,7 @@ export function PurchaseStart({ canWrite }) {
     if (query.kind === 'list') return createFromText()
     if (!searched) return
     if (cards.length === 1) return setChosen(cards[0])
-    if (!cards.length && canCreate) createFromText()
+    if (!cards.length && canCreate) openCardForm()
   }
 
   if (!canWrite) return null
@@ -135,12 +145,13 @@ export function PurchaseStart({ canWrite }) {
       {searched && !cards.length && <p className="pr-note">
         {query.kind === 'number' ? `Карточки #${query.value} нет в реестре.` : 'В реестре такого вещества нет.'}
       </p>}
-      {searched && canCreate && <button type="button" className="pr-start__create" disabled={start.isPending} onClick={createFromText}>
-        <Plus size={15} />Новая карточка «{typed[0]?.name || typed[0]?.cas}»{typed[0]?.name && typed[0]?.cas ? ` · CAS ${typed[0].cas}` : ''} и поиск поставщиков
+      {searched && canCreate && <button type="button" className="pr-start__create" onClick={openCardForm}>
+        <Plus size={15} />Новая карточка «{typed[0]?.name || typed[0]?.cas}»{typed[0]?.name && typed[0]?.cas ? ` · CAS ${typed[0].cas}` : ''}
       </button>}
     </div>}
 
     {chosen && <div className="pr-start__launch">
+      {created?.id === chosen.id && <p className="pr-note">Карточка #{chosen.id} «{chosen.substanceName || chosen.title}» создана. Запустите поиск поставщиков по ней.</p>}
       <CampaignLaunchPanel compact cardIds={[chosen.id]} substanceName={chosen.substanceName || chosen.title} cas={chosen.casNumber} canEdit={canWrite} onCancel={() => setChosen(null)} />
     </div>}
 
