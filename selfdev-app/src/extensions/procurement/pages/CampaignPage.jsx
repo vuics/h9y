@@ -16,6 +16,7 @@ import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
 import { CampaignMemberProgress } from '../components/CampaignMemberProgress'
 import { CampaignLaunchPanel } from '../components/CampaignLaunchPanel'
+import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -629,7 +630,7 @@ export default function CampaignPage() {
                 {item.error && <span className="pr-import-missing">
                   {item.errorFromLastRun
                     ? `при попытке ${item.errorAt ? new Date(item.errorAt).toLocaleString('ru-RU') : '(время не записано)'}: `
-                    : ''}{item.error}
+                    : ''}{readableAgentError(item.error)}
                 </span>}
               </li>
             </ul>}
