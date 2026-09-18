@@ -68,6 +68,12 @@ const ERROR_LABEL = {
   CARD_NOT_NORMALIZED: 'карточка не нормализована',
   SOURCING_NOT_READY: 'поиск по карточке ещё не готов',
   NO_USABLE_CONTACT: 'не нашли контакт в разрешённых каналах',
+  // Why the campaign could not take an approval step it was told to take.
+  SOURCING_REVIEW_REQUIRED: 'автоматически не подтвердить: у запустившего нет права SOURCING_REVIEW',
+  CARD_WRITE_REQUIRED: 'RFQ автоматически не согласовать: у запустившего нет права CARD_WRITE',
+  CARD_INCOMPLETE: 'RFQ не подготовить: в карточке не заполнены поля',
+  RFQ_NOT_PREPARED: 'RFQ не подготовлен',
+  AUTOPILOT_FAILED: 'автоматическое согласование не удалось — решите вручную',
 }
 
 // Only the statuses a campaign thread actually lands in; the negotiation page

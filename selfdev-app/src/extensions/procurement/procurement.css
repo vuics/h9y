@@ -1223,3 +1223,10 @@
 .pr-import-launched__list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
 .pr-import-launched__list li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pr-import-launched__list li > span { color: var(--pr-muted); font-size: 11px; }
+.pr-review-identity { border: 1px solid color-mix(in oklch, var(--pr-status-amber) 35%, transparent); background: var(--pr-status-amber-soft); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+.pr-review-identity .pr-note { margin: 0; }
+.pr-review-decided { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.pr-review-decided .pr-review-candidates { width: 100%; }
+.pr-case-card__number { color: var(--pr-status-green); font-weight: 600; text-decoration: none; }
+.pr-case-card__number:hover { text-decoration: underline; }
+.pr-case-card:focus-visible { outline: 2px solid var(--pr-status-green); outline-offset: 2px; }

@@ -95,6 +95,7 @@ export function CampaignLaunchPanel({
   const [channels, setChannels] = useState(['EMAIL', 'WHATSAPP', 'ECHEMI', 'WEB_FORM'])
   const [approveRfq, setApproveRfq] = useState(true)
   const [draftFirst, setDraftFirst] = useState(false)
+  const [confirmCandidates, setConfirmCandidates] = useState(true)
 
   const start = useMutation({
     mutationFn: () => {
@@ -106,6 +107,7 @@ export function CampaignLaunchPanel({
         channels,
         approveRfq,
         draftFirst,
+        confirmCandidates,
         // Depth is chosen as results-per-query; the API takes the analysis
         // budget, which is that spread back over the queries it will issue.
         maxResults: sourcesPerSubstance(
@@ -191,6 +193,10 @@ export function CampaignLaunchPanel({
       <fieldset className="pr-campaign-approval">
         <legend>Где спрашивать</legend>
         <label>
+          <input type="checkbox" checked={confirmCandidates} disabled={start.isPending} onChange={event => setConfirmCandidates(event.target.checked)} />
+          <span><strong>Проверять найденных поставщиков перед рассылкой</strong>Вы подтверждаете каждую найденную компанию как производителя или дистрибьютора. Если снять — агент сам примет роль, к которой пришли доказательства; компании с неясной ролью он не трогает и не пишет им.</span>
+        </label>
+        <label>
           <input type="checkbox" checked={approveRfq} disabled={start.isPending} onChange={event => setApproveRfq(event.target.checked)} />
           <span><strong>Согласовать RFQ перед первой отправкой</strong>Один экран на всю кампанию: кому пишем и что спрашиваем. Это согласование покрывает всю рассылку, включая заявки на площадках.</span>
         </label>
@@ -199,6 +205,7 @@ export function CampaignLaunchPanel({
           <span><strong>Показывать каждое письмо до отправки</strong>Сверх согласования RFQ. На большой кампании это возвращает работу по письму за письмом — включайте, когда переписка идёт с новой площадкой.</span>
         </label>
       </fieldset>
+      {!confirmCandidates && !approveRfq && !draftFirst && <p className="pr-note">Все проверки сняты: кампания сама пройдёт от поиска до отправленных запросов. Вы увидите результат на странице кампании; компании с неясной ролью останутся на согласовании.</p>}
     </>}
 
     <SourcingSettings

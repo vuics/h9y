@@ -131,6 +131,7 @@ export function campaignReviewFixture(campaignId) {
     title: campaign.title,
     status: campaign.status,
     approveRfq: true,
+    confirmCandidates: true,
     pendingCandidates: 4,
     pendingRfq: 2,
     items: campaign.members.map(member => ({
@@ -141,8 +142,24 @@ export function campaignReviewFixture(campaignId) {
       sourcingRunId: member.sourcingRunId,
       blockedBy: member.stage === 'FAILED' ? member.errorCode : null,
       candidates: member.stage === 'AWAITING_REVIEW'
-        ? [candidate(`${member.cardId}A`, 'MANUFACTURER', 78), candidate(`${member.cardId}B`, 'UNKNOWN', 54)]
+        ? [
+          candidate(`${member.cardId}A`, 'MANUFACTURER', 78),
+          candidate(`${member.cardId}B`, 'UNKNOWN', 54),
+          // Decided on an earlier visit: folded away, and revisable.
+          candidate(`${member.cardId}C`, 'DISTRIBUTOR', 66, 'VERIFIED_DISTRIBUTOR'),
+        ]
         : [],
+      // The identity problem the approval screen settles before an RFQ exists.
+      normalization: member.stage === 'FAILED'
+        ? {
+          status: 'NEEDS_REVIEW',
+          reasons: ['Введённое название не совпадает с названием или синонимами PubChem.'],
+          preferredName: 'Benzene',
+          casMatches: true,
+          nameMatches: false,
+          suggestedCas: null,
+        }
+        : null,
       rfq: member.stage === 'AWAITING_REVIEW'
         ? {
           status: 'PREPARED',

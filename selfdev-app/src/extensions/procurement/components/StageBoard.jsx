@@ -1,11 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { procurementApi } from '../api/client'
 import { StatusBadge } from '../components/StatusBadge'
 import { escalationTarget } from '../lib/escalation'
+import { importFieldLabels } from '../api/imports'
 import { AlertTriangle, CircleAlert, Refresh } from './icons'
 
 // Which registry filter a column's "open all" link should apply.
@@ -16,13 +17,50 @@ const registryFilter = {
   ESCALATED: 'ESCALATED',
 }
 
+// Where a card opens from each column: the screen where that stage's work is
+// done, not the card page that only points at it. The card page stays one
+// click away through the number on the card.
+const stageTarget = {
+  SOURCING: id => `/procurement/requests/${id}/sourcing`,
+  NEGOTIATION: id => `/procurement/negotiations?cardId=${id}`,
+  COMPARISON: id => `/procurement/proposals/compare?cardId=${id}`,
+}
+
+// "Черновик · −1" said nothing about what was missing; the field does.
+const draftLabel = card => {
+  const fields = (card.incompleteFields || []).map(field => importFieldLabels[field] || field)
+  if (fields.length) return `Не заполнено: ${fields.join(', ').toLowerCase()}`
+  return `Не заполнено полей: ${card.incompleteFieldCount}`
+}
+
 function StageCard({ card, onOpen }) {
+  const open = () => onOpen(card.id)
   return (
-    <button type="button" className="pr-case-card" onClick={() => onOpen(card.id)}>
+    // A container rather than a <button>: the card number inside is a link of
+    // its own, and a link cannot live inside a button.
+    <div
+      role="button"
+      tabIndex={0}
+      className="pr-case-card"
+      onClick={open}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          open()
+        }
+      }}
+    >
       <div>
         <strong>{card.title}</strong>
         <span>
-          CAS {card.casNumber || 'не указан'} · {card.targetVolume || 'объём не указан'}
+          <Link
+            to={`/procurement/requests/${card.id}`}
+            className="pr-case-card__number"
+            title="Открыть карточку вещества"
+            onClick={event => event.stopPropagation()}
+            onKeyDown={event => event.stopPropagation()}
+          >#{card.id}</Link>
+          {' · '}CAS {card.casNumber || 'не указан'} · {card.targetVolume || 'объём не указан'}
         </span>
         {(card.proposalCount > 0 || card.assignmentCount > 0) && (
           <span className="pr-case-card__relations">
@@ -33,13 +71,9 @@ function StageCard({ card, onOpen }) {
         )}
       </div>
       {card.isDraft
-        ? <StatusBadge
-            status="DRAFT"
-            label={`Черновик · −${card.incompleteFieldCount}`}
-            compact
-          />
+        ? <StatusBadge status="DRAFT" label={draftLabel(card)} compact />
         : <StatusBadge status={card.completeness || card.status} compact />}
-    </button>
+    </div>
   )
 }
 
@@ -132,7 +166,13 @@ export function StageBoard({ stages, truncated }) {
 
             <div className="pr-stage__cards" tabIndex={stage.count ? 0 : -1}>
               {stage.loaded.map(card => (
-                <StageCard key={card.id} card={card} onOpen={stage.id === 'ESCALATED' ? openEscalated : open} />
+                <StageCard
+                  key={card.id}
+                  card={card}
+                  onOpen={stage.id === 'ESCALATED'
+                    ? openEscalated
+                    : stageTarget[stage.id] ? id => navigate(stageTarget[stage.id](id)) : open}
+                />
               ))}
 
               {stage.hasMore && (

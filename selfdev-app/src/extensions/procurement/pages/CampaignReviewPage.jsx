@@ -95,6 +95,12 @@ const RFQ_STATUS = {
 const mutationMessage = error => error?.response?.data?.message || error?.message
 const blockedText = code => BLOCKED_LABEL[code] || code
 
+const DECISION_LABEL = Object.fromEntries(VERDICTS)
+
+// Said when the specialist vouches from this screen. Required by the API, and
+// true: they confirmed the card's own CAS and name against what PubChem showed.
+const CONFIRM_REASON = 'Подтверждено специалистом при согласовании кампании: CAS и название в карточке верны.'
+
 /** Every reason a substance was not written to, flattened for one list.
  *
  * Per substance rather than as one count: "не отправлено по 3" tells the
@@ -133,6 +139,9 @@ export default function CampaignReviewPage() {
   const [verdicts, setVerdicts] = useState({})
   const [rfqs, setRfqs] = useState({})
   const [opened, setOpened] = useState({})
+  // Decided candidates are folded per substance; unfolding is how a past
+  // verdict is changed, and applying folds them again.
+  const [revising, setRevising] = useState({})
   const [applied, setApplied] = useState(null)
   const [dispatched, setDispatched] = useState(null)
   const [posted, setPosted] = useState(null)
@@ -159,6 +168,35 @@ export default function CampaignReviewPage() {
       setPosted(data.marketplace || null)
       setVerdicts({})
       setRfqs({})
+      setRevising({})
+    },
+  })
+  // Settling the identity of several cards at once, then writing the RFQs that
+  // were waiting on it: an RFQ is written only for a confirmed identity, so the
+  // two are one step for the person, not two buttons.
+  const identity = useMutation({
+    mutationFn: async ({ action, cardIds, cas }) => {
+      const failed = []
+      for (const cardId of cardIds) {
+        try {
+          if (action === 'recheck') await procurementApi.normalizeCard(cardId)
+          if (action === 'confirm') await procurementApi.confirmCardNormalization(cardId, CONFIRM_REASON)
+          if (action === 'replaceCas') {
+            await procurementApi.updateCard(cardId, { cas_number: cas })
+            await procurementApi.normalizeCard(cardId)
+          }
+        } catch (error) {
+          failed.push({ cardId, message: mutationMessage(error) })
+        }
+      }
+      const prepared = canWriteCards
+        ? await procurementApi.prepareCampaignRfqs(campaignId).catch(() => null)
+        : null
+      return { failed, prepared }
+    },
+    onSuccess: ({ prepared }) => {
+      if (prepared) accept(prepared)
+      else queryClient.invalidateQueries({ queryKey: procurementKeys.campaignReview(campaignId) })
     },
   })
 
@@ -166,28 +204,30 @@ export default function CampaignReviewPage() {
   // which would make every derived list below recompute for nothing.
   const items = useMemo(() => query.data?.items || [], [query.data?.items])
   const actionable = useMemo(() => items.filter(item => !item.blockedBy), [items])
+  const identityItems = useMemo(() => items.filter(item => item.normalization), [items])
 
-  const decisions = useMemo(() => actionable.map(item => {
+  // Over every substance, not only those waiting: a verdict on a substance
+  // whose letters have gone can still be corrected, and a company left
+  // undecided there can still be written to.
+  const decisions = useMemo(() => items.map(item => {
     const candidates = item.candidates
-      .filter(candidate => verdicts[verdictKey(item.cardId, candidate.candidateId)])
+      .filter(candidate => {
+        const chosen = verdicts[verdictKey(item.cardId, candidate.candidateId)]
+        return chosen && chosen !== candidate.reviewDecision
+      })
       .map(candidate => ({
         candidateId: candidate.candidateId,
         decision: verdicts[verdictKey(item.cardId, candidate.candidateId)],
       }))
-    const fingerprint = rfqs[item.cardId] ? item.rfq?.documentFingerprint : null
+    const fingerprint = rfqs[item.cardId] && item.rfq?.status !== 'APPROVED' ? item.rfq?.documentFingerprint : null
     return { cardId: item.cardId, candidates, ...(fingerprint ? { rfqFingerprint: fingerprint } : {}) }
-  }).filter(decision => decision.candidates.length || decision.rfqFingerprint), [actionable, verdicts, rfqs])
+  }).filter(decision => decision.candidates.length || decision.rfqFingerprint), [items, verdicts, rfqs])
 
   // Counted separately from the substances: "Согласовать (1)" on a page where
   // one substance carries a candidate verdict and an RFQ approval reads as one
   // decision when it is two, and the operator is about to send both.
-  const decisionCount = useMemo(
-    () => decisions.reduce(
-      (total, item) => total + item.candidates.length + (item.rfqFingerprint ? 1 : 0),
-      0,
-    ),
-    [decisions],
-  )
+  const candidateCount = decisions.reduce((total, item) => total + item.candidates.length, 0)
+  const rfqCount = decisions.filter(item => item.rfqFingerprint).length
 
   // The suggestion is the starting position, not a hidden default: the dots
   // arrive already on what the evidence concluded, so the specialist spends
@@ -198,11 +238,11 @@ export default function CampaignReviewPage() {
   // time so that the counter on "Согласовать" and what is submitted are the
   // same thing the operator can see.
   useEffect(() => {
-    if (!actionable.length) return
+    if (!items.length) return
     setVerdicts(current => {
       const next = { ...current }
       let changed = false
-      for (const item of actionable) {
+      for (const item of items) {
         for (const candidate of item.candidates) {
           if (candidate.reviewDecision !== 'UNREVIEWED') continue
           const key = verdictKey(item.cardId, candidate.candidateId)
@@ -215,33 +255,89 @@ export default function CampaignReviewPage() {
       }
       return changed ? next : current
     })
-  }, [actionable])
-
-  const acceptAllSuggested = () => {
-    const next = {}
-    const nextRfqs = {}
-    for (const item of actionable) {
-      for (const candidate of item.candidates) {
-        if (candidate.reviewDecision !== 'UNREVIEWED') continue
-        const suggested = SUGGESTED[candidate.role]
-        // Only where the evidence actually concluded something. A candidate
-        // whose role is unknown is exactly the one a person has to look at,
-        // so "accept all" deliberately leaves it blank rather than guessing.
-        if (suggested) next[verdictKey(item.cardId, candidate.candidateId)] = suggested
+    // A prepared RFQ starts ticked, like the companies: the button names how
+    // many texts it approves, every text is one click from being read, and an
+    // untick is remembered. Seeded once per card so a reload of the data never
+    // re-ticks what the specialist unticked.
+    setRfqs(current => {
+      const next = { ...current }
+      let changed = false
+      for (const item of items) {
+        if (item.cardId in next) continue
+        if (!item.rfq?.documentFingerprint || item.rfq.status === 'APPROVED') continue
+        next[item.cardId] = true
+        changed = true
       }
-      if (item.rfq?.documentFingerprint && item.rfq.status !== 'APPROVED') nextRfqs[item.cardId] = true
-    }
-    setVerdicts(next)
-    setRfqs(nextRfqs)
-  }
+      return changed ? next : current
+    })
+  }, [items])
 
   if (query.isLoading) return <LoadingState />
   if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
   const review = query.data
   if (!review) return <EmptyState title="Кампания не найдена" />
 
-  const missingRfqs = actionable.filter(item => item.rfq && item.rfq.status === 'NOT_PREPARED').length
+  const missingRfqs = items.filter(item => item.rfq && item.rfq.status === 'NOT_PREPARED' && !item.normalization).length
   const appliedById = new Map((applied || []).map(result => [result.cardId, result]))
+  // A CAS the name contradicts is never settled in bulk: that is the one case
+  // where the letter would ask for the wrong substance.
+  const confirmable = identityItems.filter(item => item.normalization.casMatches !== false)
+  const identityBusy = identity.isPending
+
+  const verdictRadios = (item, candidate) => {
+    const key = verdictKey(item.cardId, candidate.candidateId)
+    const decided = candidate.reviewDecision !== 'UNREVIEWED'
+    const current = verdicts[key] ?? (decided ? candidate.reviewDecision : undefined)
+    return <div className="pr-review-verdicts">{VERDICTS.map(([value, label]) => {
+      const suggested = !decided && SUGGESTED[candidate.role] === value
+      const concluded = CONCLUDED.has(candidate.role)
+      return <label key={value}>
+        <input
+          type="radio"
+          // Scoped to the substance: the same company id repeats across blocks.
+          name={`verdict-${item.cardId}-${candidate.candidateId}`}
+          aria-label={`${candidate.name}: ${label}`}
+          checked={current === value}
+          disabled={!canReviewSourcing || apply.isPending}
+          onChange={() => setVerdicts(cur => ({ ...cur, [key]: value }))}
+        />
+        <span>{label}</span>
+        {suggested && (concluded
+          ? <em className="pr-review-suggested">рекомендую</em>
+          : <em className="pr-review-suggested pr-review-suggested--unknown">нет данных</em>)}
+      </label>
+    })}</div>
+  }
+
+  const candidateRow = (item, candidate, editable) => <tr key={candidate.candidateId}>
+    <td>
+      <strong>{candidate.name}</strong>
+      <div className="pr-primary-meta">{candidate.country || '—'}{candidate.website && <> · <a href={candidate.website} target="_blank" rel="noreferrer"><ExternalLink size={12} />сайт</a></>}{candidate.promotedSupplierId && <> · <Link to={`/procurement/suppliers/${candidate.promotedSupplierId}`}>в справочнике</Link></>}</div>
+      {editable && candidate.signals.length > 0 && <ul className="pr-review-signals">{candidate.signals.map((signal, index) => <li key={index}>{signal}</li>)}</ul>}
+      {editable && candidate.risks.length > 0 && <ul className="pr-review-signals pr-review-signals--risk">{candidate.risks.map((risk, index) => <li key={index}>{risk}</li>)}</ul>}
+    </td>
+    <td><StatusBadge status={candidate.preliminaryStatus} label={`${candidate.score}/100`} /></td>
+    <td>{candidate.contactCount || <span className="pr-import-missing">нет</span>}</td>
+    <td>{editable ? verdictRadios(item, candidate) : <StatusBadge status={candidate.reviewDecision} label={DECISION_LABEL[candidate.reviewDecision]} />}</td>
+  </tr>
+
+  const candidateTable = (item, candidates, editable) => <table className="pr-table pr-review-candidates"><thead><tr>
+    <th>Компания</th><th>Оценка</th><th>Контакты</th><th>Решение</th>
+  </tr></thead><tbody>{candidates.map(candidate => candidateRow(item, candidate, editable))}</tbody></table>
+
+  const identityBlock = item => {
+    const n = item.normalization
+    return <div className="pr-review-identity">
+      <strong>Идентичность вещества не подтверждена — без неё RFQ не готовится</strong>
+      <ul className="pr-plain-list">{n.reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
+      {n.preferredName && <p className="pr-note">PubChem по этому CAS: «{n.preferredName}».{n.suggestedCas && <> По названию PubChem даёт CAS <strong>{n.suggestedCas}</strong>.</>}</p>}
+      {canWriteCards && <div className="pr-inline-actions">
+        {n.suggestedCas && <Button size="sm" isDisabled={identityBusy} onPress={() => identity.mutate({ action: 'replaceCas', cardIds: [item.cardId], cas: n.suggestedCas })}>Заменить CAS на {n.suggestedCas}</Button>}
+        <Button size="sm" variant="outline" isDisabled={identityBusy} onPress={() => identity.mutate({ action: 'confirm', cardIds: [item.cardId] })}>{n.casMatches === false ? 'Оставить CAS как в карточке' : 'Подтвердить как в карточке'}</Button>
+        <Button size="sm" variant="ghost" isDisabled={identityBusy} onPress={() => identity.mutate({ action: 'recheck', cardIds: [item.cardId] })}>Перепроверить в PubChem</Button>
+      </div>}
+    </div>
+  }
 
   return <DetailLayout
     backTo={`/procurement/campaigns/${campaignId}`}
@@ -265,26 +361,40 @@ export default function CampaignReviewPage() {
         {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}><Link to={`/procurement/requests/${problem.cardId}`}>#{problem.cardId}</Link> — {blockedText(problem.code)}</li>)}</ul>}
       </AlertDescription></Alert>}
       {prepare.data?.failed?.length > 0 && <Alert><CircleAlert /><AlertTitle>RFQ подготовлен не по всем веществам</AlertTitle><AlertDescription><ul className="pr-plain-list">{prepare.data.failed.map(item => <li key={item.cardId}><Link to={`/procurement/requests/${item.cardId}`}>#{item.cardId}</Link> — {blockedText(item.code)}</li>)}</ul></AlertDescription></Alert>}
+      {identity.error && <Alert><AlertTriangle /><AlertTitle>Не удалось</AlertTitle><AlertDescription>{mutationMessage(identity.error)}</AlertDescription></Alert>}
+      {identity.data?.failed?.length > 0 && <Alert><CircleAlert /><AlertTitle>Не по всем веществам получилось</AlertTitle><AlertDescription><ul className="pr-plain-list">{identity.data.failed.map(item => <li key={item.cardId}><Link to={`/procurement/requests/${item.cardId}`}>#{item.cardId}</Link> — {item.message}</li>)}</ul></AlertDescription></Alert>}
     </>}
   >
     <div className="pr-stack">
+      {identityItems.length > 0 && <Card className="pr-review-identity-summary"><CardHeader><div>
+        <CardTitle>Идентичность не подтверждена: {identityItems.length} {plural(identityItems.length, 'вещество', 'вещества', 'веществ')}</CardTitle>
+        <p>RFQ пишется только для вещества, чьи CAS и название подтвердил PubChem или специалист. Перепроверка исправит то, что система теперь распознаёт сама (обрезанные названия, пометки в скобках). Подтверждение фиксирует, что CAS и название в карточке верны, — под вашим именем. Вещества, где CAS противоречит названию, подтверждаются только по одному.</p>
+      </div></CardHeader><CardContent>
+        {canWriteCards && <div className="pr-inline-actions">
+          <Button isDisabled={identityBusy} onPress={() => identity.mutate({ action: 'recheck', cardIds: identityItems.map(item => item.cardId) })}><Refresh className={identityBusy ? 'pr-spin' : undefined} />{identityBusy ? 'Проверяем…' : `Перепроверить в PubChem (${identityItems.length})`}</Button>
+          {confirmable.length > 0 && <Button variant="outline" isDisabled={identityBusy} onPress={() => identity.mutate({ action: 'confirm', cardIds: confirmable.map(item => item.cardId) })}>Подтвердить как в карточке ({confirmable.length})</Button>}
+        </div>}
+        <ul className="pr-plain-list">{identityItems.map(item => <li key={item.cardId}><a href={`#review-${item.cardId}`}>#{item.cardId} {item.title}</a> — {item.normalization.casMatches === false ? 'CAS не совпадает с названием' : 'название не совпадает с PubChem'}</li>)}</ul>
+      </CardContent></Card>}
+
       <Card><CardHeader><div>
         <CardTitle>Одно решение на всю кампанию</CardTitle>
-        <p>Кому пишем и что спрашиваем — по каждому веществу. Кандидат становится поставщиком только с явным подтверждением, а RFQ согласуется по тому тексту, который показан здесь.</p>
+        <p>Кому пишем и что спрашиваем — по каждому веществу. Компании и тексты RFQ уже отмечены по рекомендации: проверьте, снимите лишнее и нажмите одну кнопку. Кандидат становится поставщиком только с этим подтверждением.</p>
       </div></CardHeader><CardContent>
         <div className="pr-inline-actions">
           {missingRfqs > 0 && canWriteCards && <Button variant="outline" isDisabled={prepare.isPending} onPress={() => prepare.mutate()}><Refresh className={prepare.isPending ? 'pr-spin' : undefined} />{prepare.isPending ? 'Готовим…' : `Подготовить RFQ (${missingRfqs})`}</Button>}
-          {canReviewSourcing && <Button variant="outline" onPress={acceptAllSuggested}>Принять предложенное</Button>}
-          {canReviewSourcing && <Button isDisabled={!decisions.length || apply.isPending} onPress={() => apply.mutate(decisions)}><Check />{apply.isPending ? 'Применяем…' : `Согласовать: ${decisionCount} ${plural(decisionCount, 'решение', 'решения', 'решений')} по ${decisions.length} ${plural(decisions.length, 'веществу', 'веществам', 'веществам')}`}</Button>}
+          {canReviewSourcing && <Button isDisabled={!decisions.length || apply.isPending} onPress={() => apply.mutate(decisions)}><Check />{apply.isPending ? 'Применяем…' : `Согласовать: ${candidateCount} ${plural(candidateCount, 'решение', 'решения', 'решений')} по компаниям и ${rfqCount} RFQ`}</Button>}
         </div>
-        <p className="pr-note">«Принять предложенное» отмечает роль, к которой пришли доказательства, и только там, где они к чему-то пришли: кандидат с неопределённой ролью остаётся пустым, потому что именно его и надо посмотреть глазами.</p>
       </CardContent></Card>
 
       {items.length === 0 && <EmptyState title="В кампании нет веществ" />}
 
       {items.map(item => {
         const result = appliedById.get(item.cardId)
-        return <Card key={item.cardId} className="pr-review-block"><CardHeader><div>
+        const open = item.candidates.filter(candidate => candidate.reviewDecision === 'UNREVIEWED')
+        const decided = item.candidates.filter(candidate => candidate.reviewDecision !== 'UNREVIEWED')
+        const hasRun = item.candidates.length > 0
+        return <Card key={item.cardId} id={`review-${item.cardId}`} className="pr-review-block"><CardHeader><div>
           <CardTitle>{item.title}</CardTitle>
           <p>
             <CopyableId value={item.cardId} displayValue={`#${item.cardId}`} to={`/procurement/requests/${item.cardId}`} />
@@ -293,93 +403,59 @@ export default function CampaignReviewPage() {
           </p>
         </div>{item.blockedBy
           ? <Badge variant="outline">{blockedText(item.blockedBy)}</Badge>
-          : <Badge variant="secondary">{item.candidates.length} кандидатов</Badge>}
+          : <Badge variant="secondary">{open.length} на решении</Badge>}
         </CardHeader><CardContent>
           {result && <Alert>{result.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>{result.errors?.length ? 'Применено частично' : 'Применено'}</AlertTitle><AlertDescription>
             Подтверждено {result.verified?.length ?? 0}, стало поставщиками {result.promoted?.length ?? 0}{result.rfqApproved ? ', RFQ согласован' : ''}.
             {result.errors?.length > 0 && <ul className="pr-plain-list">{result.errors.map((error, index) => <li key={index}>{error.candidateId ? `${error.candidateId}: ` : ''}{error.message}</li>)}</ul>}
           </AlertDescription></Alert>}
 
-          {item.blockedBy
-            ? <p className="pr-note">Это вещество пока нельзя согласовать: {blockedText(item.blockedBy)}. <Link to={`/procurement/requests/${item.cardId}`}>Открыть карточку</Link></p>
-            : <>
-              {item.candidates.length === 0
-                ? <p className="pr-note">Поиск не нашёл кандидатов. <Link to={`/procurement/requests/${item.cardId}/sourcing`}>Открыть поиск</Link></p>
-                : <table className="pr-table pr-review-candidates"><thead><tr>
-                  <th>Компания</th><th>Оценка</th><th>Контакты</th><th>Решение</th>
-                </tr></thead><tbody>{item.candidates.map(candidate => <tr key={candidate.candidateId}>
-                  <td>
-                    <strong>{candidate.name}</strong>
-                    <div className="pr-primary-meta">{candidate.country || '—'}{candidate.website && <> · <a href={candidate.website} target="_blank" rel="noreferrer"><ExternalLink size={12} />сайт</a></>}</div>
-                    {candidate.signals.length > 0 && <ul className="pr-review-signals">{candidate.signals.map((signal, index) => <li key={index}>{signal}</li>)}</ul>}
-                    {candidate.risks.length > 0 && <ul className="pr-review-signals pr-review-signals--risk">{candidate.risks.map((risk, index) => <li key={index}>{risk}</li>)}</ul>}
-                  </td>
-                  <td><StatusBadge status={candidate.preliminaryStatus} label={`${candidate.score}/100`} /></td>
-                  <td>{candidate.contactCount || <span className="pr-import-missing">нет</span>}</td>
-                  <td>{candidate.reviewDecision !== 'UNREVIEWED'
-                    ? <StatusBadge status={candidate.reviewDecision} />
-                    : <div className="pr-review-verdicts">{VERDICTS.map(([value, label]) => {
-                      const key = verdictKey(item.cardId, candidate.candidateId)
-                      const suggested = SUGGESTED[candidate.role] === value
-                      const concluded = CONCLUDED.has(candidate.role)
-                      // Falls back to the suggestion while the operator has not
-                      // touched this row, so the page opens already filled in
-                      // and only the disagreements cost a click. `verdicts` is
-                      // still what gets submitted — `acceptAllSuggested` writes
-                      // the same values into it — so nothing is sent on the
-                      // strength of a preselected dot the operator never saw.
-                      const current = verdicts[key]
-                      return <label key={value}>
-                        <input
-                          type="radio"
-                          // Scoped to the substance: the id alone repeats across
-                          // blocks, and a shared name makes those rows one radio
-                          // group, so choosing here would clear the other block.
-                          name={`verdict-${item.cardId}-${candidate.candidateId}`}
-                          // Named in full because the page holds dozens of these
-                          // and a reader hearing only "Производитель" would have
-                          // no idea which company the verdict lands on.
-                          aria-label={`${candidate.name}: ${label}`}
-                          checked={current === value}
-                          disabled={!canReviewSourcing || apply.isPending}
-                          onChange={() => setVerdicts(cur => ({ ...cur, [key]: value }))}
-                        />
-                        <span>{label}</span>
-                        {suggested && (concluded
-                          ? <em className="pr-review-suggested">рекомендую</em>
-                          : <em className="pr-review-suggested pr-review-suggested--unknown">нет данных</em>)}
-                      </label>
-                    })}</div>}</td>
-                </tr>)}</tbody></table>}
+          {item.normalization && identityBlock(item)}
 
-              <div className="pr-review-rfq">
-                <header>
-                  <strong>Запрос предложения (RFQ)</strong>
-                  <span>{RFQ_STATUS[item.rfq?.status] || item.rfq?.status || '—'}</span>
-                </header>
-                {item.rfq?.subject && <>
-                  <button type="button" className="pr-review-rfq__toggle" onClick={() => setOpened(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
-                    {opened[item.cardId] ? 'Свернуть текст' : 'Показать текст'}
-                  </button>
-                  <p className="pr-review-rfq__subject">{item.rfq.subject}</p>
-                  {opened[item.cardId] && <pre className="pr-review-rfq__body">{item.rfq.bodyMarkdown}</pre>}
+          {!hasRun
+            ? <p className="pr-note">{item.blockedBy ? <>Пока нечего согласовывать: {blockedText(item.blockedBy)}. </> : 'Поиск не нашёл кандидатов. '}<Link to={`/procurement/requests/${item.cardId}/sourcing`}>Открыть поиск</Link></p>
+            : <>
+              {open.length > 0 && candidateTable(item, open, true)}
+              {decided.length > 0 && <div className="pr-review-decided">
+                <button type="button" className="pr-review-rfq__toggle" onClick={() => setRevising(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
+                  {revising[item.cardId] ? 'Свернуть принятые решения' : `Принятые решения (${decided.length}) — показать и изменить`}
+                </button>
+                {revising[item.cardId] && <>
+                  {item.stage === 'OUTREACH' || item.stage === 'NEGOTIATION'
+                    ? <p className="pr-note">Запросы по этому веществу уже ушли. Новая роль или новый поставщик учтутся дальше, но уже отправленное письмо не отзывается.</p>
+                    : null}
+                  {candidateTable(item, decided, true)}
                 </>}
-                {item.rfq?.status === 'APPROVED'
-                  ? <p className="pr-note">Согласован. Изменение карточки или текста снимает согласование.</p>
-                  : item.rfq?.documentFingerprint
-                    ? <label className="pr-review-rfq__approve">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(rfqs[item.cardId])}
-                        aria-label={`Согласовать RFQ по веществу ${item.title}`}
-                        disabled={!canWriteCards || apply.isPending}
-                        onChange={event => setRfqs(current => ({ ...current, [item.cardId]: event.target.checked }))}
-                      />
-                      <span>Согласовать этот текст</span>
-                    </label>
-                    : <p className="pr-note">RFQ ещё не подготовлен — нажмите «Подготовить RFQ» наверху.</p>}
-              </div>
+              </div>}
             </>}
+
+          {item.rfq && <div className="pr-review-rfq">
+            <header>
+              <strong>Запрос предложения (RFQ)</strong>
+              <span>{RFQ_STATUS[item.rfq?.status] || item.rfq?.status || '—'}</span>
+            </header>
+            {item.rfq?.subject && <>
+              <button type="button" className="pr-review-rfq__toggle" onClick={() => setOpened(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
+                {opened[item.cardId] ? 'Свернуть текст' : 'Показать текст'}
+              </button>
+              <p className="pr-review-rfq__subject">{item.rfq.subject}</p>
+              {opened[item.cardId] && <pre className="pr-review-rfq__body">{item.rfq.bodyMarkdown}</pre>}
+            </>}
+            {item.rfq?.status === 'APPROVED'
+              ? <p className="pr-note">Согласован. Изменение карточки или текста снимает согласование.</p>
+              : item.rfq?.documentFingerprint
+                ? <label className="pr-review-rfq__approve">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(rfqs[item.cardId])}
+                    aria-label={`Согласовать RFQ по веществу ${item.title}`}
+                    disabled={!canWriteCards || apply.isPending}
+                    onChange={event => setRfqs(current => ({ ...current, [item.cardId]: event.target.checked }))}
+                  />
+                  <span>Согласовать этот текст</span>
+                </label>
+                : <p className="pr-note">{item.normalization ? 'RFQ появится, когда идентичность вещества будет подтверждена.' : 'RFQ ещё не подготовлен — нажмите «Подготовить RFQ» наверху.'}</p>}
+          </div>}
         </CardContent></Card>
       })}
     </div>
