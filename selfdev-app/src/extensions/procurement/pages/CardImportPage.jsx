@@ -29,7 +29,7 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, CircleAlert, Plus, Refresh, Search } from '../components/icons'
+import { ArrowLeft, CircleAlert, Plus, Refresh, Search, Trash } from '../components/icons'
 
 // With a 300-row file, rendering every row at once is neither fast nor readable.
 const VISIBLE_ROW_STEP = 50
@@ -111,6 +111,15 @@ export default function CardImportPage() {
     mutationFn: () => procurementApi.cancelCardImport(importId),
     onSuccess: accept,
   })
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const remove = useMutation({
+    mutationFn: () => procurementApi.deleteCardImport(importId),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: procurementKeys.cardImport(importId) })
+      queryClient.invalidateQueries({ queryKey: procurementKeys.cardImports() })
+      navigate('/procurement', { replace: true })
+    },
+  })
 
   // Reset the row window when the filter changes, so "show more" stays meaningful.
   useEffect(() => { setVisibleRows(VISIBLE_ROW_STEP) }, [statusFilter, importId])
@@ -149,12 +158,15 @@ export default function CardImportPage() {
   // existing card: typing "Toluene" again means "find Toluene", not "make a
   // second Toluene card" — and not "nothing to do".
   const launchCardIds = useMemo(() => {
-    if (!quickStart) return createdCardIds
     const existing = (run?.rows || [])
       .filter(row => row.status === 'DUPLICATE' && row.duplicateCardId != null)
       .map(row => row.duplicateCardId)
     return [...new Set([...createdCardIds, ...existing])]
-  }, [quickStart, createdCardIds, run?.rows])
+  }, [createdCardIds, run?.rows])
+  const existingCount = launchCardIds.length - createdCardIds.length
+  // Before confirmation only the substances already in the register could be
+  // searched, and launching then would leave the new ones out.
+  const launchable = launchCardIds.length > 0 && !(run?.status === 'AWAITING_CONFIRMATION' && selectable.length > 0)
 
   // Typed substances need no column mapping or row selection: the list is
   // what the purchaser just wrote. Confirmed once, with duplicates skipped.
@@ -169,11 +181,10 @@ export default function CardImportPage() {
   const autoLaunch = useRef(false)
   useEffect(() => {
     if (!quickStart || autoLaunch.current || !canWriteCards || campaigns.isLoading) return
-    if (isImportRunning(run) || confirm.isPending || !launchCardIds.length || launchedFromHere.length) return
-    if (run?.status === 'AWAITING_CONFIRMATION' && selectable.length) return
+    if (isImportRunning(run) || confirm.isPending || !launchable || launchedFromHere.length) return
     autoLaunch.current = true
     setLaunching(true)
-  }, [quickStart, canWriteCards, campaigns.isLoading, run, confirm.isPending, launchCardIds.length, launchedFromHere.length, selectable.length])
+  }, [quickStart, canWriteCards, campaigns.isLoading, run, confirm.isPending, launchable, launchedFromHere.length])
 
   if (!importId) {
     return (
@@ -208,7 +219,7 @@ export default function CardImportPage() {
 
   const editable = isImportEditable(run) && canWriteCards
   const running = isImportRunning(run)
-  const operationError = remap.error || confirm.error || normalize.error || cancel.error
+  const operationError = remap.error || confirm.error || normalize.error || cancel.error || remove.error
 
   return (
     <div className="pr-stack">
@@ -232,6 +243,15 @@ export default function CardImportPage() {
               Остановить
             </Button>
           )}
+          {!running && canWriteCards && (confirmDelete
+            ? <>
+              <Button variant="destructive" isDisabled={remove.isPending} onPress={() => remove.mutate()}>
+                <Trash size={15} />{remove.isPending ? 'Удаляем…' : 'Удалить импорт'}
+              </Button>
+              <Button variant="outline" isDisabled={remove.isPending} onPress={() => setConfirmDelete(false)}>Отмена</Button>
+              <span className="pr-note">Созданные карточки останутся в реестре.</span>
+            </>
+            : <Button variant="ghost" onPress={() => setConfirmDelete(true)}><Trash size={15} />Удалить</Button>)}
           <Button variant="ghost" onPress={() => query.refetch()} aria-label="Обновить">
             <Refresh size={15} />
           </Button>
@@ -314,7 +334,7 @@ export default function CardImportPage() {
         </Alert>
       )}
 
-      {launchCardIds.length > 0 && (
+      {launchable && (
         <div className="pr-inline-actions">
           {launchedFromHere.length > 0 && (
             <RouterLinkButton to={`/procurement/campaigns/${launchedFromHere[0].campaignId}`}>
@@ -330,7 +350,7 @@ export default function CardImportPage() {
               <Search size={15} />
               {launchedFromHere.length
                 ? 'Запустить ещё одну кампанию'
-                : `Запустить поиск по ${launchCardIds.length} ${plural(launchCardIds.length, 'веществу', 'веществам', 'веществам')}`}
+                : `Запустить поиск по ${launchCardIds.length} ${plural(launchCardIds.length, 'веществу', 'веществам', 'веществам')}${existingCount > 0 ? ` (уже в реестре: ${existingCount})` : ''}`}
             </Button>
           )}
           <RouterLinkButton to="/procurement/requests?status=DRAFT" variant="outline">
@@ -343,7 +363,7 @@ export default function CardImportPage() {
           become two hundred cards, and asking the operator to go and find them
           again to do the one thing they uploaded the file for is the step the
           batch launch exists to remove. */}
-      {launching && launchCardIds.length > 0 && (
+      {launching && launchable && (
         <div ref={launchPanel}><CampaignLaunchPanel
           compact={Boolean(quickStart)}
           cardIds={launchCardIds}

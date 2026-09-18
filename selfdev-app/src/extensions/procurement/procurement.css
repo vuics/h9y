@@ -1319,3 +1319,20 @@
 .procurement-shell a.pr-back-link { font-size: 13px; font-weight: 600; }
 .pr-more-details > summary { cursor: pointer; font-weight: 600; color: var(--pr-muted); padding: 6px 0; }
 .pr-more-details[open] > summary { margin-bottom: 12px; }
+
+/* The search field's answers: cards already in the register, then "new". */
+.pr-start__results { display: flex; flex-direction: column; margin-top: 8px; border: 1px solid var(--pr-border); border-radius: 12px; background: var(--pr-card); text-align: left; overflow: hidden; }
+.pr-start__results > .pr-note { padding: 10px 16px; margin: 0; }
+.pr-start__card { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 14px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--pr-border); }
+.pr-start__card:first-child { border-top: 0; }
+.pr-start__card.is-chosen { background: var(--pr-surface-muted); }
+.pr-start__card strong { display: block; }
+.pr-start__card span { display: block; color: var(--pr-muted); font-size: 12px; }
+.pr-start__create { display: flex; align-items: center; gap: 8px; padding: 11px 16px; border: 0; border-top: 1px solid var(--pr-border); background: transparent; font: inherit; font-weight: 600; color: var(--pr-text); text-align: left; cursor: pointer; }
+.pr-start__create:hover { background: var(--pr-surface-muted); }
+.pr-start__launch { margin-top: 12px; text-align: left; }
+
+/* KPI tiles in a row share one height, whether or not they open a queue. */
+.pr-kpis { align-items: stretch; grid-auto-rows: 1fr; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.pr-kpis > .pr-kpi, .pr-kpis > .pr-kpi-link, .pr-kpis > .pr-kpi-link > .pr-kpi { height: 100%; }
+.pr-kpis > .pr-kpi-link { display: block; }

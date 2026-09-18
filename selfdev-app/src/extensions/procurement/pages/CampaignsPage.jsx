@@ -30,7 +30,9 @@ function PurchaseRow({ row }) {
       <strong>{row.title}</strong>
       <span>{[cas && `CAS ${cas}`, size, REACH[row.reach], row.createdAt && new Date(row.createdAt).toLocaleDateString('ru-RU')].filter(Boolean).join(' · ')}</span>
     </div>
-    {total > 1
+    {/* The same bar for one substance as for two hundred: a purchase reads
+        the same whatever its size. Its stage is the sentence beside it. */}
+    {total > 0
       ? <div className="pr-campaign-row-progress" title={`${percent}%`}>
         <span>{row.progress.settled} из {total}</span>
         <div className="pr-campaign-row-progress__track" role="img" aria-label={`Пройдено ${percent}%`}>

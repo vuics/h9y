@@ -52,6 +52,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/card-imports' },
   { method: 'GET', path: '/card-imports/{import_id}' },
   { method: 'POST', path: '/card-imports/{import_id}/cancel' },
+  { method: 'POST', path: '/card-imports/{import_id}/delete' },
   { method: 'POST', path: '/card-imports/{import_id}/confirm' },
   { method: 'PATCH', path: '/card-imports/{import_id}/mapping' },
   { method: 'POST', path: '/card-imports/{import_id}/normalize' },

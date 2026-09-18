@@ -90,6 +90,9 @@ export const cardImportEndpoints = {
     request(`/card-imports/${id(importId)}/confirm`, { method: 'post', data: payload })),
   normalizeCardImport: mutation(importId =>
     request(`/card-imports/${id(importId)}/normalize`, { method: 'post' })),
+  // Removes the upload from the list only; the cards it created stay.
+  deleteCardImport: mutation(importId =>
+    request(`/card-imports/${id(importId)}/delete`, { method: 'post' })),
   cancelCardImport: mutation(importId =>
     request(`/card-imports/${id(importId)}/cancel`, { method: 'post' })),
 }

@@ -105,9 +105,25 @@ export function purchaseSentence(row) {
   return { text: 'Идёт', tone: 'progress' }
 }
 
-/** "4 вещества" for a list; nothing for a purchase of one. */
+/** "4 вещества", "1 вещество": the same words for every purchase. */
 export function purchaseSize(row) {
   const total = row.progress?.total || 0
-  if (total <= 1) return ''
+  if (!total) return ''
   return `${total} ${plural(total, 'вещество', 'вещества', 'веществ')}`
+}
+
+/** What the search field holds, so it searches before it creates.
+ *
+ * A bare number is a card number — never a new substance called "381". One
+ * line is looked up in the register first; only a list (or a file) goes
+ * straight to the import, which checks each line for duplicates itself.
+ */
+export function classifyQuery(text) {
+  const value = String(text || '').trim()
+  if (!value) return { kind: 'empty', value }
+  if (parseSubstances(value).length > 1) return { kind: 'list', value }
+  const number = value.match(/^#?\s*(\d+)$/)
+  if (number) return { kind: 'number', value: number[1] }
+  if (CAS.test(value) && value.replace(CAS, '').trim() === '') return { kind: 'cas', value: value.match(CAS)[0] }
+  return { kind: 'name', value }
 }

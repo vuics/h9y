@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { parseSubstances, purchaseSentence, purchaseSize, substancesToCsv, typedListFilename } from './purchases.js'
+import { classifyQuery, parseSubstances, purchaseSentence, purchaseSize, substancesToCsv, typedListFilename } from './purchases.js'
 
 test('a line may hold a name, a CAS number or both, in either order', () => {
   assert.deepEqual(parseSubstances('Toluene 108-88-3\n\n108-88-3\nCAS 7732-18-5, Water\n2,4-Dichlorophenol'), [
@@ -28,9 +28,19 @@ test('a purchase says first what waits for a person', () => {
   assert.equal(purchaseSentence({ status: 'CANCELLED', progress: row.progress }).text, 'Остановлена')
 })
 
-test('a purchase of one substance reads as that substance, without "0 из 1"', () => {
+test('a purchase of one substance reads as that substance, sized like any other', () => {
   const single = { status: 'RUNNING', progress: { total: 1 }, substance: { stage: 'SOURCING' } }
   assert.equal(purchaseSentence(single).text, 'Ищем поставщиков')
-  assert.equal(purchaseSize(single), '')
+  assert.equal(purchaseSize(single), '1 вещество')
   assert.equal(purchaseSize({ progress: { total: 4 } }), '4 вещества')
+})
+
+test('the field searches before it creates: a number is a card number', () => {
+  assert.deepEqual(classifyQuery('381'), { kind: 'number', value: '381' })
+  assert.deepEqual(classifyQuery('#381'), { kind: 'number', value: '381' })
+  assert.deepEqual(classifyQuery('108-88-3'), { kind: 'cas', value: '108-88-3' })
+  assert.equal(classifyQuery('Toluene').kind, 'name')
+  assert.equal(classifyQuery('Toluene 108-88-3').kind, 'name')
+  assert.equal(classifyQuery('Toluene\nBenzene').kind, 'list')
+  assert.equal(classifyQuery('  ').kind, 'empty')
 })
