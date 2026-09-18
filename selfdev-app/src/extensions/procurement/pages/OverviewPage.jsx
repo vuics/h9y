@@ -10,13 +10,16 @@ import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
 import { StageBoard } from '../components/StageBoard'
 import { Sparkline } from '../components/Sparkline'
+import { escalationKind, escalationSubject } from '../lib/escalation'
 
+// A tile that names a queue opens it: a count you cannot act on from the
+// page that shows it is the dead end the customer ran into.
 const kpis = [
   ['activeCards', 'Активные карточки', Flask, 'progress'],
   ['waitingSupplier', 'Ждём поставщика', Clock, 'waiting'],
-  ['needsSpecialist', 'Нужен специалист', AlertTriangle, 'warning'],
+  ['needsSpecialist', 'Нужен специалист', AlertTriangle, 'warning', '/procurement/escalations'],
   ['readyProposals', 'Готовые предложения', FileCheck, 'complete'],
-  ['failures', 'Ошибки обработки', Inbox, 'danger'],
+  ['failures', 'Ошибки обработки', Inbox, 'danger', '/procurement/activity?level=error'],
 ]
 
 const TREND_DAYS = 14
@@ -36,12 +39,13 @@ export default function OverviewPage() {
   const data = query.data
   if (!data) return <EmptyState />
   return <div className="pr-stack pr-stack--lg">
-    <section className="pr-kpis" aria-label="Ключевые показатели">{kpis.map(([key, label, KpiIcon, tone]) => {
+    <section className="pr-kpis" aria-label="Ключевые показатели">{kpis.map(([key, label, KpiIcon, tone, to]) => {
       const series = trends.data?.series?.[key]
-      return <Card key={key} className="pr-kpi"><CardContent><div className={`pr-kpi__icon pr-kpi__icon--${tone}`}><KpiIcon /></div><div className="pr-kpi__body"><strong>{data.kpis?.[key] ?? '—'}</strong><span>{label}</span>{series && <>
+      const tile = <Card key={key} className={to ? 'pr-kpi pr-kpi--link' : 'pr-kpi'}><CardContent><div className={`pr-kpi__icon pr-kpi__icon--${tone}`}><KpiIcon /></div><div className="pr-kpi__body"><strong>{data.kpis?.[key] ?? '—'}</strong><span>{label}</span>{series && <>
         <Sparkline points={series.points} label={series.label} kind={series.kind} tone={tone} />
         <small>{series.label}</small>
-      </>}</div></CardContent></Card>
+      </>}{to && <em className="pr-kpi__open">Открыть →</em>}</div></CardContent></Card>
+      return to ? <Link key={key} to={to} className="pr-kpi-link" aria-label={`${label}: открыть`}>{tile}</Link> : tile
     })}</section>
     {/* Said once under the row rather than repeated on four tiles: one fact
         multiplied by four is noise, which is the mistake the benchmark card
@@ -50,7 +54,7 @@ export default function OverviewPage() {
     <section><div className="pr-section-heading"><div><h2>Активные закупки по этапам</h2><p>Счётчик каждой колонки — точное число карточек на этапе, а не размер первой страницы.</p></div><Link to="/procurement/requests">Все карточки</Link></div>
       <StageBoard stages={data.stages} truncated={data.truncated} />
     </section>
-    <div className="pr-overview-grid"><Card><CardHeader><CardTitle>Требует внимания</CardTitle><CardAction><Link to="/procurement/escalations">Вся очередь</Link></CardAction></CardHeader><CardContent className="pr-attention-list">{data.attention?.length ? data.attention.slice(0, 4).map(item => <Link to={`/procurement/escalations?selected=${item.id}`} key={item.id} className="pr-attention"><div className="pr-attention__priority">{item.priority}</div><div><strong>{item.title}</strong><span>{item.cardTitle} · {item.supplierName}</span></div><StatusBadge status={item.status} compact /></Link>) : <EmptyState title="Очередь пуста" description="Открытых эскалаций нет." />}</CardContent></Card>
+    <div className="pr-overview-grid"><Card><CardHeader><CardTitle>Требует внимания</CardTitle><CardAction><Link to="/procurement/escalations">Вся очередь</Link></CardAction></CardHeader><CardContent className="pr-attention-list">{data.attention?.length ? data.attention.slice(0, 4).map(item => <Link to={`/procurement/escalations?selected=${item.id}`} key={item.id} className="pr-attention"><div className="pr-attention__priority">{item.priority}</div><div><strong>{escalationSubject(item)}</strong><span>{escalationKind(item)} · {item.supplierName}</span></div><StatusBadge status={item.status} compact /></Link>) : <EmptyState title="Очередь пуста" description="Открытых эскалаций нет." />}</CardContent></Card>
       <Card><CardHeader><CardTitle>Последние изменения</CardTitle><CardAction><Link to="/procurement/activity">Журнал</Link></CardAction></CardHeader><CardContent className="pr-activity-list">{data.recentActivity?.map(item => <div className="pr-activity" key={item.id}><div className={`pr-activity__dot pr-activity__dot--${item.level}`} /><div><strong>{item.title}</strong><p>{item.description}</p><time>{new Date(item.createdAt).toLocaleString('ru-RU')}</time></div></div>)}</CardContent></Card></div>
     {data.kpis?.failures > 0 && <Alert><AlertTriangle /><AlertTitle>Есть необработанные сбои</AlertTitle><AlertDescription><p>Ошибки интеграций и вложений показаны отдельно от бизнес-статусов и не скрываются автоматическими повторами.</p><Link to="/procurement/activity?level=error">Открыть ошибки</Link></AlertDescription></Alert>}
   </div>

@@ -7,18 +7,8 @@ import { procurementKeys } from '../api/queryKeys'
 import { DataTable } from '../components/DataTable'
 import { LoadingState, ErrorState } from '../components/AsyncState'
 import { CopyableId } from '../components/CopyableId'
-import { Badge } from '@/components/ui/badge'
+import { CampaignStatusBadge } from '../components/CampaignStatusBadge'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
-
-const STATUS = {
-  RUNNING: 'Идёт',
-  AWAITING_REVIEW: 'Ждёт согласования',
-  COMPLETED: 'Завершена',
-  FAILED: 'Не выполнена',
-  PAUSED: 'На паузе',
-  CANCELLED: 'Остановлена',
-  INTERRUPTED: 'Прервана перезапуском',
-}
 
 const REACH = {
   SOURCING: 'только поиск',
@@ -57,7 +47,7 @@ export default function CampaignsPage() {
       emptyDescription="Загрузите список веществ файлом или отметьте карточки в реестре и запустите поиск по всем сразу."
       columns={[
         { id: 'title', header: 'Кампания', cell: row => <div className="pr-primary-cell"><strong>{row.title}</strong><div className="pr-primary-meta"><CopyableId value={row.campaignId} /><span>· {REACH[row.reach] || row.reach}</span></div></div> },
-        { id: 'status', header: 'Состояние', cell: row => <Badge variant={row.status === 'AWAITING_REVIEW' ? 'secondary' : 'outline'}>{STATUS[row.status] || row.status}</Badge> },
+        { id: 'status', header: 'Состояние', cell: row => <CampaignStatusBadge status={row.status} /> },
         { id: 'progress', header: 'Пройдено', cell: row => `${row.progress.settled} из ${row.progress.total}` },
         { id: 'awaiting', header: 'Ждут решения', cell: row => row.progress.awaitingReview || '—' },
         { id: 'candidates', header: 'Кандидатов', cell: row => row.progress.candidateTotal || '—' },

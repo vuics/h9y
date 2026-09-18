@@ -5,6 +5,7 @@ import { RfqApproval } from './RfqApproval'
 import { StatusBadge, statusLabel } from './StatusBadge'
 import { escalationActions, escalationOutcomes } from '../api/escalations'
 import { CHANGE_FIELD_LABELS } from '../lib/thread'
+import { ESCALATION_CATEGORY_LABELS, escalationKind } from '../lib/escalation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { AlertTriangle, Clock } from './icons'
@@ -59,7 +60,7 @@ export function EscalationEvent({ escalation, actions, permissions }) {
     <section className="pr-tevent pr-tevent--danger">
       <header>
         <AlertTriangle size={15} />
-        <strong>{escalation.title || 'Эскалация'}</strong>
+        <strong>Эскалация: {escalationKind(escalation)}</strong>
         <StatusBadge status={escalation.status} compact />
         <time>{formatDate(escalation.createdAt)}</time>
       </header>
@@ -67,7 +68,7 @@ export function EscalationEvent({ escalation, actions, permissions }) {
       {escalation.risks?.length > 0 && (
         <ul className="pr-tevent__risks">
           {escalation.risks.map((risk, index) => (
-            <li key={`${risk.code}-${index}`}><strong>{risk.code}</strong> · {risk.reason}</li>
+            <li key={`${risk.code}-${index}`} title={risk.code}><strong>{ESCALATION_CATEGORY_LABELS[risk.category] || 'Прочее'}</strong> · {risk.reason}</li>
           ))}
         </ul>
       )}

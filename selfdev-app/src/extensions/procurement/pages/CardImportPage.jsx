@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -23,6 +23,7 @@ import { CampaignLaunchPanel } from '../components/CampaignLaunchPanel'
 import { plural } from '../components/SourcingSettings'
 import { StatusBadge } from '../components/StatusBadge'
 import { CopyableId } from '../components/CopyableId'
+import { CampaignStatusBadge } from '../components/CampaignStatusBadge'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -46,6 +47,7 @@ export default function CardImportPage() {
   const [deselected, setDeselected] = useState(() => new Set())
   const [duplicatePolicy, setDuplicatePolicy] = useState('SKIP')
   const [launching, setLaunching] = useState(false)
+  const launchPanel = useRef(null)
 
   const query = useQuery({
     queryKey: procurementKeys.cardImport(importId),
@@ -54,6 +56,25 @@ export default function CardImportPage() {
     refetchInterval: data => (isImportRunning(data) ? 1500 : false),
   })
   const run = query.data
+
+  // Campaigns already started from this file. Without them the page looked
+  // exactly as it did before the launch, and the button asked to be pressed
+  // again — which is how one list became eleven identical campaigns.
+  const campaigns = useQuery({
+    queryKey: procurementKeys.campaigns(),
+    queryFn: ({ signal }) => procurementApi.campaigns(signal),
+    enabled: Boolean(importId),
+  })
+  const launchedFromHere = useMemo(
+    () => (campaigns.data?.items || []).filter(item => item.importId && item.importId === importId),
+    [campaigns.data, importId],
+  )
+
+  // The panel opens below the fold on a long file; bring it into view so the
+  // press visibly did something.
+  useEffect(() => {
+    if (launching) launchPanel.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  }, [launching])
 
   const accept = next => {
     queryClient.setQueryData(procurementKeys.cardImport(next.id), next)
@@ -235,12 +256,48 @@ export default function CardImportPage() {
         onFilterOutcome={outcome => setStatusFilter(`NORMALIZATION:${outcome}`)}
       />
 
+      {launchedFromHere.length > 0 && (
+        <Alert className="pr-import-launched">
+          <Search />
+          <AlertTitle>
+            {launchedFromHere.length === 1
+              ? 'Поиск по этому файлу уже запущен'
+              : `Поиск по этому файлу уже запускали ${launchedFromHere.length} ${plural(launchedFromHere.length, 'раз', 'раза', 'раз')}`}
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="pr-import-launched__list">
+              {launchedFromHere.slice(0, 5).map(item => (
+                <li key={item.campaignId}>
+                  <Link to={`/procurement/campaigns/${item.campaignId}`}>
+                    {item.title || item.campaignId}
+                  </Link>
+                  <CampaignStatusBadge status={item.status} />
+                  <span>{item.createdAt ? new Date(item.createdAt).toLocaleString('ru-RU') : ''}</span>
+                </li>
+              ))}
+            </ul>
+            {launchedFromHere.length > 5 && <Link to="/procurement/campaigns">Все кампании</Link>}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {createdCardIds.length > 0 && (
         <div className="pr-inline-actions">
+          {launchedFromHere.length > 0 && (
+            <RouterLinkButton to={`/procurement/campaigns/${launchedFromHere[0].campaignId}`}>
+              Открыть кампанию
+            </RouterLinkButton>
+          )}
           {canWriteCards && !launching && (
-            <Button onPress={() => setLaunching(true)}>
+            <Button
+              variant={launchedFromHere.length ? 'outline' : undefined}
+              isDisabled={campaigns.isLoading}
+              onPress={() => setLaunching(true)}
+            >
               <Search size={15} />
-              Запустить поиск по {createdCardIds.length} {plural(createdCardIds.length, 'веществу', 'веществам', 'веществам')}
+              {launchedFromHere.length
+                ? 'Запустить ещё одну кампанию'
+                : `Запустить поиск по ${createdCardIds.length} ${plural(createdCardIds.length, 'веществу', 'веществам', 'веществам')}`}
             </Button>
           )}
           <RouterLinkButton to="/procurement/requests?status=DRAFT" variant="outline">
@@ -254,12 +311,12 @@ export default function CardImportPage() {
           again to do the one thing they uploaded the file for is the step the
           batch launch exists to remove. */}
       {launching && createdCardIds.length > 0 && (
-        <CampaignLaunchPanel
+        <div ref={launchPanel}><CampaignLaunchPanel
           cardIds={createdCardIds}
           importId={run.id}
           canEdit={canWriteCards}
           onCancel={() => setLaunching(false)}
-        />
+        /></div>
       )}
 
       <ImportRowsTable

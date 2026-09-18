@@ -29,9 +29,11 @@ const labels = {
   EXTRACTION_FAILED: 'Ошибка анализа', EXTRACTION_TIMEOUT: 'Анализ не успел', BUDGET_EXHAUSTED: 'Не хватило времени прогона', PENDING: 'В очереди',
 }
 
-const complete = new Set(['NORMALIZED', 'APPROVED', 'COMPLETE', 'COMPLETED', 'QUALIFIED', 'RESOLVED', 'MATCHED', 'PRESENT', 'PROVIDED', 'DELIVERED', 'PROCESSED', 'GREEN', 'VERIFIED_MANUFACTURER', 'VERIFIED_DISTRIBUTOR', 'POSITIVE', 'ANALYZED', 'CREATED', 'READY', 'SENT'])
-const warning = new Set(['PAUSED_BY_CHANGE', 'NEEDS_REVIEW', 'AWAITING_APPROVAL', 'NEEDS_CLARIFICATION', 'UNDER_REVIEW', 'CLAIMED_ATTACHED', 'CLAIMED_AVAILABLE', 'AMBIGUOUS', 'YELLOW', 'NEEDS_MORE_EVIDENCE', 'EXTRACTION_TIMEOUT', 'BUDGET_EXHAUSTED', 'DRAFT', 'DUPLICATE', 'AWAITING_CONFIRMATION'])
-const danger = new Set(['FAILED', 'ESCALATED', 'CONFLICTING', 'NEEDS_HUMAN_REVIEW', 'MISMATCH', 'CONFLICT', 'INVALID', 'REJECTED', 'RED', 'NEGATIVE', 'EXTRACTION_FAILED', 'UNIDENTIFIED', 'BLOCKED'])
+const complete = new Set(['NORMALIZED', 'APPROVED', 'COMPLETE', 'COMPLETED', 'QUALIFIED', 'RESOLVED', 'MATCHED', 'PRESENT', 'PROVIDED', 'DELIVERED', 'PROCESSED', 'GREEN', 'VERIFIED_MANUFACTURER', 'VERIFIED_DISTRIBUTOR', 'POSITIVE', 'ANALYZED', 'CREATED', 'READY', 'SENT', 'DONE'])
+// Waiting for a person is amber, not red: red is kept for things that went
+// wrong, so that it still means something when it does appear in a list.
+const warning = new Set(['PAUSED_BY_CHANGE', 'NEEDS_REVIEW', 'AWAITING_APPROVAL', 'AWAITING_REVIEW', 'NEEDS_CLARIFICATION', 'UNDER_REVIEW', 'CLAIMED_ATTACHED', 'CLAIMED_AVAILABLE', 'AMBIGUOUS', 'YELLOW', 'NEEDS_MORE_EVIDENCE', 'EXTRACTION_TIMEOUT', 'BUDGET_EXHAUSTED', 'DRAFT', 'DUPLICATE', 'AWAITING_CONFIRMATION', 'ESCALATED', 'CONFLICTING', 'NEEDS_HUMAN_REVIEW', 'UNIDENTIFIED'])
+const danger = new Set(['FAILED', 'MISMATCH', 'CONFLICT', 'INVALID', 'REJECTED', 'RED', 'NEGATIVE', 'EXTRACTION_FAILED', 'BLOCKED'])
 const waiting = new Set(['WAITING_SUPPLIER', 'QUEUED', 'OPEN', 'IN_REVIEW', 'PENDING', 'ANALYZING', 'CREATING', 'NORMALIZING'])
 
 export function statusTone(status) {
@@ -43,11 +45,11 @@ export function statusTone(status) {
   return 'progress'
 }
 
-export function StatusBadge({ status, label, compact = false }) {
-  const tone = statusTone(status)
+export function StatusBadge({ status, label, tone: toneOverride, compact = false }) {
+  const tone = toneOverride || statusTone(status)
   const StatusIcon = tone === 'complete' ? Check : tone === 'danger' ? CircleAlert : tone === 'warning' ? AlertTriangle : Clock
   const variant = tone === 'danger' ? 'destructive' : tone === 'complete' ? 'default' : tone === 'muted' ? 'secondary' : 'outline'
-  return <Badge variant={variant} title={status}><StatusIcon size={compact ? 12 : 13} />{label || labels[status] || status || 'Неизвестно'}</Badge>
+  return <Badge variant={variant} title={status} className="pr-status-badge" data-tone={tone}><StatusIcon size={compact ? 12 : 13} />{label || labels[status] || status || 'Неизвестно'}</Badge>
 }
 
 export const statusLabel = status => labels[status] || status || 'Неизвестно'

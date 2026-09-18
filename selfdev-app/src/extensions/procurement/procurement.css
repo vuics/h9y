@@ -1197,3 +1197,29 @@
   .pr-member-progress__fill { transition: none; }
 }
 .pr-member-stage-cell { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+
+/* Status colour. Green is the accent for work moving or done, amber for a
+   decision someone has to make, red only for a failure. */
+.procurement-shell { --pr-status-green: #1f7a4d; --pr-status-green-soft: #e6f4ec; --pr-status-amber: #8a5a00; --pr-status-amber-soft: #fdf1d8; --pr-status-red: #b42318; --pr-status-red-soft: #fdecea; --pr-status-grey: #5b6673; --pr-status-grey-soft: #f1f3f5; }
+.dark .procurement-shell { --pr-status-green: #6fd3a0; --pr-status-green-soft: #16372a; --pr-status-amber: #f1c46b; --pr-status-amber-soft: #3a2e14; --pr-status-red: #ff8a80; --pr-status-red-soft: #43201d; --pr-status-grey: #aab4bf; --pr-status-grey-soft: #262c33; }
+.pr-status-badge[data-tone] { border-color: transparent; }
+.pr-status-badge[data-tone="complete"] { background: var(--pr-status-green); color: #fff; }
+.dark .pr-status-badge[data-tone="complete"] { color: #0c1f16; }
+.pr-status-badge[data-tone="progress"] { background: var(--pr-status-green-soft); color: var(--pr-status-green); border-color: color-mix(in oklch, var(--pr-status-green) 30%, transparent); }
+.pr-status-badge[data-tone="warning"] { background: var(--pr-status-amber-soft); color: var(--pr-status-amber); border-color: color-mix(in oklch, var(--pr-status-amber) 30%, transparent); }
+.pr-status-badge[data-tone="danger"] { background: var(--pr-status-red-soft); color: var(--pr-status-red); border-color: color-mix(in oklch, var(--pr-status-red) 30%, transparent); }
+.pr-status-badge[data-tone="waiting"], .pr-status-badge[data-tone="muted"] { background: var(--pr-status-grey-soft); color: var(--pr-status-grey); }
+.pr-kpi-link { display: block; color: inherit; text-decoration: none; border-radius: 12px; }
+.pr-kpi-link:focus-visible { outline: 2px solid var(--pr-status-green); outline-offset: 2px; }
+.pr-kpi--link { cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease; }
+.pr-kpi-link:hover .pr-kpi--link { border-color: var(--pr-status-green); box-shadow: 0 1px 6px color-mix(in oklch, var(--pr-status-green) 18%, transparent); }
+.pr-kpi__open { display: block; margin-top: 6px; color: var(--pr-status-green); font-size: 11px; font-style: normal; font-weight: 600; }
+/* The substance first and large; what kind of judgement it needs, second. */
+.pr-escalation__heading h3.pr-escalation__subject { font-size: 20px; line-height: 1.2; margin: 0; }
+.pr-escalation__subject a { color: var(--pr-text); text-decoration: none; }
+.pr-escalation__subject a:hover { text-decoration: underline; }
+.pr-escalation__kind { margin: 3px 0 0; color: var(--pr-muted); font-size: 12.5px; }
+.pr-escalation__relations { align-items: center; flex-wrap: wrap; color: var(--pr-muted); font-size: 12px; }
+.pr-import-launched__list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.pr-import-launched__list li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pr-import-launched__list li > span { color: var(--pr-muted); font-size: 11px; }

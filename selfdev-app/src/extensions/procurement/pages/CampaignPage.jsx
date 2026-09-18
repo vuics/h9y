@@ -8,6 +8,7 @@ import { DetailLayout } from '../components/DetailLayout'
 import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { DataTable } from '../components/DataTable'
 import { StatusBadge } from '../components/StatusBadge'
+import { CampaignStatusBadge } from '../components/CampaignStatusBadge'
 import { CopyableId } from '../components/CopyableId'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from '../components/SourcingSettings'
@@ -15,7 +16,6 @@ import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
 import { CampaignMemberProgress } from '../components/CampaignMemberProgress'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, Check, CircleAlert, Clock, Pause, Play, Refresh, Send } from '../components/icons'
@@ -27,16 +27,6 @@ import { AlertTriangle, Check, CircleAlert, Clock, Pause, Play, Refresh, Send } 
  * card's means "the purchase is at the sourcing stage", and one word cannot
  * carry both without one of the screens lying.
  */
-
-const CAMPAIGN_STATUS = {
-  RUNNING: 'Идёт',
-  AWAITING_REVIEW: 'Ждёт согласования',
-  COMPLETED: 'Завершена',
-  FAILED: 'Не выполнена',
-  PAUSED: 'На паузе',
-  CANCELLED: 'Остановлена',
-  INTERRUPTED: 'Прервана перезапуском',
-}
 
 const MEMBER_STAGE = {
   QUEUED: 'В очереди',
@@ -344,7 +334,7 @@ export default function CampaignPage() {
     backLabel="К кампаниям"
     eyebrow={<CopyableId value={campaign.campaignId} />}
     title={campaign.title}
-    status={<Badge variant={campaign.status === 'AWAITING_REVIEW' ? 'secondary' : 'outline'}>{CAMPAIGN_STATUS[campaign.status] || campaign.status}</Badge>}
+    status={<CampaignStatusBadge status={campaign.status} />}
     meta={`${progress.total} ${plural(progress.total, 'вещество', 'вещества', 'веществ')} · ${REACH_LABEL[plan.reach] || plan.reach}`}
     actions={canResearchSourcing && <>
       {/* Pausing sits before stopping, and stopping keeps the quieter variant:
