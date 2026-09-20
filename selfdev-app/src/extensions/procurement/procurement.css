@@ -1383,3 +1383,5 @@
 .pr-row-menu__danger { color: var(--pr-danger); }
 .pr-row-menu__trigger { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 7px; background: none; color: var(--pr-muted); cursor: pointer; }
 .pr-row-menu__trigger:hover { background: var(--pr-surface-muted); color: var(--pr-text); }
+.procurement-shell a.pr-members__action[data-tone="muted"] { background: none; border: 1px solid var(--pr-border); color: var(--pr-muted); font-weight: 500; }
+.procurement-shell a.pr-members__action[data-tone="muted"]:hover { color: var(--pr-text); border-color: var(--pr-text); opacity: 1; }

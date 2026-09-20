@@ -493,7 +493,8 @@ export default function CampaignPage() {
           <b>Ждут вас:</b>
           <span>{[
             progress.awaitingReview > 0 && `${progress.awaitingReview} ${plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')} на согласовании`,
-            blockingAsks > 0 && `${blockingAsks} ${plural(blockingAsks, 'требует', 'требуют', 'требуют')} вашего вмешательства`,
+            marketplaceNeedsReview > 0 && `${marketplaceNeedsReview} ${plural(marketplaceNeedsReview, 'заявка на площадке ждёт', 'заявки на площадке ждут', 'заявок на площадке ждут')} проверки в браузере`,
+            blockingAsks - marketplaceNeedsReview > 0 && `${blockingAsks - marketplaceNeedsReview} ${plural(blockingAsks - marketplaceNeedsReview, 'вещество требует', 'вещества требуют', 'веществ требуют')} вашего вмешательства`,
             awaitingPerson > 0 && `${awaitingPerson} ${plural(awaitingPerson, 'письмо готово', 'письма готовы', 'писем готовы')} к отправке`,
           ].filter(Boolean).join(' · ')}</span>
           <div className="pr-inline-actions">

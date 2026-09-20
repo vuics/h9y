@@ -37,9 +37,6 @@ export const filterMembers = (members, filter) =>
  * else about the substance is behind the row's own expander.
  */
 export function nextAction(member, campaignId) {
-  if (member.marketplaceStatus === 'NEEDS_REVIEW') {
-    return { label: 'Закончить заявку', to: `/procurement/requests/${member.cardId}/echemi`, tone: 'warning' }
-  }
   if (member.errorCode) {
     return { label: 'Открыть карточку', to: `/procurement/requests/${member.cardId}`, tone: 'danger' }
   }
@@ -55,6 +52,13 @@ export function nextAction(member, campaignId) {
   }
   if (member.stage === 'AWAITING_REVIEW') {
     return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning' }
+  }
+  // Last, and quietly: the marketplace check is the same batch job on every
+  // substance — twenty-four identical black buttons said nothing about any of
+  // them and hid the rows that really were waiting for a decision. The count
+  // is stated once above the table; the row only offers the way in.
+  if (member.marketplaceStatus === 'NEEDS_REVIEW') {
+    return { label: 'Закончить заявку', to: `/procurement/requests/${member.cardId}/echemi`, tone: 'muted' }
   }
   return null
 }

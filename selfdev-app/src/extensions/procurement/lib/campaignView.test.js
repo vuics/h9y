@@ -16,12 +16,22 @@ test('a substance belongs to the chip that says who is holding it', () => {
   })
 })
 
-test('a row offers one press, and the marketplace check outranks the rest', () => {
+test('a row offers one press, and the marketplace check comes last', () => {
   assert.equal(nextAction(member({ waitingFor: 'CANDIDATE_REVIEW' }), 'CMP-1').to, '/procurement/campaigns/CMP-1/review')
   assert.equal(nextAction(member({ waitingFor: 'RFQ_APPROVAL' }), 'CMP-1').to, '/procurement/requests/7/rfq')
+  // The decision about the substance outranks the marketplace check every
+  // substance of the campaign is waiting on at once.
   assert.equal(
     nextAction(member({ waitingFor: 'CANDIDATE_REVIEW', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1').label,
-    'Закончить заявку',
+    'Согласовать',
+  )
+  assert.equal(
+    nextAction(member({ errorCode: 'CARD_NOT_NORMALIZED', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1').label,
+    'Открыть карточку',
+  )
+  assert.deepEqual(
+    nextAction(member({ stage: 'NEGOTIATION', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1'),
+    { label: 'Закончить заявку', to: '/procurement/requests/7/echemi', tone: 'muted' },
   )
   assert.equal(nextAction(member(), 'CMP-1'), null)
 })
