@@ -153,10 +153,15 @@ export function CampaignMembers({
                 </Link>
                 : <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
             </td>
-            <td className="pr-members__actions">
-              {actions.length
-                ? actions.map(item => <Link key={item.label} className="pr-members__action" data-tone={item.tone} to={item.to}>{item.label}</Link>)
-                : <span className="pr-muted">—</span>}
+            <td>
+              {/* The flex box is inside the cell, not the cell itself: a
+                  `display: flex` on a <td> takes it out of the table layout,
+                  and the column stops lining up with its own row. */}
+              <div className="pr-members__actions">
+                {actions.length
+                  ? actions.map(item => <Link key={item.label} className="pr-members__action" data-tone={item.tone} to={item.to}>{item.label}</Link>)
+                  : <span className="pr-muted">—</span>}
+              </div>
             </td>
             <td className="pr-members__menu">
               <RowMenu label={`Действия: ${member.title}`}>

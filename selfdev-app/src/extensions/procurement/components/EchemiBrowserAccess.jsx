@@ -47,14 +47,14 @@ export function EchemiBrowserAccess({ access, error, loading, compact = false, b
         <div>
           {!brief && <p className="pr-note">Откройте noVNC в новой вкладке, чтобы видеть, что агент делает в браузере прямо сейчас. Это общий пароль MVP; не пересылайте его пользователям без разрешения ECHEMI_OPERATE.</p>}
           {access.passwordRequired
-            ? <div className="pr-echemi-password"><span>Пароль x11vnc</span><code>{access.password}</code><Button variant="outline" onPress={copyPassword}>{copied ? <Check /> : <Copy />}{copied ? 'Скопировано' : 'Копировать'}</Button></div>
+            ? <div className="pr-echemi-password"><span>{brief ? 'Пароль' : 'Пароль x11vnc'}</span><span className="pr-echemi-password__field"><code>{access.password}</code><Button variant="ghost" size="icon" aria-label="Копировать пароль" title={copied ? 'Скопировано' : 'Копировать'} onPress={copyPassword}>{copied ? <Check size={15} /> : <Copy size={15} />}</Button></span></div>
             : <Badge variant="outline">Пароль не требуется</Badge>}
         </div>
-        <LinkButton href={access.url} target="_blank" rel="noreferrer"><ExternalLink />Открыть браузер Echemi</LinkButton>
+        <LinkButton href={access.url} target="_blank" rel="noreferrer" size={brief ? 'sm' : undefined}><ExternalLink />{brief ? 'Открыть Echemi' : 'Открыть браузер Echemi'}</LinkButton>
       </div>}
   </>
 
-  if (compact) return <div className="pr-echemi-browser-access is-compact">{body}</div>
+  if (compact) return <div className={`pr-echemi-browser-access is-compact${brief ? ' is-brief' : ''}`}>{body}</div>
 
   return <Card className="pr-echemi-browser-access">
     <CardHeader><div><CardTitle>Ручной браузер Echemi</CardTitle><span>Общая noVNC-сессия для проверки страницы и формы</span></div></CardHeader>

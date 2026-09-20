@@ -8,8 +8,17 @@ export const echemiEndpoints = {
     request(`/cards/${id(cardId)}/echemi/browser-access`, { signal })),
   // The same single session, asked for without a card: a campaign drives the
   // browser too and has no card of its own to ask on behalf of.
-  echemiBrowserSession: mutation(signal =>
-    request('/echemi/browser-access', { signal })),
+  // A read, not a change: the shared noVNC session's link and password, so
+  // the block that shows them can be seen in demonstration mode too.
+  echemiBrowserSession: read(
+    signal => request('/echemi/browser-access', { signal }),
+    async () => ({
+      url: 'https://prc.example.invalid/vnc.html',
+      password: 'b9790b2a',
+      passwordRequired: true,
+      accountConfigured: true,
+    }),
+  ),
   searchEchemi: mutation(cardId =>
     request(`/cards/${id(cardId)}/echemi/search`, { method: 'post' })),
   registerEchemiSeller: mutation((cardId, productId) =>

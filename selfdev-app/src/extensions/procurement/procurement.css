@@ -1397,3 +1397,12 @@
 .pr-members__table td, .pr-members__table th { padding-top: 10px; padding-bottom: 10px; }
 .pr-echemi-browser-access.is-compact .pr-echemi-browser-access__content { flex-wrap: wrap; gap: 8px; }
 .pr-members__marketplace .pr-echemi-password code { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+
+/* The noVNC access inside one substance's row: a password field with the
+   copy button attached, and short labels. */
+.pr-echemi-browser-access.is-brief .pr-echemi-password { align-items: center; gap: 8px; }
+.pr-echemi-browser-access.is-brief .pr-echemi-password > span:first-child { font-size: 12px; color: var(--pr-muted); }
+.pr-echemi-password__field { display: inline-flex; align-items: center; border: 1px solid var(--pr-border); border-radius: 7px; background: var(--pr-card); overflow: hidden; }
+.pr-echemi-password__field code { padding: 4px 8px; border: 0; background: none; font-size: 12px; }
+.pr-echemi-password__field [data-slot="button"] { border-radius: 0; border-left: 1px solid var(--pr-border); height: 26px; width: 28px; }
+.pr-echemi-browser-access.is-brief .pr-echemi-browser-access__content { align-items: center; gap: 10px; }
