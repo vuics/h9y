@@ -1373,3 +1373,13 @@
 .pr-members__panel h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--pr-muted); }
 .pr-members__panel .pr-plain-list li { padding: 2px 0; }
 @media (max-width: 900px) { .pr-members__panel { grid-template-columns: 1fr; gap: 12px; } }
+.pr-members__menu { width: 44px; }
+.pr-members__offers a { display: block; color: inherit; }
+.pr-members__offers a:hover { text-decoration: none; }
+.pr-members__offers a:hover strong, .pr-members__offers a:hover .pr-primary-meta { text-decoration: underline; }
+.pr-row-menu { position: fixed; z-index: 40; min-width: 200px; display: flex; flex-direction: column; padding: 6px; background: var(--pr-card); border: 1px solid var(--pr-border); border-radius: 9px; box-shadow: 0 10px 28px rgba(15, 23, 42, .14); }
+.procurement-shell .pr-row-menu a, .pr-row-menu button { padding: 8px 10px; border: 0; border-radius: 6px; background: none; font: inherit; color: var(--pr-text); text-align: left; cursor: pointer; }
+.procurement-shell .pr-row-menu a:hover, .pr-row-menu button:hover { background: var(--pr-surface-muted); text-decoration: none; }
+.pr-row-menu__danger { color: var(--pr-danger); }
+.pr-row-menu__trigger { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 7px; background: none; color: var(--pr-muted); cursor: pointer; }
+.pr-row-menu__trigger:hover { background: var(--pr-surface-muted); color: var(--pr-text); }

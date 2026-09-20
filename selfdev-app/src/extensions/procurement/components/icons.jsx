@@ -17,6 +17,7 @@ export const Flask = props => <Icon {...props}><path d="M9 3h6M10 3v6l-5 9a2 2 0
 export const Refresh = props => <Icon {...props}><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 8A7 7 0 0 1 18 6l2 6M18 16a7 7 0 0 1-12 2l-2-6"/></Icon>
 export const ExternalLink = props => <Icon {...props}><path d="M14 4h6v6M20 4l-9 9M18 13v7H4V6h7"/></Icon>
 export const ArrowLeft = props => <Icon {...props}><path d="m15 18-6-6 6-6M9 12h11"/></Icon>
+export const Gear = props => <Icon {...props}><circle cx="12" cy="12" r="3.2"/><path d="M12 3.4v2.2M12 18.4v2.2M20.6 12h-2.2M5.6 12H3.4M18.1 5.9l-1.6 1.6M7.5 16.5l-1.6 1.6M18.1 18.1l-1.6-1.6M7.5 7.5 5.9 5.9"/></Icon>
 export const Sliders = props => <Icon {...props}><path d="M4 6h16M7 12h10M10 18h4"/></Icon>
 export const Plus = props => <Icon {...props}><path d="M12 5v14M5 12h14" /></Icon>
 export const Trash = props => <Icon {...props}><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"/></Icon>

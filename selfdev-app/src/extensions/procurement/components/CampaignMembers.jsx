@@ -1,15 +1,56 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from './StatusBadge'
 import { CampaignMemberProgress } from './CampaignMemberProgress'
-import { ChevronDown, ChevronRight } from './icons'
+import { ChevronDown, ChevronRight, Gear } from './icons'
 import { readableAgentError } from '../lib/agentText'
 import {
   FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, nextAction, requestsSummary,
 } from '../lib/campaignView'
 import { plural } from './SourcingSettings'
+
+/** The per-substance actions nobody needs while reading the table.
+ *
+ * Positioned against the viewport rather than the row: the table scrolls
+ * inside its own box, and a menu laid out inside it is cut off at the edge.
+ */
+function RowMenu({ label, children }) {
+  const [at, setAt] = useState(null)
+  const button = useRef(null)
+  const menu = useRef(null)
+  useEffect(() => {
+    if (!at) return undefined
+    const close = event => {
+      if (event.type === 'keydown' ? event.key === 'Escape' : !menu.current?.contains(event.target)) setAt(null)
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', close)
+    window.addEventListener('scroll', () => setAt(null), { once: true, capture: true })
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', close)
+    }
+  }, [at])
+  const open = () => {
+    const rect = button.current?.getBoundingClientRect()
+    setAt(rect ? { top: rect.bottom + 6, right: Math.max(8, window.innerWidth - rect.right) } : null)
+  }
+  return <>
+    <button
+      ref={button}
+      type="button"
+      className="pr-row-menu__trigger"
+      aria-label={label}
+      aria-expanded={Boolean(at)}
+      onClick={() => (at ? setAt(null) : open())}
+    ><Gear size={16} /></button>
+    {at && <div ref={menu} className="pr-row-menu" role="menu" style={{ top: at.top, right: at.right }} onClick={() => setAt(null)}>
+      {children}
+    </div>}
+  </>
+}
 
 /** The campaign's substances, and everything about one of them on demand.
  *
@@ -53,7 +94,7 @@ export function CampaignMembers({
         <th title="Запросов отправлено → ответов получено">Запросы</th>
         <th>Предложения</th>
         <th>Что дальше</th>
-        {canRemove && <th aria-label="Убрать" />}
+        <th aria-label="Действия" />
       </tr></thead>
       <tbody>{rows.map(member => {
         const expanded = open.has(member.cardId)
@@ -94,29 +135,40 @@ export function CampaignMembers({
             <td>{foundSummary(member)}</td>
             <td>{requestsSummary(member)}</td>
             <td className="pr-members__offers">
-              {offers?.prices.length
-                ? <>
-                  <strong>{offers.prices[0]}</strong>
-                  <span className="pr-primary-meta">{offers.priced} с ценой из {offers.offers.length}</span>
-                </>
-                : offers
-                  ? <span className="pr-primary-meta">{offers.offers.length} {plural(offers.offers.length, 'ответ', 'ответа', 'ответов')}, цены нет</span>
-                  : <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
+              {/* The prices open the comparison they came from: that table is
+                  the result the whole purchase is run for. */}
+              {offers
+                ? <Link to={`/procurement/proposals/compare?cardId=${member.cardId}`} title="Открыть сравнение предложений">
+                  {offers.prices.length
+                    ? <>
+                      <strong>{offers.prices[0]}</strong>
+                      <span className="pr-primary-meta">{offers.priced} с ценой из {offers.offers.length} · сравнить</span>
+                    </>
+                    : <span className="pr-primary-meta">{offers.offers.length} {plural(offers.offers.length, 'ответ', 'ответа', 'ответов')}, цены нет · сравнить</span>}
+                </Link>
+                : <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
             </td>
             <td>
               {action
                 ? <Link className="pr-members__action" data-tone={action.tone} to={action.to}>{action.label}</Link>
                 : <span className="pr-muted">—</span>}
             </td>
-            {canRemove && <td>{removable(member) && <Button
-              variant="ghost"
-              size="sm"
-              aria-label={`Убрать ${member.title} из кампании`}
-              isDisabled={removePending}
-              onPress={() => onRemove(member.cardId)}
-            >Убрать</Button>}</td>}
+            <td className="pr-members__menu">
+              <RowMenu label={`Действия: ${member.title}`}>
+                <Link to={`/procurement/requests/${member.cardId}`} role="menuitem">Карточка закупки</Link>
+                {member.sourcingRunId && <Link to={`/procurement/requests/${member.cardId}/sourcing`} role="menuitem">Поиск и кандидаты</Link>}
+                <Link to={`/procurement/requests/${member.cardId}/rfq`} role="menuitem">RFQ</Link>
+                {canRemove && removable(member) && <button
+                  type="button"
+                  role="menuitem"
+                  className="pr-row-menu__danger"
+                  disabled={removePending}
+                  onClick={() => onRemove(member.cardId)}
+                >Убрать из закупки</button>}
+              </RowMenu>
+            </td>
           </tr>
-          {expanded && <tr className="pr-members__details"><td colSpan={canRemove ? 8 : 7}>
+          {expanded && <tr className="pr-members__details"><td colSpan={8}>
             <div className="pr-members__panel">
               <div>
                 <h4>Переписки</h4>
