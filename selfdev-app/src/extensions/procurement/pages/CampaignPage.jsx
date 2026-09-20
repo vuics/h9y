@@ -18,6 +18,7 @@ import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
 import { CampaignMembers } from '../components/CampaignMembers'
 import { groupOffersBySubstance } from '../lib/offers'
+import { offerTotals } from '../lib/campaignView'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -421,6 +422,7 @@ export default function CampaignPage() {
       .filter(group => memberIds.includes(group.cardId))
       .map(group => [group.cardId, group]),
   )
+  const offerCounts = offerTotals(offersByCard)
 
   return <DetailLayout
     backTo="/procurement"
@@ -483,7 +485,9 @@ export default function CampaignPage() {
           <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.contactTotal} с контактами</button>
           <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.verifiedTotal ?? 0} подтверждено</button>
           <button type="button" className="pr-chip" onClick={() => setFilter('working')}>{progress.requestTotal ?? 0} запросов</button>
-          <button type="button" className="pr-chip" onClick={() => setFilter('working')}>{progress.responseTotal ?? 0} ответов</button>
+          {/* Counted from the offers themselves: a substance answered through
+              the marketplace has no conversation to count an answer on. */}
+          <Link className="pr-chip" to="/procurement/proposals">{offerCounts.offers} {plural(offerCounts.offers, 'предложение', 'предложения', 'предложений')}{offerCounts.priced > 0 ? `, ${offerCounts.priced} с ценой` : ''}</Link>
           {progress.failed > 0 && <button type="button" className="pr-chip pr-chip--danger" onClick={() => setFilter('failed')}>{progress.failed} с ошибкой</button>}
         </div>
       </div>

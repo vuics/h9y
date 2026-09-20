@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { filterCounts, foundSummary, memberGroup, nextAction, requestsSummary } from './campaignView.js'
+import { filterCounts, foundSummary, memberGroup, nextAction, offerTotals, requestsSummary } from './campaignView.js'
 
 const member = (extra = {}) => ({ cardId: 7, stage: 'SOURCING', ...extra })
 
@@ -42,4 +42,13 @@ test('the numbers read as one cell each', () => {
   assert.equal(requestsSummary(member({ requestCount: 6, responseCount: 2 })), '6 → 2')
   assert.equal(requestsSummary(member({ requestCount: 6 })), '6')
   assert.equal(requestsSummary(member()), '—')
+})
+
+test('offers are counted from the offers, not from answers to letters', () => {
+  const groups = new Map([
+    [1, { offers: [{}, {}], priced: 1 }],
+    [2, { offers: [{}], priced: 0 }],
+  ])
+  assert.deepEqual(offerTotals(groups), { offers: 3, priced: 1 })
+  assert.deepEqual(offerTotals(new Map()), { offers: 0, priced: 0 })
 })

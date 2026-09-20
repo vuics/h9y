@@ -74,3 +74,20 @@ export function requestsSummary(member) {
   if (!member.requestCount) return '—'
   return member.responseCount ? `${member.requestCount} → ${member.responseCount}` : String(member.requestCount)
 }
+
+/** Offers in hand across the campaign, counted from the offers themselves.
+ *
+ * Not from the members' `responseCount`: that counts answers to letters with
+ * an addressee, so a substance answered through the marketplace — where the
+ * request has no addressee at all — reads as "0 ответов" with prices already
+ * on the page.
+ */
+export function offerTotals(offersByCard) {
+  let offers = 0
+  let priced = 0
+  for (const group of offersByCard.values()) {
+    offers += group.offers.length
+    priced += group.priced
+  }
+  return { offers, priced }
+}

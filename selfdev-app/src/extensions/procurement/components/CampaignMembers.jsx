@@ -90,7 +90,7 @@ export function CampaignMembers({
         <th aria-label="Развернуть" />
         <th>Вещество</th>
         <th>Этап</th>
-        <th title="Кандидатов · из них с контактами · подтверждено">Найдено</th>
+        <th title="Найдено кандидатов · из них с адресом · подтверждено поставщиками. Подтвердить можно и компанию без адреса, поэтому третье число бывает больше второго">Кандидаты</th>
         <th title="Запросов отправлено → ответов получено">Запросы</th>
         <th>Предложения</th>
         <th>Что дальше</th>
@@ -132,7 +132,7 @@ export function CampaignMembers({
                 paused={campaign.status === 'PAUSED'}
               />
             </div></td>
-            <td>{foundSummary(member)}</td>
+            <td title={member.candidateCount ? `${member.candidateCount} найдено · ${member.contactCount || 0} с адресом · ${member.verifiedCount || 0} подтверждено` : undefined}>{foundSummary(member)}</td>
             <td>{requestsSummary(member)}</td>
             <td className="pr-members__offers">
               {/* The prices open the comparison they came from: that table is
