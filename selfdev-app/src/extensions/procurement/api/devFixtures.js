@@ -97,7 +97,7 @@ const campaigns = [
     members: [
       { cardId: 90001, title: '1,3-Бутадиен', casNumber: '106-99-0', stage: 'AWAITING_REVIEW', sourcingRunId: 'SRC-RUN-90001', candidateCount: 9, contactCount: 7, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: 'CANDIDATE_REVIEW', startedAt: ago(4), finishedAt: ago(3) },
       { cardId: 90002, title: 'Ксилит', casNumber: '87-99-0', stage: 'AWAITING_REVIEW', sourcingRunId: 'SRC-RUN-90002', candidateCount: 11, contactCount: 8, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: 'CANDIDATE_REVIEW', startedAt: ago(4), finishedAt: ago(3) },
-      { cardId: 90003, title: 'Глицин', casNumber: '56-40-6', stage: 'AWAITING_REVIEW', sourcingRunId: 'SRC-RUN-90003', candidateCount: 7, contactCount: 4, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: 'CANDIDATE_REVIEW', startedAt: ago(4), finishedAt: ago(2) },
+      { cardId: 90003, title: 'Глицин', casNumber: '56-40-6', marketplaceStatus: 'NEEDS_REVIEW', stage: 'AWAITING_REVIEW', sourcingRunId: 'SRC-RUN-90003', candidateCount: 7, contactCount: 4, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: null, waitingFor: 'CANDIDATE_REVIEW', startedAt: ago(4), finishedAt: ago(2) },
       { cardId: 90004, title: 'Бензол', casNumber: '71-43-2', stage: 'FAILED', sourcingRunId: null, candidateCount: 0, contactCount: 0, verifiedCount: 0, requestCount: 0, responseCount: 0, escalationCount: 0, errorCode: 'CARD_NOT_NORMALIZED', waitingFor: null, startedAt: ago(4), finishedAt: ago(4) },
     ],
   },
@@ -261,7 +261,9 @@ export function campaignMarketplaceFixture(campaignId) {
   if (!campaign) return null
   // One request per substance, in the three states the block has to explain:
   // posted, waiting for the specialist's approval, and blocked on an RFQ.
-  const states = ['SUBMITTED', 'AWAITING_APPROVAL', 'RFQ_APPROVAL']
+  // NEEDS_REVIEW is the state the block and the substance row exist for: the
+  // platform asked for a person and the request is neither out nor lost.
+  const states = ['SUBMITTED', 'AWAITING_APPROVAL', 'NEEDS_REVIEW', 'RFQ_APPROVAL']
   const items = campaign.members.map((member, index) => ({
     cardId: member.cardId,
     title: member.title,
@@ -269,7 +271,9 @@ export function campaignMarketplaceFixture(campaignId) {
     status: states[index % states.length],
     inquiryId: `ECHEMI-${member.cardId}-4F2A`,
     platformInquiryId: index % states.length === 0 ? 'RFQ2043117' : null,
-    error: null,
+    error: states[index % states.length] === 'NEEDS_REVIEW'
+      ? 'ECHEMI-357-52C3BB59. Кнопка отправки нажата, но подтверждения площадки мы не увидели. Повторять автоматически не будем: заявка могла уйти. Проверьте её в браузере. Inquiry created: NO'
+      : null,
   }))
   return {
     campaignId: campaign.campaignId,

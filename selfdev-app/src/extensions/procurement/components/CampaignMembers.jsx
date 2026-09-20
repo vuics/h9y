@@ -7,7 +7,8 @@ import { CampaignMemberProgress } from './CampaignMemberProgress'
 import { ChevronDown, ChevronRight, Gear } from './icons'
 import { readableAgentError } from '../lib/agentText'
 import {
-  FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, nextAction, requestsSummary,
+  FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
+  nextActions, requestsSummary,
 } from '../lib/campaignView'
 import { plural } from './SourcingSettings'
 
@@ -62,6 +63,9 @@ export function CampaignMembers({
   campaign, members, stageLabels, marketplaceLabels, threadStatusLabels,
   conversationsByCard, marketplaceByCard, offersByCard, offersLoading,
   canRemove, removable, onRemove, removePending, filter, onFilterChange,
+  // The marketplace actions and the browser access are owned by the page,
+  // which holds their mutations; the row only says where they belong.
+  renderMarketplaceActions, browserAccess,
 }) {
   const [open, setOpen] = useState(() => new Set())
   const counts = filterCounts(members)
@@ -98,7 +102,7 @@ export function CampaignMembers({
       </tr></thead>
       <tbody>{rows.map(member => {
         const expanded = open.has(member.cardId)
-        const action = nextAction(member, campaign.campaignId)
+        const actions = nextActions(member, campaign.campaignId)
         const offers = offersByCard.get(member.cardId)
         const threads = conversationsByCard.get(member.cardId)
         const marketplace = marketplaceByCard.get(member.cardId)
@@ -120,6 +124,7 @@ export function CampaignMembers({
               <div className="pr-primary-meta">
                 <Link to={`/procurement/requests/${member.cardId}`}>#{member.cardId}</Link>
                 <span>· CAS {member.casNumber || 'не указан'}</span>
+                {needsMarketplaceAction(member) && <span className="pr-members__flag" title="Заявка на площадке ждёт человека — раскройте строку">Echemi</span>}
               </div>
             </td>
             <td><div className="pr-member-stage-cell">
@@ -148,9 +153,9 @@ export function CampaignMembers({
                 </Link>
                 : <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
             </td>
-            <td>
-              {action
-                ? <Link className="pr-members__action" data-tone={action.tone} to={action.to}>{action.label}</Link>
+            <td className="pr-members__actions">
+              {actions.length
+                ? actions.map(item => <Link key={item.label} className="pr-members__action" data-tone={item.tone} to={item.to}>{item.label}</Link>)
                 : <span className="pr-muted">—</span>}
             </td>
             <td className="pr-members__menu">
@@ -185,12 +190,20 @@ export function CampaignMembers({
               <div>
                 <h4>Заявка на площадку</h4>
                 {marketplace
-                  ? <p>
-                    <StatusBadge status={marketplace.status} label={marketplaceLabels[marketplace.status] || marketplace.status} compact />
-                    {marketplace.platformInquiryId && <span className="pr-primary-meta"> номер на площадке: {marketplace.platformInquiryId}</span>}
-                    {marketplace.error && <span className="pr-import-missing"> {readableAgentError(marketplace.error)}</span>}
-                    {' '}<Link to={`/procurement/requests/${member.cardId}/echemi`}>открыть заявку</Link>
-                  </p>
+                  ? <div className="pr-members__marketplace">
+                    <p>
+                      <StatusBadge status={marketplace.status} label={marketplaceLabels[marketplace.status] || marketplace.status} compact />
+                      {marketplace.platformInquiryId && <span className="pr-primary-meta"> номер на площадке: {marketplace.platformInquiryId}</span>}
+                      {/* The actions below carry their own way in, so the
+                          link is not repeated beside them. */}
+                      {marketplace.status !== 'NEEDS_REVIEW' && <>{' '}<Link to={`/procurement/requests/${member.cardId}/echemi`}>открыть заявку</Link></>}
+                    </p>
+                    {marketplace.error && <p className="pr-import-missing">{readableAgentError(marketplace.error)}</p>}
+                    {/* The same presses as the box below the table, here for
+                        the one substance the reader is looking at. */}
+                    {renderMarketplaceActions?.(marketplace)}
+                    {needsMarketplaceAction(member) && browserAccess}
+                  </div>
                   : <p className="pr-note">Заявка на площадку по этому веществу не готовилась.</p>}
               </div>
               <div>

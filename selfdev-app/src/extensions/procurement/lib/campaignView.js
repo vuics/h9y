@@ -31,12 +31,24 @@ export function filterCounts(members) {
 export const filterMembers = (members, filter) =>
   filter === 'all' ? members : members.filter(member => memberGroup(member) === filter)
 
-/** The one press this row is waiting for, or nothing while the agent works.
- *
- * Deliberately one: a row with three links is a row nobody reads. Everything
- * else about the substance is behind the row's own expander.
+/** The presses this row is waiting for: the substance's own decision first,
+ * then the marketplace check, quietly — it is the same batch job on every
+ * substance of the campaign, and as the only button it hid the rows that
+ * really were waiting for a decision.
  */
-export function nextAction(member, campaignId) {
+export function nextActions(member, campaignId) {
+  const actions = []
+  // A substance can be two things at once: a card that failed and a request
+  // the platform never confirmed. Both are offered, in that order.
+  const own = ownAction(member, campaignId)
+  if (own) actions.push(own)
+  if (member.marketplaceStatus === 'NEEDS_REVIEW') {
+    actions.push({ label: 'Закончить заявку', to: `/procurement/requests/${member.cardId}/echemi`, tone: 'muted' })
+  }
+  return actions
+}
+
+function ownAction(member, campaignId) {
   if (member.errorCode) {
     return { label: 'Открыть карточку', to: `/procurement/requests/${member.cardId}`, tone: 'danger' }
   }
@@ -53,15 +65,12 @@ export function nextAction(member, campaignId) {
   if (member.stage === 'AWAITING_REVIEW') {
     return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning' }
   }
-  // Last, and quietly: the marketplace check is the same batch job on every
-  // substance — twenty-four identical black buttons said nothing about any of
-  // them and hid the rows that really were waiting for a decision. The count
-  // is stated once above the table; the row only offers the way in.
-  if (member.marketplaceStatus === 'NEEDS_REVIEW') {
-    return { label: 'Закончить заявку', to: `/procurement/requests/${member.cardId}/echemi`, tone: 'muted' }
-  }
   return null
 }
+
+/** Whether the platform is holding this substance and needs a person. */
+export const needsMarketplaceAction = member =>
+  ['NEEDS_REVIEW', 'HUMAN_ACTION_REQUIRED', 'FAILED', 'STALE'].includes(member.marketplaceStatus)
 
 /** "9 · 7 · 1": candidates found, of them with contacts, verified suppliers. */
 export function foundSummary(member) {

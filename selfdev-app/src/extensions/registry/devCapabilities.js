@@ -10,6 +10,8 @@ export const developmentCapabilities = {
       // Shows the controls that write; every write is still refused in
       // fixture mode, so the page can be seen as a purchaser sees it.
       'CARD_WRITE',
+      'ECHEMI_OPERATE',
+      'ECHEMI_SUBMIT',
       'COMMUNICATION_READ',
       'ESCALATION_READ',
       'AUDIT_READ',

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { filterCounts, foundSummary, memberGroup, nextAction, offerTotals, requestsSummary } from './campaignView.js'
+import { filterCounts, foundSummary, memberGroup, needsMarketplaceAction, nextActions, offerTotals, requestsSummary } from './campaignView.js'
 
 const member = (extra = {}) => ({ cardId: 7, stage: 'SOURCING', ...extra })
 
@@ -16,24 +16,18 @@ test('a substance belongs to the chip that says who is holding it', () => {
   })
 })
 
-test('a row offers one press, and the marketplace check comes last', () => {
-  assert.equal(nextAction(member({ waitingFor: 'CANDIDATE_REVIEW' }), 'CMP-1').to, '/procurement/campaigns/CMP-1/review')
-  assert.equal(nextAction(member({ waitingFor: 'RFQ_APPROVAL' }), 'CMP-1').to, '/procurement/requests/7/rfq')
-  // The decision about the substance outranks the marketplace check every
-  // substance of the campaign is waiting on at once.
-  assert.equal(
-    nextAction(member({ waitingFor: 'CANDIDATE_REVIEW', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1').label,
-    'Согласовать',
-  )
-  assert.equal(
-    nextAction(member({ errorCode: 'CARD_NOT_NORMALIZED', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1').label,
-    'Открыть карточку',
-  )
+test('a row offers its own decision first and the marketplace check after', () => {
+  assert.deepEqual(nextActions(member({ waitingFor: 'CANDIDATE_REVIEW' }), 'CMP-1').map(item => item.label), ['Согласовать'])
+  assert.equal(nextActions(member({ waitingFor: 'RFQ_APPROVAL' }), 'CMP-1')[0].to, '/procurement/requests/7/rfq')
+  // Both: the card failed and the platform never confirmed its request.
   assert.deepEqual(
-    nextAction(member({ stage: 'NEGOTIATION', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1'),
-    { label: 'Закончить заявку', to: '/procurement/requests/7/echemi', tone: 'muted' },
+    nextActions(member({ errorCode: 'CARD_NOT_NORMALIZED', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1')
+      .map(item => [item.label, item.tone]),
+    [['Открыть карточку', 'danger'], ['Закончить заявку', 'muted']],
   )
-  assert.equal(nextAction(member(), 'CMP-1'), null)
+  assert.deepEqual(nextActions(member(), 'CMP-1'), [])
+  assert.equal(needsMarketplaceAction(member({ marketplaceStatus: 'STALE' })), true)
+  assert.equal(needsMarketplaceAction(member({ marketplaceStatus: 'SUBMITTED' })), false)
 })
 
 test('the numbers read as one cell each', () => {

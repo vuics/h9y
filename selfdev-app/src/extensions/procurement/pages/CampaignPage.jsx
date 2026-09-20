@@ -372,6 +372,52 @@ export default function CampaignPage() {
     onSuccess: accept,
   })
 
+  // One substance's marketplace presses, used in its row in the table and in
+  // the box below it: the same question asked in two places must not be two
+  // different sets of buttons.
+  const marketplaceActions = item => item.status === 'NEEDS_REVIEW' && canSubmitEchemi && item.inquiryId
+    ? <div className="pr-inline-actions">
+          {/* The question the browser could not answer, put to the party
+              that knows: Echemi lists every inquiry the account holds. It
+              is there — the record catches up and nothing is sent twice.
+              It is not — the click created nothing and the request goes
+              out in the same press. */}
+          <Button
+            size="sm"
+            isDisabled={resendMarketplace.isPending}
+            onPress={() => resendMarketplace.mutate(item.cardId)}
+          >
+            <Send className={resendMarketplace.isPending && resendMarketplace.variables === item.cardId ? 'pr-spin' : undefined} />
+            {resendMarketplace.isPending && resendMarketplace.variables === item.cardId
+              ? 'Проверяем на площадке…'
+              : 'Проверить и отправить'}
+          </Button>
+          {vouch[item.cardId] === undefined
+            ? <Button size="sm" variant="outline" onPress={() => setVouch(current => ({
+                ...current, [item.cardId]: 'Отправлено вручную через noVNC, площадка подтвердила заявку.',
+              }))}>Заявка ушла — записать</Button>
+            : <>
+                <input
+                  className="pr-thread__search"
+                  value={vouch[item.cardId]}
+                  placeholder="Что вы увидели на площадке"
+                  onChange={event => setVouch(current => ({ ...current, [item.cardId]: event.target.value }))}
+                />
+                <Button size="sm" variant="outline" onPress={() => setVouch(current => ({ ...current, [item.cardId]: undefined }))}>Отмена</Button>
+                <Button
+                  size="sm"
+                  isDisabled={confirmMarketplace.isPending || (vouch[item.cardId] || '').trim().length < 8}
+                  onPress={() => confirmMarketplace.mutate({
+                    cardId: item.cardId,
+                    inquiryId: item.inquiryId,
+                    note: vouch[item.cardId].trim(),
+                  })}
+                >Записать</Button>
+              </>}
+          <Link to={`/procurement/requests/${item.cardId}/echemi`}>открыть карточку</Link>
+    </div>
+    : null
+
   if (query.isLoading) return <LoadingState />
   if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
   const campaign = query.data
@@ -545,6 +591,13 @@ export default function CampaignPage() {
         removePending={removeCard.isPending}
         filter={filter}
         onFilterChange={setFilter}
+        renderMarketplaceActions={marketplaceActions}
+        browserAccess={canOperateEchemi ? <EchemiBrowserAccess
+          access={browser.data}
+          error={browser.error}
+          loading={browser.isLoading}
+          compact
+        /> : null}
       />
 
       {marketplaceView?.enabled && marketplaceItems.length > 0 && <details className="pr-more-details">
@@ -631,46 +684,7 @@ export default function CampaignPage() {
                 by hand in noVNC is the specialist's job; recording that it
                 went is what stops the campaign from showing a live request as
                 a failure for ever. */}
-            {item.status === 'NEEDS_REVIEW' && canSubmitEchemi && item.inquiryId && <div className="pr-inline-actions">
-              {/* The question the browser could not answer, put to the party
-                  that knows: Echemi lists every inquiry the account holds. It
-                  is there — the record catches up and nothing is sent twice.
-                  It is not — the click created nothing and the request goes
-                  out in the same press. */}
-              <Button
-                size="sm"
-                isDisabled={resendMarketplace.isPending}
-                onPress={() => resendMarketplace.mutate(item.cardId)}
-              >
-                <Send className={resendMarketplace.isPending && resendMarketplace.variables === item.cardId ? 'pr-spin' : undefined} />
-                {resendMarketplace.isPending && resendMarketplace.variables === item.cardId
-                  ? 'Проверяем на площадке…'
-                  : 'Проверить и отправить'}
-              </Button>
-              {vouch[item.cardId] === undefined
-                ? <Button size="sm" variant="outline" onPress={() => setVouch(current => ({
-                    ...current, [item.cardId]: 'Отправлено вручную через noVNC, площадка подтвердила заявку.',
-                  }))}>Заявка ушла — записать</Button>
-                : <>
-                    <input
-                      className="pr-thread__search"
-                      value={vouch[item.cardId]}
-                      placeholder="Что вы увидели на площадке"
-                      onChange={event => setVouch(current => ({ ...current, [item.cardId]: event.target.value }))}
-                    />
-                    <Button size="sm" variant="outline" onPress={() => setVouch(current => ({ ...current, [item.cardId]: undefined }))}>Отмена</Button>
-                    <Button
-                      size="sm"
-                      isDisabled={confirmMarketplace.isPending || (vouch[item.cardId] || '').trim().length < 8}
-                      onPress={() => confirmMarketplace.mutate({
-                        cardId: item.cardId,
-                        inquiryId: item.inquiryId,
-                        note: vouch[item.cardId].trim(),
-                      })}
-                    >Записать</Button>
-                  </>}
-              <Link to={`/procurement/requests/${item.cardId}/echemi`}>открыть карточку</Link>
-            </div>}
+            {marketplaceActions(item)}
             {(item.platformInquiryId || item.error) && <ul>
               <li>
                 {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}

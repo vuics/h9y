@@ -1385,3 +1385,8 @@
 .pr-row-menu__trigger:hover { background: var(--pr-surface-muted); color: var(--pr-text); }
 .procurement-shell a.pr-members__action[data-tone="muted"] { background: none; border: 1px solid var(--pr-border); color: var(--pr-muted); font-weight: 500; }
 .procurement-shell a.pr-members__action[data-tone="muted"]:hover { color: var(--pr-text); border-color: var(--pr-text); opacity: 1; }
+.pr-members__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.pr-members__flag { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px; background: var(--pr-warning-soft); color: var(--pr-warning); font-size: 11px; font-weight: 700; }
+.pr-members__marketplace { display: flex; flex-direction: column; gap: 8px; }
+.pr-members__marketplace p { margin: 0; }
+.pr-members__marketplace .pr-inline-actions { flex-wrap: wrap; }
