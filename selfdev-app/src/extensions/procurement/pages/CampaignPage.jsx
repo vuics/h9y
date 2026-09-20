@@ -597,6 +597,7 @@ export default function CampaignPage() {
           error={browser.error}
           loading={browser.isLoading}
           compact
+          brief
         /> : null}
       />
 

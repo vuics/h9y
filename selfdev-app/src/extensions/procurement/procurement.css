@@ -1390,3 +1390,10 @@
 .pr-members__marketplace { display: flex; flex-direction: column; gap: 8px; }
 .pr-members__marketplace p { margin: 0; }
 .pr-members__marketplace .pr-inline-actions { flex-wrap: wrap; }
+
+/* Two presses in one cell stack instead of widening the table. */
+.pr-members__actions { flex-direction: column; align-items: flex-start; gap: 4px; max-width: 190px; }
+.pr-members__table td { vertical-align: top; }
+.pr-members__table td, .pr-members__table th { padding-top: 10px; padding-bottom: 10px; }
+.pr-echemi-browser-access.is-compact .pr-echemi-browser-access__content { flex-wrap: wrap; gap: 8px; }
+.pr-members__marketplace .pr-echemi-password code { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }

@@ -10,9 +10,10 @@ import { AlertTriangle, Check, Copy, ExternalLink } from './icons'
  *
  * `compact` drops the card around it so the same link and the same password —
  * one implementation, not two — can sit inside a block that already has its
- * own heading, such as a campaign's marketplace requests.
+ * own heading, such as a campaign's marketplace requests. `brief` also drops
+ * the explanation, for the narrow panel inside one substance's row.
  */
-export function EchemiBrowserAccess({ access, error, loading, compact = false }) {
+export function EchemiBrowserAccess({ access, error, loading, compact = false, brief = false }) {
   const [copied, setCopied] = useState(false)
 
   const copyPassword = async () => {
@@ -44,7 +45,7 @@ export function EchemiBrowserAccess({ access, error, loading, compact = false })
       {error && <Alert><AlertTriangle /><AlertTitle>Параметры доступа недоступны</AlertTitle><AlertDescription>{error.response?.data?.message || error.message}</AlertDescription></Alert>}
       {access && <div className="pr-echemi-browser-access__content">
         <div>
-          <p className="pr-note">Откройте noVNC в новой вкладке, чтобы видеть, что агент делает в браузере прямо сейчас. Это общий пароль MVP; не пересылайте его пользователям без разрешения ECHEMI_OPERATE.</p>
+          {!brief && <p className="pr-note">Откройте noVNC в новой вкладке, чтобы видеть, что агент делает в браузере прямо сейчас. Это общий пароль MVP; не пересылайте его пользователям без разрешения ECHEMI_OPERATE.</p>}
           {access.passwordRequired
             ? <div className="pr-echemi-password"><span>Пароль x11vnc</span><code>{access.password}</code><Button variant="outline" onPress={copyPassword}>{copied ? <Check /> : <Copy />}{copied ? 'Скопировано' : 'Копировать'}</Button></div>
             : <Badge variant="outline">Пароль не требуется</Badge>}
