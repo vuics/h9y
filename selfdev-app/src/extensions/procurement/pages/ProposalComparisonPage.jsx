@@ -41,9 +41,8 @@ const siteFields = [
 const DECISION_NOTE = 'Сравнение только показывает условия: оно не ранжирует поставщиков и не выбирает победителя. Решение принимает специалист по закупкам.'
 
 const fieldState = (row, key, raw) => row.fieldStates?.[key] || (raw ? 'PRESENT' : 'UNKNOWN')
-// Mirrored server-side in `comparison_row_matches` so the CSV export contains
-// exactly the rows shown here. The site grade is searched too, but it is not an
-// export column, so a search on it alone narrows the table and not the file.
+// Mirrored server-side in `comparison_row_matches` and `comparison_export` so the
+// CSV export contains exactly the rows shown here, the site grade included.
 const matchesSearch = (row, search, lookup) => !search || [row.supplierName, row.incoterm, row.namedPlace, row.currency, row.grade, row.proposalId, row.id, siteSearchText(lookup)].some(value => String(value ?? '').toLowerCase().includes(search))
 
 function SiteCell({ cell }) {
