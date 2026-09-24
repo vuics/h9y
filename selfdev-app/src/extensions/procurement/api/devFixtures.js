@@ -458,3 +458,7 @@ export const siteLookups = [
 export const awaitingSuppliers = [
   { cardId: 1042, supplierId: 'SUP-C11A', supplierName: suppliers[2].name, supplierWebsite: 'https://arclight.example/', negotiationId: 'NEG-1042-C3', negotiationStatus: 'WAITING_SUPPLIER' },
 ]
+
+export const siteRuns = {
+  1042: { runId: 'SGR-DEMO', running: false, total: 3, done: 3, found: 2, stopped: false, startedAt: ago(6.1), finishedAt: ago(6) },
+}

@@ -1410,3 +1410,7 @@
 .pr-comparison__site-row th { color: #3c6e57 !important; }
 .pr-comparison__site-found { background: #f3f9f5; }
 .pr-site-mark { display: inline-block; margin-bottom: 5px; padding: 1px 6px; border: 1px solid #b9d8c5; border-radius: 999px; color: #2f6b4b; background: #fff; font-size: 10px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.pr-site-check__title { display: flex; align-items: flex-start; gap: 9px; }
+.pr-site-check__title svg { margin-top: 2px; color: var(--pr-progress); flex: none; }
+.pr-site-check header .pr-inline-actions { align-items: center; }
+.pr-site-check__done { margin: 0; }

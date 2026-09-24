@@ -135,6 +135,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'GET', path: '/proposals' },
   { method: 'GET', path: '/proposals/compare' },
   { method: 'POST', path: '/proposals/compare/site-grades' },
+  { method: 'POST', path: '/proposals/compare/site-grades/stop' },
   { method: 'GET', path: '/proposals/export' },
   { method: 'GET', path: '/proposals/{response_id}' },
   { method: 'POST', path: '/proposals/{response_id}/clarification' },

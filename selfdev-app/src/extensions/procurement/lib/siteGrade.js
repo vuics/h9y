@@ -14,6 +14,7 @@ const REASONS = {
   NOT_FOUND: 'на сайте не указан',
   NO_WEBSITE: 'сайт поставщика неизвестен',
   UNREACHABLE: 'сайт не открылся',
+  STOPPED: 'проверка остановлена',
   PENDING: 'проверяем сайт…',
 }
 
@@ -36,15 +37,42 @@ export function comparisonColumns(data) {
   return [...rows, ...awaiting]
 }
 
-/** Still being read: the table polls until every contacted site has an answer. */
+/** A check is going: the table polls, shows its progress and offers to stop it.
+ *
+ * The run says so when the API reports one; a lookup still marked PENDING says
+ * so too, for an answer from an API that predates runs. A supplier never
+ * checked is not "in progress" — polling for it would never end.
+ */
 export function siteLookupsInProgress(data) {
-  return (data?.siteLookups || []).some(item => item.status == null || item.status === 'PENDING')
+  if (data?.siteRun) return Boolean(data.siteRun.running)
+  return (data?.siteLookups || []).some(item => item.status === 'PENDING')
 }
 
-const formatDate = value => {
+/** "Проверено 3 из 10 · грейд найден у 2", and the percentage for the bar. */
+export function siteRunProgress(run) {
+  if (!run?.total) return null
+  const percent = Math.round((run.done / run.total) * 100)
+  return {
+    percent,
+    running: Boolean(run.running),
+    stopped: Boolean(run.stopped),
+    text: `Проверено ${run.done} из ${run.total} · грейд найден у ${run.found}`,
+    finishedAt: formatDateTime(run.finishedAt),
+  }
+}
+
+const parse = value => {
   if (!value) return null
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString('ru-RU')
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+const formatDate = value => parse(value)?.toLocaleDateString('ru-RU') || null
+
+/** "24.09.2026, 13:22" — the time matters: a re-check the same day must show. */
+export function formatDateTime(value) {
+  const date = parse(value)
+  return date ? date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null
 }
 
 /** The grade cell: found grades with their source, or «нет данных» and why. */
@@ -59,8 +87,11 @@ export function siteGradeCell(lookup) {
       checkedAt: formatDate(lookup.checkedAt),
     }
   }
+  if (lookup.status === 'PENDING') return { found: false, pending: true, text: REASONS.PENDING, reason: null }
   const reason = lookup.status == null ? 'ещё не проверяли' : REASONS[lookup.status] || null
-  return { found: false, text: lookup.status === 'PENDING' ? REASONS.PENDING : NO_DATA, reason: lookup.status === 'PENDING' ? null : reason }
+  // When it was checked, so a re-check that finds the same nothing still shows.
+  const checked = lookup.status && lookup.status !== 'STOPPED' ? formatDateTime(lookup.checkedAt) : null
+  return { found: false, text: NO_DATA, reason: checked ? `${reason} · проверено ${checked}` : reason }
 }
 
 export function siteWaterCell(lookup) {

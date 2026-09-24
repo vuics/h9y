@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { downloadBlob } from '../api/responses'
 import { ArrowLeft, CircleAlert, ExternalLink, FileCheck, Refresh } from '../components/icons'
 import { siteHostLabel } from '../lib/supplierWeb'
+import { SiteCheckProgress } from '../components/SiteCheckProgress'
 import { formatPrice } from '../lib/price'
 import { comparisonColumns, lookupsBySupplier, siteDocumentsCell, siteGradeCell, siteLookupsInProgress, siteSearchText, siteWaterCell } from '../lib/siteGrade'
 
@@ -50,6 +51,7 @@ const fieldState = (row, key, raw) => row.fieldStates?.[key] || (raw ? 'PRESENT'
 const matchesSearch = (row, search, lookup) => !search || [row.supplierName, row.incoterm, row.namedPlace, row.currency, row.grade, row.proposalId, row.id, siteSearchText(lookup)].some(value => String(value ?? '').toLowerCase().includes(search))
 
 function SiteCell({ cell }) {
+  if (cell.pending) return <strong className="pr-site-pending"><Refresh size={13} className="pr-spin" />{cell.text}</strong>
   if (!cell.found) return <><strong>{cell.text}</strong>{cell.reason && <small>{cell.reason}</small>}</>
   const link = cell.sourceUrl || cell.links?.[0]?.url
   return <>
@@ -71,7 +73,7 @@ export default function ProposalComparisonPage() {
     enabled: Boolean(cardId),
     // Sites are read in the background after the table first opens; poll only
     // while one is still being read, then stop.
-    refetchInterval: data => (siteLookupsInProgress(data) ? 5000 : false),
+    refetchInterval: data => (siteLookupsInProgress(data) ? 2000 : false),
   })
   const exportCsv = useMutation({
     mutationFn: language => procurementApi.exportSupplierComparison(cardId, language, { search: filters.search, status: filters.status }),
@@ -79,6 +81,10 @@ export default function ProposalComparisonPage() {
   })
   const recheck = useMutation({
     mutationFn: () => procurementApi.recheckSiteGrades(cardId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: procurementKeys.comparison(cardId) }),
+  })
+  const stopCheck = useMutation({
+    mutationFn: () => procurementApi.stopSiteGrades(cardId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: procurementKeys.comparison(cardId) }),
   })
   if (!cardId) return <EmptyState title="Выберите карточку закупки" description="Откройте предложения нужной карточки и запустите сравнение оттуда." action={<RouterLinkButton to="/procurement/proposals">К предложениям</RouterLinkButton>} />
@@ -106,7 +112,7 @@ export default function ProposalComparisonPage() {
     ...fields.slice(gradeIndex + 1).map(field => ['offer', field]),
   ]
   const checking = siteLookupsInProgress(query.data)
-  return <div className="pr-stack"><RouterLinkButton to={`/procurement/proposals?cardId=${cardId}`} variant="ghost" size="sm"><ArrowLeft size={15} />Предложения карточки #{cardId}</RouterLinkButton><div className="pr-section-heading"><div><h2>Сравнение предложений</h2><p>Условия из ответов поставщиков, приведённые к единому виду. Валюты не пересчитываются, поставщики не ранжируются.</p><CardIdentity cardId={cardId} /></div><div className="pr-inline-actions">{query.data.siteLookups?.length > 0 && <Button variant="outline" isDisabled={recheck.isPending || checking} onPress={() => recheck.mutate()}><Refresh />{checking ? 'Проверяем сайты…' : 'Проверить сайты заново'}</Button>}<Button variant="outline" isDisabled={exportCsv.isPending} onPress={() => exportCsv.mutate('ru')}><FileCheck />CSV RU</Button><Button variant="outline" isDisabled={exportCsv.isPending} onPress={() => exportCsv.mutate('en')}><FileCheck />CSV EN</Button></div></div>{exportCsv.isError && <Alert><CircleAlert /><AlertTitle>Экспорт не выполнен</AlertTitle><AlertDescription>{exportCsv.error?.response?.data?.message || exportCsv.error?.message}</AlertDescription></Alert>}{recheck.isError && <Alert><CircleAlert /><AlertTitle>Проверку сайтов не удалось запустить</AlertTitle><AlertDescription>{recheck.error?.response?.data?.message || recheck.error?.message}</AlertDescription></Alert>}<Alert><CircleAlert /><AlertTitle>Решение остаётся за специалистом</AlertTitle><AlertDescription>{DECISION_NOTE}</AlertDescription></Alert>
+  return <div className="pr-stack"><RouterLinkButton to={`/procurement/proposals?cardId=${cardId}`} variant="ghost" size="sm"><ArrowLeft size={15} />Предложения карточки #{cardId}</RouterLinkButton><div className="pr-section-heading"><div><h2>Сравнение предложений</h2><p>Условия из ответов поставщиков, приведённые к единому виду. Валюты не пересчитываются, поставщики не ранжируются.</p><CardIdentity cardId={cardId} /></div><div className="pr-inline-actions">{query.data.siteLookups?.length > 0 && !checking && <Button variant="outline" isDisabled={recheck.isPending} onPress={() => recheck.mutate()}><Refresh className={recheck.isPending ? 'pr-spin' : undefined} />Проверить сайты заново</Button>}<Button variant="outline" isDisabled={exportCsv.isPending} onPress={() => exportCsv.mutate('ru')}><FileCheck />CSV RU</Button><Button variant="outline" isDisabled={exportCsv.isPending} onPress={() => exportCsv.mutate('en')}><FileCheck />CSV EN</Button></div></div>{exportCsv.isError && <Alert><CircleAlert /><AlertTitle>Экспорт не выполнен</AlertTitle><AlertDescription>{exportCsv.error?.response?.data?.message || exportCsv.error?.message}</AlertDescription></Alert>}<SiteCheckProgress run={query.data.siteRun} onStop={() => stopCheck.mutate()} stopping={stopCheck.isPending} />{stopCheck.isError && <Alert><CircleAlert /><AlertTitle>Проверку сайтов не удалось остановить</AlertTitle><AlertDescription>{stopCheck.error?.response?.data?.message || stopCheck.error?.message}</AlertDescription></Alert>}{recheck.isError && <Alert><CircleAlert /><AlertTitle>Проверку сайтов не удалось запустить</AlertTitle><AlertDescription>{recheck.error?.response?.data?.message || recheck.error?.message}</AlertDescription></Alert>}<Alert><CircleAlert /><AlertTitle>Решение остаётся за специалистом</AlertTitle><AlertDescription>{DECISION_NOTE}</AlertDescription></Alert>
     <ListFilters filters={filters} onChange={setFilters} statuses={statuses} placeholder="Поставщик, валюта, Incoterm или RESP-ID"><Button variant={onlyFilled ? 'default' : 'outline'} onPress={() => setFilters({ onlyFilled: onlyFilled ? '' : '1' })}>Только заполненные параметры</Button></ListFilters>
     <p className="pr-note">Показано {rows.length} из {allRows.length} поставщиков{awaitingCount > 0 ? ` (из них ${awaitingCount} ещё не ответили)` : ''} · {fields.length} из {comparisonFields.length} параметров · таблица прокручивается по горизонтали, столбец параметров закреплён. Экспорт CSV повторяет поиск и статус; набор колонок в файле полный и не зависит от переключателя параметров.</p>
     {shownSiteFields.length > 0 && <p className="pr-note">Строки «с сайта» — то, что поставщик пишет о продукте на своём сайте, для тех, кому уже ушёл запрос. Это не его предложение: грейд из ответа поставщика стоит строкой выше и важнее. Сайт каждого поставщика читается один раз; «нет данных» — если на сайте этого нет.</p>}

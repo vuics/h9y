@@ -138,6 +138,7 @@ export const proposalEndpoints = {
         rows: fixture.proposals.filter(item => String(item.cardId) === String(cardId)),
         siteLookups: (fixture.siteLookups || []).filter(item => String(item.cardId) === String(cardId)),
         awaitingSuppliers: (fixture.awaitingSuppliers || []).filter(item => String(item.cardId) === String(cardId)),
+        siteRun: (fixture.siteRuns || {})[cardId] || null,
         decisionNote: 'Сравнение носит описательный характер. Итоговое решение принимает специалист по закупкам.',
       }
     },
@@ -145,6 +146,9 @@ export const proposalEndpoints = {
   // Reads the contacted suppliers' sites again; the table polls for the result.
   recheckSiteGrades: mutation((cardId, supplierId) =>
     request('/proposals/compare/site-grades', { method: 'post', data: { cardId: Number(cardId), supplierId: supplierId || undefined } })),
+  // Suppliers not yet read keep their previous result.
+  stopSiteGrades: mutation(cardId =>
+    request('/proposals/compare/site-grades/stop', { method: 'post', data: { cardId: Number(cardId) } })),
   prepareSupplierClarification: mutation((responseId, language) =>
     request(`/proposals/${id(responseId)}/clarification`, { method: 'post', data: { language } })),
   // Not routed through `request`: the export is a file download, so it needs a
