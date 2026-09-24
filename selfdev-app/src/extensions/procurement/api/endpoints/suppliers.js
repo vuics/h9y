@@ -131,12 +131,20 @@ export const proposalEndpoints = {
   ),
   comparison: read(
     (cardId, signal) => request('/proposals/compare', { params: { cardId }, signal }),
-    async cardId => ({
-      cardId: Number(cardId),
-      rows: (await fixtures()).proposals.filter(item => String(item.cardId) === String(cardId)),
-      decisionNote: 'Сравнение носит описательный характер. Итоговое решение принимает специалист по закупкам.',
-    }),
+    async cardId => {
+      const fixture = await fixtures()
+      return {
+        cardId: Number(cardId),
+        rows: fixture.proposals.filter(item => String(item.cardId) === String(cardId)),
+        siteLookups: (fixture.siteLookups || []).filter(item => String(item.cardId) === String(cardId)),
+        awaitingSuppliers: (fixture.awaitingSuppliers || []).filter(item => String(item.cardId) === String(cardId)),
+        decisionNote: 'Сравнение носит описательный характер. Итоговое решение принимает специалист по закупкам.',
+      }
+    },
   ),
+  // Reads the contacted suppliers' sites again; the table polls for the result.
+  recheckSiteGrades: mutation((cardId, supplierId) =>
+    request('/proposals/compare/site-grades', { method: 'post', data: { cardId: Number(cardId), supplierId: supplierId || undefined } })),
   prepareSupplierClarification: mutation((responseId, language) =>
     request(`/proposals/${id(responseId)}/clarification`, { method: 'post', data: { language } })),
   // Not routed through `request`: the export is a file download, so it needs a

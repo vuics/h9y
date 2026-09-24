@@ -446,3 +446,15 @@ export function quarantineFixture(filters = {}) {
     status: filters.status || 'NEEDS_IDENTIFICATION',
   }
 }
+
+// What contacted suppliers' own sites say about the substance, before and
+// beside their replies. Always a hint with its source, never the offer.
+export const siteLookups = [
+  { cardId: 1042, supplierId: 'SUP-A19F', supplierName: suppliers[0].name, supplierWebsite: 'https://qingdao-nova.example/', negotiationId: 'NEG-1042-A1', status: 'FOUND', grades: [{ label: 'Polymerization grade', quote: '1,3-Butadiene 106-99-0, Polymerization grade, 99.5% min', sourceUrl: 'https://qingdao-nova.example/products/butadiene' }], sourceUrl: 'https://qingdao-nova.example/products/butadiene', water: { value: '≤ 20 ppm', quote: 'Water ≤ 20 ppm', sourceUrl: 'https://qingdao-nova.example/products/butadiene' }, documents: { sds: 'https://qingdao-nova.example/files/butadiene-sds.pdf' }, website: 'https://qingdao-nova.example/', checkedAt: ago(20), pagesRead: 2 },
+  { cardId: 1042, supplierId: 'SUP-B72D', supplierName: suppliers[1].name, supplierWebsite: 'https://meridian-materials.example/', negotiationId: 'NEG-1042-B2', status: 'NOT_FOUND', grades: [], sourceUrl: null, water: null, documents: {}, website: 'https://meridian-materials.example/', checkedAt: ago(20), pagesRead: 4 },
+  { cardId: 1042, supplierId: 'SUP-C11A', supplierName: suppliers[2].name, supplierWebsite: 'https://arclight.example/', negotiationId: 'NEG-1042-C3', status: 'FOUND', grades: [{ label: 'Industrial grade', quote: 'Butadiene (CAS 106-99-0), Industrial grade', sourceUrl: 'https://arclight.example/catalog/106-99-0' }], sourceUrl: 'https://arclight.example/catalog/106-99-0', water: null, documents: { coa: 'https://arclight.example/coa/106-99-0.pdf' }, website: 'https://arclight.example/', checkedAt: ago(6), pagesRead: 1 },
+]
+
+export const awaitingSuppliers = [
+  { cardId: 1042, supplierId: 'SUP-C11A', supplierName: suppliers[2].name, supplierWebsite: 'https://arclight.example/', negotiationId: 'NEG-1042-C3', negotiationStatus: 'WAITING_SUPPLIER' },
+]

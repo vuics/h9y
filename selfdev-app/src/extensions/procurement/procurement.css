@@ -1406,3 +1406,7 @@
 .pr-echemi-password__field code { padding: 4px 8px; border: 0; background: none; font-size: 12px; }
 .pr-echemi-password__field [data-slot="button"] { border-radius: 0; border-left: 1px solid var(--pr-border); height: 26px; width: 28px; }
 .pr-echemi-browser-access.is-brief .pr-echemi-browser-access__content { align-items: center; gap: 10px; }
+/* Values read from a supplier's own website, not from its reply: tinted and labelled so they are never taken for the offer. */
+.pr-comparison__site-row th { color: #3c6e57 !important; }
+.pr-comparison__site-found { background: #f3f9f5; }
+.pr-site-mark { display: inline-block; margin-bottom: 5px; padding: 1px 6px; border: 1px solid #b9d8c5; border-radius: 999px; color: #2f6b4b; background: #fff; font-size: 10px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
