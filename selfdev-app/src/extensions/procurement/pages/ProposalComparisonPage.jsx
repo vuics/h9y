@@ -30,10 +30,14 @@ const comparisonFields = [
 // Read from the supplier's own website, never from its reply, and so kept in
 // rows of their own right under the reply's grade: the two must not be read
 // as one value. Each cell says «с сайта» and links the page it came from.
+// The grade row is always there once a request has gone out — «нет данных» is
+// itself the answer Antonina asked for. Water and documents were not asked for
+// and matter only for some substances, so they appear only when a site
+// actually states them; otherwise they would be a row of «нет данных».
 const siteFields = [
-  ['siteGrade', 'Грейд с сайта', siteGradeCell],
-  ['siteWater', 'Вода, по сайту', siteWaterCell],
-  ['siteDocuments', 'Документы на сайте', siteDocumentsCell],
+  ['siteGrade', 'Грейд с сайта', siteGradeCell, true],
+  ['siteWater', 'Содержание воды (с сайта)', siteWaterCell, false],
+  ['siteDocuments', 'Документы (с сайта)', siteDocumentsCell, false],
 ]
 
 // The API's `decisionNote` is English and is also what the CSV EN export states;
@@ -93,7 +97,7 @@ export default function ProposalComparisonPage() {
   const onlyFilled = filters.onlyFilled === '1'
   const fields = comparisonFields.filter(([key, , format, raw]) => !onlyFilled || rows.some(row => !row.awaiting && fieldState(row, key, (raw || format)(row)) !== 'UNKNOWN'))
   const shownSiteFields = query.data.siteLookups?.length
-    ? siteFields.filter(([, , cell]) => !onlyFilled || rows.some(row => cell(lookups.get(row.supplierId)).found))
+    ? siteFields.filter(([, , cell, always]) => (always && !onlyFilled) || rows.some(row => cell(lookups.get(row.supplierId)).found))
     : []
   const gradeIndex = fields.findIndex(([key]) => key === 'grade')
   const tableFields = [
