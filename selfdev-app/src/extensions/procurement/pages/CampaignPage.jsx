@@ -21,8 +21,9 @@ import { groupOffersBySubstance } from '../lib/offers'
 import { offerTotals } from '../lib/campaignView'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, CircleAlert, Clock, Pause, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
+import { AlertTriangle, Check, CircleAlert, Clock, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -318,6 +319,16 @@ export default function CampaignPage() {
   const [showAsks, setShowAsks] = useState(false)
   const [editingSettings, setEditingSettings] = useState(false)
   const [savedEffects, setSavedEffects] = useState(null)
+  // The generated name lists the first substances ("… и ещё 23"), which stops
+  // telling campaigns apart once there are several; a person names it instead.
+  const [draftTitle, setDraftTitle] = useState(null)
+  const rename = useMutation({
+    mutationFn: title => procurementApi.changeCampaignSettings(campaignId, { title }),
+    onSuccess: result => {
+      accept(result)
+      setDraftTitle(null)
+    },
+  })
   const removeCard = useMutation({
     mutationFn: cardId => procurementApi.removeCampaignCard(campaignId, cardId),
     onSuccess: accept,
@@ -492,6 +503,7 @@ export default function CampaignPage() {
     status={<CampaignStatusBadge status={campaign.status} />}
     meta={`${progress.total} ${plural(progress.total, 'вещество', 'вещества', 'веществ')} · ${REACH_LABEL[plan.reach] || plan.reach}`}
     actions={canResearchSourcing && <>
+      {draftTitle === null && <Button variant="ghost" onPress={() => { setDraftTitle(campaign.title); rename.reset() }}><Pencil />Переименовать</Button>}
       {campaign.status !== 'CANCELLED' && <Button variant="outline" onPress={() => { setEditingSettings(value => !value); setSavedEffects(null) }}><Sliders />{editingSettings ? 'Скрыть настройки' : 'Настройки кампании'}</Button>}
       {/* Pausing sits before stopping, and stopping keeps the quieter variant:
           ending a run of two hundred substances is not the button a hand should
@@ -522,6 +534,24 @@ export default function CampaignPage() {
     </>}
   >
     <div className="pr-stack">
+      {draftTitle !== null && <Card><CardHeader><CardTitle>Название кампании</CardTitle></CardHeader><CardContent>
+        <form className="pr-inline-actions" onSubmit={event => {
+          event.preventDefault()
+          if (draftTitle.trim()) rename.mutate(draftTitle.trim())
+        }}>
+          <Input
+            value={draftTitle}
+            aria-label="Название кампании"
+            maxLength={200}
+            autoFocus
+            onChange={event => setDraftTitle(event.target.value)}
+            onKeyDown={event => { if (event.key === 'Escape') setDraftTitle(null) }}
+          />
+          <Button type="submit" isDisabled={!draftTitle.trim() || rename.isPending}><Check />{rename.isPending ? 'Сохраняем…' : 'Сохранить'}</Button>
+          <Button variant="outline" isDisabled={rename.isPending} onPress={() => setDraftTitle(null)}>Отмена</Button>
+        </form>
+        {rename.error && <Alert><AlertTriangle /><AlertTitle>Название не сохранено</AlertTitle><AlertDescription>{rename.error?.response?.data?.detail?.message || mutationMessage(rename.error)}</AlertDescription></Alert>}
+      </CardContent></Card>}
       {editingSettings && <CampaignLaunchPanel
         campaign={campaign}
         canEdit={canResearchSourcing}

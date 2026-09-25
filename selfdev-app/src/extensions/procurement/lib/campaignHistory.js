@@ -76,6 +76,7 @@ const KINDS = {
       return `Настройки изменены — ${changes.join('; ')}${requeued}`
     },
   },
+  RENAMED: { main: true, text: event => `Кампания переименована: «${event.data?.changes?.title?.from ?? ''}» → «${event.data?.changes?.title?.to ?? ''}»` },
   PAUSED: { main: true, text: () => 'Кампания поставлена на паузу' },
   UNPAUSED: { main: true, text: () => 'Кампания продолжена после паузы' },
   RESUMED: { main: true, text: () => 'Кампания продолжена после перезапуска' },
