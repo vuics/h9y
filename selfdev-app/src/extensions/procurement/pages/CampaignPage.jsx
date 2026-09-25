@@ -146,6 +146,17 @@ const ASKS = {
     label: 'подготовить и согласовать RFQ',
     to: (campaignId, cardId) => `/procurement/requests/${cardId}/rfq`,
   },
+  // Dead ends the approval screen cannot settle: every candidate is decided
+  // and none verified, or the verified ones cannot be reached. They used to
+  // read "на согласовании" and lead to a page with nothing to approve.
+  SUPPLIER_EVIDENCE: {
+    label: 'нет подтверждённого поставщика — найти или подтвердить',
+    to: (campaignId, cardId) => `/procurement/requests/${cardId}/sourcing`,
+  },
+  SUPPLIER_CONTACT: {
+    label: 'у поставщиков нет контакта — добавить',
+    to: (campaignId, cardId) => `/procurement/requests/${cardId}`,
+  },
   MESSAGE_APPROVAL: {
     label: 'отправить подготовленные письма',
     // The letters, not the card. A specialist told to send something has to
@@ -432,8 +443,11 @@ export default function CampaignPage() {
   // Substances with a verified supplier that nothing has been sent to yet.
   // The count is what makes the button honest: it says how much work is left,
   // not merely that a button exists.
+  // Not those with no usable contact: pressing again would open nothing, and
+  // "Отправить запросы (2)" promised two sends that could not happen.
   const undispatched = members.filter(
-    member => member.stage === 'AWAITING_REVIEW' && member.verifiedCount > 0 && !member.requestCount,
+    member => member.stage === 'AWAITING_REVIEW' && member.verifiedCount > 0 && !member.requestCount
+      && member.waitingFor !== 'SUPPLIER_CONTACT' && member.errorCode !== 'NO_USABLE_CONTACT',
   ).length
   const percent = progress.total ? Math.round((progress.settled / progress.total) * 100) : 0
   const threadsView = threads.data

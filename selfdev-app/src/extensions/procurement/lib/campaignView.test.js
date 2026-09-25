@@ -19,6 +19,13 @@ test('a substance belongs to the chip that says who is holding it', () => {
 test('a row offers its own decision first and the marketplace check after', () => {
   assert.deepEqual(nextActions(member({ waitingFor: 'CANDIDATE_REVIEW' }), 'CMP-1').map(item => item.label), ['Согласовать'])
   assert.equal(nextActions(member({ waitingFor: 'RFQ_APPROVAL' }), 'CMP-1')[0].to, '/procurement/requests/7/rfq')
+  // Nothing to approve: the row leads to the work that is owed instead.
+  assert.deepEqual(
+    nextActions(member({ stage: 'AWAITING_REVIEW', waitingFor: 'SUPPLIER_EVIDENCE' }), 'CMP-1')
+      .map(item => [item.label, item.to]),
+    [['Найти поставщика', '/procurement/requests/7/sourcing']],
+  )
+  assert.equal(nextActions(member({ stage: 'AWAITING_REVIEW', waitingFor: 'SUPPLIER_CONTACT' }), 'CMP-1')[0].label, 'Добавить контакт')
   // Both: the card failed and the platform never confirmed its request.
   assert.deepEqual(
     nextActions(member({ errorCode: 'CARD_NOT_NORMALIZED', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1')

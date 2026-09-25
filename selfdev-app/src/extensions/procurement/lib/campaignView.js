@@ -57,6 +57,10 @@ function ownAction(member, campaignId) {
       return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning' }
     case 'RFQ_APPROVAL':
       return { label: 'Согласовать RFQ', to: `/procurement/requests/${member.cardId}/rfq`, tone: 'warning' }
+    case 'SUPPLIER_EVIDENCE':
+      return { label: 'Найти поставщика', to: `/procurement/requests/${member.cardId}/sourcing`, tone: 'warning' }
+    case 'SUPPLIER_CONTACT':
+      return { label: 'Добавить контакт', to: `/procurement/requests/${member.cardId}`, tone: 'warning' }
     case 'MESSAGE_APPROVAL':
       return { label: 'Отправить письма', to: `/procurement/negotiations?cardId=${member.cardId}`, tone: 'warning' }
     default:

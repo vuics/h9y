@@ -243,6 +243,10 @@ export default function CampaignReviewPage() {
       const next = { ...current }
       let changed = false
       for (const item of items) {
+        // A substance still in work is shown blocked; preselecting its
+        // candidates put them into "Согласовать: N решений" on a page whose
+        // every open block read "0 на решении".
+        if (item.blockedBy) continue
         for (const candidate of item.candidates) {
           if (candidate.reviewDecision !== 'UNREVIEWED') continue
           const key = verdictKey(item.cardId, candidate.candidateId)
