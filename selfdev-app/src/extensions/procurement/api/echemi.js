@@ -40,7 +40,7 @@ export function quantityMatchesCard(target, quantity, unit) {
 }
 
 export function echemiOperationIsError(operation) {
-  return Boolean(operation && /(FAILED|NOT_READY|DISABLED|BLOCKED|REQUIRES|CONFIGURATION_REQUIRED|NEEDS_REVIEW)/.test(operation.code))
+  return Boolean(operation && /(FAILED|NOT_READY|DISABLED|BLOCKED|REQUIRES|CONFIGURATION_REQUIRED|NEEDS_REVIEW|UNDECIDED|NOT_POSSIBLE)/.test(operation.code))
 }
 
 export function echemiOperationLabel(operation) {
@@ -58,6 +58,10 @@ export function echemiOperationLabel(operation) {
     ECHEMI_ALREADY_SUBMITTED: 'Inquiry уже был отправлен ранее.',
     ECHEMI_SUBMISSION_NEEDS_REVIEW: 'Echemi не дал однозначного подтверждения после клика. Проверьте состояние вручную и не повторяйте отправку.',
     ECHEMI_SUBMISSION_DISABLED: 'Отправка выключена настройкой ECHEMI_ENABLE_SUBMISSION.',
+    ECHEMI_INQUIRY_CONFIRMED_ON_PLATFORM: 'Заявка уже есть в списке на площадке — записали её номер, второй раз не отправляли.',
+    ECHEMI_INQUIRY_NOT_ON_PLATFORM: 'Заявки нет в списке на площадке — предыдущий клик её не создал, её можно отправить снова.',
+    ECHEMI_RECHECK_UNDECIDED: 'На площадке есть заявка с этим CAS, но однозначно связать её с карточкой не удалось. Ничего не отправлено — проверьте список заявок на Echemi.',
+    ECHEMI_RESUME_NOT_POSSIBLE: 'Форма, на которой остановилась отправка, уже закрыта. Ничего не отправлено — нажмите «Проверить и отправить», и заявка будет заполнена заново, если её нет на площадке.',
     HUMAN_ACTION_REQUIRED: 'Echemi запросил ручную проверку. Пройдите её в открытой браузерной сессии, затем повторите исходное действие.',
   }
   return labels[operation?.code] || operation?.message?.split('\n')[0] || 'Операция завершена.'

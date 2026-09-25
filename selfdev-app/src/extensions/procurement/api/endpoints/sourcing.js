@@ -31,6 +31,11 @@ export const echemiEndpoints = {
     request(`/cards/${id(cardId)}/echemi/inquiries/${id(inquiryId)}/approve`, { method: 'post' })),
   submitEchemiInquiry: mutation((cardId, inquiryId) =>
     request(`/cards/${id(cardId)}/echemi/inquiries/${id(inquiryId)}/submit`, { method: 'post' })),
+  // After Echemi's "Verify you are human" stopped a Send and a person passed
+  // the check: the server reads the platform's list first, then presses Send
+  // on the same form, or records the request if it went through after all.
+  resumeEchemiSubmission: mutation((cardId, inquiryId) =>
+    request(`/cards/${id(cardId)}/echemi/inquiries/${id(inquiryId)}/resume`, { method: 'post' })),
   // What a person saw that the browser could not: the platform confirmed a
   // request our automation was unable to read a confirmation for. The note is
   // stored with their name against it, so the record says who vouched for it.

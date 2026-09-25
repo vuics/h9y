@@ -271,6 +271,8 @@ export function campaignMarketplaceFixture(campaignId) {
     status: states[index % states.length],
     inquiryId: `ECHEMI-${member.cardId}-4F2A`,
     platformInquiryId: index % states.length === 0 ? 'RFQ2043117' : null,
+    // Stopped by "Verify you are human" after Send: the form is held open.
+    verificationStage: states[index % states.length] === 'NEEDS_REVIEW' ? 'AFTER_SUBMIT' : null,
     error: states[index % states.length] === 'NEEDS_REVIEW'
       ? 'ECHEMI-357-52C3BB59. Кнопка отправки нажата, но подтверждения площадки мы не увидели. Повторять автоматически не будем: заявка могла уйти. Проверьте её в браузере. Inquiry created: NO'
       : null,

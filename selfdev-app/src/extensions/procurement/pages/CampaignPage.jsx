@@ -103,7 +103,9 @@ const MARKETPLACE_STATUS = {
   // заполнена" about it turns a preview that failed into a request that looks
   // ready to send.
   PREPARED: 'черновик заявки создан, форму не заполняли',
-  AWAITING_APPROVAL: 'форма заполнена, ждёт вашего согласования',
+  // A draft-first campaign leaves the form unfilled until the press that
+  // sends it, so "форма заполнена" is not something this label may promise.
+  AWAITING_APPROVAL: 'ждёт вашего согласования',
   APPROVED: 'согласована, не отправлена',
   SUBMITTING: 'отправляется',
   SUBMITTED: 'размещена на площадке',
@@ -412,7 +414,10 @@ export default function CampaignPage() {
             <Send className={resendMarketplace.isPending && resendMarketplace.variables === item.cardId ? 'pr-spin' : undefined} />
             {resendMarketplace.isPending && resendMarketplace.variables === item.cardId
               ? 'Проверяем на площадке…'
-              : 'Проверить и отправить'}
+              // The check after Send stopped it and the form is held open:
+              // this press sends that same form once the list says it is not
+              // there yet.
+              : item.verificationStage === 'AFTER_SUBMIT' ? 'Проверка пройдена — отправить' : 'Проверить и отправить'}
           </Button>
           {vouch[item.cardId] === undefined
             ? <Button size="sm" variant="outline" onPress={() => setVouch(current => ({
@@ -664,7 +669,9 @@ export default function CampaignPage() {
           {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере — ссылка и пароль ниже — и запустите ещё раз.</>}
         </AlertDescription></Alert>}
         {marketplaceNeedsReview > 0 && <p className="pr-note">Площадка иногда просит подтвердить, что заявку отправляет человек. Пройти эту проверку за вас агент не может и не должен, поэтому он останавливается и оставляет форму открытой: пройдите проверку в браузере, отправьте заявку там же — и нажмите «Заявка ушла — записать», чтобы кампания перестала считать её неотправленной. Если проверку вы уже прошли и не уверены, ушла заявка или нет, — нажмите «Проверить и отправить»: система спросит у самой площадки, есть ли там заявка по этому CAS, и либо запишет её как размещённую, либо отправит заново. Вслепую повторять отправку она не станет — это был бы риск второй заявки по тому же веществу.</p>}
-        {marketplaceAwaiting > 0 && !marketplaceView?.running && <p className="pr-note">Формы заполнены и ждут вас. Отправка необратима: заявку видят все продавцы Echemi, и отозвать её из системы нельзя — на площадке она снимается вручную.</p>}
+        {marketplaceAwaiting > 0 && !marketplaceView?.running && <p className="pr-note">{plan.draftFirst
+          ? 'Заявки ждут вас. По кнопке каждая форма заполняется, сверяется с согласованным RFQ и сразу отправляется — заранее формы не заполняются, их всё равно нельзя было бы посмотреть.'
+          : 'Формы заполнены и ждут вас.'} Отправка необратима: заявку видят все продавцы Echemi, и отозвать её из системы нельзя — на площадке она снимается вручную.</p>}
         {confirmSend && <Alert><AlertTriangle /><AlertTitle>Отправка необратима</AlertTitle><AlertDescription>
           {marketplaceAwaiting} {plural(marketplaceAwaiting, 'заявка уйдёт', 'заявки уйдут', 'заявок уйдут')} на Echemi и станут видны всем продавцам площадки. Формы уже заполнены и проверены — перед отправкой каждая согласуется тем же порядком, что и на карточке.
         </AlertDescription></Alert>}
@@ -683,7 +690,7 @@ export default function CampaignPage() {
             onPress={() => postToMarketplace.mutate()}
           >
             <Send className={busyMarketplace ? 'pr-spin' : undefined} />
-            {marketplaceView?.running ? 'Работаем…' : `Заполнить формы (${marketplacePending})`}
+            {marketplaceView?.running ? 'Работаем…' : `${plan.draftFirst ? 'Подготовить заявки' : 'Заполнить формы'} (${marketplacePending})`}
           </Button>}
           {/* The press that actually publishes. Separate from filling the
               forms because it is the irreversible half, and confirmed once for
