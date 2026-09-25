@@ -104,7 +104,7 @@ export default function RequestsPage() {
       onCancel={() => setLaunching(false)}
     />}
 
-    <ListFilters filters={filters} onChange={setFilters} statuses={statuses} placeholder="CAS, вещество или номер карточки">
+    <ListFilters filters={filters} onChange={setFilters} statuses={statuses} placeholder="CAS, название или синоним вещества, номер карточки">
       <Button variant="outline" size="sm" onClick={() => setFilters({ order: ascending ? 'desc' : 'asc' })} aria-label={`Сортировка по номеру карточки: ${ascending ? 'по возрастанию' : 'по убыванию'}. Переключить.`}>{ascending ? <ArrowUp size={15} /> : <ArrowDown size={15} />}№ {ascending ? 'по возрастанию' : 'по убыванию'}</Button>
     </ListFilters>
 

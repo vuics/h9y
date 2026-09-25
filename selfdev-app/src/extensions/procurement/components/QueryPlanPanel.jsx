@@ -24,20 +24,28 @@ export function QueryPlanPanel({
   disabled,
   cas,
   substanceName,
+  synonymLimit = 0,
+  maxSynonymLimit = 10,
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState([])
+  const [synonymDraft, setSynonymDraft] = useState(synonymLimit)
 
   useEffect(() => {
-    if (!isEditing) setDraft(templates.map(item => ({ ...item })))
-  }, [templates, isEditing])
+    if (!isEditing) {
+      setDraft(templates.map(item => ({ ...item })))
+      setSynonymDraft(synonymLimit)
+    }
+  }, [templates, synonymLimit, isEditing])
 
   const startEditing = () => {
     setDraft(templates.map(item => ({ ...item })))
+    setSynonymDraft(synonymLimit)
     setIsEditing(true)
   }
   const cancelEditing = () => {
     setDraft(templates.map(item => ({ ...item })))
+    setSynonymDraft(synonymLimit)
     setIsEditing(false)
   }
   const updateDraft = (index, patch) =>
@@ -51,12 +59,15 @@ export function QueryPlanPanel({
       .map(item => ({ template: item.template.trim(), enabled: Boolean(item.enabled) }))
       .filter(item => item.template)
     if (!payload.length) return
-    const saved = await onSave(payload)
+    const saved = await onSave(payload, synonymDraft)
     if (saved) setIsEditing(false)
   }
 
   const rows = isEditing ? draft : templates
-  const selectedCount = templates.filter(item => selectedIds.includes(item.id)).length
+  const selected = templates.filter(item => selectedIds.includes(item.id))
+  const selectedCount = selected.length
+  const byNameCount = selected.filter(item => String(item.template).includes('{name}')).length
+  const synonymQueries = byNameCount * synonymLimit
 
   return (
     <section className="pr-query-plan">
@@ -68,6 +79,14 @@ export function QueryPlanPanel({
               ? 'Галочка задаёт, входит ли запрос в план по умолчанию. Список общий для всех карточек.'
               : `В этот запуск войдёт ${selectedCount} из ${templates.length}. Снятая галочка не меняет общий список.`}
           </span>
+          {!isEditing && synonymQueries > 0 && (
+            <span>
+              Плюс до {synonymQueries} запросов по другим названиям вещества: каждый
+              запрос с <code>{'{name}'}</code> повторяется для синонимов из
+              нормализации, не более {synonymLimit} на вещество. Какие именно
+              названия ушли в поиск, видно в списке запросов прогона.
+            </span>
+          )}
         </div>
         {!isEditing && canEdit && (
           <Button variant="outline" size="sm" isDisabled={disabled} onPress={startEditing}>
@@ -138,6 +157,29 @@ export function QueryPlanPanel({
               Доступные переменные: <code>{'{cas}'}</code> и <code>{'{name}'}</code>. Каждый запрос должен использовать
               хотя бы одну — иначе все карточки искали бы одно и то же.
             </p>
+            <label className="pr-form-field pr-query-plan__synonyms">
+              <span>Синонимов на вещество</span>
+              <Input
+                type="number"
+                min={0}
+                max={maxSynonymLimit}
+                step={1}
+                value={String(synonymDraft)}
+                aria-label="Сколько синонимов вещества добавлять к запросам с названием"
+                onChange={event => {
+                  const next = Number.parseInt(event.target.value, 10)
+                  setSynonymDraft(Number.isNaN(next) ? 0 : Math.max(0, Math.min(maxSynonymLimit, next)))
+                }}
+              />
+              <small>
+                Производитель публикуется под тем названием, которое принято на его рынке,
+                поэтому запросы с <code>{'{name}'}</code> повторяются по синонимам из
+                нормализации. Каждый синоним умножает число запросов и бюджет анализа,
+                поэтому это не «все синонимы»: в списке PubChem их сотни, и почти все —
+                идентификаторы реестров, а не названия. 0 отключает такие запросы,
+                максимум — {maxSynonymLimit}.
+              </small>
+            </label>
             <div className="pr-inline-actions">
               {!isDefault && <Button variant="ghost" size="sm" isDisabled={isSaving} onPress={onReset}>Вернуть стандартные</Button>}
               <Button variant="outline" isDisabled={isSaving} onPress={cancelEditing}>Отмена</Button>

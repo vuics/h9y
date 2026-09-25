@@ -8,6 +8,7 @@ import {
   SourcingSettings,
   canLaunch,
   defaultSourcingValue,
+  effectiveQueryCount,
   plural,
   sourcesPerSubstance,
   sourcingValueFromPlan,
@@ -145,7 +146,11 @@ export function CampaignLaunchPanel({
     // budget, which is that spread back over the queries it will issue.
     maxResults: sourcesPerSubstance(
       sourcing.depth,
-      (sourcing.queryIds ?? settings.defaultQueryIds).length,
+      effectiveQueryCount(
+        settings.templates,
+        sourcing.queryIds ?? settings.defaultQueryIds,
+        settings.synonymLimit,
+      ),
       settings.maxAnalysedSources,
     ),
     siteProbe: sourcing.siteProbe,

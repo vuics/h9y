@@ -53,6 +53,21 @@ const depthOf = id => DEPTHS.find(item => item.id === id) || DEPTHS[1]
 export const sourcesPerSubstance = (depth, queryCount, ceiling = 300) =>
   Math.max(1, Math.min(ceiling, depthOf(depth).perQuery * Math.max(1, queryCount)))
 
+/** How many queries the plan really issues, synonym repeats included.
+ *
+ * A query written with `{name}` is issued once for the card's own name and once
+ * more for each of the substance's other names, so the number of lines in the
+ * plan is not the number of searches. This is the upper bound — a substance
+ * whose normalization offers fewer usable names issues fewer — and the bound is
+ * the right end to err on: the analysis budget is spread over the queries, so
+ * budgeting for the shorter plan would quietly cut the chosen depth.
+ */
+export const effectiveQueryCount = (templates, selectedIds, synonymLimit = 0) => {
+  const selected = templates.filter(item => selectedIds.includes(item.id))
+  const byName = selected.filter(item => String(item.template).includes('{name}')).length
+  return selected.length + byName * Math.max(0, synonymLimit)
+}
+
 const plural = (count, one, few, many) => {
   const mod10 = count % 10
   const mod100 = count % 100
@@ -101,6 +116,9 @@ export function useSourcingSettings() {
     defaultQueryIds: templates.filter(item => item.enabled).map(item => item.id),
     isDefault: queryTemplates.data?.isDefault,
     defaultTemplates: queryTemplates.data?.defaultTemplates || [],
+    synonymLimit: queryTemplates.data?.synonymLimit ?? 0,
+    defaultSynonymLimit: queryTemplates.data?.defaultSynonymLimit ?? 3,
+    maxSynonymLimit: queryTemplates.data?.maxSynonymLimit ?? 10,
     saveTemplates,
     isLoading: queryTemplates.isLoading || engines.isLoading,
   }
@@ -151,12 +169,13 @@ export function SourcingSettings({
     </fieldset>
     <p className="pr-note pr-sourcing-cost-note">
       {(() => {
-        const perSubstance = sourcesPerSubstance(value.depth, queryIds.length, settings.maxAnalysedSources)
+        const queryCount = effectiveQueryCount(templates, queryIds, settings.synonymLimit)
+        const perSubstance = sourcesPerSubstance(value.depth, queryCount, settings.maxAnalysedSources)
         const count = Math.max(1, substanceCount || 1)
         const total = perSubstance * count
         const rate = settings.secondsPerSource
         return <>
-          {queryIds.length} {plural(queryIds.length, 'запрос', 'запроса', 'запросов')} × {depthOf(value.depth).perQuery} = до {perSubstance} {plural(perSubstance, 'источника', 'источников', 'источников')} на вещество
+          до {queryCount} {plural(queryCount, 'запроса', 'запросов', 'запросов')} × {depthOf(value.depth).perQuery} = до {perSubstance} {plural(perSubstance, 'источника', 'источников', 'источников')} на вещество
           {count > 1 && <>, около {total.toLocaleString('ru-RU')} на всю кампанию</>}.
           {' '}Каждый источник — одно скачивание страницы и одно обращение к модели.
           {rate
@@ -184,20 +203,25 @@ export function SourcingSettings({
           ? [...new Set([...queryIds, id])]
           : queryIds.filter(current => current !== id),
       })}
-      onSave={async payload => {
+      onSave={async (payload, synonymLimit) => {
         try {
-          await saveTemplates.mutateAsync(payload)
+          await saveTemplates.mutateAsync({ templates: payload, synonymLimit })
           onTemplatesSaved?.()
           return true
         } catch { return false }
       }}
-      onReset={() => saveTemplates.mutate(settings.defaultTemplates.map(template => ({ template, enabled: true })))}
+      onReset={() => saveTemplates.mutate({
+        templates: settings.defaultTemplates.map(template => ({ template, enabled: true })),
+        synonymLimit: settings.defaultSynonymLimit,
+      })}
       isSaving={saveTemplates.isPending}
       saveError={saveTemplates.error}
       canEdit={canEdit}
       disabled={disabled}
       cas={cas}
       substanceName={substanceName}
+      synonymLimit={settings.synonymLimit}
+      maxSynonymLimit={settings.maxSynonymLimit}
     />
   </>
 }

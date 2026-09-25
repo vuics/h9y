@@ -104,11 +104,11 @@ export function PurchaseStart({ canWrite }) {
       onDrop={event => { event.preventDefault(); const file = event.dataTransfer.files?.[0]; if (file) submitFile(file) }}
     >
       <textarea
-        aria-label="Номер карточки, CAS или название вещества"
+        aria-label="Номер карточки, CAS, название или синоним вещества"
         rows={lines}
         value={text}
         disabled={start.isPending}
-        placeholder="Номер карточки, CAS или название, например 108-88-3 Toluene"
+        placeholder="Номер карточки, CAS, название или синоним, например 108-88-3 Toluene"
         onChange={event => { setText(event.target.value); setChosen(null); start.reset() }}
         onKeyDown={event => {
           if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit() }

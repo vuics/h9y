@@ -15,6 +15,7 @@ import {
   SourcingSettings,
   canLaunch,
   defaultSourcingValue,
+  effectiveQueryCount,
   sourcesPerSubstance,
   useSourcingSettings,
 } from '../components/SourcingSettings'
@@ -264,7 +265,7 @@ export default function SourcingPage() {
   const effectiveEngineIds = (sourcing.engineIds ?? settings.availableEngineIds)
     .filter(id => settings.availableEngineIds.includes(id))
   const start = useMutation({
-    mutationFn: () => procurementApi.startSourcing(requestId, sourcesPerSubstance(sourcing.depth, effectiveQueryIds.length, settings.maxAnalysedSources), effectiveQueryIds, effectiveEngineIds, sourcing.siteProbe),
+    mutationFn: () => procurementApi.startSourcing(requestId, sourcesPerSubstance(sourcing.depth, effectiveQueryCount(settings.templates, effectiveQueryIds, settings.synonymLimit), settings.maxAnalysedSources), effectiveQueryIds, effectiveEngineIds, sourcing.siteProbe),
     onSuccess: accept,
   })
   const cancel = useMutation({
