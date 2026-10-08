@@ -265,4 +265,29 @@ export const sourcingValueFromPlan = (plan, settings) => {
   }
 }
 
+/** The depth a run was actually started with, or null when it cannot be told.
+ *
+ * From the budget it stored, spread over its queries; for a run started before
+ * the budget was stored, from the most results any one query returned on one
+ * engine, which the depth caps (2, 5, 10).
+ */
+export const depthOfRun = run => {
+  if (!run) return null
+  const queries = Math.max(1, run.queryPlan?.length || 0)
+  let perQuery = run.maxResults ? run.maxResults / queries : 0
+  if (!perQuery && run.sources?.length) {
+    const counts = {}
+    for (const source of run.sources) {
+      const key = `${source.query}|${source.engine}`
+      counts[key] = (counts[key] || 0) + 1
+    }
+    perQuery = Math.max(...Object.values(counts))
+    if (perQuery > 5) perQuery = 10
+    else if (perQuery > 2) perQuery = 5
+  }
+  if (!perQuery) return null
+  return DEPTHS.reduce((best, item) =>
+    Math.abs(item.perQuery - perQuery) < Math.abs(best.perQuery - perQuery) ? item : best)
+}
+
 export { plural }

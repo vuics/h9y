@@ -67,7 +67,7 @@ export function ContactScanProgress({ run }) {
   )
 }
 
-export function SourcingProgress({ run, isRunning }) {
+export function SourcingProgress({ run, isRunning, depthLabel }) {
   const progress = run?.progress || {}
   const counts = progress.sourceStatusCounts || {}
   const discovered = progress.discoveredSources || 0
@@ -83,6 +83,7 @@ export function SourcingProgress({ run, isRunning }) {
         <div>
           <strong>{progress.stage === 'QUEUED' && run?.queuePosition ? `В очереди на поиск: ${run.queuePosition}-й` : stageLabels[progress.stage] || (isRunning ? 'Поиск выполняется' : 'Поиск завершён')}</strong>
           <span>
+            {depthLabel && <>Глубина: <b>{depthLabel}</b> · </>}
             {progress.stage === 'QUEUED'
               ? `Поиск запущен и начнётся, когда освободится место: одновременно идёт ограниченное число поисков (настройка «Одновременных поисков»).${total ? ` Уже обработано ${processed} из ${total} источников.` : ''}`
               : total

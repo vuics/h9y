@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 
@@ -11,7 +11,7 @@ import { businessRoleLabel, businessRoleSourceLabels } from '../components/Busin
 import { ContactScanProgress, SourcingProgress } from '../components/SourcingProgress'
 import { SourcingSourceTable } from '../components/SourcingSourceTable'
 import { SelectField } from '../components/SelectField'
-import {
+import { depthOfRun,
   SourcingSettings,
   canLaunch,
   defaultSourcingValue,
@@ -255,6 +255,17 @@ export default function SourcingPage() {
       ? 3000
       : false,
   })
+  // The form starts from the depth of the search already on this card, not
+  // from a fixed "quick": a card searched at maximum depth showed "Быстрый",
+  // which read as the depth of the running search. Once, so a choice the
+  // specialist makes is not overwritten by the next refresh.
+  const depthSeeded = useRef(false)
+  useEffect(() => {
+    if (depthSeeded.current || !query.data) return
+    depthSeeded.current = true
+    const depth = depthOfRun(query.data)
+    if (depth) setSourcing(current => ({ ...current, depth: depth.id }))
+  }, [query.data])
   const accept = run => {
     queryClient.setQueryData(procurementKeys.sourcing(requestId), run)
     if (run?.id) queryClient.setQueryData(procurementKeys.sourcingRun(run.id), run)
@@ -370,7 +381,7 @@ export default function SourcingPage() {
       {!run && <EmptyState title="Поиск ещё не запускался" description="После запуска здесь появятся источники, предварительный светофор и подтверждающие цитаты по каждому кандидату." />}
 
       {run && <>
-        <SourcingProgress run={run} isRunning={isRunning} />
+        <SourcingProgress run={run} isRunning={isRunning} depthLabel={depthOfRun(run)?.label} />
         <ContactScanProgress run={run} />
         <div className="pr-sourcing-kpis"><div className="is-neutral"><span>Кандидаты</span><strong>{run.candidates?.length || 0}</strong></div><div className="is-green"><span>Высокая уверенность</span><strong>{counts.GREEN || 0}</strong></div><div className="is-yellow"><span>Нужны доказательства</span><strong>{counts.YELLOW || 0}</strong></div><div className="is-red"><span>Высокий риск</span><strong>{counts.RED || 0}</strong></div><div className="is-ink"><span>Источники</span><strong>{run.sources?.length || 0}</strong></div></div>
 
