@@ -51,4 +51,14 @@ export const settingsEndpoints = {
   saveBuyerSettings: mutation(settings => request('/settings/buyer', {
     method: 'put', data: payload(settings),
   })),
+  sendingLimits: read(
+    signal => request('/settings/sending', { signal }),
+    async () => ({
+      limits: { emailsPerDay: 80, windowStart: '09:00', windowEnd: '19:00', timezone: 'Europe/Moscow', repliesExempt: true, bouncesInvalidate: true },
+      usage: { sentToday: 0, limit: 80, waiting: 0, daysToClear: null, open: false, reason: 'BEFORE_WINDOW', nextAt: null },
+    }),
+  ),
+  saveSendingLimits: mutation(limits => request('/settings/sending', {
+    method: 'put', data: limits,
+  })),
 }

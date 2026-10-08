@@ -8,6 +8,7 @@ import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { StatusBadge } from '../components/StatusBadge'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
+import { SendingUsageLine } from '../components/SendingLimits'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -244,6 +245,7 @@ export default function NegotiatorActivityPage() {
         ))}
       </div>
 
+      <SendingUsageLine usage={data.sending} />
       {counts.awaitingReview > 0 && (
         <Alert>
           <Clock />

@@ -7,6 +7,7 @@ import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import { LoadingState, ErrorState } from '../components/AsyncState'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
+import { SendingLimitsCard } from '../components/SendingLimits'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -322,6 +323,8 @@ export default function SettingsPage() {
         Это переключатель развёртывания <code>ECHEMI_ENABLE_SUBMISSION</code>, а не право пользователя: он подтверждает, что контур браузерной интеграции проверен. Его меняет администратор в конфигурации сервиса — из интерфейса он не редактируется намеренно, потому что это последний рубеж перед необратимой отправкой реальному поставщику.
       </p>
     </CardContent></Card>
+
+    <SendingLimitsCard canEdit={canManageBuyerSettings} />
 
     <div ref={saveErrorRef}>
       {save.isError && <Alert variant="destructive"><AlertTriangle /><AlertTitle>Настройки не сохранены</AlertTitle><AlertDescription>

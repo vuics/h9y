@@ -593,6 +593,8 @@
 /* Mail only: a messenger message has no subject, so nothing is reserved for
    one and the body stays where the eye already looks for it. */
 .pr-quarantine-item__subject { margin: 0.35rem 0 0; font-weight: 500; }
+.pr-form-field--check { flex-direction: row; align-items: flex-start; gap: 0.5rem; grid-column: 1 / -1; }
+.pr-form-field--check > input { margin-top: 0.2rem; }
 .pr-review-bulk { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0.75rem 0; }
 .pr-quarantine-item__actions { display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; }
 .pr-quarantine-suggestions { border-left: 3px solid var(--border); padding-left: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
