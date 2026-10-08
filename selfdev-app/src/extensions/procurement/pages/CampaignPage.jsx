@@ -516,7 +516,7 @@ export default function CampaignPage() {
       {holdable && <Button variant="outline" isDisabled={hold.isPending} onPress={() => hold.mutate()}><Pause />{hold.isPending ? 'Останавливаем…' : 'Пауза'}</Button>}
       {campaign.status === 'PAUSED' && <Button isDisabled={carryOn.isPending} onPress={() => carryOn.mutate()}><Play className={carryOn.isPending ? 'pr-spin' : undefined} />{carryOn.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
       {(stoppable || campaignDeletable(campaign)) && !moreActions && <Button variant="ghost" onPress={() => setMoreActions(true)}>Ещё…</Button>}
-      {moreActions && stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()}><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
+      {moreActions && stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()} aria-description="Останавливает кампанию и закрывает её переговоры: напоминания и неотправленные письма не уйдут"><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
       {moreActions && campaignDeletable(campaign) && (confirmDelete
         ? <>
           <Button variant="destructive" isDisabled={remove.isPending} onPress={() => remove.mutate()}><Trash />{remove.isPending ? 'Удаляем…' : 'Удалить кампанию навсегда'}</Button>
@@ -532,7 +532,10 @@ export default function CampaignPage() {
         {savedEffects.released?.length > 0 && <> Снятые проверки выполняются для веществ, ждущих согласования, — ход будет виден в истории ниже.</>}
       </AlertDescription></Alert>}
       {remove.error && <Alert><AlertTriangle /><AlertTitle>Кампания не удалена</AlertTitle><AlertDescription>{deleteMessage(remove.error)}</AlertDescription></Alert>}
-      {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
+      {cancel.data?.effects && <Alert><Check /><AlertTitle>Кампания остановлена</AlertTitle><AlertDescription>
+        Закрыто переговоров: {cancel.data.effects.cancelledNegotiations}, отклонено неотправленных писем: {cancel.data.effects.rejectedDrafts}. Вещества, которые ведёт другая кампания, не затронуты; история переписки сохранена.
+      </AlertDescription></Alert>}
+            {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
       {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Кампания на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не кампании, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
       {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Кампания прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}
       {errors.length > 0 && <Alert><CircleAlert /><AlertTitle>Замечания по запуску</AlertTitle><AlertDescription><ul className="pr-plain-list">{errors.map(code => <li key={code}>{code.startsWith('card:CARD_NOT_FOUND:') ? `Карточка #${code.split(':').pop()} не найдена и в кампанию не вошла` : errorText(code)}</li>)}</ul></AlertDescription></Alert>}
