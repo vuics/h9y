@@ -29,6 +29,17 @@ export function CampaignMemberProgress({ stage, stepProgress, waitingFor, errorC
   const { label, done, total, percent } = stepProgress
   const tone = failed ? 'is-failed' : working ? 'is-working' : waiting ? 'is-waiting' : 'is-idle'
 
+  // Asking the search engines: no count exists yet, so the bar says the search
+  // is on without inventing a percentage.
+  if (stepProgress.indeterminate) {
+    return <div className={`pr-member-progress pr-member-progress--indeterminate ${tone}`}>
+      <div className="pr-member-progress__track" role="progressbar" aria-label={label} aria-busy="true">
+        <span className="pr-member-progress__fill" />
+      </div>
+      <span className="pr-member-progress__figure"><i>{label}…</i></span>
+    </div>
+  }
+
   return <div className={`pr-member-progress ${tone}`}>
     <div
       className="pr-member-progress__track"
