@@ -21,7 +21,8 @@ export function CampaignMemberProgress({ stage, stepProgress, waitingFor, errorC
   const failed = stage === 'FAILED' || Boolean(errorCode)
   // A campaign on hold is working on nothing, whatever its members still say:
   // the driver checks for the hold before it picks the next substance up.
-  const working = WORKING_STAGES.has(stage) && !paused && !failed
+  // A search started again from the card works whatever stage the row shows.
+  const working = (WORKING_STAGES.has(stage) || Boolean(stepProgress?.running)) && !paused && !failed
   const waiting = !working && !failed && Boolean(waitingFor)
   if (!stepProgress) return null
 
@@ -44,6 +45,9 @@ export function CampaignMemberProgress({ stage, stepProgress, waitingFor, errorC
       {/* The counts, because a percentage alone cannot say whether the pass is
           small and nearly done or large and barely started. */}
       <i>{done}/{total}</i>
+      {/* Named only for a search outside the campaign's own steps: the stage
+          column says something else, and 100% that keeps going needs a word. */}
+      {stepProgress.running && <i>{label}</i>}
     </span>
   </div>
 }
