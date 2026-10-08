@@ -20,6 +20,7 @@ const mutationMessage = error => error?.response?.data?.message || error?.messag
 
 const KPI = [
   ['dueNow', 'Пора действовать'],
+  ['webFormPending', 'Ждут отправки формы'],
   ['awaitingReview', 'Черновиков ждут решения'],
   ['quarantine', 'Не опознано'],
   ['waitingSupplier', 'Ждём поставщика'],
@@ -28,7 +29,7 @@ const KPI = [
   ['queued', 'В очереди'],
 ]
 
-function AssignmentList({ items, emptyTitle, emptyDescription, showTime = true }) {
+function AssignmentList({ items, emptyTitle, emptyDescription, showTime = true, showErrors = true }) {
   if (!items?.length) return <EmptyState title={emptyTitle} description={emptyDescription} />
   return (
     <ul className="pr-activity-list">
@@ -42,7 +43,7 @@ function AssignmentList({ items, emptyTitle, emptyDescription, showTime = true }
           <div className="pr-activity-list__meta">
             <Link to={`/procurement/requests/${item.cardId}`}>{item.cardTitle}</Link>
             {showTime && <span>{formatDate(item.nextActionAt)}</span>}
-            {item.lastWorkerError && <span className="pr-activity-error">{item.lastWorkerError}</span>}
+            {showErrors && item.lastWorkerError && <span className="pr-activity-error">{item.lastWorkerError}</span>}
             {item.escalationReason && <span className="pr-activity-error">{item.escalationReason}</span>}
           </div>
         </li>
@@ -284,6 +285,31 @@ export default function NegotiatorActivityPage() {
         </Card>
       </div>
 
+      {counts.webFormPending > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle><MessageSquare size={15} />Ждут отправки формы</CardTitle>
+            <p className="pr-note">
+              Запросы через форму на сайте поставщика агент не отправляет: форму заполняет,
+              проверяет и отправляет специалист на странице переговоров.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <AssignmentList
+              items={data.webForms}
+              emptyTitle="Форм к отправке нет"
+              emptyDescription="Все запросы через формы отправлены."
+              showTime={false}
+              showErrors={false}
+            />
+            {counts.webFormPending > (data.webForms?.length || 0) && (
+              <p className="pr-muted">
+                Показаны {data.webForms.length} из {counts.webFormPending}.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle><AlertTriangle size={15} />Застряло</CardTitle>
