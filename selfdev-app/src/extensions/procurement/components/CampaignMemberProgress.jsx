@@ -31,6 +31,13 @@ export function CampaignMemberProgress({ stage, stepProgress, waitingFor, errorC
 
   // Asking the search engines: no count exists yet, so the bar says the search
   // is on without inventing a percentage.
+  // Started and waiting for a free slot: still, not animated, with its place.
+  if (stepProgress.queued) {
+    return <div className="pr-member-progress pr-member-progress--queued is-waiting">
+      <span className="pr-member-progress__figure"><i>{label}</i></span>
+    </div>
+  }
+
   if (stepProgress.indeterminate) {
     return <div className={`pr-member-progress pr-member-progress--indeterminate ${tone}`}>
       <div className="pr-member-progress__track" role="progressbar" aria-label={label} aria-busy="true">

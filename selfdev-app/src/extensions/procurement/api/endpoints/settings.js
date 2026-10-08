@@ -61,4 +61,11 @@ export const settingsEndpoints = {
   saveSendingLimits: mutation(limits => request('/settings/sending', {
     method: 'put', data: limits,
   })),
+  searchSettings: read(
+    signal => request('/settings/search', { signal }),
+    async () => ({ settings: { concurrentSearches: 2 }, queue: { running: 0, waiting: 0 } }),
+  ),
+  saveSearchSettings: mutation(settings => request('/settings/search', {
+    method: 'put', data: settings,
+  })),
 }

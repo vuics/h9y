@@ -5,6 +5,7 @@ const stageLabels = {
   DISCOVERY: 'Ищем релевантные открытые источники',
   ANALYSIS: 'Читаем источники и извлекаем доказательства',
   MANUAL_SOURCE: 'Анализируем добавленный источник',
+  QUEUED: 'В очереди на поиск',
   COMPLETED: 'Поиск завершён',
   FAILED: 'Поиск остановлен',
   INTERRUPTED: 'Прогон прерван',
@@ -80,11 +81,13 @@ export function SourcingProgress({ run, isRunning }) {
     <section className={`pr-sourcing-progress${isRunning ? ' is-running' : ''}`} aria-live="polite">
       <header>
         <div>
-          <strong>{stageLabels[progress.stage] || (isRunning ? 'Поиск выполняется' : 'Поиск завершён')}</strong>
+          <strong>{progress.stage === 'QUEUED' && run?.queuePosition ? `В очереди на поиск: ${run.queuePosition}-й` : stageLabels[progress.stage] || (isRunning ? 'Поиск выполняется' : 'Поиск завершён')}</strong>
           <span>
-            {total
-              ? `Обработано ${processed} из ${total} источников · доказательства найдены в ${evidence}`
-              : 'Формируем список источников…'}
+            {progress.stage === 'QUEUED'
+              ? `Поиск запущен и начнётся, когда освободится место: одновременно идёт ограниченное число поисков (настройка «Одновременных поисков»).${total ? ` Уже обработано ${processed} из ${total} источников.` : ''}`
+              : total
+                ? `Обработано ${processed} из ${total} источников · доказательства найдены в ${evidence}`
+                : 'Формируем список источников…'}
           </span>
         </div>
         <b aria-hidden="true">{percent}%</b>

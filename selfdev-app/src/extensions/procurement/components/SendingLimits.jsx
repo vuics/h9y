@@ -88,3 +88,46 @@ export function SendingLimitsCard({ canEdit }) {
       : <p className="pr-muted">Лимиты меняет администратор (BUYER_SETTINGS_MANAGE).</p>}
   </CardContent></Card>
 }
+
+
+/** How many supplier searches run at once; the rest wait their turn.
+ *
+ * Every search reads its sources through one model server. More searches at
+ * once than it can answer only make each one wait and lose sources to
+ * timeouts, so the limit is set to what the server keeps up with.
+ */
+export function SearchConcurrencyCard({ canEdit }) {
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    queryKey: procurementKeys.searchSettings(),
+    queryFn: ({ signal }) => procurementApi.searchSettings(signal),
+    refetchInterval: 30000,
+  })
+  const [value, setValue] = useState(null)
+  useEffect(() => { if (query.data && value === null) setValue(String(query.data.settings.concurrentSearches)) }, [query.data, value])
+  const save = useMutation({
+    mutationFn: () => procurementApi.saveSearchSettings({ concurrentSearches: Number(value) }),
+    onSuccess: data => {
+      queryClient.setQueryData(procurementKeys.searchSettings(), data)
+      setValue(String(data.settings.concurrentSearches))
+    },
+  })
+  if (value === null) return null
+  const queue = query.data?.queue
+  const changed = Number(value) !== query.data?.settings.concurrentSearches
+
+  return <Card><CardHeader><CardTitle><Clock /> Поиск поставщиков</CardTitle></CardHeader><CardContent>
+    <p className="pr-note">Все поиски читают источники через одну модель. Если запустить больше поисков, чем она успевает обработать, каждый идёт медленнее и теряет источники по таймауту. Лишние поиски ждут своей очереди и начинаются сами, по порядку запуска.</p>
+    <div className="pr-card-form">
+      <label className="pr-form-field"><span>Одновременных поисков</span>
+        <Input type="number" min={1} max={16} value={value} disabled={!canEdit} onChange={event => setValue(event.target.value)} />
+        <small className="pr-muted">Меняется без перезапуска: очередь подхватит новое значение в течение полуминуты.</small>
+      </label>
+    </div>
+    {queue && <p className="pr-note"><Clock size={13} /> Сейчас идёт поисков: {queue.running}{queue.waiting ? `, в очереди: ${queue.waiting}` : ''}.</p>}
+    {save.error && <Alert><AlertTriangle /><AlertTitle>Не сохранено</AlertTitle><AlertDescription>{mutationMessage(save.error)}</AlertDescription></Alert>}
+    {canEdit
+      ? <div className="pr-inline-actions"><Button isDisabled={!changed || save.isPending || !(Number(value) >= 1)} onPress={() => save.mutate()}>{save.isPending ? 'Сохраняем…' : 'Сохранить'}</Button></div>
+      : <p className="pr-muted">Меняет администратор (BUYER_SETTINGS_MANAGE).</p>}
+  </CardContent></Card>
+}
