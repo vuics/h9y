@@ -66,8 +66,11 @@ export function CampaignMembers({
   // The marketplace actions and the browser access are owned by the page,
   // which holds their mutations; the row only says where they belong.
   renderMarketplaceActions, browserAccess,
+  // Searching chosen substances again: the page owns the mutation.
+  canResearch, onResearch, researchPending,
 }) {
   const [open, setOpen] = useState(() => new Set())
+  const [selected, setSelected] = useState(() => new Set())
   const counts = filterCounts(members)
   const rows = filterMembers(members, filter)
   const toggle = cardId => setOpen(current => {
@@ -76,6 +79,24 @@ export function CampaignMembers({
     else next.add(cardId)
     return next
   })
+
+  const visible = rows.map(member => member.cardId)
+  const allVisible = visible.length > 0 && visible.every(cardId => selected.has(cardId))
+  const pick = cardId => setSelected(current => {
+    const next = new Set(current)
+    if (next.has(cardId)) next.delete(cardId)
+    else next.add(cardId)
+    return next
+  })
+  const pickVisible = () => setSelected(current => {
+    const next = new Set(current)
+    for (const cardId of visible) {
+      if (allVisible) next.delete(cardId)
+      else next.add(cardId)
+    }
+    return next
+  })
+  const columns = canResearch ? 9 : 8
 
   return <section className="pr-members">
     <div className="pr-members__filters" role="group" aria-label="Показать вещества">
@@ -89,8 +110,22 @@ export function CampaignMembers({
       >{label} <b>{counts[id]}</b></button>)}
     </div>
 
+    {canResearch && selected.size > 0 && <div className="pr-members__bulk" role="region" aria-label="Выбранные вещества">
+      <span>Выбрано: <b>{selected.size}</b></span>
+      <Button
+        size="sm"
+        isDisabled={researchPending}
+        onPress={() => onResearch([...selected], () => setSelected(new Set()))}
+      >{researchPending ? 'Запускаем…' : `Искать заново (${selected.size})`}</Button>
+      <Button size="sm" variant="ghost" onPress={() => setSelected(new Set())}>Снять выбор</Button>
+      <span className="pr-muted">С текущими настройками кампании — глубина, движки, запросы. Найденное сольётся с прежним поиском; решения по кандидатам сохранятся. Вещества, где поиск уже идёт, пропускаются.</span>
+    </div>}
+
     <div className="pr-table-wrap"><table className="pr-table pr-members__table">
       <thead><tr>
+        {canResearch && <th className="pr-members__pick">
+          <input type="checkbox" checked={allVisible} aria-label="Выбрать все показанные вещества" onChange={pickVisible} />
+        </th>}
         <th aria-label="Развернуть" />
         <th>Вещество</th>
         <th>Этап</th>
@@ -108,6 +143,9 @@ export function CampaignMembers({
         const marketplace = marketplaceByCard.get(member.cardId)
         return <React.Fragment key={member.cardId}>
           <tr className={expanded ? 'pr-members__row is-open' : 'pr-members__row'} data-group={memberGroup(member)}>
+            {canResearch && <td className="pr-members__pick">
+              <input type="checkbox" checked={selected.has(member.cardId)} aria-label={`Выбрать: ${member.title}`} onChange={() => pick(member.cardId)} />
+            </td>}
             <td className="pr-members__toggle">
               <Button
                 variant="ghost"
@@ -178,7 +216,7 @@ export function CampaignMembers({
               </RowMenu>
             </td>
           </tr>
-          {expanded && <tr className="pr-members__details"><td colSpan={8}>
+          {expanded && <tr className="pr-members__details"><td colSpan={columns}>
             <div className="pr-members__panel">
               <div>
                 <h4>Переписки</h4>

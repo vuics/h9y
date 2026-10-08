@@ -29,6 +29,8 @@ export const campaignEndpoints = {
     request(`/campaigns/${id(campaignId)}/settings`, { method: 'post', data: payload })),
   addCampaignCards: mutation((campaignId, cardIds) =>
     request(`/campaigns/${id(campaignId)}/members`, { method: 'post', data: { cardIds } })),
+  researchCampaignCards: mutation((campaignId, cardIds) =>
+    request(`/campaigns/${id(campaignId)}/research`, { method: 'post', data: { cardIds } })),
   removeCampaignCard: mutation((campaignId, cardId) =>
     request(`/campaigns/${id(campaignId)}/members/${id(cardId)}/remove`, { method: 'post' })),
   cancelCampaign: mutation(campaignId =>

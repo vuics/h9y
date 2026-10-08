@@ -331,6 +331,10 @@ export default function CampaignPage() {
       setDraftTitle(null)
     },
   })
+  const research = useMutation({
+    mutationFn: cardIds => procurementApi.researchCampaignCards(campaignId, cardIds),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) }),
+  })
   const removeCard = useMutation({
     mutationFn: cardId => procurementApi.removeCampaignCard(campaignId, cardId),
     onSuccess: accept,
@@ -532,6 +536,11 @@ export default function CampaignPage() {
         {savedEffects.released?.length > 0 && <> Снятые проверки выполняются для веществ, ждущих согласования, — ход будет виден в истории ниже.</>}
       </AlertDescription></Alert>}
       {remove.error && <Alert><AlertTriangle /><AlertTitle>Кампания не удалена</AlertTitle><AlertDescription>{deleteMessage(remove.error)}</AlertDescription></Alert>}
+      {research.data && <Alert>{research.data.started.length ? <Check /> : <CircleAlert />}<AlertTitle>{research.data.started.length ? `Поиск запущен заново: ${research.data.started.length}` : 'Поиск не запущен'}</AlertTitle><AlertDescription>
+        {research.data.started.length > 0 && <>Ход поиска видно в строках таблицы; когда он закончится, найденное сольётся с прежним. </>}
+        {research.data.skipped.length > 0 && <>Пропущено: {research.data.skipped.map(item => `#${item.cardId} — ${item.code === 'SEARCH_RUNNING' ? 'поиск уже идёт' : item.code === 'NOT_IN_CAMPAIGN' ? 'не в кампании' : item.message || item.code}`).join('; ')}.</>}
+      </AlertDescription></Alert>}
+      {research.error && <Alert><AlertTriangle /><AlertTitle>Поиск не запущен</AlertTitle><AlertDescription>{mutationMessage(research.error)}</AlertDescription></Alert>}
       {cancel.data?.effects && <Alert><Check /><AlertTitle>Кампания остановлена</AlertTitle><AlertDescription>
         Закрыто переговоров: {cancel.data.effects.cancelledNegotiations}, отклонено неотправленных писем: {cancel.data.effects.rejectedDrafts}. Вещества, которые ведёт другая кампания, не затронуты; история переписки сохранена.
       </AlertDescription></Alert>}
@@ -638,6 +647,9 @@ export default function CampaignPage() {
         offersByCard={offersByCard}
         offersLoading={offers.isLoading}
         canRemove={canResearchSourcing && campaign.status !== 'CANCELLED'}
+        canResearch={canResearchSourcing && campaign.status !== 'CANCELLED'}
+        onResearch={(cardIds, done) => research.mutate(cardIds, { onSuccess: done })}
+        researchPending={research.isPending}
         removable={member => removable(member, campaign)}
         onRemove={cardId => removeCard.mutate(cardId)}
         removePending={removeCard.isPending}

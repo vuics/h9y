@@ -598,6 +598,8 @@
 .pr-member-progress--indeterminate .pr-member-progress__fill { width: 30% !important; animation: pr-progress-sweep 1.4s ease-in-out infinite; }
 @keyframes pr-progress-sweep { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
 @media (prefers-reduced-motion: reduce) { .pr-member-progress--indeterminate .pr-member-progress__fill { animation: none; width: 100% !important; opacity: 0.4; } }
+.pr-members__bulk { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin: 0.5rem 0; padding: 0.5rem 0.75rem; border: 1px solid var(--pr-border, var(--border)); border-radius: 0.5rem; }
+.pr-members__pick { width: 2rem; text-align: center; }
 .pr-review-bulk { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0.75rem 0; }
 .pr-quarantine-item__actions { display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; }
 .pr-quarantine-suggestions { border-left: 3px solid var(--border); padding-left: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
