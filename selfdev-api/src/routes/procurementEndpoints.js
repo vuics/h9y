@@ -113,6 +113,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/negotiations' },
   { method: 'GET', path: '/negotiations/activity' },
   { method: 'GET', path: '/negotiations/quarantine' },
+  { method: 'POST', path: '/negotiations/quarantine/{message_id}/accept' },
   { method: 'POST', path: '/negotiations/quarantine/{message_id}/assign' },
   { method: 'POST', path: '/negotiations/quarantine/{message_id}/dismiss' },
   { method: 'GET', path: '/negotiations/{negotiation_id}' },

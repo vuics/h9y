@@ -594,6 +594,9 @@
    one and the body stays where the eye already looks for it. */
 .pr-quarantine-item__subject { margin: 0.35rem 0 0; font-weight: 500; }
 .pr-quarantine-item__actions { display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; }
+.pr-quarantine-suggestions { border-left: 3px solid var(--border); padding-left: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.pr-quarantine-suggestions > ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.pr-quarantine-suggestion { display: flex; flex-direction: column; gap: 0.35rem; }
 
 /* ---- Conversation timeline -------------------------------------------- */
 

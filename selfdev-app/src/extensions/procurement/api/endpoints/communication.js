@@ -96,6 +96,11 @@ export const negotiatorActivityEndpoints = {
       method: 'post',
       data: { assignmentId },
     })),
+  acceptQuarantinedMessage: mutation((messageId, { cardId, supplierId, supplierName }) =>
+    request(`/negotiations/quarantine/${id(messageId)}/accept`, {
+      method: 'post',
+      data: { cardId, supplierId, supplierName },
+    })),
   dismissQuarantinedMessage: mutation((messageId, reason) =>
     request(`/negotiations/quarantine/${id(messageId)}/dismiss`, {
       method: 'post',

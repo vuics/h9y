@@ -51,6 +51,64 @@ function AssignmentList({ items, emptyTitle, emptyDescription, showTime = true }
   )
 }
 
+const SUGGESTION_ACTION = {
+  ASSIGNMENT: 'Отнести',
+  NEW_ASSIGNMENT: 'Начать переговоры и отнести',
+  NEW_SUPPLIER: 'Создать поставщика и отнести',
+}
+
+// One confirmed click: the sender becomes the supplier's contact (the supplier
+// is created first when it is new), and the message is processed there.
+function MatchSuggestion({ message, suggestion, canResolve }) {
+  const queryClient = useQueryClient()
+  const [supplierName, setSupplierName] = useState(suggestion.proposedSupplierName || '')
+  const isNewSupplier = suggestion.kind === 'NEW_SUPPLIER'
+  const accept = useMutation({
+    mutationFn: () => procurementApi.acceptQuarantinedMessage(message.id, {
+      cardId: suggestion.cardId,
+      supplierId: suggestion.supplierId || undefined,
+      supplierName: isNewSupplier ? supplierName.trim() : undefined,
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: procurementKeys.all }),
+  })
+  const target = suggestion.assignmentId
+    ? <Link to={`/procurement/negotiations/${suggestion.assignmentId}`}>{suggestion.supplierName}</Link>
+    : suggestion.supplierName || 'новый поставщик'
+
+  return (
+    <li className="pr-quarantine-suggestion">
+      <div>
+        <Link to={`/procurement/requests/${suggestion.cardId}`}>#{suggestion.cardId} {suggestion.cardTitle}</Link>
+        {' · '}{target}
+        <span className="pr-muted"> — {suggestion.evidence.join(', ')}</span>
+        {!isNewSupplier && !suggestion.senderIsContact && (
+          <span className="pr-muted"> · {message.address} станет контактом поставщика</span>
+        )}
+      </div>
+      {accept.isError && <span className="pr-activity-error">{mutationMessage(accept.error)}</span>}
+      {canResolve && (
+        <div className="pr-quarantine-item__actions">
+          {isNewSupplier && (
+            <Input
+              value={supplierName}
+              placeholder="Название компании"
+              aria-label="Название нового поставщика"
+              onChange={event => setSupplierName(event.target.value)}
+            />
+          )}
+          <Button
+            size="sm"
+            isDisabled={accept.isPending || (isNewSupplier && !supplierName.trim())}
+            onPress={() => accept.mutate()}
+          >
+            {SUGGESTION_ACTION[suggestion.kind]}
+          </Button>
+        </div>
+      )}
+    </li>
+  )
+}
+
 function QuarantineCard({ message, canResolve }) {
   const queryClient = useQueryClient()
   const [assignmentId, setAssignmentId] = useState('')
@@ -80,6 +138,21 @@ function QuarantineCard({ message, canResolve }) {
         : <p className="pr-muted">Письмо без текстовой части.</p>}
       {message.attachmentUrls?.length > 0 && (
         <p className="pr-muted">Вложений: {message.attachmentUrls.length}</p>
+      )}
+      {message.suggestions?.length > 0 && (
+        <div className="pr-quarantine-suggestions">
+          <span className="pr-muted">Похоже, это ответ на:</span>
+          <ul>
+            {message.suggestions.map(suggestion => (
+              <MatchSuggestion
+                key={`${suggestion.cardId}-${suggestion.assignmentId || suggestion.supplierId || 'new'}`}
+                message={message}
+                suggestion={suggestion}
+                canResolve={canResolve}
+              />
+            ))}
+          </ul>
+        </div>
       )}
       {(assign.isError || dismiss.isError) && (
         <Alert variant="destructive">
