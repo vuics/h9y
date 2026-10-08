@@ -28,6 +28,9 @@ import { AlertTriangle, Check, CircleAlert, ExternalLink, Refresh } from '../com
 const VERDICTS = [
   ['VERIFIED_MANUFACTURER', 'Производитель'],
   ['VERIFIED_DISTRIBUTOR', 'Дистрибьютор'],
+  // Write to them for a price without vouching for who they are: the company
+  // enters the directory unverified, and its offer says so.
+  ['PRICE_REQUEST', 'Запросить цену'],
   ['NEEDS_MORE_EVIDENCE', 'Нужны доказательства'],
   ['REJECTED', 'Отклонить'],
 ]
@@ -40,7 +43,7 @@ const VERDICTS = [
 // BOC Sciences, Lookchem, Fisher Scientific among them. So it defaults to
 // "needs evidence" rather than to a rejection. The two are identical in what
 // they permit — `require_promotable_candidate` writes to a supplier only on
-// VERIFIED_MANUFACTURER or VERIFIED_DISTRIBUTOR — and differ only in whether a
+// VERIFIED_MANUFACTURER, VERIFIED_DISTRIBUTOR or PRICE_REQUEST — and differ only in whether a
 // real company is thrown away on no grounds, recorded under the specialist's
 // own name. A verdict can be revised later; only the way back to UNREVIEWED is
 // closed.
@@ -288,6 +291,43 @@ export default function CampaignReviewPage() {
   const confirmable = identityItems.filter(item => item.normalization.casMatches !== false)
   const identityBusy = identity.isPending
 
+  // One choice for many rows: every undecided company of a substance, or of
+  // the whole campaign. Only fills the dots — nothing is recorded until
+  // "Согласовать", so a bulk pick is reviewed like any other.
+  const openTargets = scope => scope
+    .filter(item => !item.blockedBy)
+    .flatMap(item => item.candidates
+      .filter(candidate => candidate.reviewDecision === 'UNREVIEWED')
+      .map(candidate => [item, candidate]))
+  const setAll = (scope, value, { withContactsOnly = false } = {}) => setVerdicts(current => {
+    const next = { ...current }
+    for (const [item, candidate] of openTargets(scope)) {
+      if (withContactsOnly && !candidate.contactCount) continue
+      next[verdictKey(item.cardId, candidate.candidateId)] = value
+    }
+    return next
+  })
+  const suggestAll = scope => setVerdicts(current => {
+    const next = { ...current }
+    for (const [item, candidate] of openTargets(scope)) {
+      const suggested = SUGGESTED[candidate.role]
+      if (suggested) next[verdictKey(item.cardId, candidate.candidateId)] = suggested
+    }
+    return next
+  })
+  const bulkVerdicts = scope => {
+    const targets = openTargets(scope)
+    if (!canReviewSourcing || !targets.length) return null
+    const reachable = targets.filter(([, candidate]) => candidate.contactCount).length
+    const busy = apply.isPending
+    return <div className="pr-review-bulk">
+      <span className="pr-muted">Всем нерешённым ({targets.length}):</span>
+      {reachable > 0 && <Button size="sm" isDisabled={busy} onPress={() => setAll(scope, 'PRICE_REQUEST', { withContactsOnly: true })}>Запросить цену у всех с контактами ({reachable})</Button>}
+      {VERDICTS.map(([value, label]) => <Button key={value} size="sm" variant="outline" isDisabled={busy} onPress={() => setAll(scope, value)}>{label}</Button>)}
+      <Button size="sm" variant="ghost" isDisabled={busy} onPress={() => suggestAll(scope)}>По рекомендации</Button>
+    </div>
+  }
+
   const verdictRadios = (item, candidate) => {
     const key = verdictKey(item.cardId, candidate.candidateId)
     const decided = candidate.reviewDecision !== 'UNREVIEWED'
@@ -389,6 +429,7 @@ export default function CampaignReviewPage() {
           {missingRfqs > 0 && canWriteCards && <Button variant="outline" isDisabled={prepare.isPending} onPress={() => prepare.mutate()}><Refresh className={prepare.isPending ? 'pr-spin' : undefined} />{prepare.isPending ? 'Готовим…' : `Подготовить RFQ (${missingRfqs})`}</Button>}
           {canReviewSourcing && <Button isDisabled={!decisions.length || apply.isPending} onPress={() => apply.mutate(decisions)}><Check />{apply.isPending ? 'Применяем…' : `Согласовать: ${candidateCount} ${plural(candidateCount, 'решение', 'решения', 'решений')} по компаниям и ${rfqCount} RFQ`}</Button>}
         </div>
+        {bulkVerdicts(items)}
       </CardContent></Card>
 
       {items.length === 0 && <EmptyState title="В кампании нет веществ" />}
@@ -419,6 +460,7 @@ export default function CampaignReviewPage() {
           {!hasRun
             ? <p className="pr-note">{item.blockedBy ? <>Пока нечего согласовывать: {blockedText(item.blockedBy)}. </> : 'Поиск не нашёл кандидатов. '}<Link to={`/procurement/requests/${item.cardId}/sourcing`}>Открыть поиск</Link></p>
             : <>
+              {open.length > 0 && bulkVerdicts([item])}
               {open.length > 0 && candidateTable(item, open, true)}
               {decided.length > 0 && <div className="pr-review-decided">
                 <button type="button" className="pr-review-rfq__toggle" onClick={() => setRevising(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
