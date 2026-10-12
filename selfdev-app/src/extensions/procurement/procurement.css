@@ -1425,3 +1425,7 @@
 .pr-site-check__title svg { margin-top: 2px; color: var(--pr-progress); flex: none; }
 .pr-site-check header .pr-inline-actions { align-items: center; }
 .pr-site-check__done { margin: 0; }
+.pr-marketplace-quotes { color: var(--pr-muted); font-size: 11px; }
+.pr-marketplace-quotes.is-behind { color: #b45309; font-weight: 600; }
+.pr-marketplace-summary { margin-top: 8px; color: var(--pr-muted); }
+.pr-marketplace-summary strong { color: #b45309; }

@@ -113,6 +113,9 @@ const MARKETPLACE_STATUS = {
   HUMAN_ACTION_REQUIRED: 'площадка просит пройти проверку',
   STALE: 'устарела: карточка или RFQ изменились',
   FAILED: 'не выставлена',
+  // Echemi lists it as "Invalid Inquiries" and never showed it to sellers —
+  // HCl and acetone, both drug precursors, were refused that way.
+  REJECTED: 'площадка отклонила заявку',
 }
 
 const MARKETPLACE_POSTED = new Set(['SUBMITTED', 'SUBMITTING', 'NEEDS_REVIEW'])
@@ -131,12 +134,32 @@ const MARKETPLACE_TONE = {
   HUMAN_ACTION_REQUIRED: 'warning',
   STALE: 'warning',
   FAILED: 'danger',
+  REJECTED: 'danger',
 }
 const marketplaceTone = item => item.status === 'NOT_PREPARED'
   ? (item.error ? 'danger' : 'muted')
   : MARKETPLACE_TONE[item.status]
 
 const ACTIVE = new Set(['RUNNING'])
+
+const shortTime = value => value
+  ? new Date(value).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  : null
+
+// One line per marketplace request about the offers sellers left on it: the
+// platform's count beside what reached the comparison. The gap is offers the
+// collector has not read, and it used to be visible only by opening Echemi.
+function MarketplaceQuotes({ quotations }) {
+  if (!quotations) return null
+  const published = quotations.published ?? 0
+  const unread = Math.max(0, published - quotations.ingested)
+  return <span className={unread > 0 ? 'pr-marketplace-quotes is-behind' : 'pr-marketplace-quotes'}>
+    {published > 0
+      ? `предложений на площадке: ${published} · в сравнении: ${quotations.ingested}${unread > 0 ? ` · не забрано: ${unread}` : ''}`
+      : 'предложений пока нет'}
+    {quotations.collectedAt && ` · проверено ${shortTime(quotations.collectedAt)}`}
+  </span>
+}
 
 // What each kind of wait is called when it is addressed to the specialist
 // rather than described in a table cell, and where pressing it takes them.
@@ -361,6 +384,13 @@ export default function CampaignPage() {
       queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
     },
   })
+  const collectMarketplaceQuotes = useMutation({
+    mutationFn: cardId => procurementApi.collectEchemiQuotations(cardId, true),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaignMarketplace(campaignId) })
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
+    },
+  })
   const resendMarketplace = useMutation({
     mutationFn: cardId => procurementApi.resendCampaignMarketplace(campaignId, cardId),
     onSuccess: result => queryClient.setQueryData(
@@ -494,6 +524,8 @@ export default function CampaignPage() {
   const asks = asksOf(members, campaignId)
   const blockingAsks = asks.filter(ask => ask.blocking).length
   const conversationsByCard = new Map(conversations.map(item => [item.cardId, item]))
+  const marketplaceQuotes = marketplaceView?.quotations
+  const lastCollection = browser.data?.lastCollection
   const marketplaceByCard = new Map(marketplaceItems.map(item => [item.cardId, item]))
   // A server without the cardIds filter answers with every offer; grouping by
   // card and keeping this campaign's substances makes that harmless.
@@ -670,7 +702,27 @@ export default function CampaignPage() {
         <div className="pr-stack">
       {marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
         <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
+        {marketplaceQuotes && <p className="pr-marketplace-summary">
+          {`Размещено: ${marketplaceView.posted} из ${marketplaceView.total}`}
+          {marketplaceView.rejected > 0 && ` · отклонено площадкой: ${marketplaceView.rejected}`}
+          {` · предложений от продавцов: ${marketplaceQuotes.published}, в сравнении: ${marketplaceQuotes.ingested}`}
+          {marketplaceQuotes.unread > 0 && <strong>{` · не забрано: ${marketplaceQuotes.unread}`}</strong>}
+          {marketplaceQuotes.lastCollectedAt && ` · последний сбор ${shortTime(marketplaceQuotes.lastCollectedAt)}`}
+        </p>}
       </div></CardHeader><CardContent>
+        {/* The collector reads offers every fifteen minutes in the agent's
+            browser. A lapsed session used to look exactly like "no offers";
+            this is where it says so instead. */}
+        {lastCollection && lastCollection.outcome !== 'OK' && <Alert><CircleAlert /><AlertTitle>{lastCollection.outcome === 'LOGIN'
+          ? 'Сбор предложений остановлен: нужен вход в Echemi'
+          : 'Сбор предложений остановлен'}</AlertTitle><AlertDescription>
+          {lastCollection.outcome === 'LOGIN'
+            ? 'Площадка разлогинила браузер агента. Откройте браузер Echemi ниже и войдите — следующий сбор (раз в 15 минут) заберёт всё, что продавцы оставили за это время.'
+            : lastCollection.outcome === 'HUMAN_ACTION'
+              ? 'Площадка просит пройти проверку в браузере агента. Пройдите её в браузере Echemi ниже.'
+              : `Последняя попытка ${shortTime(lastCollection.at)} не удалась: ${lastCollection.error || 'причина не записана'}.`}
+        </AlertDescription></Alert>}
+        {collectMarketplaceQuotes.error && <Alert><AlertTriangle /><AlertTitle>Предложения не забраны</AlertTitle><AlertDescription>{mutationMessage(collectMarketplaceQuotes.error)}</AlertDescription></Alert>}
         {resendMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Не отправлено</AlertTitle><AlertDescription>{mutationMessage(resendMarketplace.error)}</AlertDescription></Alert>}
         {resendMarketplace.data?.confirmed && <Alert><Check /><AlertTitle>Заявка уже была на площадке</AlertTitle><AlertDescription>Список заявок Echemi показывает её по этому CAS, поэтому второй раз она не отправлялась — запись просто догнала действительность.</AlertDescription></Alert>}
         {confirmMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Не записано</AlertTitle><AlertDescription>{mutationMessage(confirmMarketplace.error)}</AlertDescription></Alert>}
@@ -752,9 +804,23 @@ export default function CampaignPage() {
                 went is what stops the campaign from showing a live request as
                 a failure for ever. */}
             {marketplaceActions(item)}
-            {(item.platformInquiryId || item.error) && <ul>
+            {(item.platformInquiryId || item.error || item.platformMessage) && <ul>
               <li>
                 {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}
+                <MarketplaceQuotes quotations={item.quotations} />
+                {item.platformMessage && <span className="pr-import-missing">{item.platformMessage}</span>}
+                {canOperateEchemi && item.quotations
+                  && (item.quotations.published ?? 0) > item.quotations.ingested
+                  && <Button
+                    size="sm"
+                    variant="outline"
+                    isDisabled={collectMarketplaceQuotes.isPending}
+                    onPress={() => collectMarketplaceQuotes.mutate(item.cardId)}
+                  >
+                    {collectMarketplaceQuotes.isPending && collectMarketplaceQuotes.variables === item.cardId
+                      ? 'Забираем…'
+                      : 'Забрать предложения'}
+                  </Button>}
                 {/* Said in the past tense when it is in the past. "Не
                     выставить" reads as a standing verdict, and a run that
                     failed an hour ago is a thing that happened — the causes
