@@ -116,7 +116,9 @@ const MARKETPLACE_STATUS = {
   // Echemi lists it as "Invalid Inquiries" and never showed it to sellers —
   // HCl and acetone, both drug precursors, were refused that way.
   REJECTED: 'площадка отклонила заявку',
-  REPOSTED: 'размещена заново',
+  // The old request is retired and the new one not prepared yet: "Подготовить
+  // заявки" below makes it. Once prepared, the new request is what is shown.
+  REPOSTED: 'ждёт повторного размещения',
 }
 
 const MARKETPLACE_POSTED = new Set(['SUBMITTED', 'SUBMITTING', 'NEEDS_REVIEW'])
@@ -136,7 +138,7 @@ const MARKETPLACE_TONE = {
   STALE: 'warning',
   FAILED: 'danger',
   REJECTED: 'danger',
-  REPOSTED: 'complete',
+  REPOSTED: 'warning',
 }
 const marketplaceTone = item => item.status === 'NOT_PREPARED'
   ? (item.error ? 'danger' : 'muted')
