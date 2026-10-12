@@ -162,8 +162,9 @@ function MarketplaceQuotes({ quotations }) {
   const unread = unreadQuotes(quotations)
   return <span className={unread > 0 ? 'pr-marketplace-quotes is-behind' : 'pr-marketplace-quotes'}>
     {published > 0
-      ? `предложений на площадке: ${published}${hidden > 0 ? ` (площадка показывает ${visible})` : ''} · в сравнении: ${quotations.ingested}${unread > 0 ? ` · не забрано: ${unread}` : ''}`
-      : 'предложений пока нет'}
+      ? `предложений на Echemi: ${published}${hidden > 0 ? ` (площадка показывает ${visible})` : ''} · в сравнении: ${quotations.ingested}${unread > 0 ? ` · не забрано: ${unread}` : ''}`
+      // Only this request's offers: answers by email are in the table above.
+      : 'на Echemi предложений пока нет'}
     {quotations.collectedAt && ` · проверено ${shortTime(quotations.collectedAt)}`}
   </span>
 }
