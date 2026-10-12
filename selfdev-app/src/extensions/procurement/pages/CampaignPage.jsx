@@ -146,16 +146,23 @@ const shortTime = value => value
   ? new Date(value).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
   : null
 
-// One line per marketplace request about the offers sellers left on it: the
-// platform's count beside what reached the comparison. The gap is offers the
-// collector has not read, and it used to be visible only by opening Echemi.
+// One line per marketplace request about the offers sellers left on it. The
+// platform's list counts offers its inquiry page never shows the buyer (Na2CO3:
+// two counted, none shown, in the account's own browser), so three numbers:
+// counted, shown, and in the comparison. Only shown-but-not-filed is ours.
+const unreadQuotes = quotations => quotations
+  ? Math.max(0, (quotations.visible ?? quotations.published ?? 0) - quotations.ingested)
+  : 0
+
 function MarketplaceQuotes({ quotations }) {
   if (!quotations) return null
   const published = quotations.published ?? 0
-  const unread = Math.max(0, published - quotations.ingested)
+  const visible = quotations.visible ?? published
+  const hidden = Math.max(0, published - visible)
+  const unread = unreadQuotes(quotations)
   return <span className={unread > 0 ? 'pr-marketplace-quotes is-behind' : 'pr-marketplace-quotes'}>
     {published > 0
-      ? `предложений на площадке: ${published} · в сравнении: ${quotations.ingested}${unread > 0 ? ` · не забрано: ${unread}` : ''}`
+      ? `предложений на площадке: ${published}${hidden > 0 ? ` (площадка показывает ${visible})` : ''} · в сравнении: ${quotations.ingested}${unread > 0 ? ` · не забрано: ${unread}` : ''}`
       : 'предложений пока нет'}
     {quotations.collectedAt && ` · проверено ${shortTime(quotations.collectedAt)}`}
   </span>
@@ -707,6 +714,7 @@ export default function CampaignPage() {
           {marketplaceView.rejected > 0 && ` · отклонено площадкой: ${marketplaceView.rejected}`}
           {` · предложений от продавцов: ${marketplaceQuotes.published}, в сравнении: ${marketplaceQuotes.ingested}`}
           {marketplaceQuotes.unread > 0 && <strong>{` · не забрано: ${marketplaceQuotes.unread}`}</strong>}
+          {marketplaceQuotes.hidden > 0 && ` · ещё ${marketplaceQuotes.hidden} площадка считает, но не показывает`}
           {marketplaceQuotes.lastCollectedAt && ` · последний сбор ${shortTime(marketplaceQuotes.lastCollectedAt)}`}
         </p>}
       </div></CardHeader><CardContent>
@@ -809,8 +817,7 @@ export default function CampaignPage() {
                 {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}
                 <MarketplaceQuotes quotations={item.quotations} />
                 {item.platformMessage && <span className="pr-import-missing">{item.platformMessage}</span>}
-                {canOperateEchemi && item.quotations
-                  && (item.quotations.published ?? 0) > item.quotations.ingested
+                {canOperateEchemi && unreadQuotes(item.quotations) > 0
                   && <Button
                     size="sm"
                     variant="outline"
