@@ -753,11 +753,11 @@ export default function CampaignPage() {
         </AlertDescription></Alert>}
         {canOperateEchemi && repostable.length > 0 && !repostAsk && <div className="pr-inline-actions">
           <Button variant="outline" isDisabled={repostMarketplace.isPending || marketplaceView?.running} onPress={() => setRepostAsk(repostable)}>
-            {`Разместить заново без предложений (${repostable.length})`}
+            {`Разместить заново без видимых предложений (${repostable.length})`}
           </Button>
         </div>}
         {repostAsk && <Alert><AlertTriangle /><AlertTitle>{`Разместить заново: ${repostAsk.length}`}</AlertTitle><AlertDescription>
-          <p>Как «Post Again» на Echemi: заявка публикуется ещё раз и снова видна всем продавцам площадки сверху ленты. Старая остаётся, предложения на неё продолжают собираться. Размещаются только заявки без предложений, которым больше трёх дней.{plan.draftFirst ? ' Новые заявки сначала придут вам на согласование.' : ''}</p>
+          <p>Как «Post Again» на Echemi: заявка публикуется ещё раз и снова видна всем продавцам площадки сверху ленты. Старая остаётся, предложения на неё продолжают собираться. Размещаются только заявки старше трёх дней, на которых площадка не показывает ни одного предложения — в том числе те, где она предложения считает, но не показывает.{plan.draftFirst ? ' Новые заявки сначала придут вам на согласование.' : ''}</p>
           <div className="pr-inline-actions">
             <Button isDisabled={repostMarketplace.isPending} onPress={() => repostMarketplace.mutate(repostAsk)}>
               {repostMarketplace.isPending ? 'Размещаем…' : 'Да, разместить заново'}
