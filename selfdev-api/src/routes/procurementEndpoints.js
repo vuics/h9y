@@ -35,6 +35,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/campaigns/{campaign_id}/delete' },
   { method: 'GET', path: '/campaigns/{campaign_id}/marketplace' },
   { method: 'POST', path: '/campaigns/{campaign_id}/marketplace' },
+  { method: 'POST', path: '/campaigns/{campaign_id}/marketplace/repost' },
   { method: 'POST', path: '/campaigns/{campaign_id}/marketplace/submit' },
   { method: 'POST', path: '/campaigns/{campaign_id}/marketplace/{card_id}/resend' },
   { method: 'POST', path: '/campaigns/{campaign_id}/members' },

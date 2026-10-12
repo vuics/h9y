@@ -81,4 +81,6 @@ export const campaignEndpoints = {
   // request is there, then either record it or send it.
   resendCampaignMarketplace: mutation((campaignId, cardId) =>
     request(`/campaigns/${id(campaignId)}/marketplace/${id(cardId)}/resend`, { method: 'post' })),
+  repostCampaignMarketplace: mutation((campaignId, cardIds) =>
+    request(`/campaigns/${id(campaignId)}/marketplace/repost`, { method: 'post', data: { cardIds } })),
 }

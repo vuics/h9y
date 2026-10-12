@@ -116,6 +116,7 @@ const MARKETPLACE_STATUS = {
   // Echemi lists it as "Invalid Inquiries" and never showed it to sellers —
   // HCl and acetone, both drug precursors, were refused that way.
   REJECTED: 'площадка отклонила заявку',
+  REPOSTED: 'размещена заново',
 }
 
 const MARKETPLACE_POSTED = new Set(['SUBMITTED', 'SUBMITTING', 'NEEDS_REVIEW'])
@@ -135,6 +136,7 @@ const MARKETPLACE_TONE = {
   STALE: 'warning',
   FAILED: 'danger',
   REJECTED: 'danger',
+  REPOSTED: 'complete',
 }
 const marketplaceTone = item => item.status === 'NOT_PREPARED'
   ? (item.error ? 'danger' : 'muted')
@@ -392,6 +394,17 @@ export default function CampaignPage() {
       queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
     },
   })
+  // Echemi's "Post Again": a request no seller answered is put back on top of
+  // sellers' feeds. Asked once more before it goes, because it is published to
+  // every seller on the platform and cannot be taken back from here.
+  const [repostAsk, setRepostAsk] = useState(null)
+  const repostMarketplace = useMutation({
+    mutationFn: cardIds => procurementApi.repostCampaignMarketplace(campaignId, cardIds),
+    onSuccess: result => {
+      setRepostAsk(null)
+      queryClient.setQueryData(procurementKeys.campaignMarketplace(campaignId), result)
+    },
+  })
   const collectMarketplaceQuotes = useMutation({
     mutationFn: cardId => procurementApi.collectEchemiQuotations(cardId, true),
     onSettled: () => {
@@ -533,6 +546,7 @@ export default function CampaignPage() {
   const blockingAsks = asks.filter(ask => ask.blocking).length
   const conversationsByCard = new Map(conversations.map(item => [item.cardId, item]))
   const marketplaceQuotes = marketplaceView?.quotations
+  const repostable = marketplaceItems.filter(item => item.repostable).map(item => item.cardId)
   const lastCollection = browser.data?.lastCollection
   const marketplaceByCard = new Map(marketplaceItems.map(item => [item.cardId, item]))
   // A server without the cardIds filter answers with every offer; grouping by
@@ -731,6 +745,26 @@ export default function CampaignPage() {
               ? 'Площадка просит пройти проверку в браузере агента. Пройдите её в браузере Echemi ниже.'
               : `Последняя попытка ${shortTime(lastCollection.at)} не удалась: ${lastCollection.error || 'причина не записана'}.`}
         </AlertDescription></Alert>}
+        {repostMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Заново не размещено</AlertTitle><AlertDescription>{mutationMessage(repostMarketplace.error)}</AlertDescription></Alert>}
+        {repostMarketplace.data?.reposting?.length > 0 && <Alert><Check /><AlertTitle>{`Размещаются заново: ${repostMarketplace.data.reposting.length}`}</AlertTitle><AlertDescription>
+          {plan.draftFirst
+            ? 'Новые заявки подготовлены и ждут вас — кнопка «Согласовать и отправить» ниже. Предложения на старые заявки по-прежнему собираются.'
+            : 'Заявки уходят по одной через общий браузер. Предложения на старые заявки по-прежнему собираются.'}
+        </AlertDescription></Alert>}
+        {canOperateEchemi && repostable.length > 0 && !repostAsk && <div className="pr-inline-actions">
+          <Button variant="outline" isDisabled={repostMarketplace.isPending || marketplaceView?.running} onPress={() => setRepostAsk(repostable)}>
+            {`Разместить заново без предложений (${repostable.length})`}
+          </Button>
+        </div>}
+        {repostAsk && <Alert><AlertTriangle /><AlertTitle>{`Разместить заново: ${repostAsk.length}`}</AlertTitle><AlertDescription>
+          <p>Как «Post Again» на Echemi: заявка публикуется ещё раз и снова видна всем продавцам площадки сверху ленты. Старая остаётся, предложения на неё продолжают собираться. Размещаются только заявки без предложений, которым больше трёх дней.{plan.draftFirst ? ' Новые заявки сначала придут вам на согласование.' : ''}</p>
+          <div className="pr-inline-actions">
+            <Button isDisabled={repostMarketplace.isPending} onPress={() => repostMarketplace.mutate(repostAsk)}>
+              {repostMarketplace.isPending ? 'Размещаем…' : 'Да, разместить заново'}
+            </Button>
+            <Button variant="outline" onPress={() => setRepostAsk(null)}>Отмена</Button>
+          </div>
+        </AlertDescription></Alert>}
         {collectMarketplaceQuotes.error && <Alert><AlertTriangle /><AlertTitle>Предложения не забраны</AlertTitle><AlertDescription>{mutationMessage(collectMarketplaceQuotes.error)}</AlertDescription></Alert>}
         {resendMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Не отправлено</AlertTitle><AlertDescription>{mutationMessage(resendMarketplace.error)}</AlertDescription></Alert>}
         {resendMarketplace.data?.confirmed && <Alert><Check /><AlertTitle>Заявка уже была на площадке</AlertTitle><AlertDescription>Список заявок Echemi показывает её по этому CAS, поэтому второй раз она не отправлялась — запись просто догнала действительность.</AlertDescription></Alert>}
@@ -818,6 +852,14 @@ export default function CampaignPage() {
                 {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}
                 <MarketplaceQuotes quotations={item.quotations} />
                 {item.platformMessage && <span className="pr-import-missing">{item.platformMessage}</span>}
+                {canOperateEchemi && item.repostable && !repostAsk && <Button
+                    size="sm"
+                    variant="outline"
+                    isDisabled={repostMarketplace.isPending || marketplaceView?.running}
+                    onPress={() => setRepostAsk([item.cardId])}
+                  >
+                    Разместить заново
+                  </Button>}
                 {canOperateEchemi && unreadQuotes(item.quotations) > 0
                   && <Button
                     size="sm"
