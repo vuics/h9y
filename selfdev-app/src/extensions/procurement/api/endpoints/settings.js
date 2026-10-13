@@ -68,4 +68,11 @@ export const settingsEndpoints = {
   saveSearchSettings: mutation(settings => request('/settings/search', {
     method: 'put', data: settings,
   })),
+  autoTriageSettings: read(
+    signal => request('/settings/auto-triage', { signal }),
+    async () => ({ settings: { messages: true, escalations: true }, available: false, lastRun: null }),
+  ),
+  saveAutoTriageSettings: mutation(settings => request('/settings/auto-triage', {
+    method: 'put', data: settings,
+  })),
 }

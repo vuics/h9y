@@ -143,6 +143,8 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'GET', path: '/proposals/export' },
   { method: 'GET', path: '/proposals/{response_id}' },
   { method: 'POST', path: '/proposals/{response_id}/clarification' },
+  { method: 'GET', path: '/settings/auto-triage' },
+  { method: 'PUT', path: '/settings/auto-triage' },
   { method: 'GET', path: '/settings/buyer' },
   { method: 'PUT', path: '/settings/buyer' },
   { method: 'GET', path: '/settings/search' },

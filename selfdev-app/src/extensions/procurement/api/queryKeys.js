@@ -54,6 +54,7 @@ export const procurementKeys = {
   buyerSettings: () => [...procurementKeys.all, 'buyer-settings'],
   sendingLimits: () => [...procurementKeys.all, 'sending-limits'],
   searchSettings: () => [...procurementKeys.all, 'search-settings'],
+  autoTriageSettings: () => [...procurementKeys.all, 'auto-triage-settings'],
   accessVocabulary: () => [...procurementKeys.all, 'access-vocabulary'],
   accessPrincipals: filters => [...procurementKeys.all, 'access-principals', filters],
   accessPrincipal: key => [...procurementKeys.all, 'access-principal', String(key)],

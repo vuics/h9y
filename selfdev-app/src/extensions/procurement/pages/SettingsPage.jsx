@@ -7,7 +7,7 @@ import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import { LoadingState, ErrorState } from '../components/AsyncState'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
-import { SearchConcurrencyCard, SendingLimitsCard } from '../components/SendingLimits'
+import { AutoTriageCard, SearchConcurrencyCard, SendingLimitsCard } from '../components/SendingLimits'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -327,6 +327,7 @@ export default function SettingsPage() {
     <SendingLimitsCard canEdit={canManageBuyerSettings} />
 
     <SearchConcurrencyCard canEdit={canManageBuyerSettings} />
+    <AutoTriageCard canEdit={canManageBuyerSettings} />
 
     <div ref={saveErrorRef}>
       {save.isError && <Alert variant="destructive"><AlertTriangle /><AlertTitle>Настройки не сохранены</AlertTitle><AlertDescription>

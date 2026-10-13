@@ -131,3 +131,41 @@ export function SearchConcurrencyCard({ canEdit }) {
       : <p className="pr-muted">Меняет администратор (BUYER_SETTINGS_MANAGE).</p>}
   </CardContent></Card>
 }
+
+
+// Whether the quarantine and the escalations settle their obvious cases on
+// their own. Each switch saves at once: there is nothing to type, and a rule
+// someone has stopped trusting should stop on the click, not on "Сохранить".
+export function AutoTriageCard({ canEdit }) {
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    queryKey: procurementKeys.autoTriageSettings(),
+    queryFn: ({ signal }) => procurementApi.autoTriageSettings(signal),
+    refetchInterval: 60000,
+  })
+  const save = useMutation({
+    mutationFn: values => procurementApi.saveAutoTriageSettings(values),
+    onSuccess: data => queryClient.setQueryData(procurementKeys.autoTriageSettings(), data),
+  })
+  if (!query.data) return null
+  const { settings, available, lastRun } = query.data
+  const toggle = (key, value) => save.mutate({ [key]: value })
+
+  return <Card><CardHeader><CardTitle><Clock /> Автоматический разбор</CardTitle></CardHeader><CardContent>
+    <p className="pr-note">Раз в пять минут система разбирает очевидные случаи сама, как это делал бы специалист. Поставщикам она ничего нового не пишет: только привязывает, отклоняет и переводит переписку на рабочий адрес. Каждое решение записано с причиной и пометкой «Разобрано автоматически».</p>
+    <div className="pr-card-form">
+      <label className="pr-form-field pr-form-field--check">
+        <input type="checkbox" checked={settings.messages} disabled={!canEdit || save.isPending} onChange={event => toggle('messages', event.target.checked)} />
+        <span>Застрявшие письма: отклонять автоответы и рассылки; привязывать ответ поставщика, если переговоры однозначны (номер нашего запроса в письме и домен или наше письмо в цитате); читать вложения, если в письме нет текста</span>
+      </label>
+      <label className="pr-form-field pr-form-field--check">
+        <input type="checkbox" checked={settings.escalations} disabled={!canEdit || save.isPending} onChange={event => toggle('escalations', event.target.checked)} />
+        <span>Эскалации: на «передал коллеге» не отвечать и ждать котировку; если письмо не доставлено, а у поставщика есть другой адрес — перевести переписку на него и отправить запрос заново</span>
+      </label>
+    </div>
+    {!available && <p className="pr-note"><AlertTriangle size={13} /> В этой установке разбор выключен переменной QUARANTINE_AUTO_TRIAGE — переключатели сохраняются, но не действуют.</p>}
+    {lastRun && <p className="pr-note"><Clock size={13} /> Последний проход {new Date(lastRun.at).toLocaleString('ru-RU')}: привязано {lastRun.attached}, отклонено {lastRun.dismissed}, ждут коллегу {lastRun.waiting}, переведено на другой адрес {lastRun.rerouted}{lastRun.failed ? `, не удалось ${lastRun.failed}` : ''}.</p>}
+    {save.error && <Alert><AlertTriangle /><AlertTitle>Не сохранено</AlertTitle><AlertDescription>{mutationMessage(save.error)}</AlertDescription></Alert>}
+    {!canEdit && <p className="pr-muted">Меняет администратор (BUYER_SETTINGS_MANAGE).</p>}
+  </CardContent></Card>
+}
