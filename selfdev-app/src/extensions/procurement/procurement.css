@@ -1444,4 +1444,7 @@
 .pr-phase__legend li { display: inline-flex; align-items: center; gap: 5px; color: var(--pr-muted); font-size: 11px; }
 .pr-phase__legend i { width: 9px; height: 9px; border-radius: 3px; }
 .pr-phase__legend b { color: var(--pr-text); font-variant-numeric: tabular-nums; }
+.pr-phase__legend button { display: inline-flex; align-items: center; gap: 5px; margin: -3px -6px; padding: 3px 6px; border: 1px solid transparent; border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.pr-phase__legend button:hover { background: var(--pr-surface-muted); color: var(--pr-text); }
+.pr-phase__legend button.is-on { border-color: var(--pr-muted); background: var(--pr-surface-muted); color: var(--pr-text); }
 .pr-campaign-summary__phases { flex: 1 1 320px; min-width: 0; }

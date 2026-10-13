@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { memberPhases, phaseSummary } from './campaignPhases.js'
+import { memberPhase, memberPhases, phaseLabel, phaseOfFilter, phaseSummary } from './campaignPhases.js'
 
 test('a campaign in negotiation reads as moving, not as 0 of 28', () => {
   const members = [
@@ -20,4 +20,12 @@ test('a campaign in negotiation reads as moving, not as 0 of 28', () => {
   assert.equal(counts.review, 1)
   assert.equal(counts.searching, 1)
   assert.equal(phaseSummary(counts, 2), '1 с ценой · 1 с ответами')
+})
+
+test('a legend entry names the substances of its phase', () => {
+  assert.equal(phaseOfFilter('phase:waiting'), 'waiting')
+  assert.equal(phaseOfFilter('waiting'), null)
+  assert.equal(phaseLabel('waiting'), 'ждут ответа')
+  const members = [{ cardId: 7, stage: 'OUTREACH', responseCount: 0 }]
+  assert.equal(memberPhase(members[0]), 'waiting')
 })

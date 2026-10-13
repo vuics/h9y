@@ -11,6 +11,7 @@ import {
   nextActions, requestsSummary,
 } from '../lib/campaignView'
 import { plural } from './SourcingSettings'
+import { memberPhase, phaseLabel, phaseOfFilter } from '../lib/campaignPhases'
 
 /** The per-substance actions nobody needs while reading the table.
  *
@@ -72,7 +73,11 @@ export function CampaignMembers({
   const [open, setOpen] = useState(() => new Set())
   const [selected, setSelected] = useState(() => new Set())
   const counts = filterCounts(members)
-  const rows = filterMembers(members, filter)
+  // A legend entry above the table picks the substances of one phase.
+  const phase = phaseOfFilter(filter)
+  const rows = phase
+    ? members.filter(member => memberPhase(member, offersByCard) === phase)
+    : filterMembers(members, filter)
   const toggle = cardId => setOpen(current => {
     const next = new Set(current)
     if (next.has(cardId)) next.delete(cardId)
@@ -108,6 +113,14 @@ export function CampaignMembers({
         aria-pressed={filter === id}
         onClick={() => onFilterChange(id)}
       >{label} <b>{counts[id]}</b></button>)}
+      {phase && <button
+        type="button"
+        className="pr-chip is-on"
+        data-filter={filter}
+        aria-pressed="true"
+        title="Показать все"
+        onClick={() => onFilterChange('all')}
+      >{phaseLabel(phase)} <b>{rows.length}</b> ✕</button>}
     </div>
 
     {canResearch && selected.size > 0 && <div className="pr-members__bulk" role="region" aria-label="Выбранные вещества">

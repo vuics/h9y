@@ -14,6 +14,7 @@ import { plural } from '../components/SourcingSettings'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
 import { CampaignPhaseBar, memberPhases } from '../components/CampaignPhaseBar'
+import { PHASE_FILTER, phaseOfFilter } from '../lib/campaignPhases'
 import { CampaignLaunchPanel } from '../components/CampaignLaunchPanel'
 import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
@@ -641,7 +642,13 @@ export default function CampaignPage() {
           above it is a summary, never a block to scroll past. */}
       <div className="pr-campaign-summary">
         <div className="pr-campaign-summary__phases">
-          <CampaignPhaseBar counts={phases} total={progress.total} legend />
+          <CampaignPhaseBar
+            counts={phases}
+            total={progress.total}
+            legend
+            selected={phaseOfFilter(filter)}
+            onSelect={key => setFilter(key ? `${PHASE_FILTER}${key}` : 'all')}
+          />
         </div>
         <div className="pr-campaign-summary__chips">
           <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.candidateTotal} кандидатов</button>
