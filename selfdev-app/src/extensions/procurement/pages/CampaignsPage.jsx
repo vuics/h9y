@@ -10,6 +10,7 @@ import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { purchaseSentence, purchaseSize } from '../lib/purchases'
 import { Button } from '@/components/ui/button'
 import { ChevronRight } from '../components/icons'
+import { CampaignPhaseBar, phaseSummary } from '../components/CampaignPhaseBar'
 
 const REACH = {
   SOURCING: 'только поиск',
@@ -23,7 +24,7 @@ function PurchaseRow({ row }) {
   const sentence = purchaseSentence(row)
   const size = purchaseSize(row)
   const total = row.progress?.total || 0
-  const percent = total ? Math.round((row.progress?.settled || 0) / total * 100) : 0
+  const phases = row.progress?.phases
   const cas = row.substance?.casNumber
   return <Link to={`/procurement/campaigns/${row.campaignId}`} className="pr-purchase" data-status={row.status}>
     <div className="pr-purchase__name">
@@ -32,12 +33,10 @@ function PurchaseRow({ row }) {
     </div>
     {/* The same bar for one substance as for two hundred: a purchase reads
         the same whatever its size. Its stage is the sentence beside it. */}
-    {total > 0
-      ? <div className="pr-campaign-row-progress" title={`${percent}%`}>
-        <span>{row.progress.settled} из {total}</span>
-        <div className="pr-campaign-row-progress__track" role="img" aria-label={`Пройдено ${percent}%`}>
-          <span data-status={row.status} style={{ width: `${percent}%` }} />
-        </div>
+    {total > 0 && phases
+      ? <div className="pr-campaign-row-progress">
+        <span>{phaseSummary(phases, 2) || `${total} веществ`}</span>
+        <CampaignPhaseBar counts={phases} total={total} />
       </div>
       : <div />}
     <div className={`pr-purchase__state pr-purchase__state--${sentence.tone}`}><i aria-hidden="true" />{sentence.text}</div>

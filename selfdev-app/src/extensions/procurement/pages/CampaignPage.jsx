@@ -13,6 +13,7 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from '../components/SourcingSettings'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
+import { CampaignPhaseBar, memberPhases } from '../components/CampaignPhaseBar'
 import { CampaignLaunchPanel } from '../components/CampaignLaunchPanel'
 import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
@@ -522,7 +523,6 @@ export default function CampaignPage() {
     member => member.stage === 'AWAITING_REVIEW' && member.verifiedCount > 0 && !member.requestCount
       && member.waitingFor !== 'SUPPLIER_CONTACT' && member.errorCode !== 'NO_USABLE_CONTACT',
   ).length
-  const percent = progress.total ? Math.round((progress.settled / progress.total) * 100) : 0
   const threadsView = threads.data
   const conversations = threadsView?.items || []
   const awaitingPerson = threadsView?.awaitingPerson || 0
@@ -559,6 +559,7 @@ export default function CampaignPage() {
       .map(group => [group.cardId, group]),
   )
   const offerCounts = offerTotals(offersByCard)
+  const phases = memberPhases(members, offersByCard)
 
   return <DetailLayout
     backTo="/procurement"
@@ -639,9 +640,8 @@ export default function CampaignPage() {
           person for. The table is what the page is opened for, so everything
           above it is a summary, never a block to scroll past. */}
       <div className="pr-campaign-summary">
-        <div className="pr-campaign-summary__bar">
-          <div className="pr-campaign-bar" role="img" aria-label={`Готово ${percent}%`} title="Вещество считается пройденным и тогда, когда оно ждёт решения: машина по нему свою работу закончила"><span style={{ width: `${percent}%` }} /></div>
-          <strong>{progress.settled} из {progress.total}</strong>
+        <div className="pr-campaign-summary__phases">
+          <CampaignPhaseBar counts={phases} total={progress.total} legend />
         </div>
         <div className="pr-campaign-summary__chips">
           <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.candidateTotal} кандидатов</button>

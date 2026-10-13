@@ -1429,3 +1429,19 @@
 .pr-marketplace-quotes.is-behind { color: #b45309; font-weight: 600; }
 .pr-marketplace-summary { margin-top: 8px; color: var(--pr-muted); }
 .pr-marketplace-summary strong { color: #b45309; }
+/* Where a purchase's substances stand: one segment per phase, most advanced first. */
+.pr-phase__track { display: flex; height: 8px; overflow: hidden; border-radius: 999px; background: var(--pr-surface-muted, #eef1f4); }
+.pr-phase__track span { height: 100%; transition: width .4s ease; }
+.pr-phase .is-done { background: #1f7a4d; }
+.pr-phase .is-priced { background: var(--pr-signal-green); }
+.pr-phase .is-answered { background: #9bd5ae; }
+.pr-phase .is-waiting { background: #7fb3e6; }
+.pr-phase .is-review { background: var(--pr-signal-yellow); }
+.pr-phase .is-searching { background: repeating-linear-gradient(135deg, #c9d6e3 0 6px, #e6edf4 6px 12px); }
+.pr-phase .is-failed { background: var(--pr-danger); }
+.pr-phase .is-skipped { background: #c3ccd6; }
+.pr-phase__legend { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; margin: 8px 0 0; padding: 0; }
+.pr-phase__legend li { display: inline-flex; align-items: center; gap: 5px; color: var(--pr-muted); font-size: 11px; }
+.pr-phase__legend i { width: 9px; height: 9px; border-radius: 3px; }
+.pr-phase__legend b { color: var(--pr-text); font-variant-numeric: tabular-nums; }
+.pr-campaign-summary__phases { flex: 1 1 320px; min-width: 0; }
