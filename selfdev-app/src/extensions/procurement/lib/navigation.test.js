@@ -26,3 +26,9 @@ test('no screen of the old menu is lost', () => {
   const now = new Set([...PRIMARY_SECTIONS, ...MORE_SECTIONS].map(([, , path]) => path))
   for (const [, , path] of CLASSIC_SECTIONS) assert.ok(now.has(path), path)
 })
+
+test('the agent page is its own section, and negotiation pages stay negotiations', () => {
+  assert.equal(sectionOf('/procurement/negotiations/agent'), 'agent')
+  assert.equal(sectionOf('/procurement/negotiations/NEG-1'), 'negotiations')
+  assert.equal(sectionOf('/procurement/negotiations'), 'negotiations')
+})

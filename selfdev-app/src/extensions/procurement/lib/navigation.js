@@ -18,6 +18,7 @@ export const MORE_SECTIONS = [
   ['requests', 'Карточки закупок', '/procurement/requests'],
   ['suppliers', 'Поставщики', '/procurement/suppliers'],
   ['negotiations', 'Переговоры', '/procurement/negotiations'],
+  ['agent', 'Что делает агент', '/procurement/negotiations/agent'],
   ['communication', 'Коммуникация', '/procurement/communication'],
   ['activity', 'Активность и ошибки', '/procurement/activity'],
   ['settings', 'Настройки', '/procurement/settings'],
@@ -46,9 +47,12 @@ export function sectionOf(pathname) {
   const path = trimSlash(pathname)
   if (path === '/procurement' || path.startsWith('/procurement/campaigns')) return 'purchases'
   const all = [...PRIMARY_SECTIONS, ...MORE_SECTIONS]
+  // The longest matching path wins: «Что делает агент» lives under
+  // /procurement/negotiations and is its own section, not «Переговоры».
   const match = all
     .filter(([, , to]) => to !== '/procurement')
-    .find(([, , to]) => path === to || path.startsWith(`${to}/`))
+    .filter(([, , to]) => path === to || path.startsWith(`${to}/`))
+    .sort(([, , a], [, , b]) => b.length - a.length)[0]
   return match?.[0] || 'purchases'
 }
 
