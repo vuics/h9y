@@ -1,6 +1,7 @@
 import { ImapFlow } from 'imapflow'
 import nodemailer from 'nodemailer'
 import { simpleParser } from 'mailparser'
+import { emailBodyText } from './emailText.js'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
@@ -374,11 +375,14 @@ export default class Email extends Connector {
             }
           }
 
+          // The letter itself, from the HTML part when the text part is empty.
+          const bodyText = emailBodyText(parsed)
+
           // ✅ Construct message text
           const emailText =
             `📧 New Email from ${parsed.from?.text || '(unknown sender)'}\n` +
             `Subject: ${parsed.subject || '(no subject)'}\n\n` +
-            `${parsed.text || '(no text)'}\n\n` +
+            `${bodyText || '(no text)'}\n\n` +
             (attachments.length ? `[${attachments.length} attachment(s)]` : '');
 
           verbose('Constructed emailText:', emailText);
@@ -399,7 +403,7 @@ export default class Email extends Connector {
             fromName,
             to: toAddresses,
             timestamp: parsed.date?.toISOString(),
-            text: parsed.text || '',
+            text: bodyText,
             extra: {
               subject: parsed.subject || '',
               replyTo: (parsed.replyTo?.value || []).map(item => item.address),

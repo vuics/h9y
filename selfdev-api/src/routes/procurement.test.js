@@ -68,8 +68,8 @@ test('gateway allow-lists the bulk card import lifecycle', () => {
   assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/confirm'), true)
   assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/normalize'), true)
   assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/cancel'), true)
-  // Not exposed: the gateway must not invent an import endpoint.
-  assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/delete'), false)
+  // An unwanted import can be deleted (its cards stay); nothing else is invented.
+  assert.equal(isAllowedProcurementRequest('POST', '/card-imports/IMP-1/delete'), true)
   assert.equal(isAllowedProcurementRequest('DELETE', '/card-imports/IMP-1'), false)
   assert.equal(isAllowedProcurementRequest('PATCH', '/card-imports/IMP-1'), false)
   assert.equal(isReadableProcurementPath('/card-imports/IMP-1/rows/1/raw'), false)
