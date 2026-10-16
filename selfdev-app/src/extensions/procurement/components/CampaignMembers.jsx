@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from './StatusBadge'
 import { CampaignMemberProgress } from './CampaignMemberProgress'
-import { ChevronDown, ChevronRight, Gear } from './icons'
+import { ChevronDown, ChevronRight, MoreVertical } from './icons'
 import { readableAgentError } from '../lib/agentText'
+import { formatPrice } from '../lib/price'
+import { channelLabel } from '../lib/thread'
+import { offerBasis, offerNote, splitSuppliers, statusTally } from '../lib/offers'
 import {
   FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
   nextActions, requestsSummary,
@@ -47,11 +50,96 @@ function RowMenu({ label, children }) {
       aria-label={label}
       aria-expanded={Boolean(at)}
       onClick={() => (at ? setAt(null) : open())}
-    ><Gear size={16} /></button>
+    ><MoreVertical size={16} /></button>
     {at && <div ref={menu} className="pr-row-menu" role="menu" style={{ top: at.top, right: at.right }} onClick={() => setAt(null)}>
       {children}
     </div>}
   </>
+}
+
+/** What a person says about a conversation's state, in the row's own words. */
+const threadLabel = (thread, labels) => (thread.awaitingPerson
+  ? (thread.automationPaused ? 'агент остановлен' : 'ждёт отправки')
+  : labels[thread.status] || thread.status)
+
+/** One conversation on one line: who, through what, where it stands. */
+function SupplierLine({ thread, labels }) {
+  return <li className={thread.awaitingPerson ? 'pr-supplier-line is-waiting' : 'pr-supplier-line'}>
+    <Link to={`/procurement/negotiations/${thread.assignmentId}`} title={thread.supplierName || thread.assignmentId}>{thread.supplierName || thread.assignmentId}</Link>
+    <span className="pr-supplier-line__channel">{channelLabel(thread.channel)}</span>
+    {thread.awaitingPerson
+      ? <StatusBadge status="NEEDS_REVIEW" label={threadLabel(thread, labels)} compact />
+      : <StatusBadge status={thread.status} label={threadLabel(thread, labels)} compact />}
+    {thread.answered && <span className="pr-primary-meta">есть ответ</span>}
+  </li>
+}
+
+/** A substance opened: the offers first, then who has not answered, then Echemi.
+ *
+ * The offers are what the row is opened for, so they are a table in the
+ * columns a buyer compares. Everybody else is one line each, folded behind a
+ * tally — unless one of them waits for a person, which is never folded away.
+ */
+function MemberSuppliers({
+  member, offers, threads, marketplace, marketplaceLabels, threadStatusLabels, offersLoading,
+  renderMarketplaceActions, browserAccess,
+}) {
+  const { offered, silent } = splitSuppliers(offers, threads)
+  const waiting = silent.some(thread => thread.awaitingPerson)
+  return <div className="pr-member-suppliers">
+    {offered.length > 0
+      ? <div className="pr-member-offers">
+        <table className="pr-member-offers__table">
+          <thead><tr>
+            <th>Поставщик</th><th>Цена</th><th>Базис</th><th>Количество</th><th>Чистота</th><th>Срок</th><th>Примечание</th>
+          </tr></thead>
+          <tbody>{offered.map(({ offer, thread }) => <tr key={offer.id}>
+            <td>
+              {thread
+                ? <Link to={`/procurement/negotiations/${thread.assignmentId}`}>{offer.supplierName}</Link>
+                : <span>{offer.supplierName}</span>}
+              {thread && <span className="pr-supplier-line__channel">{channelLabel(thread.channel)}</span>}
+            </td>
+            <td className="pr-member-offers__price">
+              <Link to={`/procurement/proposals/${offer.id}`} title="Открыть предложение">{formatPrice(offer) || 'цены нет'}</Link>
+            </td>
+            <td>{offerBasis(offer) || '—'}</td>
+            <td>{offer.quantity || '—'}</td>
+            <td>{[offer.purity || offer.grade, offer.coa === 'PROVIDED' && 'CoA'].filter(Boolean).join(', ') || '—'}</td>
+            <td>{offer.leadTime || '—'}</td>
+            <td className="pr-member-offers__note">{offerNote(offer)}</td>
+          </tr>)}</tbody>
+        </table>
+        <Link className="pr-member-offers__compare" to={`/procurement/proposals/compare?cardId=${member.cardId}`}>Сравнить все {offered.length} →</Link>
+      </div>
+      : <p className="pr-note">{offersLoading ? 'Загружаем предложения…' : 'Предложений по этому веществу пока нет.'}</p>}
+
+    {silent.length > 0 && <details className="pr-member-silent" open={waiting || undefined}>
+      <summary>
+        <b>Без предложения: {silent.length}</b>
+        <span className="pr-member-silent__tally"> · {statusTally(silent, thread => threadLabel(thread, threadStatusLabels))}</span>
+      </summary>
+      <ul className="pr-supplier-lines">{silent.map(thread => <SupplierLine key={thread.assignmentId} thread={thread} labels={threadStatusLabels} />)}</ul>
+    </details>}
+    {!threads.length && !offered.length && <p className="pr-note">Переписок по этому веществу пока нет.</p>}
+
+    {marketplace && <div className="pr-member-echemi">
+      <div className="pr-supplier-line">
+        <b>Echemi</b>
+        <span className="pr-supplier-line__channel">площадка</span>
+        <StatusBadge status={marketplace.status} label={marketplaceLabels[marketplace.status] || marketplace.status} compact />
+        {marketplace.platformInquiryId && <span className="pr-primary-meta">№ {marketplace.platformInquiryId}</span>}
+        {/* The actions below carry their own way in, so the link is not
+            repeated beside them. */}
+        {marketplace.status !== 'NEEDS_REVIEW' && <Link to={`/procurement/requests/${member.cardId}/echemi`}>открыть заявку</Link>}
+      </div>
+      {marketplace.error && <p className="pr-import-missing">{readableAgentError(marketplace.error)}</p>}
+      {/* The same presses as the box below the table, here for the one
+          substance the reader is looking at. */}
+      {renderMarketplaceActions?.(marketplace)}
+      {needsMarketplaceAction(member) && browserAccess}
+    </div>}
+  </div>
 }
 
 /** The campaign's substances, and everything about one of them on demand.
@@ -215,10 +303,12 @@ export function CampaignMembers({
               </div>
             </td>
             <td className="pr-members__menu">
-              <RowMenu label={`Действия: ${member.title}`}>
+              <RowMenu label={`Ещё по веществу: ${member.title}`}>
                 <Link to={`/procurement/requests/${member.cardId}`} role="menuitem">Карточка позиции</Link>
                 {member.sourcingRunId && <Link to={`/procurement/requests/${member.cardId}/sourcing`} role="menuitem">Поиск и кандидаты</Link>}
                 <Link to={`/procurement/requests/${member.cardId}/rfq`} role="menuitem">RFQ</Link>
+                {offers?.offers.length > 0 && <Link to={`/procurement/proposals/compare?cardId=${member.cardId}`} role="menuitem">Сравнить предложения ({offers.offers.length})</Link>}
+                {member.escalationCount > 0 && <Link to={`/procurement/escalations?cardId=${member.cardId}`} role="menuitem">Эскалации ({member.escalationCount})</Link>}
                 {canRemove && removable(member) && <button
                   type="button"
                   role="menuitem"
@@ -230,49 +320,17 @@ export function CampaignMembers({
             </td>
           </tr>
           {expanded && <tr className="pr-members__details"><td colSpan={columns}>
-            <div className="pr-members__panel">
-              <div>
-                <h4>Переписки</h4>
-                {threads?.conversations?.length
-                  ? <ul className="pr-plain-list">{threads.conversations.map(thread => <li key={thread.assignmentId}>
-                    <Link to={`/procurement/negotiations/${thread.assignmentId}`}>{thread.supplierName || thread.assignmentId}</Link>
-                    <span className="pr-primary-meta"> {thread.channel}{thread.answered ? ' · есть ответ' : ''}</span>
-                    {thread.awaitingPerson
-                      ? <StatusBadge status="NEEDS_REVIEW" label={thread.automationPaused ? 'агент остановлен' : 'ждёт отправки'} compact />
-                      : <StatusBadge status={thread.status} label={threadStatusLabels[thread.status] || thread.status} compact />}
-                  </li>)}</ul>
-                  : <p className="pr-note">Переписок по этому веществу пока нет.</p>}
-              </div>
-              <div>
-                <h4>Заявка на площадку</h4>
-                {marketplace
-                  ? <div className="pr-members__marketplace">
-                    <p>
-                      <StatusBadge status={marketplace.status} label={marketplaceLabels[marketplace.status] || marketplace.status} compact />
-                      {marketplace.platformInquiryId && <span className="pr-primary-meta"> номер на площадке: {marketplace.platformInquiryId}</span>}
-                      {/* The actions below carry their own way in, so the
-                          link is not repeated beside them. */}
-                      {marketplace.status !== 'NEEDS_REVIEW' && <>{' '}<Link to={`/procurement/requests/${member.cardId}/echemi`}>открыть заявку</Link></>}
-                    </p>
-                    {marketplace.error && <p className="pr-import-missing">{readableAgentError(marketplace.error)}</p>}
-                    {/* The same presses as the box below the table, here for
-                        the one substance the reader is looking at. */}
-                    {renderMarketplaceActions?.(marketplace)}
-                    {needsMarketplaceAction(member) && browserAccess}
-                  </div>
-                  : <p className="pr-note">Заявка на площадку по этому веществу не готовилась.</p>}
-              </div>
-              <div>
-                <h4>Ещё по веществу</h4>
-                <ul className="pr-plain-list">
-                  <li><Link to={`/procurement/requests/${member.cardId}`}>Карточка позиции</Link></li>
-                  {member.sourcingRunId && <li><Link to={`/procurement/requests/${member.cardId}/sourcing`}>Поиск и кандидаты</Link></li>}
-                  <li><Link to={`/procurement/requests/${member.cardId}/rfq`}>RFQ</Link></li>
-                  {offers?.offers.length > 0 && <li><Link to={`/procurement/proposals/compare?cardId=${member.cardId}`}>Сравнить предложения ({offers.offers.length})</Link></li>}
-                  {member.escalationCount > 0 && <li><Link to={`/procurement/escalations?cardId=${member.cardId}`}>Эскалации ({member.escalationCount})</Link></li>}
-                </ul>
-              </div>
-            </div>
+            <MemberSuppliers
+              member={member}
+              offers={offers?.offers || []}
+              threads={threads?.conversations || []}
+              marketplace={marketplace}
+              marketplaceLabels={marketplaceLabels}
+              threadStatusLabels={threadStatusLabels}
+              offersLoading={offersLoading}
+              renderMarketplaceActions={renderMarketplaceActions}
+              browserAccess={browserAccess}
+            />
           </td></tr>}
         </React.Fragment>
       })}</tbody>

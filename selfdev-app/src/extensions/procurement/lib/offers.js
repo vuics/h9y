@@ -59,3 +59,64 @@ export function groupOffersBySubstance(offers = []) {
     }))
     .sort((left, right) => (right.priced - left.priced) || String(right.latest).localeCompare(String(left.latest)))
 }
+
+const priceOrder = offer => {
+  if (!hasComparablePrice(offer)) return [1, '', 0]
+  const value = amount(offer.price)
+  return value == null ? [1, '', 0] : [0, `${offer.currency} ${offer.priceUnit}`.toUpperCase(), value]
+}
+
+/** Priced offers first, cheapest first within one currency and unit.
+ *
+ * Within a currency only: 140 CNY is not cheaper than 20 USD, and sorting
+ * across currencies would rank them as if it were.
+ */
+export function sortByPrice(offers = []) {
+  return [...offers].sort((left, right) => {
+    const [a, b] = [priceOrder(left), priceOrder(right)]
+    return (a[0] - b[0]) || a[1].localeCompare(b[1]) || (a[2] - b[2])
+  })
+}
+
+/** "CIP Москва": the Incoterm and its place, as the supplier wrote them. */
+export const offerBasis = offer => [offer.incoterm, offer.namedPlace].filter(present).join(' ')
+
+/** What the columns have no room for: the minimum order and the payment. */
+export const offerNote = offer => [
+  present(offer.moq) && `MOQ ${offer.moq}`,
+  present(offer.paymentTerms) && offer.paymentTerms,
+].filter(Boolean).join('; ')
+
+const answersThread = (offer, thread) =>
+  (offer.negotiationId && offer.negotiationId === thread.assignmentId)
+  || (offer.supplierId && offer.supplierId === thread.supplierId)
+
+/** One substance's suppliers: who sent an offer, and who has not yet.
+ *
+ * An offer keeps the conversation it came from, so its row can open it; a
+ * conversation without an offer is listed once, those waiting for a person
+ * first — they are the only ones somebody has to act on.
+ */
+export function splitSuppliers(offers = [], threads = []) {
+  const offered = sortByPrice(offers).map(offer => ({
+    offer,
+    thread: threads.find(thread => answersThread(offer, thread)) || null,
+  }))
+  const silent = threads
+    .filter(thread => !offers.some(offer => answersThread(offer, thread)))
+    .sort((left, right) => Number(Boolean(right.awaitingPerson)) - Number(Boolean(left.awaitingPerson)))
+  return { offered, silent }
+}
+
+/** "18 ждём поставщика · 4 в очереди": how the silent ones stand, largest first. */
+export function statusTally(threads = [], labelOf) {
+  const counts = new Map()
+  for (const thread of threads) {
+    const label = labelOf(thread)
+    counts.set(label, (counts.get(label) || 0) + 1)
+  }
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .map(([label, count]) => `${count} ${label}`)
+    .join(' · ')
+}
