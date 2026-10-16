@@ -305,7 +305,7 @@ export default function SettingsPage() {
         {deliveryInput('destination', 'Пункт назначения', { placeholder: 'Санкт-Петербург' })}
         {deliveryInput('destinationCountry', 'Страна назначения', { maxLength: 2, placeholder: 'RU' })}
       </div>
-      {deliveryIncomplete && <p className="pr-note">Пока не заполнены пункт и страна назначения, кампания не выставит заявку на площадку — она откажется угадывать адрес за вас.</p>}
+      {deliveryIncomplete && <p className="pr-note">Пока не заполнены пункт и страна назначения, закупка не выставит заявку на площадку — она откажется угадывать адрес за вас.</p>}
     </CardContent></Card>
 
     <div className="pr-section-heading"><div><h3>Команда и отправители</h3><p>Каждый RFQ сохраняет выбранного отправителя как неизменяемый снимок: правка здесь меняет только будущие запросы и не затрагивает уже отправленные RFQ и идущие переговоры.</p></div>{canManageSenders && <Button variant="outline" onPress={() => setDraft(current => { const sender = newSender(); return { ...current, senders: [...current.senders, sender], defaultSenderId: current.defaultSenderId || sender.senderId } })}><Plus />Добавить отправителя</Button>}</div>

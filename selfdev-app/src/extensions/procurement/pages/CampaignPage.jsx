@@ -66,7 +66,7 @@ const ERROR_LABEL = {
   CARD_NOT_FOUND: 'карточка не найдена',
   SOURCING_ENGINE_UNAVAILABLE: 'ни один движок поиска не доступен',
   SOURCING_RUN_FAILED: 'поиск прервался ошибкой',
-  CAMPAIGN_DRIVER_FAILED: 'сбой в самой кампании',
+  CAMPAIGN_DRIVER_FAILED: 'сбой в самой закупке',
   CARD_NOT_NORMALIZED: 'карточка не нормализована',
   SOURCING_NOT_READY: 'поиск по карточке ещё не готов',
   NO_USABLE_CONTACT: 'не нашли контакт в разрешённых каналах',
@@ -276,10 +276,10 @@ const deleteMessage = error => {
   // answers with FastAPI's bare "Not Found".
   const missing = status === 405 || data?.code === 'ENDPOINT_NOT_ALLOWED'
     || (status === 404 && data?.detail === 'Not Found')
-  if (missing) return 'Удаление кампаний заработает после обновления сервера. Пока кампанию можно остановить кнопкой «Остановить совсем» — остановленные скрыты из списка кампаний.'
+  if (missing) return 'Удаление закупок заработает после обновления сервера. Пока закупку можно остановить кнопкой «Остановить совсем» — остановленные скрыты из списка закупок.'
   const detail = error?.response?.data?.detail
-  if (detail?.code === 'CAMPAIGN_HAS_WORK') return 'По кампании уже шла работа — её можно только остановить.'
-  if (detail?.code === 'CAMPAIGN_NOT_DELETABLE') return 'Идущую кампанию сначала поставьте на паузу.'
+  if (detail?.code === 'CAMPAIGN_HAS_WORK') return 'По закупке уже шла работа — её можно только остановить.'
+  if (detail?.code === 'CAMPAIGN_NOT_DELETABLE') return 'Идущую закупку сначала поставьте на паузу.'
   return detail?.message || mutationMessage(error)
 }
 const errorText = code => ERROR_LABEL[code] || code
@@ -507,7 +507,7 @@ export default function CampaignPage() {
   if (query.isLoading) return <LoadingState />
   if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
   const campaign = query.data
-  if (!campaign) return <EmptyState title="Кампания не найдена" />
+  if (!campaign) return <EmptyState title="Закупка не найдена" />
 
   const { progress, plan, members = [] } = campaign
   // The restart already has its own explained alert with a button on it;
@@ -571,17 +571,17 @@ export default function CampaignPage() {
     meta={`${progress.total} ${plural(progress.total, 'вещество', 'вещества', 'веществ')} · ${REACH_LABEL[plan.reach] || plan.reach}`}
     actions={canResearchSourcing && <>
       {draftTitle === null && <Button variant="ghost" onPress={() => { setDraftTitle(campaign.title); rename.reset() }}><Pencil />Переименовать</Button>}
-      {campaign.status !== 'CANCELLED' && <Button variant="outline" onPress={() => { setEditingSettings(value => !value); setSavedEffects(null) }}><Sliders />{editingSettings ? 'Скрыть настройки' : 'Настройки кампании'}</Button>}
+      {campaign.status !== 'CANCELLED' && <Button variant="outline" onPress={() => { setEditingSettings(value => !value); setSavedEffects(null) }}><Sliders />{editingSettings ? 'Скрыть настройки' : 'Настройки закупки'}</Button>}
       {/* Pausing sits before stopping, and stopping keeps the quieter variant:
           ending a run of two hundred substances is not the button a hand should
           land on when it meant "wait a moment". */}
       {holdable && <Button variant="outline" isDisabled={hold.isPending} onPress={() => hold.mutate()}><Pause />{hold.isPending ? 'Останавливаем…' : 'Пауза'}</Button>}
       {campaign.status === 'PAUSED' && <Button isDisabled={carryOn.isPending} onPress={() => carryOn.mutate()}><Play className={carryOn.isPending ? 'pr-spin' : undefined} />{carryOn.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
       {(stoppable || campaignDeletable(campaign)) && !moreActions && <Button variant="ghost" onPress={() => setMoreActions(true)}>Ещё…</Button>}
-      {moreActions && stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()} aria-description="Останавливает кампанию и закрывает её переговоры: напоминания и неотправленные письма не уйдут"><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
+      {moreActions && stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()} aria-description="Останавливает закупку и закрывает её переговоры: напоминания и неотправленные письма не уйдут"><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
       {moreActions && campaignDeletable(campaign) && (confirmDelete
         ? <>
-          <Button variant="destructive" isDisabled={remove.isPending} onPress={() => remove.mutate()}><Trash />{remove.isPending ? 'Удаляем…' : 'Удалить кампанию навсегда'}</Button>
+          <Button variant="destructive" isDisabled={remove.isPending} onPress={() => remove.mutate()}><Trash />{remove.isPending ? 'Удаляем…' : 'Удалить закупку навсегда'}</Button>
           <Button variant="outline" isDisabled={remove.isPending} onPress={() => { setConfirmDelete(false); remove.reset() }}>Отмена</Button>
         </>
         : <Button variant="ghost" onPress={() => setConfirmDelete(true)}><Trash />Удалить</Button>)}
@@ -593,30 +593,30 @@ export default function CampaignPage() {
         {savedEffects.requeued?.length > 0 && <> Продолжено веществ с их готовым поиском: {savedEffects.requeued.length}.</>}
         {savedEffects.released?.length > 0 && <> Снятые проверки выполняются для веществ, ждущих согласования, — ход будет виден в истории ниже.</>}
       </AlertDescription></Alert>}
-      {remove.error && <Alert><AlertTriangle /><AlertTitle>Кампания не удалена</AlertTitle><AlertDescription>{deleteMessage(remove.error)}</AlertDescription></Alert>}
+      {remove.error && <Alert><AlertTriangle /><AlertTitle>Закупка не удалена</AlertTitle><AlertDescription>{deleteMessage(remove.error)}</AlertDescription></Alert>}
       {research.data && <Alert>{research.data.started.length ? <Check /> : <CircleAlert />}<AlertTitle>{research.data.started.length ? `Поиск запущен заново: ${research.data.started.length}` : 'Поиск не запущен'}</AlertTitle><AlertDescription>
         {research.data.started.length > 0 && <>Ход поиска видно в строках таблицы; когда он закончится, найденное сольётся с прежним. </>}
-        {research.data.skipped.length > 0 && <>Пропущено: {research.data.skipped.map(item => `#${item.cardId} — ${item.code === 'SEARCH_RUNNING' ? 'поиск уже идёт' : item.code === 'NOT_IN_CAMPAIGN' ? 'не в кампании' : item.message || item.code}`).join('; ')}.</>}
+        {research.data.skipped.length > 0 && <>Пропущено: {research.data.skipped.map(item => `#${item.cardId} — ${item.code === 'SEARCH_RUNNING' ? 'поиск уже идёт' : item.code === 'NOT_IN_CAMPAIGN' ? 'не в закупке' : item.message || item.code}`).join('; ')}.</>}
       </AlertDescription></Alert>}
       {research.error && <Alert><AlertTriangle /><AlertTitle>Поиск не запущен</AlertTitle><AlertDescription>{mutationMessage(research.error)}</AlertDescription></Alert>}
-      {cancel.data?.effects && <Alert><Check /><AlertTitle>Кампания остановлена</AlertTitle><AlertDescription>
-        Закрыто переговоров: {cancel.data.effects.cancelledNegotiations}, отклонено неотправленных писем: {cancel.data.effects.rejectedDrafts}. Вещества, которые ведёт другая кампания, не затронуты; история переписки сохранена.
+      {cancel.data?.effects && <Alert><Check /><AlertTitle>Закупка остановлена</AlertTitle><AlertDescription>
+        Закрыто переговоров: {cancel.data.effects.cancelledNegotiations}, отклонено неотправленных писем: {cancel.data.effects.rejectedDrafts}. Вещества, которые ведёт другая закупка, не затронуты; история переписки сохранена.
       </AlertDescription></Alert>}
             {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
-      {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Кампания на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не кампании, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
-      {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Кампания прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}
-      {errors.length > 0 && <Alert><CircleAlert /><AlertTitle>Замечания по запуску</AlertTitle><AlertDescription><ul className="pr-plain-list">{errors.map(code => <li key={code}>{code.startsWith('card:CARD_NOT_FOUND:') ? `Карточка #${code.split(':').pop()} не найдена и в кампанию не вошла` : errorText(code)}</li>)}</ul></AlertDescription></Alert>}
+      {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Закупка на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не закупке, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
+      {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Закупка прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}
+      {errors.length > 0 && <Alert><CircleAlert /><AlertTitle>Замечания по запуску</AlertTitle><AlertDescription><ul className="pr-plain-list">{errors.map(code => <li key={code}>{code.startsWith('card:CARD_NOT_FOUND:') ? `Карточка #${code.split(':').pop()} не найдена и в закупку не вошла` : errorText(code)}</li>)}</ul></AlertDescription></Alert>}
     </>}
   >
     <div className="pr-stack">
-      {draftTitle !== null && <Card><CardHeader><CardTitle>Название кампании</CardTitle></CardHeader><CardContent>
+      {draftTitle !== null && <Card><CardHeader><CardTitle>Название закупки</CardTitle></CardHeader><CardContent>
         <form className="pr-inline-actions" onSubmit={event => {
           event.preventDefault()
           if (draftTitle.trim()) rename.mutate(draftTitle.trim())
         }}>
           <Input
             value={draftTitle}
-            aria-label="Название кампании"
+            aria-label="Название закупки"
             maxLength={200}
             autoFocus
             onChange={event => setDraftTitle(event.target.value)}
@@ -787,7 +787,7 @@ export default function CampaignPage() {
           {marketplaceStopped.message}
           {marketplaceStopped.noVncUrl && <> Пройдите проверку в браузере — ссылка и пароль ниже — и запустите ещё раз.</>}
         </AlertDescription></Alert>}
-        {marketplaceNeedsReview > 0 && <p className="pr-note">Площадка иногда просит подтвердить, что заявку отправляет человек. Пройти эту проверку за вас агент не может и не должен, поэтому он останавливается и оставляет форму открытой: пройдите проверку в браузере, отправьте заявку там же — и нажмите «Заявка ушла — записать», чтобы кампания перестала считать её неотправленной. Если проверку вы уже прошли и не уверены, ушла заявка или нет, — нажмите «Проверить и отправить»: система спросит у самой площадки, есть ли там заявка по этому CAS, и либо запишет её как размещённую, либо отправит заново. Вслепую повторять отправку она не станет — это был бы риск второй заявки по тому же веществу.</p>}
+        {marketplaceNeedsReview > 0 && <p className="pr-note">Площадка иногда просит подтвердить, что заявку отправляет человек. Пройти эту проверку за вас агент не может и не должен, поэтому он останавливается и оставляет форму открытой: пройдите проверку в браузере, отправьте заявку там же — и нажмите «Заявка ушла — записать», чтобы закупка перестала считать её неотправленной. Если проверку вы уже прошли и не уверены, ушла заявка или нет, — нажмите «Проверить и отправить»: система спросит у самой площадки, есть ли там заявка по этому CAS, и либо запишет её как размещённую, либо отправит заново. Вслепую повторять отправку она не станет — это был бы риск второй заявки по тому же веществу.</p>}
         {marketplaceAwaiting > 0 && !marketplaceView?.running && <p className="pr-note">{plan.draftFirst
           ? 'Заявки ждут вас. По кнопке каждая форма заполняется, сверяется с согласованным RFQ и сразу отправляется — заранее формы не заполняются, их всё равно нельзя было бы посмотреть.'
           : 'Формы заполнены и ждут вас.'} Отправка необратима: заявку видят все продавцы Echemi, и отозвать её из системы нельзя — на площадке она снимается вручную.</p>}
@@ -905,7 +905,7 @@ export default function CampaignPage() {
         <p>{awaitingPerson > 0
           ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
           : 'Все запросы отправлены — переписки идут сами.'}
-          {threadsView?.draftFirst && ' Кампания запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
+          {threadsView?.draftFirst && ' Закупка запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
         {/* A marketplace request is not in this list on purpose: it has no
             contact behind it and no thread. It has its own block above. */}
         {hasEchemi && <p className="pr-note">Заявки на площадку Echemi — отдельным блоком выше: у них нет адресата и переписки, одна заявка на вещество видна всем продавцам сразу. Здесь только переписка с контактами.</p>}
@@ -950,11 +950,11 @@ export default function CampaignPage() {
       {/* What explains the run rather than asks for anything: kept, one click
           away, so the page opens on what needs a person and what came in. */}
       <details className="pr-more-details">
-        <summary>Подробнее: история кампании{unreachable.length > 0 ? ' и компании без адреса' : ''}</summary>
+        <summary>Подробнее: история закупки{unreachable.length > 0 ? ' и компании без адреса' : ''}</summary>
         <div className="pr-stack">
       {unreachable.length > 0 && <Card><CardHeader><div>
         <CardTitle>Некому написать</CardTitle>
-        <p>Эти компании вы подтвердили, но кампания не нашла у них адреса в разрешённых каналах{channelsLabel ? ` (${channelsLabel})` : ''}. Допишите контакт на карточке поставщика — и запустите рассылку ещё раз.</p>
+        <p>Эти компании вы подтвердили, но поиск не нашёл у них адреса в разрешённых каналах{channelsLabel ? ` (${channelsLabel})` : ''}. Допишите контакт на карточке поставщика — и запустите рассылку ещё раз.</p>
       </div></CardHeader><CardContent>
         <ul className="pr-campaign-threads">
           {unreachable.map(entry => <li key={entry.cardId}>

@@ -214,7 +214,7 @@ export function CampaignLaunchPanel({
   return <Card className="pr-sourcing-launch"><CardHeader><div>
     {editing
       ? <>
-        <CardTitle>Настройки кампании</CardTitle>
+        <CardTitle>Настройки закупки</CardTitle>
         <p>Изменения действуют на то, что ещё впереди; сделанное не переделывается. Поиск — для {notSearched} {plural(notSearched, 'вещества', 'веществ', 'веществ')}, которые ещё не искали. Снятая проверка сразу применится и к {waiting} {plural(waiting, 'веществу', 'веществам', 'веществам')}, ждущим согласования. Более далёкая ступень «Довести до» продолжит остановленные вещества с их готовым поиском.</p>
       </>
       : <>
@@ -273,14 +273,14 @@ export function CampaignLaunchPanel({
         </label>
         <label>
           <input type="checkbox" checked={approveRfq} disabled={start.isPending} onChange={event => setApproveRfq(event.target.checked)} />
-          <span><strong>Согласовать RFQ перед первой отправкой</strong>Один экран на всю кампанию: кому пишем и что спрашиваем. Это согласование покрывает всю рассылку, включая заявки на площадках.</span>
+          <span><strong>Согласовать RFQ перед первой отправкой</strong>Один экран на всю закупку: кому пишем и что спрашиваем. Это согласование покрывает всю рассылку, включая заявки на площадках.</span>
         </label>
         <label>
           <input type="checkbox" checked={draftFirst} disabled={start.isPending} onChange={event => setDraftFirst(event.target.checked)} />
-          <span><strong>Показывать каждое письмо до отправки</strong>Сверх согласования RFQ. На большой кампании это возвращает работу по письму за письмом — включайте, когда переписка идёт с новой площадкой.</span>
+          <span><strong>Показывать каждое письмо до отправки</strong>Сверх согласования RFQ. В большой закупке это возвращает работу по письму за письмом — включайте, когда переписка идёт с новой площадкой.</span>
         </label>
       </fieldset>
-      {!confirmCandidates && !approveRfq && !draftFirst && <p className="pr-note">Все проверки сняты: кампания сама пройдёт от поиска до отправленных запросов. Вы увидите результат на странице кампании; компании с неясной ролью останутся на согласовании.</p>}
+      {!confirmCandidates && !approveRfq && !draftFirst && <p className="pr-note">Все проверки сняты: закупка сама пройдёт от поиска до отправленных запросов. Вы увидите результат на странице закупки; компании с неясной ролью останутся на согласовании.</p>}
     </>}
 
     <SourcingSettings
@@ -300,10 +300,10 @@ export function CampaignLaunchPanel({
         <Search className={busy ? 'pr-spin' : undefined} />
         {editing
           ? (start.isPending ? 'Сохраняем…' : 'Сохранить настройки')
-          : start.isSuccess ? 'Запущено, открываем кампанию…' : start.isPending ? 'Запускаем…' : `Запустить по ${cardIds.length}`}
+          : start.isSuccess ? 'Запущено, открываем закупку…' : start.isPending ? 'Запускаем…' : `Запустить по ${cardIds.length}`}
       </Button>
       {onCancel && <Button variant="outline" isDisabled={busy} onPress={onCancel}>Отмена</Button>}
     </div>
-    <p className="pr-note">Ошибка по одному веществу не останавливает остальные: она записывается в строку этого вещества, а кампания едет дальше.</p>
+    <p className="pr-note">Ошибка по одному веществу не останавливает остальные: она записывается в строку этого вещества, а закупка идёт дальше.</p>
   </CardContent></Card>
 }

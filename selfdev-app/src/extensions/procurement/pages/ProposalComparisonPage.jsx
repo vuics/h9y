@@ -87,7 +87,7 @@ export default function ProposalComparisonPage() {
     mutationFn: () => procurementApi.stopSiteGrades(cardId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: procurementKeys.comparison(cardId) }),
   })
-  if (!cardId) return <EmptyState title="Выберите карточку закупки" description="Откройте предложения нужной карточки и запустите сравнение оттуда." action={<RouterLinkButton to="/procurement/proposals">К предложениям</RouterLinkButton>} />
+  if (!cardId) return <EmptyState title="Выберите карточку позиции" description="Откройте предложения нужной карточки и запустите сравнение оттуда." action={<RouterLinkButton to="/procurement/proposals">К предложениям</RouterLinkButton>} />
   if (query.isLoading) return <LoadingState />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   const allRows = comparisonColumns(query.data)

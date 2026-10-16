@@ -131,7 +131,7 @@ export function CampaignMembers({
         onPress={() => onResearch([...selected], () => setSelected(new Set()))}
       >{researchPending ? 'Запускаем…' : `Искать заново (${selected.size})`}</Button>
       <Button size="sm" variant="ghost" onPress={() => setSelected(new Set())}>Снять выбор</Button>
-      <span className="pr-muted">С текущими настройками кампании — глубина, движки, запросы. Найденное сольётся с прежним поиском; решения по кандидатам сохранятся. Вещества, где поиск уже идёт, пропускаются.</span>
+      <span className="pr-muted">С текущими настройками закупки — глубина, движки, запросы. Найденное сольётся с прежним поиском; решения по кандидатам сохранятся. Вещества, где поиск уже идёт, пропускаются.</span>
     </div>}
 
     <div className="pr-table-wrap"><table className="pr-table pr-members__table">
@@ -216,7 +216,7 @@ export function CampaignMembers({
             </td>
             <td className="pr-members__menu">
               <RowMenu label={`Действия: ${member.title}`}>
-                <Link to={`/procurement/requests/${member.cardId}`} role="menuitem">Карточка закупки</Link>
+                <Link to={`/procurement/requests/${member.cardId}`} role="menuitem">Карточка позиции</Link>
                 {member.sourcingRunId && <Link to={`/procurement/requests/${member.cardId}/sourcing`} role="menuitem">Поиск и кандидаты</Link>}
                 <Link to={`/procurement/requests/${member.cardId}/rfq`} role="menuitem">RFQ</Link>
                 {canRemove && removable(member) && <button
@@ -265,7 +265,7 @@ export function CampaignMembers({
               <div>
                 <h4>Ещё по веществу</h4>
                 <ul className="pr-plain-list">
-                  <li><Link to={`/procurement/requests/${member.cardId}`}>Карточка закупки</Link></li>
+                  <li><Link to={`/procurement/requests/${member.cardId}`}>Карточка позиции</Link></li>
                   {member.sourcingRunId && <li><Link to={`/procurement/requests/${member.cardId}/sourcing`}>Поиск и кандидаты</Link></li>}
                   <li><Link to={`/procurement/requests/${member.cardId}/rfq`}>RFQ</Link></li>
                   {offers?.offers.length > 0 && <li><Link to={`/procurement/proposals/compare?cardId=${member.cardId}`}>Сравнить предложения ({offers.offers.length})</Link></li>}

@@ -66,7 +66,7 @@ const substance = event => event.data?.title || (event.cardId ? `#${event.cardId
 
 /** Each kind: whether it is a main line, and how it reads. */
 const KINDS = {
-  CREATED: { main: true, text: event => `Кампания запущена: ${event.data?.cards ?? '?'} ${plural(event.data?.cards ?? 0, 'вещество', 'вещества', 'веществ')}, ${REACH[event.data?.plan?.reach] || 'настройки по умолчанию'}` },
+  CREATED: { main: true, text: event => `Закупка запущена: ${event.data?.cards ?? '?'} ${plural(event.data?.cards ?? 0, 'вещество', 'вещества', 'веществ')}, ${REACH[event.data?.plan?.reach] || 'настройки по умолчанию'}` },
   PLAN_CHANGED: {
     main: true,
     text: event => {
@@ -76,15 +76,15 @@ const KINDS = {
       return `Настройки изменены — ${changes.join('; ')}${requeued}`
     },
   },
-  RENAMED: { main: true, text: event => `Кампания переименована: «${event.data?.changes?.title?.from ?? ''}» → «${event.data?.changes?.title?.to ?? ''}»` },
-  PAUSED: { main: true, text: () => 'Кампания поставлена на паузу' },
-  UNPAUSED: { main: true, text: () => 'Кампания продолжена после паузы' },
-  RESUMED: { main: true, text: () => 'Кампания продолжена после перезапуска' },
-  INTERRUPTED: { main: true, text: () => 'Кампания прервана перезапуском сервиса' },
-  CANCELLED: { main: true, text: () => 'Кампания остановлена совсем' },
-  STATUS: { main: true, text: event => `Состояние кампании: ${CAMPAIGN_STATUS[event.data?.status] || event.data?.status}` },
+  RENAMED: { main: true, text: event => `Закупка переименована: «${event.data?.changes?.title?.from ?? ''}» → «${event.data?.changes?.title?.to ?? ''}»` },
+  PAUSED: { main: true, text: () => 'Закупка поставлена на паузу' },
+  UNPAUSED: { main: true, text: () => 'Закупка продолжена после паузы' },
+  RESUMED: { main: true, text: () => 'Закупка продолжена после перезапуска' },
+  INTERRUPTED: { main: true, text: () => 'Закупка прервана перезапуском сервиса' },
+  CANCELLED: { main: true, text: () => 'Закупка остановлена совсем' },
+  STATUS: { main: true, text: event => `Состояние закупки: ${CAMPAIGN_STATUS[event.data?.status] || event.data?.status}` },
   MEMBERS_ADDED: { main: true, text: event => `Добавлены вещества: ${(event.data?.cards || []).map(card => card.title).join(', ')}` },
-  MEMBER_REMOVED: { main: true, text: event => `Вещество убрано из кампании: ${substance(event)}` },
+  MEMBER_REMOVED: { main: true, text: event => `Вещество убрано из закупки: ${substance(event)}` },
   REVIEW_APPLIED: {
     main: true,
     text: event => `Согласовано: ${event.data?.verified ?? 0} ${plural(event.data?.verified ?? 0, 'решение', 'решения', 'решений')} по компаниям, ${event.data?.promoted ?? 0} в поставщики, RFQ — ${event.data?.rfqApproved ?? 0}`,
@@ -112,7 +112,7 @@ const KINDS = {
   AWAITING_REVIEW: { main: false, text: event => `${substance(event)}: ждёт решения на экране согласования` },
   MEMBER_DONE: { main: false, text: event => `${substance(event)}: готово` },
   SEARCH_RESUMED: { main: false, text: event => `${substance(event)}: поиск продолжен с места обрыва (прочитано ${event.data?.read ?? 0} из ${event.data?.total ?? '?'} источников)` },
-  WORKER_BLOCKED: { main: true, text: event => `Кампанию некому вести: ${event.data?.code === 'DRIVER_PRINCIPAL_UNKNOWN' ? 'не найден пользователь, от имени которого она запущена' : event.data?.code === 'SOURCING_MODEL_NOT_CONFIGURED' ? 'у запустившего нет развёрнутого агента закупок' : event.data?.code}` },
+  WORKER_BLOCKED: { main: true, text: event => `Закупку некому вести: ${event.data?.code === 'DRIVER_PRINCIPAL_UNKNOWN' ? 'не найден пользователь, от имени которого она запущена' : event.data?.code === 'SOURCING_MODEL_NOT_CONFIGURED' ? 'у запустившего нет развёрнутого агента закупок' : event.data?.code}` },
 }
 
 export const historyLine = event => {

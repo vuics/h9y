@@ -38,14 +38,14 @@ export function CampaignAddPanel({ cardIds, onCancel }) {
   const message = add.error?.response?.data?.detail?.message || add.error?.message
 
   return <Card className="pr-sourcing-launch"><CardHeader><div>
-    <CardTitle>Добавить {cardIds.length} {plural(cardIds.length, 'вещество', 'вещества', 'веществ')} в кампанию</CardTitle>
-    <p>Вещества встанут в очередь кампании и пройдут её текущие настройки. Уже входящие в неё пропускаются.</p>
+    <CardTitle>Добавить {cardIds.length} {plural(cardIds.length, 'вещество', 'вещества', 'веществ')} в закупку</CardTitle>
+    <p>Вещества встанут в очередь закупки и пройдут её текущие настройки. Уже входящие в неё пропускаются.</p>
   </div></CardHeader><CardContent>
     {add.error && <Alert><AlertTriangle /><AlertTitle>Не добавлено</AlertTitle><AlertDescription>{message}</AlertDescription></Alert>}
     {open.length === 0 && !campaigns.isLoading
-      ? <p className="pr-note">Нет кампаний, в которые можно добавить вещества.</p>
-      : <SelectField label="Кампания" selectedKey={campaignId} onSelectionChange={key => setCampaignId(String(key))} isDisabled={campaigns.isLoading || add.isPending}>
-        <SelectTrigger><SelectValue placeholder="Выберите кампанию" /></SelectTrigger>
+      ? <p className="pr-note">Нет закупок, в которые можно добавить вещества.</p>
+      : <SelectField label="Закупка" selectedKey={campaignId} onSelectionChange={key => setCampaignId(String(key))} isDisabled={campaigns.isLoading || add.isPending}>
+        <SelectTrigger><SelectValue placeholder="Выберите закупку" /></SelectTrigger>
         <SelectContent>
           {open.map(item => <SelectItem key={item.campaignId} id={item.campaignId}>
             {item.title} · {CAMPAIGN_STATUS[item.status] || item.status} · {item.campaignId}

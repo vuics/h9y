@@ -62,7 +62,7 @@ export default function RequestDetailPage() {
   // operator learns where to go instead of guessing why the button did nothing.
   const deleteBlockers = ((remove.error?.response?.data?.blockers) || []).map(blocker => {
     if (blocker.code === 'HAS_NEGOTIATIONS') return `переговоры (${blocker.count})`
-    if (blocker.code === 'IN_CAMPAIGN') return `кампании: ${(blocker.campaignIds || []).join(', ')}`
+    if (blocker.code === 'IN_CAMPAIGN') return `закупки: ${(blocker.campaignIds || []).join(', ')}`
     return blocker.code
   })
   const mutationError = failed?.response?.data?.message || failed?.message

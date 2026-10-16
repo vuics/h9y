@@ -17,7 +17,7 @@ export function CampaignHistory({ events = [], members = [] }) {
     .filter(line => cardId === 'all' || String(line.event.cardId) === cardId), [events, level, cardId])
 
   return <Card className="pr-campaign-history"><CardHeader><div>
-    <CardTitle>История кампании</CardTitle>
+    <CardTitle>История закупки</CardTitle>
     <p>Кто и что сделал, в каком порядке. Шаги по каждому веществу — в «Все события».</p>
   </div></CardHeader><CardContent>
     <div className="pr-inline-actions pr-campaign-history__filters">
@@ -34,7 +34,7 @@ export function CampaignHistory({ events = [], members = [] }) {
       </SelectField>}
     </div>
     {lines.length === 0
-      ? <p className="pr-note">{events.length ? 'Под выбранный фильтр ничего не попало.' : 'История ведётся с этого обновления — у кампании, запущенной раньше, она начинается с первого нового события.'}</p>
+      ? <p className="pr-note">{events.length ? 'Под выбранный фильтр ничего не попало.' : 'История ведётся с этого обновления — у закупки, запущенной раньше, она начинается с первого нового события.'}</p>
       : <ol className="pr-campaign-history__list">{lines.map(({ event, text, who }, index) => <li key={`${event.at}-${index}`} className={event.kind === 'SEARCH_FAILED' || (event.data?.errors || []).length ? 'is-problem' : undefined}>
         <time>{formatTime(event.at)}</time>
         <span>{text}</span>

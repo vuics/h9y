@@ -79,7 +79,7 @@ export default function RequestsPage() {
     { id: 'updatedAt', header: 'Обновлено', cell: row => row.updatedAt ? new Date(row.updatedAt).toLocaleString('ru-RU') : '—' },
   ]
 
-  return <div className="pr-stack"><div className="pr-section-heading"><div><h2>Карточки закупок</h2><p>Запрос, нормализация вещества, RFQ и ход закупки в одном реестре.</p></div>{canWriteCards && <div className="pr-inline-actions">
+  return <div className="pr-stack"><div className="pr-section-heading"><div><h2>Карточки позиций</h2><p>Запрос, нормализация вещества, RFQ и ход закупки в одном реестре.</p></div>{canWriteCards && <div className="pr-inline-actions">
     {canResearchSourcing && (selecting
       ? <Button variant="outline" onPress={leaveSelection}>Отменить выбор</Button>
       : <Button variant="outline" onPress={() => setSelecting(true)}><Search size={15} />Выбрать карточки</Button>)}
@@ -91,7 +91,7 @@ export default function RequestsPage() {
       <span>{selected.length ? `Выбрано ${selected.length} из ${visibleIds.length} загруженных` : 'Отметьте вещества, по которым запустить поиск'}</span>
       <div className="pr-inline-actions">
         <Button variant="outline" size="sm" isDisabled={!selected.length} onPress={() => setSelectedIds([])}>Снять выбор</Button>
-        <Button variant="outline" size="sm" isDisabled={!selected.length || adding} onPress={() => { setAdding(true); setLaunching(false) }}>Добавить в кампанию</Button>
+        <Button variant="outline" size="sm" isDisabled={!selected.length || adding} onPress={() => { setAdding(true); setLaunching(false) }}>Добавить в закупку</Button>
         <Button size="sm" isDisabled={!selected.length || launching} onPress={() => { setLaunching(true); setAdding(false) }}><Search size={15} />Запустить поиск</Button>
       </div>
     </div>}

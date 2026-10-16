@@ -192,7 +192,7 @@ export default function CardImportPage() {
     return (
       <div className="pr-stack">
         <RouterLinkButton to="/procurement/requests" variant="ghost" size="sm">
-          <ArrowLeft size={15} />Карточки закупок
+          <ArrowLeft size={15} />Карточки позиций
         </RouterLinkButton>
         <div className="pr-section-heading">
           <div>
@@ -331,7 +331,7 @@ export default function CardImportPage() {
                 </li>
               ))}
             </ul>
-            {launchedFromHere.length > 5 && <Link to="/procurement/campaigns">Все кампании</Link>}
+            {launchedFromHere.length > 5 && <Link to="/procurement/campaigns">Все закупки</Link>}
           </AlertDescription>
         </Alert>
       )}
@@ -340,7 +340,7 @@ export default function CardImportPage() {
         <div className="pr-inline-actions">
           {launchedFromHere.length > 0 && (
             <RouterLinkButton to={`/procurement/campaigns/${launchedFromHere[0].campaignId}`}>
-              Открыть кампанию
+              Открыть закупку
             </RouterLinkButton>
           )}
           {canWriteCards && !launching && (
@@ -351,7 +351,7 @@ export default function CardImportPage() {
             >
               <Search size={15} />
               {launchedFromHere.length
-                ? 'Запустить ещё одну кампанию'
+                ? 'Запустить ещё одну закупку'
                 : `Запустить поиск по ${launchCardIds.length} ${plural(launchCardIds.length, 'веществу', 'веществам', 'веществам')}${existingCount > 0 ? ` (уже в реестре: ${existingCount})` : ''}`}
             </Button>
           )}

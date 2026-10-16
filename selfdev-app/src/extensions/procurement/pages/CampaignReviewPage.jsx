@@ -84,7 +84,7 @@ const BLOCKED_LABEL = {
   SOURCING_ENGINE_UNAVAILABLE: 'ни один движок поиска не доступен',
   SOURCING_NOT_READY: 'поиск по карточке ещё не готов',
   CARD_NOT_NORMALIZED: 'карточка не нормализована',
-  NO_USABLE_CONTACT: 'у поставщика нет контакта в разрешённых каналах кампании',
+  NO_USABLE_CONTACT: 'у поставщика нет контакта в разрешённых каналах закупки',
   STAGE_OUTREACH: 'запросы уже отправлены',
   STAGE_NEGOTIATION: 'идут переговоры',
 }
@@ -102,7 +102,7 @@ const DECISION_LABEL = Object.fromEntries(VERDICTS)
 
 // Said when the specialist vouches from this screen. Required by the API, and
 // true: they confirmed the card's own CAS and name against what PubChem showed.
-const CONFIRM_REASON = 'Подтверждено специалистом при согласовании кампании: CAS и название в карточке верны.'
+const CONFIRM_REASON = 'Подтверждено специалистом при согласовании закупки: CAS и название в карточке верны.'
 
 /** Every reason a substance was not written to, flattened for one list.
  *
@@ -126,9 +126,9 @@ const dispatchTitle = outreach => {
  * started — the campaign page is where it is watched.
  */
 const MARKETPLACE_SKIPPED = {
-  ECHEMI_NOT_IN_PLAN: 'Канал Echemi при запуске не выбирали — заявки на площадку по этой кампании не выставляются.',
-  ECHEMI_OPERATE_REQUIRED: 'Заявки на площадку требуют разрешения ECHEMI_OPERATE. Решения записаны; выставить их сможет сотрудник с этим правом — со страницы кампании.',
-  BUYER_DELIVERY_INCOMPLETE: 'Заявки на площадку не начаты: в настройках закупщика не хватает условий поставки. Заполните их и запустите со страницы кампании.',
+  ECHEMI_NOT_IN_PLAN: 'Канал Echemi при запуске не выбирали — заявки на площадку по этой закупке не выставляются.',
+  ECHEMI_OPERATE_REQUIRED: 'Заявки на площадку требуют разрешения ECHEMI_OPERATE. Решения записаны; выставить их сможет сотрудник с этим правом — со страницы закупки.',
+  BUYER_DELIVERY_INCOMPLETE: 'Заявки на площадку не начаты: в настройках закупщика не хватает условий поставки. Заполните их и запустите со страницы закупки.',
 }
 
 export default function CampaignReviewPage() {
@@ -282,7 +282,7 @@ export default function CampaignReviewPage() {
   if (query.isLoading) return <LoadingState />
   if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
   const review = query.data
-  if (!review) return <EmptyState title="Кампания не найдена" />
+  if (!review) return <EmptyState title="Закупка не найдена" />
 
   const missingRfqs = items.filter(item => item.rfq && item.rfq.status === 'NOT_PREPARED' && !item.normalization).length
   const appliedById = new Map((applied || []).map(result => [result.cardId, result]))
@@ -385,9 +385,9 @@ export default function CampaignReviewPage() {
 
   return <DetailLayout
     backTo={`/procurement/campaigns/${campaignId}`}
-    backLabel="К кампании"
+    backLabel="К закупке"
     eyebrow={<CopyableId value={review.campaignId} />}
-    title="Согласование кампании"
+    title="Согласование закупки"
     status={<Badge variant="secondary">{review.pendingCandidates} на решении</Badge>}
     meta={`${review.title} · ${actionable.length} из ${items.length} веществ готовы к согласованию`}
     warnings={<>
@@ -396,11 +396,11 @@ export default function CampaignReviewPage() {
       {!canReviewSourcing && <Alert><AlertTriangle /><AlertTitle>Согласование доступно только для чтения</AlertTitle><AlertDescription>Для подтверждения кандидатов требуется разрешение SOURCING_REVIEW.</AlertDescription></Alert>}
       {posted && <Alert>{posted.started ? <Check /> : <CircleAlert />}<AlertTitle>{posted.started ? 'Заявки на площадку выставляются' : 'Заявки на площадку не начаты'}</AlertTitle><AlertDescription>
         {posted.started
-          ? <>Заявки уходят по одной через общий браузер — это минуты на вещество. Ход видно на странице кампании.</>
+          ? <>Заявки уходят по одной через общий браузер — это минуты на вещество. Ход видно на странице закупки.</>
           : MARKETPLACE_SKIPPED[posted.skipped] || posted.message || posted.skipped}
       </AlertDescription></Alert>}
       {dispatched && <Alert>{dispatched.queued > 0 ? <Check /> : <CircleAlert />}<AlertTitle>{dispatchTitle(dispatched)}</AlertTitle><AlertDescription>
-        {dispatched.queued > 0 && <p>Кампания перешла к рассылке — ход видно на странице кампании.</p>}
+        {dispatched.queued > 0 && <p>Закупка перешла к рассылке — ход видно на странице закупки.</p>}
         {dispatched.skipped === 'NEGOTIATION_QUEUE_REQUIRED' && <p>Решения записаны, но отправка требует разрешения NEGOTIATION_QUEUE. Запросы уйдут, когда её запустит сотрудник с этим правом.</p>}
         {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}><Link to={`/procurement/requests/${problem.cardId}`}>#{problem.cardId}</Link> — {blockedText(problem.code)}</li>)}</ul>}
       </AlertDescription></Alert>}
@@ -422,7 +422,7 @@ export default function CampaignReviewPage() {
       </CardContent></Card>}
 
       <Card><CardHeader><div>
-        <CardTitle>Одно решение на всю кампанию</CardTitle>
+        <CardTitle>Одно решение на всю закупку</CardTitle>
         <p>Кому пишем и что спрашиваем — по каждому веществу. Компании и тексты RFQ уже отмечены по рекомендации: проверьте, снимите лишнее и нажмите одну кнопку. Кандидат становится поставщиком только с этим подтверждением.</p>
       </div></CardHeader><CardContent>
         <div className="pr-inline-actions">
@@ -432,7 +432,7 @@ export default function CampaignReviewPage() {
         {bulkVerdicts(items)}
       </CardContent></Card>
 
-      {items.length === 0 && <EmptyState title="В кампании нет веществ" />}
+      {items.length === 0 && <EmptyState title="В закупке нет веществ" />}
 
       {items.map(item => {
         const result = appliedById.get(item.cardId)

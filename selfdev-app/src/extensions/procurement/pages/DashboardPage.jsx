@@ -184,7 +184,7 @@ function FunnelCard({ params, days, onDays }) {
             <h3>{data.discovery.label}</h3>
             <p className="pr-dash__seam">Вход: {data.discovery.entry}</p>
             {discoveryEmpty
-              ? <p className="pr-funnel__foot">За период не было ни одного прогона поиска. Запустите поиск из карточки закупки, чтобы здесь появились кандидаты.</p>
+              ? <p className="pr-funnel__foot">За период не было ни одного прогона поиска. Запустите поиск из карточки позиции, чтобы здесь появились кандидаты.</p>
               : <Funnel cohort={data.discovery} />}
           </>
         )}

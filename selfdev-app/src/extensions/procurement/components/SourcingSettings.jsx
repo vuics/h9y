@@ -36,7 +36,7 @@ import { QueryPlanPanel } from './QueryPlanPanel'
  */
 const DEPTHS = [
   { id: 'FAST', perQuery: 2, label: 'Быстрый', detail: 'По 2 результата на запрос — хватает, чтобы увидеть, есть ли вообще кто-то.' },
-  { id: 'NORMAL', perQuery: 5, label: 'Обычный', detail: 'По 5 на запрос. Разумный выбор для кампании по длинному списку.' },
+  { id: 'NORMAL', perQuery: 5, label: 'Обычный', detail: 'По 5 на запрос. Разумный выбор для закупки по длинному списку.' },
   { id: 'MAX', perQuery: 10, label: 'Максимальный', detail: 'По 10 — это потолок, выше поисковые движки не отдают.' },
 ]
 
@@ -176,7 +176,7 @@ export function SourcingSettings({
         const rate = settings.secondsPerSource
         return <>
           до {queryCount} {plural(queryCount, 'запроса', 'запросов', 'запросов')} × {depthOf(value.depth).perQuery} = до {perSubstance} {plural(perSubstance, 'источника', 'источников', 'источников')} на вещество
-          {count > 1 && <>, около {total.toLocaleString('ru-RU')} на всю кампанию</>}.
+          {count > 1 && <>, около {total.toLocaleString('ru-RU')} на всю закупку</>}.
           {' '}Каждый источник — одно скачивание страницы и одно обращение к модели.
           {rate
             ? <> Ориентировочно {duration(total * rate / (count > 1 ? CAMPAIGN_CONCURRENCY : 1))} по скорости последних прогонов этой установки.</>

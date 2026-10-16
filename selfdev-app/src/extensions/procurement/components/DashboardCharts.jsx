@@ -218,7 +218,7 @@ export function TrafficLightChart({ data }) {
       <CardContent>
         {summary.total === 0 ? (
           <p className="pr-funnel__foot">
-            Кандидатов ещё нет. Запустите поиск поставщиков из карточки закупки.
+            Кандидатов ещё нет. Запустите поиск поставщиков из карточки позиции.
           </p>
         ) : (
           <>

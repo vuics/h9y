@@ -15,7 +15,7 @@ export const PRIMARY_SECTIONS = [
 export const MORE_SECTIONS = [
   ['overview', 'Обзор этапов', '/procurement/overview'],
   ['dashboard', 'Дашборд', '/procurement/dashboard'],
-  ['requests', 'Карточки закупок', '/procurement/requests'],
+  ['requests', 'Карточки позиций', '/procurement/requests'],
   ['suppliers', 'Поставщики', '/procurement/suppliers'],
   ['negotiations', 'Переговоры', '/procurement/negotiations'],
   ['agent', 'Что делает агент', '/procurement/negotiations/agent'],
@@ -30,8 +30,8 @@ export const MORE_SECTIONS = [
 export const CLASSIC_SECTIONS = [
   ['dashboard', 'Дашборд', '/procurement/dashboard'],
   ['overview', 'Обзор', '/procurement/overview'],
-  ['requests', 'Карточки закупок', '/procurement/requests'],
-  ['purchases', 'Кампании', '/procurement'],
+  ['requests', 'Карточки позиций', '/procurement/requests'],
+  ['purchases', 'Закупки', '/procurement'],
   ['suppliers', 'Поставщики', '/procurement/suppliers'],
   ['negotiations', 'Переговоры', '/procurement/negotiations'],
   ['proposals', 'Предложения', '/procurement/proposals'],

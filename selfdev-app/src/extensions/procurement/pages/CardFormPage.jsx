@@ -126,7 +126,7 @@ export default function CardFormPage() {
 
   return <div className="pr-card-form-page">
     <Button variant="ghost" size="sm" onPress={() => navigate(editing ? `/procurement/requests/${requestId}` : '/procurement/requests')}><ArrowLeft />{editing ? 'К карточке' : 'Все карточки'}</Button>
-    <div className="pr-section-heading"><div><h2>{editing ? 'Редактирование карточки' : 'Новая карточка закупки'}</h2><p>Эти данные формируют исходное требование и используются в последующих шагах нормализации и RFQ.</p></div></div>
+    <div className="pr-section-heading"><div><h2>{editing ? 'Редактирование карточки' : 'Новая карточка позиции'}</h2><p>Эти данные формируют исходное требование и используются в последующих шагах нормализации и RFQ.</p></div></div>
     {editing && query.data?.rfqStatus && <Alert><AlertTriangle /><AlertTitle>Изменение данных поставщику аннулирует RFQ</AlertTitle><AlertDescription>CAS, вещество, чистота, применение и объём входят в RFQ. После их изменения RFQ потребуется сформировать и согласовать заново.</AlertDescription></Alert>}
     {serverNotice && <Alert><AlertTitle>Готово</AlertTitle><AlertDescription>{serverNotice}</AlertDescription></Alert>}
     {mutation.isError && <Alert><AlertTriangle /><AlertTitle>Не удалось сохранить карточку</AlertTitle><AlertDescription>{errorMessage(mutation.error)}</AlertDescription></Alert>}

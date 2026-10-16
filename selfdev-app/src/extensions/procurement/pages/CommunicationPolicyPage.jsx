@@ -155,7 +155,7 @@ export default function CommunicationPolicyPage() {
         <CardContent>
           <div className="pr-form-grid">
             <label className="pr-form-field">
-              <span>Карточка закупки</span>
+              <span>Карточка позиции</span>
               <Input
                 value={preview.cardId}
                 placeholder="1042"
