@@ -1388,7 +1388,7 @@
 .procurement-shell a.pr-members__action[data-tone="danger"] { background: var(--pr-danger); }
 .pr-members__details > td { padding: 0; background: var(--pr-surface-muted); }
 /* A substance opened: its offers as a table, then one line per supplier. */
-.pr-member-suppliers { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 14px; }
+.pr-member-suppliers { display: flex; flex-direction: column; padding: 4px 16px 6px; }
 .pr-member-suppliers .pr-note { margin: 0; }
 /* The page's own table, a size down: it sits inside a row of the main one. */
 .pr-member-offers__table { min-width: 720px; font-size: 13px; }
@@ -1398,15 +1398,25 @@
 .procurement-shell .pr-member-offers__price a { color: inherit; }
 .pr-member-offers__note { color: var(--pr-muted); font-size: 12px; }
 .pr-member-offers__compare { display: inline-block; margin-top: 6px; font-size: 13px; }
-.pr-member-silent > summary { cursor: pointer; font-size: 13px; padding: 4px 0; }
-.pr-member-silent__tally { color: var(--pr-muted); }
 .pr-supplier-lines { list-style: none; margin: 4px 0 0; padding: 0; }
 .pr-supplier-line { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 3px 0; font-size: 13px; white-space: nowrap; }
 .pr-supplier-line > a { overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
 .pr-supplier-line.is-waiting { margin: 0 -6px; padding: 3px 6px; border-radius: 6px; background: var(--pr-warning-soft); }
 .pr-supplier-line__channel { margin-left: 6px; color: var(--pr-muted); font-size: 11.5px; }
 .pr-supplier-line > .pr-supplier-line__channel { margin-left: 0; }
-.pr-member-echemi { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px dashed var(--pr-border); }
+.pr-member-echemi { display: flex; flex-direction: column; gap: 8px; }
+.pr-member-echemi__details { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+/* The three parts of an opened position, each folded behind one line. */
+.pr-member-section + .pr-member-section { border-top: 1px solid var(--pr-border); }
+.pr-member-section__head { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 7px 0; border: 0; background: none; font: inherit; font-size: 13px; color: var(--pr-text); text-align: left; cursor: pointer; white-space: nowrap; }
+.pr-member-section__head:hover b { text-decoration: underline; }
+.pr-member-section.is-empty .pr-member-section__head { cursor: default; color: var(--pr-muted); }
+.pr-member-section__chevron { display: inline-grid; place-items: center; width: 14px; color: var(--pr-muted); }
+.pr-member-section__meta { display: inline-flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; color: var(--pr-muted); font-weight: 400; }
+.pr-member-section__body { padding: 2px 0 10px 22px; }
+.pr-supplier-line__offer { font-size: 12px; }
+.pr-mode-toolbar { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid var(--pr-border); border-radius: 9px; background: var(--pr-card); }
+.pr-mode-toolbar .pr-marketplace-summary { margin: 0; }
 .pr-member-echemi p { margin: 0; }
 .pr-member-echemi .pr-inline-actions { flex-wrap: wrap; }
 .pr-members__menu { width: 44px; }

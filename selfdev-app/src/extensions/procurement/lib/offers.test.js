@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { groupOffersBySubstance, hasComparablePrice, offerBasis, offerNote, priceRanges, sortByPrice, splitSuppliers, statusTally } from './offers.js'
+import { groupOffersBySubstance, hasComparablePrice, offerBasis, offerNote, priceRanges, sortByPrice, splitSuppliers, statusTally, threadsWithOffers } from './offers.js'
 
 const offer = (cardId, price, extra = {}) => ({ cardId, cardTitle: `Вещество ${cardId}`, price, currency: 'USD', priceUnit: 'KG', completeness: 'NEEDS_CLARIFICATION', updatedAt: '2026-09-18', ...extra })
 
@@ -60,4 +60,14 @@ test('suppliers split into offered and silent, people first among the silent', (
 test('the silent ones are tallied by status, largest group first', () => {
   const threads = [{ s: 'в очереди' }, { s: 'ждём поставщика' }, { s: 'ждём поставщика' }]
   assert.equal(statusTally(threads, thread => thread.s), '2 ждём поставщика · 1 в очереди')
+})
+
+test('every conversation keeps its offer, people first, then offers', () => {
+  const threads = [
+    { assignmentId: 'NEG-1', supplierId: 'S1' },
+    { assignmentId: 'NEG-2', supplierId: 'S2' },
+    { assignmentId: 'NEG-3', supplierId: 'S3', awaitingPerson: true },
+  ]
+  const rows = threadsWithOffers([offer(1, 10, { id: 'R2', negotiationId: 'NEG-2' })], threads)
+  assert.deepEqual(rows.map(row => [row.thread.assignmentId, row.offer?.id ?? null]), [['NEG-3', null], ['NEG-2', 'R2'], ['NEG-1', null]])
 })

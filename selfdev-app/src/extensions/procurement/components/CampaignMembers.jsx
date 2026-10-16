@@ -8,7 +8,8 @@ import { ChevronDown, ChevronRight, MoreVertical } from './icons'
 import { readableAgentError } from '../lib/agentText'
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
-import { offerBasis, offerNote, splitSuppliers, statusTally } from '../lib/offers'
+import { offerBasis, offerNote, priceRanges, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
+import { contentOf, resolveOpen, rowOpenByMode, sectionOpenByMode } from '../lib/memberSections'
 import {
   FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
   nextActions, requestsSummary,
@@ -63,32 +64,59 @@ const threadLabel = (thread, labels) => (thread.awaitingPerson
   : labels[thread.status] || thread.status)
 
 /** One conversation on one line: who, through what, where it stands. */
-function SupplierLine({ thread, labels }) {
+function SupplierLine({ thread, offer, labels }) {
   return <li className={thread.awaitingPerson ? 'pr-supplier-line is-waiting' : 'pr-supplier-line'}>
     <Link to={`/procurement/negotiations/${thread.assignmentId}`} title={thread.supplierName || thread.assignmentId}>{thread.supplierName || thread.assignmentId}</Link>
     <span className="pr-supplier-line__channel">{channelLabel(thread.channel)}</span>
     {thread.awaitingPerson
       ? <StatusBadge status="NEEDS_REVIEW" label={threadLabel(thread, labels)} compact />
       : <StatusBadge status={thread.status} label={threadLabel(thread, labels)} compact />}
-    {thread.answered && <span className="pr-primary-meta">есть ответ</span>}
+    {offer
+      ? <Link className="pr-supplier-line__offer" to={`/procurement/proposals/${offer.id}`}>есть предложение{formatPrice(offer) ? ` · ${formatPrice(offer)}` : ''}</Link>
+      : thread.answered && <span className="pr-primary-meta">есть ответ</span>}
   </li>
 }
 
-/** A substance opened: the offers first, then who has not answered, then Echemi.
+/** One foldable part of an opened position: a header that always says what
+ * is inside, and the content only when unfolded. */
+function Section({ title, meta, open, onToggle, empty, children }) {
+  if (empty) {
+    return <div className="pr-member-section is-empty">
+      <span className="pr-member-section__head"><span className="pr-member-section__chevron" /><b>{title}</b><span className="pr-member-section__meta">{meta}</span></span>
+    </div>
+  }
+  return <section className={open ? 'pr-member-section is-open' : 'pr-member-section'}>
+    <button type="button" className="pr-member-section__head" aria-expanded={open} onClick={onToggle}>
+      <span className="pr-member-section__chevron">{open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
+      <b>{title}</b>
+      <span className="pr-member-section__meta">{meta}</span>
+    </button>
+    {open && <div className="pr-member-section__body">{children}</div>}
+  </section>
+}
+
+/** A position opened: its offers, its conversations, its Echemi request.
  *
- * The offers are what the row is opened for, so they are a table in the
- * columns a buyer compares. Everybody else is one line each, folded behind a
- * tally — unless one of them waits for a person, which is never folded away.
+ * Each is folded or unfolded by the mode above the table, and by hand after
+ * that; the headers say enough to decide whether to open one.
  */
-function MemberSuppliers({
+function MemberSections({
   member, offers, threads, marketplace, marketplaceLabels, threadStatusLabels, offersLoading,
-  renderMarketplaceActions, browserAccess,
+  isOpen, onToggle, renderMarketplaceActions, renderMarketplaceDetails, browserAccess,
 }) {
-  const { offered, silent } = splitSuppliers(offers, threads)
-  const waiting = silent.some(thread => thread.awaitingPerson)
+  const { offered } = splitSuppliers(offers, threads)
+  const lines = threadsWithOffers(offers, threads)
+  const waiting = threads.some(thread => thread.awaitingPerson)
+  const prices = priceRanges(offers)
   return <div className="pr-member-suppliers">
-    {offered.length > 0
-      ? <div className="pr-member-offers">
+    <Section
+      title={`Предложения${offered.length ? ` (${offered.length})` : ''}`}
+      meta={offered.length ? (prices.length ? prices.join(' · ') : 'цены нет') : (offersLoading ? 'загружаем…' : 'пока нет')}
+      empty={!offered.length}
+      open={isOpen('offers', { waiting })}
+      onToggle={() => onToggle('offers', { waiting })}
+    >
+      <div className="pr-member-offers">
         <div className="pr-table-wrap"><table className="pr-table pr-member-offers__table">
           <thead><tr>
             <th>Поставщик</th><th>Цена</th><th>Базис</th><th>Количество</th><th>Чистота</th><th>Срок</th><th>Примечание</th>
@@ -112,33 +140,38 @@ function MemberSuppliers({
         </table></div>
         <Link className="pr-member-offers__compare" to={`/procurement/proposals/compare?cardId=${member.cardId}`}>Сравнить все {offered.length} →</Link>
       </div>
-      : <p className="pr-note">{offersLoading ? 'Загружаем предложения…' : 'Предложений по этому веществу пока нет.'}</p>}
+    </Section>
 
-    {silent.length > 0 && <details className="pr-member-silent" open={waiting || undefined}>
-      <summary>
-        <b>Без предложения: {silent.length}</b>
-        <span className="pr-member-silent__tally"> · {statusTally(silent, thread => threadLabel(thread, threadStatusLabels))}</span>
-      </summary>
-      <ul className="pr-supplier-lines">{silent.map(thread => <SupplierLine key={thread.assignmentId} thread={thread} labels={threadStatusLabels} />)}</ul>
-    </details>}
-    {!threads.length && !offered.length && <p className="pr-note">Переписок по этому веществу пока нет.</p>}
+    <Section
+      title={`Переписки${threads.length ? ` (${threads.length})` : ''}`}
+      meta={threads.length ? statusTally(threads, thread => threadLabel(thread, threadStatusLabels)) : 'пока нет'}
+      empty={!threads.length}
+      open={isOpen('threads', { waiting })}
+      onToggle={() => onToggle('threads', { waiting })}
+    >
+      <ul className="pr-supplier-lines">{lines.map(({ thread, offer }) => <SupplierLine key={thread.assignmentId} thread={thread} offer={offer} labels={threadStatusLabels} />)}</ul>
+    </Section>
 
-    {marketplace && <div className="pr-member-echemi">
-      <div className="pr-supplier-line">
-        <b>Echemi</b>
-        <span className="pr-supplier-line__channel">площадка</span>
+    {marketplace && <Section
+      title="Echemi"
+      meta={<>
         <StatusBadge status={marketplace.status} label={marketplaceLabels[marketplace.status] || marketplace.status} compact />
-        {marketplace.platformInquiryId && <span className="pr-primary-meta">№ {marketplace.platformInquiryId}</span>}
-        {/* The actions below carry their own way in, so the link is not
-            repeated beside them. */}
-        {marketplace.status !== 'NEEDS_REVIEW' && <Link to={`/procurement/requests/${member.cardId}/echemi`}>открыть заявку</Link>}
+        {marketplace.platformInquiryId && <span>№ {marketplace.platformInquiryId}</span>}
+      </>}
+      open={isOpen('echemi', { waiting })}
+      onToggle={() => onToggle('echemi', { waiting })}
+    >
+      <div className="pr-member-echemi">
+        {/* The actions carry their own way in, so the link is not repeated
+            beside them. */}
+        {marketplace.status !== 'NEEDS_REVIEW' && <p><Link to={`/procurement/requests/${member.cardId}/echemi`}>Открыть заявку</Link></p>}
+        {renderMarketplaceActions?.(marketplace)}
+        {renderMarketplaceDetails
+          ? <div className="pr-member-echemi__details">{renderMarketplaceDetails(marketplace)}</div>
+          : marketplace.error && <p className="pr-import-missing">{readableAgentError(marketplace.error)}</p>}
+        {needsMarketplaceAction(member) && browserAccess}
       </div>
-      {marketplace.error && <p className="pr-import-missing">{readableAgentError(marketplace.error)}</p>}
-      {/* The same presses as the box below the table, here for the one
-          substance the reader is looking at. */}
-      {renderMarketplaceActions?.(marketplace)}
-      {needsMarketplaceAction(member) && browserAccess}
-    </div>}
+    </Section>}
   </div>
 }
 
@@ -154,11 +187,22 @@ export function CampaignMembers({
   canRemove, removable, onRemove, removePending, filter, onFilterChange,
   // The marketplace actions and the browser access are owned by the page,
   // which holds their mutations; the row only says where they belong.
-  renderMarketplaceActions, browserAccess,
+  renderMarketplaceActions, renderMarketplaceDetails, browserAccess,
+  // How the table is read: which positions and sections a mode unfolds.
+  mode = 'members',
   // Searching chosen substances again: the page owns the mutation.
   canResearch, onResearch, researchPending,
 }) {
-  const [open, setOpen] = useState(() => new Set())
+  // What a person opened or folded by hand; a new mode starts from its own rules.
+  const [manual, setManual] = useState(() => ({ mode, rows: new Map(), sections: new Map() }))
+  // Forgotten on every change of mode, so coming back to one starts clean.
+  useEffect(() => { setManual({ mode, rows: new Map(), sections: new Map() }) }, [mode])
+  const current = manual.mode === mode ? manual : { mode, rows: new Map(), sections: new Map() }
+  const setByHand = (kind, key, value) => setManual(() => {
+    const next = { ...current, [kind]: new Map(current[kind]) }
+    next[kind].set(key, value)
+    return next
+  })
   const [selected, setSelected] = useState(() => new Set())
   const counts = filterCounts(members)
   // A legend entry above the table picks the substances of one phase.
@@ -166,12 +210,6 @@ export function CampaignMembers({
   const rows = phase
     ? members.filter(member => memberPhase(member, offersByCard) === phase)
     : filterMembers(members, filter)
-  const toggle = cardId => setOpen(current => {
-    const next = new Set(current)
-    if (next.has(cardId)) next.delete(cardId)
-    else next.add(cardId)
-    return next
-  })
 
   const visible = rows.map(member => member.cardId)
   const allVisible = visible.length > 0 && visible.every(cardId => selected.has(cardId))
@@ -237,11 +275,16 @@ export function CampaignMembers({
         <th aria-label="Действия" />
       </tr></thead>
       <tbody>{rows.map(member => {
-        const expanded = open.has(member.cardId)
         const actions = nextActions(member, campaign.campaignId)
         const offers = offersByCard.get(member.cardId)
         const threads = conversationsByCard.get(member.cardId)
         const marketplace = marketplaceByCard.get(member.cardId)
+        const content = contentOf({ offers: offers?.offers, threads: threads?.conversations, marketplace })
+        const expanded = resolveOpen(current.rows, member.cardId, rowOpenByMode(mode, content))
+        const toggle = () => setByHand('rows', member.cardId, !expanded)
+        const sectionKey = section => `${member.cardId}:${section}`
+        const isOpen = (section, facts) => resolveOpen(current.sections, sectionKey(section), sectionOpenByMode(mode, section, facts))
+        const toggleSection = (section, facts) => setByHand('sections', sectionKey(section), !isOpen(section, facts))
         return <React.Fragment key={member.cardId}>
           <tr className={expanded ? 'pr-members__row is-open' : 'pr-members__row'} data-group={memberGroup(member)}>
             {canResearch && <td className="pr-members__pick">
@@ -253,11 +296,11 @@ export function CampaignMembers({
                 size="icon"
                 aria-expanded={expanded}
                 aria-label={`Подробнее: ${member.title}`}
-                onPress={() => toggle(member.cardId)}
+                onPress={toggle}
               >{expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</Button>
             </td>
             <td>
-              <button type="button" className="pr-members__name" onClick={() => toggle(member.cardId)}>
+              <button type="button" className="pr-members__name" onClick={toggle}>
                 {member.title}
               </button>
               <div className="pr-primary-meta">
@@ -320,7 +363,7 @@ export function CampaignMembers({
             </td>
           </tr>
           {expanded && <tr className="pr-members__details"><td colSpan={columns}>
-            <MemberSuppliers
+            <MemberSections
               member={member}
               offers={offers?.offers || []}
               threads={threads?.conversations || []}
@@ -328,7 +371,10 @@ export function CampaignMembers({
               marketplaceLabels={marketplaceLabels}
               threadStatusLabels={threadStatusLabels}
               offersLoading={offersLoading}
+              isOpen={isOpen}
+              onToggle={toggleSection}
               renderMarketplaceActions={renderMarketplaceActions}
+              renderMarketplaceDetails={renderMarketplaceDetails}
               browserAccess={browserAccess}
             />
           </td></tr>}

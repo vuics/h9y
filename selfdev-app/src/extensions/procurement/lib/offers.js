@@ -120,3 +120,13 @@ export function statusTally(threads = [], labelOf) {
     .map(([label, count]) => `${count} ${label}`)
     .join(' · ')
 }
+
+/** Every conversation of a substance with the offer it brought, if any:
+ * those waiting for a person first, then those with an offer.
+ */
+export function threadsWithOffers(offers = [], threads = []) {
+  return threads
+    .map(thread => ({ thread, offer: sortByPrice(offers).find(offer => answersThread(offer, thread)) || null }))
+    .sort((left, right) => (Number(Boolean(right.thread.awaitingPerson)) - Number(Boolean(left.thread.awaitingPerson)))
+      || (Number(Boolean(right.offer)) - Number(Boolean(left.offer))))
+}

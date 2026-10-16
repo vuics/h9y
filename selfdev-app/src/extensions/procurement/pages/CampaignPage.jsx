@@ -20,6 +20,7 @@ import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
 import { CampaignMembers } from '../components/CampaignMembers'
 import { groupOffersBySubstance } from '../lib/offers'
+import { MODES, modeOf } from '../lib/memberSections'
 import { offerTotals } from '../lib/campaignView'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -284,8 +285,6 @@ const deleteMessage = error => {
 }
 const errorText = code => ERROR_LABEL[code] || code
 
-const VIEWS = ['members', 'marketplace', 'threads']
-
 export default function CampaignPage() {
   const { campaignId } = useParams()
   // Two presses for the irreversible one, held in the page rather than in a
@@ -359,7 +358,7 @@ export default function CampaignPage() {
   const [filter, setFilter] = useState('all')
   // Which table the page shows, in the address so a link or Back keeps it.
   const [searchParams, setSearchParams] = useSearchParams()
-  const view = VIEWS.includes(searchParams.get('view')) ? searchParams.get('view') : 'members'
+  const view = modeOf(searchParams.get('view'))
   const showView = next => setSearchParams(current => {
     const params = new URLSearchParams(current)
     if (next === 'members') params.delete('view')
@@ -573,17 +572,15 @@ export default function CampaignPage() {
   const offerCounts = offerTotals(offersByCard)
   const phases = memberPhases(members, offersByCard)
 
-  const marketplaceCard = marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
-        <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
-        {marketplaceQuotes && <p className="pr-marketplace-summary">
+  const marketplaceSummary = marketplaceQuotes && <p className="pr-marketplace-summary">
           {`Размещено: ${marketplaceView.posted} из ${marketplaceView.total}`}
           {marketplaceView.rejected > 0 && ` · отклонено площадкой: ${marketplaceView.rejected}`}
           {` · предложений от продавцов: ${marketplaceQuotes.published}, в сравнении: ${marketplaceQuotes.ingested}`}
           {marketplaceQuotes.unread > 0 && <strong>{` · не забрано: ${marketplaceQuotes.unread}`}</strong>}
           {marketplaceQuotes.hidden > 0 && ` · ещё ${marketplaceQuotes.hidden} площадка считает, но не показывает`}
           {marketplaceQuotes.lastCollectedAt && ` · последний сбор ${shortTime(marketplaceQuotes.lastCollectedAt)}`}
-        </p>}
-      </div></CardHeader><CardContent>
+        </p>
+  const marketplaceToolbar = <>
         {/* The collector reads offers every fifteen minutes in the agent's
             browser. A lapsed session used to look exactly like "no offers";
             this is where it says so instead. */}
@@ -679,27 +676,10 @@ export default function CampaignPage() {
                 {marketplaceView?.running ? 'Отправляем…' : `Согласовать и отправить (${marketplaceAwaiting})`}
               </Button>)}
         </div>}
-
-        <ul className="pr-campaign-threads">
-          {marketplaceItems.map(item => <li key={item.cardId}>
-            <div className="pr-campaign-threads__head">
-              <Link to={`/procurement/requests/${item.cardId}`}>{item.title}</Link>
-              <span>#{item.cardId}{item.casNumber ? ` · CAS ${item.casNumber}` : ''}</span>
-              <StatusBadge
-                status={MARKETPLACE_POSTED.has(item.status) ? 'SUBMITTED' : item.status}
-                label={MARKETPLACE_STATUS[item.status] || item.status}
-                tone={marketplaceTone(item)}
-              />
-            </div>
-            {/* Echemi asks a person to pass its check, and the automation is
-                not allowed to answer that for them — so the request is left
-                exactly where it stopped and this is the way back. Sending it
-                by hand in noVNC is the specialist's job; recording that it
-                went is what stops the campaign from showing a live request as
-                a failure for ever. */}
-            {marketplaceActions(item)}
-            {(item.platformInquiryId || item.error || item.platformMessage) && <ul>
-              <li>
+  </>
+  // What one request says beyond its status: its number, its offers, and
+  // the presses that act on it alone. Shown in its row and in the list.
+  const marketplaceDetails = item => <>
                 {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}
                 <MarketplaceQuotes quotations={item.quotations} />
                 {item.platformMessage && <span className="pr-import-missing">{item.platformMessage}</span>}
@@ -731,20 +711,38 @@ export default function CampaignPage() {
                     ? `при попытке ${item.errorAt ? new Date(item.errorAt).toLocaleString('ru-RU') : '(время не записано)'}: `
                     : ''}{readableAgentError(item.error)}
                 </span>}
-              </li>
+  </>
+  const marketplaceCard = marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
+        <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
+        {marketplaceSummary}
+      </div></CardHeader><CardContent>
+        {view === 'echemi' || view === 'all' ? <p className="pr-note">Действия по всем заявкам — над таблицей.</p> : marketplaceToolbar}
+
+        <ul className="pr-campaign-threads">
+          {marketplaceItems.map(item => <li key={item.cardId}>
+            <div className="pr-campaign-threads__head">
+              <Link to={`/procurement/requests/${item.cardId}`}>{item.title}</Link>
+              <span>#{item.cardId}{item.casNumber ? ` · CAS ${item.casNumber}` : ''}</span>
+              <StatusBadge
+                status={MARKETPLACE_POSTED.has(item.status) ? 'SUBMITTED' : item.status}
+                label={MARKETPLACE_STATUS[item.status] || item.status}
+                tone={marketplaceTone(item)}
+              />
+            </div>
+            {/* Echemi asks a person to pass its check, and the automation is
+                not allowed to answer that for them — so the request is left
+                exactly where it stopped and this is the way back. Sending it
+                by hand in noVNC is the specialist's job; recording that it
+                went is what stops the campaign from showing a live request as
+                a failure for ever. */}
+            {marketplaceActions(item)}
+            {(item.platformInquiryId || item.error || item.platformMessage) && <ul>
+              <li>{marketplaceDetails(item)}</li>
             </ul>}
           </li>)}
         </ul>
       </CardContent></Card>
-  const conversationsCard = conversations.length > 0 && <Card><CardHeader><div>
-        <p>{awaitingPerson > 0
-          ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
-          : 'Все запросы отправлены — переписки идут сами.'}
-          {threadsView?.draftFirst && ' Закупка запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
-        {/* A marketplace request is not in this list on purpose: it has no
-            contact behind it and no thread. It has its own block above. */}
-        {hasEchemi && <p className="pr-note">Заявки на площадку Echemi — отдельным блоком выше: у них нет адресата и переписки, одна заявка на вещество видна всем продавцам сразу. Здесь только переписка с контактами.</p>}
-      </div></CardHeader><CardContent>
+  const conversationsToolbar = <>
         {sendPrepared.error && <Alert><AlertTriangle /><AlertTitle>Отправка не выполнена</AlertTitle><AlertDescription>{mutationMessage(sendPrepared.error)}</AlertDescription></Alert>}
         {sendPrepared.data && <Alert>{sendPrepared.data.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>Отправлено: {sendPrepared.data.sent?.length ?? 0}</AlertTitle><AlertDescription>
           {sendPrepared.data.skipped?.length > 0 && <p>Пропущено по устаревшему RFQ: {sendPrepared.data.skipped.length}. Такой запрос написан по тексту, который с тех пор пересобрали — согласуйте RFQ заново.</p>}
@@ -757,6 +755,17 @@ export default function CampaignPage() {
             {sendPrepared.isPending ? 'Отправляем…' : `Отправить все подготовленные (${awaitingPerson})`}
           </Button>
         </div>}
+  </>
+  const conversationsCard = conversations.length > 0 && <Card><CardHeader><div>
+        <p>{awaitingPerson > 0
+          ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
+          : 'Все запросы отправлены — переписки идут сами.'}
+          {threadsView?.draftFirst && ' Закупка запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
+        {/* A marketplace request is not in this list on purpose: it has no
+            contact behind it and no thread. It has its own block above. */}
+        {hasEchemi && <p className="pr-note">Заявки на площадку Echemi — отдельным блоком выше: у них нет адресата и переписки, одна заявка на вещество видна всем продавцам сразу. Здесь только переписка с контактами.</p>}
+      </div></CardHeader><CardContent>
+        {view === 'threads' || view === 'all' ? <p className="pr-note">Действия по всем перепискам — над таблицей.</p> : conversationsToolbar}
 
         {/* Grouped by substance and linked, because the number on its own sent
             the specialist to the negotiations list to find these by hand. */}
@@ -780,6 +789,17 @@ export default function CampaignPage() {
       </CardContent></Card>
   const threadTotal = conversations.reduce((total, item) => total + item.conversations.length, 0)
   const hasMarketplace = Boolean(marketplaceView?.enabled && marketplaceItems.length > 0)
+
+  const modeCounts = {
+    members: members.length,
+    offers: offerCounts.offers,
+    threads: threadTotal,
+    echemi: hasMarketplace ? marketplaceItems.length : 0,
+  }
+  const modeAlerts = {
+    threads: awaitingPerson > 0 && `${awaitingPerson} ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки`,
+    echemi: marketplaceNeedsReview > 0 && `${marketplaceNeedsReview} требует внимания`,
+  }
 
   return <DetailLayout
     backTo="/procurement"
@@ -913,60 +933,65 @@ export default function CampaignPage() {
           {awaitingPerson > 0 && <li>
             <Clock size={13} />
             <span className="pr-campaign-asks__all">Подготовленные письма</span>
-            <b>{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки — <button type="button" className="pr-link-button" onClick={() => showView('threads')}>открыть переписки</button></b>
+            <b>{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки — <button type="button" className="pr-link-button" onClick={() => showView('threads')}>показать переписки</button></b>
           </li>}
         </ul>}
       </div>}
 
-      {/* One table, three ways to read it: by substance, by marketplace
-          request, by conversation. The two blocks below the table say the
-          same until the switch has been tried by the people who use it. */}
-      {(hasMarketplace || conversations.length > 0) && <div className="pr-view-switch" role="tablist" aria-label="Что показать в таблице">
-        <button type="button" role="tab" aria-selected={view === 'members'} className={view === 'members' ? 'is-on' : undefined} onClick={() => showView('members')}>
-          Вещества <b>{members.length}</b>
-        </button>
-        {hasMarketplace && <button type="button" role="tab" aria-selected={view === 'marketplace'} className={view === 'marketplace' ? 'is-on' : undefined} onClick={() => showView('marketplace')}>
-          Заявки на площадку <b>{marketplaceItems.length}</b>
-          {marketplaceNeedsReview > 0 && <span className="pr-view-switch__alert">{marketplaceNeedsReview} требует внимания</span>}
-        </button>}
-        {conversations.length > 0 && <button type="button" role="tab" aria-selected={view === 'threads'} className={view === 'threads' ? 'is-on' : undefined} onClick={() => showView('threads')}>
-          Переписки <b>{threadTotal}</b>
-          {awaitingPerson > 0 && <span className="pr-view-switch__alert">{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки</span>}
-        </button>}
-      </div>}
+      {/* One list of positions, read five ways: a mode unfolds what it is
+          about and folds the rest, and a person can open anything by hand
+          after that. The two blocks below the table stay until the modes
+          have been tested by the people who use them. */}
+      <div className="pr-view-switch" role="group" aria-label="Что раскрыть в таблице">
+        {MODES.filter(([id]) => id === 'members' || id === 'all' || modeCounts[id] > 0).map(([id, label]) => <button
+          key={id}
+          type="button"
+          aria-pressed={view === id}
+          className={view === id ? 'is-on' : undefined}
+          onClick={() => showView(id)}
+        >
+          {label}{modeCounts[id] != null && <b>{modeCounts[id]}</b>}
+          {modeAlerts[id] && <span className="pr-view-switch__alert">{modeAlerts[id]}</span>}
+        </button>)}
+      </div>
 
-      {view === 'members' && <CampaignMembers
-          campaign={campaign}
-          members={members}
-          stageLabels={MEMBER_STAGE}
-          marketplaceLabels={MARKETPLACE_STATUS}
-          threadStatusLabels={THREAD_STATUS}
-          conversationsByCard={conversationsByCard}
-          marketplaceByCard={marketplaceByCard}
-          offersByCard={offersByCard}
-          offersLoading={offers.isLoading}
-          canRemove={canResearchSourcing && campaign.status !== 'CANCELLED'}
-          canResearch={canResearchSourcing && campaign.status !== 'CANCELLED'}
-          onResearch={(cardIds, done) => research.mutate(cardIds, { onSuccess: done })}
-          researchPending={research.isPending}
-          removable={member => removable(member, campaign)}
-          onRemove={cardId => removeCard.mutate(cardId)}
-          removePending={removeCard.isPending}
-          filter={filter}
-          onFilterChange={setFilter}
-          renderMarketplaceActions={marketplaceActions}
-          browserAccess={canOperateEchemi ? <EchemiBrowserAccess
-            access={browser.data}
-            error={browser.error}
-            loading={browser.isLoading}
-            compact
-            brief
-          /> : null}
-        />}
-      {view === 'marketplace' && marketplaceCard}
-      {view === 'threads' && conversationsCard}
+      {/* The presses that act on the whole purchase, above the table in the
+          mode they belong to, so the rows below stay about one position. */}
+      {(view === 'threads' || view === 'all') && conversations.length > 0 && <div className="pr-mode-toolbar">{conversationsToolbar}</div>}
+      {(view === 'echemi' || view === 'all') && hasMarketplace && <div className="pr-mode-toolbar">{marketplaceSummary}{marketplaceToolbar}</div>}
 
-      {hasMarketplace && view !== 'marketplace' && <details className="pr-more-details">
+      <CampaignMembers
+        campaign={campaign}
+        members={members}
+        stageLabels={MEMBER_STAGE}
+        marketplaceLabels={MARKETPLACE_STATUS}
+        threadStatusLabels={THREAD_STATUS}
+        conversationsByCard={conversationsByCard}
+        marketplaceByCard={marketplaceByCard}
+        offersByCard={offersByCard}
+        offersLoading={offers.isLoading}
+        canRemove={canResearchSourcing && campaign.status !== 'CANCELLED'}
+        canResearch={canResearchSourcing && campaign.status !== 'CANCELLED'}
+        onResearch={(cardIds, done) => research.mutate(cardIds, { onSuccess: done })}
+        researchPending={research.isPending}
+        removable={member => removable(member, campaign)}
+        onRemove={cardId => removeCard.mutate(cardId)}
+        removePending={removeCard.isPending}
+        filter={filter}
+        onFilterChange={setFilter}
+        renderMarketplaceActions={marketplaceActions}
+        renderMarketplaceDetails={marketplaceDetails}
+        mode={view}
+        browserAccess={canOperateEchemi ? <EchemiBrowserAccess
+          access={browser.data}
+          error={browser.error}
+          loading={browser.isLoading}
+          compact
+          brief
+        /> : null}
+      />
+
+      {hasMarketplace && <details className="pr-more-details">
         <summary>{`Заявки на площадку (${marketplaceItems.length})`}{marketplaceNeedsReview > 0 ? ` · ${marketplaceNeedsReview} требует внимания` : ''}</summary>
         <div className="pr-stack">
       {marketplaceCard}
@@ -974,7 +999,7 @@ export default function CampaignPage() {
         </div>
       </details>}
 
-      {conversations.length > 0 && view !== 'threads' && <details className="pr-more-details">
+      {conversations.length > 0 && <details className="pr-more-details">
         <summary>{`Все переписки закупки (${threadTotal})`}{awaitingPerson > 0 ? ` · ${awaitingPerson} ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки` : ''}</summary>
         <div className="pr-stack">
       {conversationsCard}
