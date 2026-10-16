@@ -1390,12 +1390,10 @@
 /* A substance opened: its offers as a table, then one line per supplier. */
 .pr-member-suppliers { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 14px; }
 .pr-member-suppliers .pr-note { margin: 0; }
-.pr-member-offers { overflow-x: auto; }
-.pr-member-offers__table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 13px; }
-.pr-member-offers__table th { padding: 4px 10px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--pr-muted); border-bottom: 1px solid var(--pr-border); }
-.pr-member-offers__table td { padding: 6px 10px; border-bottom: 1px solid var(--pr-border); vertical-align: top; }
-.pr-member-offers__table tbody tr:last-child td { border-bottom: 0; }
-.pr-member-offers__table th:first-child, .pr-member-offers__table td:first-child { padding-left: 0; }
+/* The page's own table, a size down: it sits inside a row of the main one. */
+.pr-member-offers__table { min-width: 720px; font-size: 13px; }
+.pr-member-offers__table th { height: 32px; padding: 6px 12px; }
+.pr-member-offers__table td { padding: 8px 12px; vertical-align: top; }
 .pr-member-offers__price { white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
 .procurement-shell .pr-member-offers__price a { color: inherit; }
 .pr-member-offers__note { color: var(--pr-muted); font-size: 12px; }

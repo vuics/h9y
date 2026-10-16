@@ -89,7 +89,7 @@ function MemberSuppliers({
   return <div className="pr-member-suppliers">
     {offered.length > 0
       ? <div className="pr-member-offers">
-        <table className="pr-member-offers__table">
+        <div className="pr-table-wrap"><table className="pr-table pr-member-offers__table">
           <thead><tr>
             <th>Поставщик</th><th>Цена</th><th>Базис</th><th>Количество</th><th>Чистота</th><th>Срок</th><th>Примечание</th>
           </tr></thead>
@@ -109,7 +109,7 @@ function MemberSuppliers({
             <td>{offer.leadTime || '—'}</td>
             <td className="pr-member-offers__note">{offerNote(offer)}</td>
           </tr>)}</tbody>
-        </table>
+        </table></div>
         <Link className="pr-member-offers__compare" to={`/procurement/proposals/compare?cardId=${member.cardId}`}>Сравнить все {offered.length} →</Link>
       </div>
       : <p className="pr-note">{offersLoading ? 'Загружаем предложения…' : 'Предложений по этому веществу пока нет.'}</p>}
