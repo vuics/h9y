@@ -364,7 +364,7 @@ export function CampaignMembers({
               </RowMenu>
             </td>
           </tr>
-          {expanded && <tr className="pr-members__details"><td colSpan={columns}>
+          {expanded && <tr className="pr-members__details" data-group={memberGroup(member)}><td colSpan={columns}>
             <MemberSections
               member={member}
               offers={offers?.offers || []}
