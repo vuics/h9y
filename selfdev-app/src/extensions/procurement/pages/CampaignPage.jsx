@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
@@ -284,6 +284,8 @@ const deleteMessage = error => {
 }
 const errorText = code => ERROR_LABEL[code] || code
 
+const VIEWS = ['members', 'marketplace', 'threads']
+
 export default function CampaignPage() {
   const { campaignId } = useParams()
   // Two presses for the irreversible one, held in the page rather than in a
@@ -355,6 +357,15 @@ export default function CampaignPage() {
   // Which substances the table shows, and whether the one-line "ждут вас"
   // is unfolded into the full list.
   const [filter, setFilter] = useState('all')
+  // Which table the page shows, in the address so a link or Back keeps it.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const view = VIEWS.includes(searchParams.get('view')) ? searchParams.get('view') : 'members'
+  const showView = next => setSearchParams(current => {
+    const params = new URLSearchParams(current)
+    if (next === 'members') params.delete('view')
+    else params.set('view', next)
+    return params
+  })
   const [showAsks, setShowAsks] = useState(false)
   const [editingSettings, setEditingSettings] = useState(false)
   const [savedEffects, setSavedEffects] = useState(null)
@@ -562,176 +573,7 @@ export default function CampaignPage() {
   const offerCounts = offerTotals(offersByCard)
   const phases = memberPhases(members, offersByCard)
 
-  return <DetailLayout
-    backTo="/procurement"
-    backLabel="К закупкам"
-    eyebrow={<CopyableId value={campaign.campaignId} />}
-    title={campaign.title}
-    status={<CampaignStatusBadge status={campaign.status} />}
-    meta={`${progress.total} ${plural(progress.total, 'вещество', 'вещества', 'веществ')} · ${REACH_LABEL[plan.reach] || plan.reach}`}
-    actions={canResearchSourcing && <>
-      {draftTitle === null && <Button variant="ghost" onPress={() => { setDraftTitle(campaign.title); rename.reset() }}><Pencil />Переименовать</Button>}
-      {campaign.status !== 'CANCELLED' && <Button variant="outline" onPress={() => { setEditingSettings(value => !value); setSavedEffects(null) }}><Sliders />{editingSettings ? 'Скрыть настройки' : 'Настройки закупки'}</Button>}
-      {/* Pausing sits before stopping, and stopping keeps the quieter variant:
-          ending a run of two hundred substances is not the button a hand should
-          land on when it meant "wait a moment". */}
-      {holdable && <Button variant="outline" isDisabled={hold.isPending} onPress={() => hold.mutate()}><Pause />{hold.isPending ? 'Останавливаем…' : 'Пауза'}</Button>}
-      {campaign.status === 'PAUSED' && <Button isDisabled={carryOn.isPending} onPress={() => carryOn.mutate()}><Play className={carryOn.isPending ? 'pr-spin' : undefined} />{carryOn.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
-      {(stoppable || campaignDeletable(campaign)) && !moreActions && <Button variant="ghost" onPress={() => setMoreActions(true)}>Ещё…</Button>}
-      {moreActions && stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()} aria-description="Останавливает закупку и закрывает её переговоры: напоминания и неотправленные письма не уйдут"><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
-      {moreActions && campaignDeletable(campaign) && (confirmDelete
-        ? <>
-          <Button variant="destructive" isDisabled={remove.isPending} onPress={() => remove.mutate()}><Trash />{remove.isPending ? 'Удаляем…' : 'Удалить закупку навсегда'}</Button>
-          <Button variant="outline" isDisabled={remove.isPending} onPress={() => { setConfirmDelete(false); remove.reset() }}>Отмена</Button>
-        </>
-        : <Button variant="ghost" onPress={() => setConfirmDelete(true)}><Trash />Удалить</Button>)}
-    </>}
-    warnings={<>
-      {removeCard.error && <Alert><AlertTriangle /><AlertTitle>Вещество не убрано</AlertTitle><AlertDescription>{removeCard.error?.response?.data?.detail?.message || mutationMessage(removeCard.error)}</AlertDescription></Alert>}
-      {savedEffects && <Alert><Check /><AlertTitle>Настройки сохранены</AlertTitle><AlertDescription>
-        Действуют на то, что ещё впереди.
-        {savedEffects.requeued?.length > 0 && <> Продолжено веществ с их готовым поиском: {savedEffects.requeued.length}.</>}
-        {savedEffects.released?.length > 0 && <> Снятые проверки выполняются для веществ, ждущих согласования, — ход будет виден в истории ниже.</>}
-      </AlertDescription></Alert>}
-      {remove.error && <Alert><AlertTriangle /><AlertTitle>Закупка не удалена</AlertTitle><AlertDescription>{deleteMessage(remove.error)}</AlertDescription></Alert>}
-      {research.data && <Alert>{research.data.started.length ? <Check /> : <CircleAlert />}<AlertTitle>{research.data.started.length ? `Поиск запущен заново: ${research.data.started.length}` : 'Поиск не запущен'}</AlertTitle><AlertDescription>
-        {research.data.started.length > 0 && <>Ход поиска видно в строках таблицы; когда он закончится, найденное сольётся с прежним. </>}
-        {research.data.skipped.length > 0 && <>Пропущено: {research.data.skipped.map(item => `#${item.cardId} — ${item.code === 'SEARCH_RUNNING' ? 'поиск уже идёт' : item.code === 'NOT_IN_CAMPAIGN' ? 'не в закупке' : item.message || item.code}`).join('; ')}.</>}
-      </AlertDescription></Alert>}
-      {research.error && <Alert><AlertTriangle /><AlertTitle>Поиск не запущен</AlertTitle><AlertDescription>{mutationMessage(research.error)}</AlertDescription></Alert>}
-      {cancel.data?.effects && <Alert><Check /><AlertTitle>Закупка остановлена</AlertTitle><AlertDescription>
-        Закрыто переговоров: {cancel.data.effects.cancelledNegotiations}, отклонено неотправленных писем: {cancel.data.effects.rejectedDrafts}. Вещества, которые ведёт другая закупка, не затронуты; история переписки сохранена.
-      </AlertDescription></Alert>}
-            {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
-      {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Закупка на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не закупке, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
-      {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Закупка прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}
-      {errors.length > 0 && <Alert><CircleAlert /><AlertTitle>Замечания по запуску</AlertTitle><AlertDescription><ul className="pr-plain-list">{errors.map(code => <li key={code}>{code.startsWith('card:CARD_NOT_FOUND:') ? `Карточка #${code.split(':').pop()} не найдена и в закупку не вошла` : errorText(code)}</li>)}</ul></AlertDescription></Alert>}
-    </>}
-  >
-    <div className="pr-stack">
-      {draftTitle !== null && <Card><CardHeader><CardTitle>Название закупки</CardTitle></CardHeader><CardContent>
-        <form className="pr-inline-actions" onSubmit={event => {
-          event.preventDefault()
-          if (draftTitle.trim()) rename.mutate(draftTitle.trim())
-        }}>
-          <Input
-            value={draftTitle}
-            aria-label="Название закупки"
-            maxLength={200}
-            autoFocus
-            onChange={event => setDraftTitle(event.target.value)}
-            onKeyDown={event => { if (event.key === 'Escape') setDraftTitle(null) }}
-          />
-          <Button type="submit" isDisabled={!draftTitle.trim() || rename.isPending}><Check />{rename.isPending ? 'Сохраняем…' : 'Сохранить'}</Button>
-          <Button variant="outline" isDisabled={rename.isPending} onPress={() => setDraftTitle(null)}>Отмена</Button>
-        </form>
-        {rename.error && <Alert><AlertTriangle /><AlertTitle>Название не сохранено</AlertTitle><AlertDescription>{rename.error?.response?.data?.detail?.message || mutationMessage(rename.error)}</AlertDescription></Alert>}
-      </CardContent></Card>}
-      {editingSettings && <CampaignLaunchPanel
-        campaign={campaign}
-        canEdit={canResearchSourcing}
-        onCancel={() => setEditingSettings(false)}
-        onSaved={result => {
-          accept(result)
-          setSavedEffects(result.effects || null)
-          setEditingSettings(false)
-        }}
-      />}
-      {/* One line each: how far the run got, and what it is waiting on a
-          person for. The table is what the page is opened for, so everything
-          above it is a summary, never a block to scroll past. */}
-      <div className="pr-campaign-summary">
-        <div className="pr-campaign-summary__phases">
-          <CampaignPhaseBar
-            counts={phases}
-            total={progress.total}
-            legend
-            selected={phaseOfFilter(filter)}
-            onSelect={key => setFilter(key ? `${PHASE_FILTER}${key}` : 'all')}
-          />
-        </div>
-        <div className="pr-campaign-summary__chips">
-          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.candidateTotal} кандидатов</button>
-          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.contactTotal} с контактами</button>
-          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.verifiedTotal ?? 0} подтверждено</button>
-          <button type="button" className="pr-chip" onClick={() => setFilter('working')}>{progress.requestTotal ?? 0} запросов</button>
-          {/* Counted from the offers themselves: a substance answered through
-              the marketplace has no conversation to count an answer on. */}
-          <Link className="pr-chip" to="/procurement/proposals">{offerCounts.offers} {plural(offerCounts.offers, 'предложение', 'предложения', 'предложений')}{offerCounts.priced > 0 ? `, ${offerCounts.priced} с ценой` : ''}</Link>
-          {progress.failed > 0 && <button type="button" className="pr-chip pr-chip--danger" onClick={() => setFilter('failed')}>{progress.failed} с ошибкой</button>}
-        </div>
-      </div>
-
-      {(asks.length > 0 || awaitingPerson > 0) && <div className="pr-campaign-waiting">
-        <div className="pr-campaign-waiting__line">
-          <b>Ждут вас:</b>
-          <span>{[
-            progress.awaitingReview > 0 && `${progress.awaitingReview} ${plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')} на согласовании`,
-            marketplaceNeedsReview > 0 && `${marketplaceNeedsReview} ${plural(marketplaceNeedsReview, 'заявка на площадке ждёт', 'заявки на площадке ждут', 'заявок на площадке ждут')} проверки в браузере`,
-            blockingAsks - marketplaceNeedsReview > 0 && `${blockingAsks - marketplaceNeedsReview} ${plural(blockingAsks - marketplaceNeedsReview, 'вещество требует', 'вещества требуют', 'веществ требуют')} вашего вмешательства`,
-            awaitingPerson > 0 && `${awaitingPerson} ${plural(awaitingPerson, 'письмо готово', 'письма готовы', 'писем готовы')} к отправке`,
-          ].filter(Boolean).join(' · ')}</span>
-          <div className="pr-inline-actions">
-            {progress.awaitingReview > 0 && <>
-            <RouterLinkButton to={`/procurement/campaigns/${campaignId}/review`}>Согласовать {progress.awaitingReview} {plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')}</RouterLinkButton>
-            {/* For a campaign approved before dispatch existed, and for the
-                substances whose first attempt failed on one supplier. Opening a
-                conversation that exists returns the one that exists, so this is
-                safe to press twice. */}
-            {undispatched > 0 && canQueueNegotiations && <Button variant="outline" isDisabled={dispatch.isPending} onPress={() => dispatch.mutate()}><Send className={dispatch.isPending ? 'pr-spin' : undefined} />{dispatch.isPending ? 'Отправляем…' : `Отправить запросы (${undispatched})`}</Button>}
-            </>}
-
-            <Button variant="ghost" size="sm" onPress={() => setShowAsks(value => !value)}>{showAsks ? 'Свернуть' : 'Показать все'}</Button>
-          </div>
-        </div>
-        {showAsks && <ul className="pr-campaign-asks__list">
-          {asks.map(ask => <li key={ask.key} className={ask.blocking ? 'is-blocked' : undefined}>
-            {ask.blocking ? <CircleAlert size={13} /> : <Clock size={13} />}
-            <Link to={ask.to}>{ask.title}</Link>
-            <span>#{ask.cardId}</span>
-            <b>{ask.text}</b>
-          </li>)}
-          {awaitingPerson > 0 && <li>
-            <Clock size={13} />
-            <span className="pr-campaign-asks__all">Подготовленные письма</span>
-            <b>{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки — в ящике «Все переписки закупки»</b>
-          </li>}
-        </ul>}
-      </div>}
-
-      <CampaignMembers
-        campaign={campaign}
-        members={members}
-        stageLabels={MEMBER_STAGE}
-        marketplaceLabels={MARKETPLACE_STATUS}
-        threadStatusLabels={THREAD_STATUS}
-        conversationsByCard={conversationsByCard}
-        marketplaceByCard={marketplaceByCard}
-        offersByCard={offersByCard}
-        offersLoading={offers.isLoading}
-        canRemove={canResearchSourcing && campaign.status !== 'CANCELLED'}
-        canResearch={canResearchSourcing && campaign.status !== 'CANCELLED'}
-        onResearch={(cardIds, done) => research.mutate(cardIds, { onSuccess: done })}
-        researchPending={research.isPending}
-        removable={member => removable(member, campaign)}
-        onRemove={cardId => removeCard.mutate(cardId)}
-        removePending={removeCard.isPending}
-        filter={filter}
-        onFilterChange={setFilter}
-        renderMarketplaceActions={marketplaceActions}
-        browserAccess={canOperateEchemi ? <EchemiBrowserAccess
-          access={browser.data}
-          error={browser.error}
-          loading={browser.isLoading}
-          compact
-          brief
-        /> : null}
-      />
-
-      {marketplaceView?.enabled && marketplaceItems.length > 0 && <details className="pr-more-details">
-        <summary>{`Заявки на площадку (${marketplaceItems.length})`}{marketplaceNeedsReview > 0 ? ` · ${marketplaceNeedsReview} требует внимания` : ''}</summary>
-        <div className="pr-stack">
-      {marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
+  const marketplaceCard = marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
         <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
         {marketplaceQuotes && <p className="pr-marketplace-summary">
           {`Размещено: ${marketplaceView.posted} из ${marketplaceView.total}`}
@@ -893,15 +735,8 @@ export default function CampaignPage() {
             </ul>}
           </li>)}
         </ul>
-      </CardContent></Card>}
-
-        </div>
-      </details>}
-
-      {conversations.length > 0 && <details className="pr-more-details">
-        <summary>{`Все переписки закупки (${conversations.reduce((total, item) => total + item.conversations.length, 0)})`}{awaitingPerson > 0 ? ` · ${awaitingPerson} ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки` : ''}</summary>
-        <div className="pr-stack">
-      {conversations.length > 0 && <Card><CardHeader><div>
+      </CardContent></Card>
+  const conversationsCard = conversations.length > 0 && <Card><CardHeader><div>
         <p>{awaitingPerson > 0
           ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
           : 'Все запросы отправлены — переписки идут сами.'}
@@ -942,7 +777,207 @@ export default function CampaignPage() {
             </ul>
           </li>)}
         </ul>
+      </CardContent></Card>
+  const threadTotal = conversations.reduce((total, item) => total + item.conversations.length, 0)
+  const hasMarketplace = Boolean(marketplaceView?.enabled && marketplaceItems.length > 0)
+
+  return <DetailLayout
+    backTo="/procurement"
+    backLabel="К закупкам"
+    eyebrow={<CopyableId value={campaign.campaignId} />}
+    title={campaign.title}
+    status={<CampaignStatusBadge status={campaign.status} />}
+    meta={`${progress.total} ${plural(progress.total, 'вещество', 'вещества', 'веществ')} · ${REACH_LABEL[plan.reach] || plan.reach}`}
+    actions={canResearchSourcing && <>
+      {draftTitle === null && <Button variant="ghost" onPress={() => { setDraftTitle(campaign.title); rename.reset() }}><Pencil />Переименовать</Button>}
+      {campaign.status !== 'CANCELLED' && <Button variant="outline" onPress={() => { setEditingSettings(value => !value); setSavedEffects(null) }}><Sliders />{editingSettings ? 'Скрыть настройки' : 'Настройки закупки'}</Button>}
+      {/* Pausing sits before stopping, and stopping keeps the quieter variant:
+          ending a run of two hundred substances is not the button a hand should
+          land on when it meant "wait a moment". */}
+      {holdable && <Button variant="outline" isDisabled={hold.isPending} onPress={() => hold.mutate()}><Pause />{hold.isPending ? 'Останавливаем…' : 'Пауза'}</Button>}
+      {campaign.status === 'PAUSED' && <Button isDisabled={carryOn.isPending} onPress={() => carryOn.mutate()}><Play className={carryOn.isPending ? 'pr-spin' : undefined} />{carryOn.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
+      {(stoppable || campaignDeletable(campaign)) && !moreActions && <Button variant="ghost" onPress={() => setMoreActions(true)}>Ещё…</Button>}
+      {moreActions && stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()} aria-description="Останавливает закупку и закрывает её переговоры: напоминания и неотправленные письма не уйдут"><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
+      {moreActions && campaignDeletable(campaign) && (confirmDelete
+        ? <>
+          <Button variant="destructive" isDisabled={remove.isPending} onPress={() => remove.mutate()}><Trash />{remove.isPending ? 'Удаляем…' : 'Удалить закупку навсегда'}</Button>
+          <Button variant="outline" isDisabled={remove.isPending} onPress={() => { setConfirmDelete(false); remove.reset() }}>Отмена</Button>
+        </>
+        : <Button variant="ghost" onPress={() => setConfirmDelete(true)}><Trash />Удалить</Button>)}
+    </>}
+    warnings={<>
+      {removeCard.error && <Alert><AlertTriangle /><AlertTitle>Вещество не убрано</AlertTitle><AlertDescription>{removeCard.error?.response?.data?.detail?.message || mutationMessage(removeCard.error)}</AlertDescription></Alert>}
+      {savedEffects && <Alert><Check /><AlertTitle>Настройки сохранены</AlertTitle><AlertDescription>
+        Действуют на то, что ещё впереди.
+        {savedEffects.requeued?.length > 0 && <> Продолжено веществ с их готовым поиском: {savedEffects.requeued.length}.</>}
+        {savedEffects.released?.length > 0 && <> Снятые проверки выполняются для веществ, ждущих согласования, — ход будет виден в истории ниже.</>}
+      </AlertDescription></Alert>}
+      {remove.error && <Alert><AlertTriangle /><AlertTitle>Закупка не удалена</AlertTitle><AlertDescription>{deleteMessage(remove.error)}</AlertDescription></Alert>}
+      {research.data && <Alert>{research.data.started.length ? <Check /> : <CircleAlert />}<AlertTitle>{research.data.started.length ? `Поиск запущен заново: ${research.data.started.length}` : 'Поиск не запущен'}</AlertTitle><AlertDescription>
+        {research.data.started.length > 0 && <>Ход поиска видно в строках таблицы; когда он закончится, найденное сольётся с прежним. </>}
+        {research.data.skipped.length > 0 && <>Пропущено: {research.data.skipped.map(item => `#${item.cardId} — ${item.code === 'SEARCH_RUNNING' ? 'поиск уже идёт' : item.code === 'NOT_IN_CAMPAIGN' ? 'не в закупке' : item.message || item.code}`).join('; ')}.</>}
+      </AlertDescription></Alert>}
+      {research.error && <Alert><AlertTriangle /><AlertTitle>Поиск не запущен</AlertTitle><AlertDescription>{mutationMessage(research.error)}</AlertDescription></Alert>}
+      {cancel.data?.effects && <Alert><Check /><AlertTitle>Закупка остановлена</AlertTitle><AlertDescription>
+        Закрыто переговоров: {cancel.data.effects.cancelledNegotiations}, отклонено неотправленных писем: {cancel.data.effects.rejectedDrafts}. Вещества, которые ведёт другая закупка, не затронуты; история переписки сохранена.
+      </AlertDescription></Alert>}
+            {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
+      {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Закупка на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не закупке, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
+      {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Закупка прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}
+      {errors.length > 0 && <Alert><CircleAlert /><AlertTitle>Замечания по запуску</AlertTitle><AlertDescription><ul className="pr-plain-list">{errors.map(code => <li key={code}>{code.startsWith('card:CARD_NOT_FOUND:') ? `Карточка #${code.split(':').pop()} не найдена и в закупку не вошла` : errorText(code)}</li>)}</ul></AlertDescription></Alert>}
+    </>}
+  >
+    <div className="pr-stack">
+      {draftTitle !== null && <Card><CardHeader><CardTitle>Название закупки</CardTitle></CardHeader><CardContent>
+        <form className="pr-inline-actions" onSubmit={event => {
+          event.preventDefault()
+          if (draftTitle.trim()) rename.mutate(draftTitle.trim())
+        }}>
+          <Input
+            value={draftTitle}
+            aria-label="Название закупки"
+            maxLength={200}
+            autoFocus
+            onChange={event => setDraftTitle(event.target.value)}
+            onKeyDown={event => { if (event.key === 'Escape') setDraftTitle(null) }}
+          />
+          <Button type="submit" isDisabled={!draftTitle.trim() || rename.isPending}><Check />{rename.isPending ? 'Сохраняем…' : 'Сохранить'}</Button>
+          <Button variant="outline" isDisabled={rename.isPending} onPress={() => setDraftTitle(null)}>Отмена</Button>
+        </form>
+        {rename.error && <Alert><AlertTriangle /><AlertTitle>Название не сохранено</AlertTitle><AlertDescription>{rename.error?.response?.data?.detail?.message || mutationMessage(rename.error)}</AlertDescription></Alert>}
       </CardContent></Card>}
+      {editingSettings && <CampaignLaunchPanel
+        campaign={campaign}
+        canEdit={canResearchSourcing}
+        onCancel={() => setEditingSettings(false)}
+        onSaved={result => {
+          accept(result)
+          setSavedEffects(result.effects || null)
+          setEditingSettings(false)
+        }}
+      />}
+      {/* One line each: how far the run got, and what it is waiting on a
+          person for. The table is what the page is opened for, so everything
+          above it is a summary, never a block to scroll past. */}
+      <div className="pr-campaign-summary">
+        <div className="pr-campaign-summary__phases">
+          <CampaignPhaseBar
+            counts={phases}
+            total={progress.total}
+            legend
+            selected={phaseOfFilter(filter)}
+            onSelect={key => setFilter(key ? `${PHASE_FILTER}${key}` : 'all')}
+          />
+        </div>
+        <div className="pr-campaign-summary__chips">
+          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.candidateTotal} кандидатов</button>
+          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.contactTotal} с контактами</button>
+          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.verifiedTotal ?? 0} подтверждено</button>
+          <button type="button" className="pr-chip" onClick={() => setFilter('working')}>{progress.requestTotal ?? 0} запросов</button>
+          {/* Counted from the offers themselves: a substance answered through
+              the marketplace has no conversation to count an answer on. */}
+          <Link className="pr-chip" to="/procurement/proposals">{offerCounts.offers} {plural(offerCounts.offers, 'предложение', 'предложения', 'предложений')}{offerCounts.priced > 0 ? `, ${offerCounts.priced} с ценой` : ''}</Link>
+          {progress.failed > 0 && <button type="button" className="pr-chip pr-chip--danger" onClick={() => setFilter('failed')}>{progress.failed} с ошибкой</button>}
+        </div>
+      </div>
+
+      {(asks.length > 0 || awaitingPerson > 0) && <div className="pr-campaign-waiting">
+        <div className="pr-campaign-waiting__line">
+          <b>Ждут вас:</b>
+          <span>{[
+            progress.awaitingReview > 0 && `${progress.awaitingReview} ${plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')} на согласовании`,
+            marketplaceNeedsReview > 0 && `${marketplaceNeedsReview} ${plural(marketplaceNeedsReview, 'заявка на площадке ждёт', 'заявки на площадке ждут', 'заявок на площадке ждут')} проверки в браузере`,
+            blockingAsks - marketplaceNeedsReview > 0 && `${blockingAsks - marketplaceNeedsReview} ${plural(blockingAsks - marketplaceNeedsReview, 'вещество требует', 'вещества требуют', 'веществ требуют')} вашего вмешательства`,
+            awaitingPerson > 0 && `${awaitingPerson} ${plural(awaitingPerson, 'письмо готово', 'письма готовы', 'писем готовы')} к отправке`,
+          ].filter(Boolean).join(' · ')}</span>
+          <div className="pr-inline-actions">
+            {progress.awaitingReview > 0 && <>
+            <RouterLinkButton to={`/procurement/campaigns/${campaignId}/review`}>Согласовать {progress.awaitingReview} {plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')}</RouterLinkButton>
+            {/* For a campaign approved before dispatch existed, and for the
+                substances whose first attempt failed on one supplier. Opening a
+                conversation that exists returns the one that exists, so this is
+                safe to press twice. */}
+            {undispatched > 0 && canQueueNegotiations && <Button variant="outline" isDisabled={dispatch.isPending} onPress={() => dispatch.mutate()}><Send className={dispatch.isPending ? 'pr-spin' : undefined} />{dispatch.isPending ? 'Отправляем…' : `Отправить запросы (${undispatched})`}</Button>}
+            </>}
+
+            <Button variant="ghost" size="sm" onPress={() => setShowAsks(value => !value)}>{showAsks ? 'Свернуть' : 'Показать все'}</Button>
+          </div>
+        </div>
+        {showAsks && <ul className="pr-campaign-asks__list">
+          {asks.map(ask => <li key={ask.key} className={ask.blocking ? 'is-blocked' : undefined}>
+            {ask.blocking ? <CircleAlert size={13} /> : <Clock size={13} />}
+            <Link to={ask.to}>{ask.title}</Link>
+            <span>#{ask.cardId}</span>
+            <b>{ask.text}</b>
+          </li>)}
+          {awaitingPerson > 0 && <li>
+            <Clock size={13} />
+            <span className="pr-campaign-asks__all">Подготовленные письма</span>
+            <b>{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки — <button type="button" className="pr-link-button" onClick={() => showView('threads')}>открыть переписки</button></b>
+          </li>}
+        </ul>}
+      </div>}
+
+      {/* One table, three ways to read it: by substance, by marketplace
+          request, by conversation. The two blocks below the table say the
+          same until the switch has been tried by the people who use it. */}
+      {(hasMarketplace || conversations.length > 0) && <div className="pr-view-switch" role="tablist" aria-label="Что показать в таблице">
+        <button type="button" role="tab" aria-selected={view === 'members'} className={view === 'members' ? 'is-on' : undefined} onClick={() => showView('members')}>
+          Вещества <b>{members.length}</b>
+        </button>
+        {hasMarketplace && <button type="button" role="tab" aria-selected={view === 'marketplace'} className={view === 'marketplace' ? 'is-on' : undefined} onClick={() => showView('marketplace')}>
+          Заявки на площадку <b>{marketplaceItems.length}</b>
+          {marketplaceNeedsReview > 0 && <span className="pr-view-switch__alert">{marketplaceNeedsReview} требует внимания</span>}
+        </button>}
+        {conversations.length > 0 && <button type="button" role="tab" aria-selected={view === 'threads'} className={view === 'threads' ? 'is-on' : undefined} onClick={() => showView('threads')}>
+          Переписки <b>{threadTotal}</b>
+          {awaitingPerson > 0 && <span className="pr-view-switch__alert">{awaitingPerson} {plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки</span>}
+        </button>}
+      </div>}
+
+      {view === 'members' && <CampaignMembers
+          campaign={campaign}
+          members={members}
+          stageLabels={MEMBER_STAGE}
+          marketplaceLabels={MARKETPLACE_STATUS}
+          threadStatusLabels={THREAD_STATUS}
+          conversationsByCard={conversationsByCard}
+          marketplaceByCard={marketplaceByCard}
+          offersByCard={offersByCard}
+          offersLoading={offers.isLoading}
+          canRemove={canResearchSourcing && campaign.status !== 'CANCELLED'}
+          canResearch={canResearchSourcing && campaign.status !== 'CANCELLED'}
+          onResearch={(cardIds, done) => research.mutate(cardIds, { onSuccess: done })}
+          researchPending={research.isPending}
+          removable={member => removable(member, campaign)}
+          onRemove={cardId => removeCard.mutate(cardId)}
+          removePending={removeCard.isPending}
+          filter={filter}
+          onFilterChange={setFilter}
+          renderMarketplaceActions={marketplaceActions}
+          browserAccess={canOperateEchemi ? <EchemiBrowserAccess
+            access={browser.data}
+            error={browser.error}
+            loading={browser.isLoading}
+            compact
+            brief
+          /> : null}
+        />}
+      {view === 'marketplace' && marketplaceCard}
+      {view === 'threads' && conversationsCard}
+
+      {hasMarketplace && view !== 'marketplace' && <details className="pr-more-details">
+        <summary>{`Заявки на площадку (${marketplaceItems.length})`}{marketplaceNeedsReview > 0 ? ` · ${marketplaceNeedsReview} требует внимания` : ''}</summary>
+        <div className="pr-stack">
+      {marketplaceCard}
+
+        </div>
+      </details>}
+
+      {conversations.length > 0 && view !== 'threads' && <details className="pr-more-details">
+        <summary>{`Все переписки закупки (${threadTotal})`}{awaitingPerson > 0 ? ` · ${awaitingPerson} ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки` : ''}</summary>
+        <div className="pr-stack">
+      {conversationsCard}
 
         </div>
       </details>}

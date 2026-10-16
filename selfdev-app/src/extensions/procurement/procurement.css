@@ -1330,6 +1330,13 @@
 @media (max-width: 900px) { .pr-offer-group [data-slot="card-content"] { grid-template-columns: 1fr; } }
 .pr-kpi__detail { display: block; color: var(--pr-muted); font-size: 11px; margin-top: 2px; }
 .procurement-shell a.pr-back-link { font-size: 13px; font-weight: 600; }
+/* The table's three readings: substances, marketplace requests, conversations. */
+.pr-view-switch { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border: 1px solid var(--pr-border); border-radius: 10px; background: var(--pr-surface-muted); align-self: flex-start; max-width: 100%; }
+.pr-view-switch button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 0; border-radius: 7px; background: none; font: inherit; font-size: 13.5px; color: var(--pr-muted); cursor: pointer; }
+.pr-view-switch button:hover { color: var(--pr-text); }
+.pr-view-switch button.is-on { background: var(--pr-card); color: var(--pr-text); font-weight: 600; box-shadow: 0 1px 2px rgba(15, 23, 42, .08); }
+.pr-view-switch button b { font-variant-numeric: tabular-nums; }
+.pr-view-switch__alert { padding: 1px 7px; border-radius: 999px; background: var(--pr-warning-soft); color: var(--pr-warning); font-size: 11px; font-weight: 700; }
 .pr-more-details > summary { cursor: pointer; font-weight: 600; color: var(--pr-muted); padding: 6px 0; }
 .pr-more-details[open] > summary { margin-bottom: 12px; }
 
