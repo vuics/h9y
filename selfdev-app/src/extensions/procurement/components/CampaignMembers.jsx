@@ -102,7 +102,7 @@ function Section({ title, meta, open, onToggle, empty, children }) {
  */
 function MemberSections({
   member, offers, threads, marketplace, marketplaceLabels, threadStatusLabels, offersLoading,
-  isOpen, onToggle, renderMarketplaceActions, renderMarketplaceDetails, browserAccess,
+  isOpen, onToggle, renderMarketplaceActions, renderMarketplaceDetails, renderMarketplaceStatus, browserAccess,
 }) {
   const { offered } = splitSuppliers(offers, threads)
   const lines = threadsWithOffers(offers, threads)
@@ -155,7 +155,9 @@ function MemberSections({
     {marketplace && <Section
       title="Echemi"
       meta={<>
-        <StatusBadge status={marketplace.status} label={marketplaceLabels[marketplace.status] || marketplace.status} compact />
+        {renderMarketplaceStatus
+          ? renderMarketplaceStatus(marketplace)
+          : <StatusBadge status={marketplace.status} label={marketplaceLabels[marketplace.status] || marketplace.status} compact />}
         {marketplace.platformInquiryId && <span>№ {marketplace.platformInquiryId}</span>}
       </>}
       open={isOpen('echemi', { waiting })}
@@ -187,7 +189,7 @@ export function CampaignMembers({
   canRemove, removable, onRemove, removePending, filter, onFilterChange,
   // The marketplace actions and the browser access are owned by the page,
   // which holds their mutations; the row only says where they belong.
-  renderMarketplaceActions, renderMarketplaceDetails, browserAccess,
+  renderMarketplaceActions, renderMarketplaceDetails, renderMarketplaceStatus, browserAccess,
   // How the table is read: which positions and sections a mode unfolds.
   mode = 'members',
   // Searching chosen substances again: the page owns the mutation.
@@ -375,6 +377,7 @@ export function CampaignMembers({
               onToggle={toggleSection}
               renderMarketplaceActions={renderMarketplaceActions}
               renderMarketplaceDetails={renderMarketplaceDetails}
+              renderMarketplaceStatus={renderMarketplaceStatus}
               browserAccess={browserAccess}
             />
           </td></tr>}

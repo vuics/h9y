@@ -266,7 +266,8 @@ export function campaignMarketplaceFixture(campaignId) {
   // posted, waiting for the specialist's approval, and blocked on an RFQ.
   // NEEDS_REVIEW is the state the block and the substance row exist for: the
   // platform asked for a person and the request is neither out nor lost.
-  const states = ['SUBMITTED', 'AWAITING_APPROVAL', 'NEEDS_REVIEW', 'RFQ_APPROVAL']
+  // The fourth was turned down by the platform: it says so in its own words.
+  const states = ['SUBMITTED', 'AWAITING_APPROVAL', 'NEEDS_REVIEW', 'REJECTED']
   const items = campaign.members.map((member, index) => ({
     cardId: member.cardId,
     title: member.title,
@@ -279,6 +280,15 @@ export function campaignMarketplaceFixture(campaignId) {
     error: states[index % states.length] === 'NEEDS_REVIEW'
       ? 'ECHEMI-357-52C3BB59. Кнопка отправки нажата, но подтверждения площадки мы не увидели. Повторять автоматически не будем: заявка могла уйти. Проверьте её в браузере. Inquiry created: NO'
       : null,
+    // Posted three days ago and answered on the platform, one offer not yet
+    // collected, and none of them visible: the case «Разместить заново» is for.
+    quotations: states[index % states.length] === 'SUBMITTED'
+      ? { published: 3, visible: 2, ingested: 2, unread: 1, collectedAt: ago(5) }
+      : null,
+    repostable: states[index % states.length] === 'SUBMITTED',
+    platformMessage: states[index % states.length] === 'REJECTED'
+      ? 'Площадка не опубликовала заявку: в списке она помечена «Invalid Inquiries». Продавцы её не видят — ищите это вещество другими каналами.'
+      : null,
   }))
   return {
     campaignId: campaign.campaignId,
@@ -288,6 +298,8 @@ export function campaignMarketplaceFixture(campaignId) {
     posted: items.filter(item => item.status === 'SUBMITTED').length,
     pending: items.filter(item => item.status === 'PREPARED').length,
     awaitingApproval: items.filter(item => item.status === 'AWAITING_APPROVAL').length,
+    rejected: items.filter(item => item.status === 'REJECTED').length,
+    quotations: { published: 3, ingested: 2, unread: 1, hidden: 1, lastCollectedAt: ago(5) },
     running: false,
   }
 }

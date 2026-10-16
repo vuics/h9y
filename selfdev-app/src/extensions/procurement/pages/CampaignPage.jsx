@@ -412,6 +412,8 @@ export default function CampaignPage() {
   // sellers' feeds. Asked once more before it goes, because it is published to
   // every seller on the platform and cannot be taken back from here.
   const [repostAsk, setRepostAsk] = useState(null)
+  // Pressed beside one request rather than for the batch: asked there too.
+  const [repostInRow, setRepostInRow] = useState(false)
   const repostMarketplace = useMutation({
     mutationFn: cardIds => procurementApi.repostCampaignMarketplace(campaignId, cardIds),
     onSuccess: result => {
@@ -572,6 +574,42 @@ export default function CampaignPage() {
   const offerCounts = offerTotals(offersByCard)
   const phases = memberPhases(members, offersByCard)
 
+  const threadTotal = conversations.reduce((total, item) => total + item.conversations.length, 0)
+  const hasMarketplace = Boolean(marketplaceView?.enabled && marketplaceItems.length > 0)
+
+  // A press in a row asks or answers in the strip above the table, whatever
+  // the mode: a confirmation shown only in a folded block below is lost.
+  const marketplaceAsking = Boolean((repostAsk && !repostInRow) || confirmSend
+    || repostMarketplace.error || repostMarketplace.data?.reposting?.length
+    || collectMarketplaceQuotes.error || resendMarketplace.error || resendMarketplace.data?.confirmed
+    || confirmMarketplace.error || postToMarketplace.error || submitMarketplace.error)
+  const marketplaceOnTop = hasMarketplace && (view === 'echemi' || view === 'all' || marketplaceAsking)
+  const threadsOnTop = conversations.length > 0 && (view === 'threads' || view === 'all' || Boolean(sendPrepared.data || sendPrepared.error))
+  // Asked where it was pressed: beside the one request, or above the table
+  // for the whole batch.
+  const repostConfirm = repostAsk && <Alert><AlertTriangle /><AlertTitle>{`Разместить заново: ${repostAsk.length}`}</AlertTitle><AlertDescription>
+          <p>Как «Post Again» на Echemi: заявка публикуется ещё раз и снова видна всем продавцам площадки сверху ленты. Старая остаётся, предложения на неё продолжают собираться. Размещаются только заявки старше трёх дней, на которых площадка не показывает ни одного предложения — в том числе те, где она предложения считает, но не показывает.{plan.draftFirst ? ' Новые заявки сначала придут вам на согласование.' : ''}</p>
+          <div className="pr-inline-actions">
+            <Button isDisabled={repostMarketplace.isPending} onPress={() => repostMarketplace.mutate(repostAsk)}>
+              {repostMarketplace.isPending ? 'Размещаем…' : 'Да, разместить заново'}
+            </Button>
+            <Button variant="outline" onPress={() => setRepostAsk(null)}>Отмена</Button>
+          </div>
+        </AlertDescription></Alert>
+  const marketplaceIntro = <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
+  const conversationsIntro = <>
+        <p>{awaitingPerson > 0
+          ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
+          : 'Все запросы отправлены — переписки идут сами.'}
+          {threadsView?.draftFirst && ' Закупка запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
+  </>
+  // The status as the marketplace list colours it: by who has to act.
+  const marketplaceBadge = item => <StatusBadge
+    status={MARKETPLACE_POSTED.has(item.status) ? 'SUBMITTED' : item.status}
+    label={MARKETPLACE_STATUS[item.status] || item.status}
+    tone={marketplaceTone(item)}
+    compact
+  />
   const marketplaceSummary = marketplaceQuotes && <p className="pr-marketplace-summary">
           {`Размещено: ${marketplaceView.posted} из ${marketplaceView.total}`}
           {marketplaceView.rejected > 0 && ` · отклонено площадкой: ${marketplaceView.rejected}`}
@@ -600,19 +638,11 @@ export default function CampaignPage() {
             : 'Заявки уходят по одной через общий браузер. Предложения на старые заявки по-прежнему собираются.'}
         </AlertDescription></Alert>}
         {canOperateEchemi && repostable.length > 0 && !repostAsk && <div className="pr-inline-actions">
-          <Button variant="outline" isDisabled={repostMarketplace.isPending || marketplaceView?.running} onPress={() => setRepostAsk(repostable)}>
+          <Button variant="outline" isDisabled={repostMarketplace.isPending || marketplaceView?.running} onPress={() => { setRepostInRow(false); setRepostAsk(repostable) }}>
             {`Разместить заново без видимых предложений (${repostable.length})`}
           </Button>
         </div>}
-        {repostAsk && <Alert><AlertTriangle /><AlertTitle>{`Разместить заново: ${repostAsk.length}`}</AlertTitle><AlertDescription>
-          <p>Как «Post Again» на Echemi: заявка публикуется ещё раз и снова видна всем продавцам площадки сверху ленты. Старая остаётся, предложения на неё продолжают собираться. Размещаются только заявки старше трёх дней, на которых площадка не показывает ни одного предложения — в том числе те, где она предложения считает, но не показывает.{plan.draftFirst ? ' Новые заявки сначала придут вам на согласование.' : ''}</p>
-          <div className="pr-inline-actions">
-            <Button isDisabled={repostMarketplace.isPending} onPress={() => repostMarketplace.mutate(repostAsk)}>
-              {repostMarketplace.isPending ? 'Размещаем…' : 'Да, разместить заново'}
-            </Button>
-            <Button variant="outline" onPress={() => setRepostAsk(null)}>Отмена</Button>
-          </div>
-        </AlertDescription></Alert>}
+        {!repostInRow && repostConfirm}
         {collectMarketplaceQuotes.error && <Alert><AlertTriangle /><AlertTitle>Предложения не забраны</AlertTitle><AlertDescription>{mutationMessage(collectMarketplaceQuotes.error)}</AlertDescription></Alert>}
         {resendMarketplace.error && <Alert><AlertTriangle /><AlertTitle>Не отправлено</AlertTitle><AlertDescription>{mutationMessage(resendMarketplace.error)}</AlertDescription></Alert>}
         {resendMarketplace.data?.confirmed && <Alert><Check /><AlertTitle>Заявка уже была на площадке</AlertTitle><AlertDescription>Список заявок Echemi показывает её по этому CAS, поэтому второй раз она не отправлялась — запись просто догнала действительность.</AlertDescription></Alert>}
@@ -680,6 +710,7 @@ export default function CampaignPage() {
   // What one request says beyond its status: its number, its offers, and
   // the presses that act on it alone. Shown in its row and in the list.
   const marketplaceDetails = item => <>
+    {repostInRow && repostAsk?.[0] === item.cardId && <div className="pr-inline-confirm">{repostConfirm}</div>}
                 {item.platformInquiryId && <span className="pr-primary-meta">номер на площадке: {item.platformInquiryId}</span>}
                 <MarketplaceQuotes quotations={item.quotations} />
                 {item.platformMessage && <span className="pr-import-missing">{item.platformMessage}</span>}
@@ -687,7 +718,7 @@ export default function CampaignPage() {
                     size="sm"
                     variant="outline"
                     isDisabled={repostMarketplace.isPending || marketplaceView?.running}
-                    onPress={() => setRepostAsk([item.cardId])}
+                    onPress={() => { setRepostInRow(true); setRepostAsk([item.cardId]) }}
                   >
                     Разместить заново
                   </Button>}
@@ -713,10 +744,10 @@ export default function CampaignPage() {
                 </span>}
   </>
   const marketplaceCard = marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
-        <p>Одна заявка на вещество, видна всем продавцам Echemi сразу — адресата у неё нет, поэтому и переписки нет: продавцы приходят с предложениями. Заявка собирается из карточки и настроек закупщика, руками ничего не вводится, так что согласован тот же текст, что и в RFQ.</p>
+        {marketplaceIntro}
         {marketplaceSummary}
       </div></CardHeader><CardContent>
-        {view === 'echemi' || view === 'all' ? <p className="pr-note">Действия по всем заявкам — над таблицей.</p> : marketplaceToolbar}
+        {marketplaceOnTop ? <p className="pr-note">Действия по всем заявкам — над таблицей.</p> : marketplaceToolbar}
 
         <ul className="pr-campaign-threads">
           {marketplaceItems.map(item => <li key={item.cardId}>
@@ -757,15 +788,12 @@ export default function CampaignPage() {
         </div>}
   </>
   const conversationsCard = conversations.length > 0 && <Card><CardHeader><div>
-        <p>{awaitingPerson > 0
-          ? `${awaitingPerson} ${plural(awaitingPerson, 'запрос подготовлен', 'запроса подготовлены', 'запросов подготовлены')} и ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки.`
-          : 'Все запросы отправлены — переписки идут сами.'}
-          {threadsView?.draftFirst && ' Закупка запущена с показом каждого письма перед отправкой, поэтому агент их не отправляет сам.'}</p>
+        {conversationsIntro}
         {/* A marketplace request is not in this list on purpose: it has no
             contact behind it and no thread. It has its own block above. */}
         {hasEchemi && <p className="pr-note">Заявки на площадку Echemi — отдельным блоком выше: у них нет адресата и переписки, одна заявка на вещество видна всем продавцам сразу. Здесь только переписка с контактами.</p>}
       </div></CardHeader><CardContent>
-        {view === 'threads' || view === 'all' ? <p className="pr-note">Действия по всем перепискам — над таблицей.</p> : conversationsToolbar}
+        {threadsOnTop ? <p className="pr-note">Действия по всем перепискам — над таблицей.</p> : conversationsToolbar}
 
         {/* Grouped by substance and linked, because the number on its own sent
             the specialist to the negotiations list to find these by hand. */}
@@ -787,9 +815,6 @@ export default function CampaignPage() {
           </li>)}
         </ul>
       </CardContent></Card>
-  const threadTotal = conversations.reduce((total, item) => total + item.conversations.length, 0)
-  const hasMarketplace = Boolean(marketplaceView?.enabled && marketplaceItems.length > 0)
-
   const modeCounts = {
     members: members.length,
     offers: offerCounts.offers,
@@ -957,8 +982,8 @@ export default function CampaignPage() {
 
       {/* The presses that act on the whole purchase, above the table in the
           mode they belong to, so the rows below stay about one position. */}
-      {(view === 'threads' || view === 'all') && conversations.length > 0 && <div className="pr-mode-toolbar">{conversationsToolbar}</div>}
-      {(view === 'echemi' || view === 'all') && hasMarketplace && <div className="pr-mode-toolbar">{marketplaceSummary}{marketplaceToolbar}</div>}
+      {threadsOnTop && <div className="pr-mode-toolbar">{conversationsIntro}{conversationsToolbar}</div>}
+      {marketplaceOnTop && <div className="pr-mode-toolbar">{marketplaceIntro}{marketplaceSummary}{marketplaceToolbar}</div>}
 
       <CampaignMembers
         campaign={campaign}
@@ -981,6 +1006,7 @@ export default function CampaignPage() {
         onFilterChange={setFilter}
         renderMarketplaceActions={marketplaceActions}
         renderMarketplaceDetails={marketplaceDetails}
+        renderMarketplaceStatus={marketplaceBadge}
         mode={view}
         browserAccess={canOperateEchemi ? <EchemiBrowserAccess
           access={browser.data}
