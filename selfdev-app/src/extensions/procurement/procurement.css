@@ -1394,7 +1394,11 @@
 .pr-members__details[data-group="waiting"] > td { box-shadow: inset 3px 0 0 var(--pr-warning); }
 .pr-members__details[data-group="failed"] > td { box-shadow: inset 3px 0 0 var(--pr-danger); }
 /* A substance opened: its offers as a table, then one line per supplier. */
-.pr-member-suppliers { display: flex; flex-direction: column; margin-left: 48px; padding: 2px 14px; background: var(--pr-card); border: 1px solid var(--pr-border); border-radius: 9px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }
+.pr-member-suppliers { display: flex; flex-direction: column; margin-left: 48px; overflow: hidden; background: var(--pr-card); border: 1px solid var(--pr-border); border-radius: 9px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }
+/* Folded sections sink into a grey a shade off the row's, so the eye lands
+   on the one that is open. */
+.pr-member-section { padding: 0 14px; background: color-mix(in oklch, var(--foreground) 3%, var(--background)); }
+.pr-member-section.is-open { background: var(--pr-card); }
 @media (max-width: 760px) { .pr-member-suppliers { margin-left: 0; } }
 .pr-member-suppliers .pr-note { margin: 0; }
 /* The page's own table, a size down: it sits inside a row of the main one. */
