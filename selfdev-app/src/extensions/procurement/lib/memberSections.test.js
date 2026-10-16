@@ -32,9 +32,10 @@ test('a mode unfolds its own section and folds the others', () => {
   assert.equal(sectionOpenByMode('all', 'threads'), true)
 })
 
-test('a conversation waiting for a person is never folded by a mode', () => {
-  assert.equal(sectionOpenByMode('offers', 'threads', { waiting: true }), true)
-  assert.equal(sectionOpenByMode('offers', 'threads', { waiting: false }), false)
+test('a mode unfolds only its own section, even past a waiting conversation', () => {
+  assert.equal(sectionOpenByMode('offers', 'threads'), false)
+  assert.equal(sectionOpenByMode('echemi', 'threads'), false)
+  assert.equal(sectionOpenByMode('threads', 'threads'), true)
 })
 
 test('a hand-made choice wins over the mode', () => {

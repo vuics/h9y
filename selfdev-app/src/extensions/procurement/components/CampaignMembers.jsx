@@ -106,15 +106,14 @@ function MemberSections({
 }) {
   const { offered } = splitSuppliers(offers, threads)
   const lines = threadsWithOffers(offers, threads)
-  const waiting = threads.some(thread => thread.awaitingPerson)
   const prices = priceRanges(offers)
   return <div className="pr-member-suppliers">
     <Section
       title={`Предложения${offered.length ? ` (${offered.length})` : ''}`}
       meta={offered.length ? (prices.length ? prices.join(' · ') : 'цены нет') : (offersLoading ? 'загружаем…' : 'пока нет')}
       empty={!offered.length}
-      open={isOpen('offers', { waiting })}
-      onToggle={() => onToggle('offers', { waiting })}
+      open={isOpen('offers')}
+      onToggle={() => onToggle('offers')}
     >
       <div className="pr-member-offers">
         <div className="pr-table-wrap"><table className="pr-table pr-member-offers__table">
@@ -146,8 +145,8 @@ function MemberSections({
       title={`Переписки${threads.length ? ` (${threads.length})` : ''}`}
       meta={threads.length ? statusTally(threads, thread => threadLabel(thread, threadStatusLabels)) : 'пока нет'}
       empty={!threads.length}
-      open={isOpen('threads', { waiting })}
-      onToggle={() => onToggle('threads', { waiting })}
+      open={isOpen('threads')}
+      onToggle={() => onToggle('threads')}
     >
       <ul className="pr-supplier-lines">{lines.map(({ thread, offer }) => <SupplierLine key={thread.assignmentId} thread={thread} offer={offer} labels={threadStatusLabels} />)}</ul>
     </Section>
@@ -160,8 +159,8 @@ function MemberSections({
           : <StatusBadge status={marketplace.status} label={marketplaceLabels[marketplace.status] || marketplace.status} compact />}
         {marketplace.platformInquiryId && <span>№ {marketplace.platformInquiryId}</span>}
       </>}
-      open={isOpen('echemi', { waiting })}
-      onToggle={() => onToggle('echemi', { waiting })}
+      open={isOpen('echemi')}
+      onToggle={() => onToggle('echemi')}
     >
       <div className="pr-member-echemi">
         {/* The actions carry their own way in, so the link is not repeated
@@ -285,8 +284,8 @@ export function CampaignMembers({
         const expanded = resolveOpen(current.rows, member.cardId, rowOpenByMode(mode, content))
         const toggle = () => setByHand('rows', member.cardId, !expanded)
         const sectionKey = section => `${member.cardId}:${section}`
-        const isOpen = (section, facts) => resolveOpen(current.sections, sectionKey(section), sectionOpenByMode(mode, section, facts))
-        const toggleSection = (section, facts) => setByHand('sections', sectionKey(section), !isOpen(section, facts))
+        const isOpen = section => resolveOpen(current.sections, sectionKey(section), sectionOpenByMode(mode, section))
+        const toggleSection = section => setByHand('sections', sectionKey(section), !isOpen(section))
         return <React.Fragment key={member.cardId}>
           <tr className={expanded ? 'pr-members__row is-open' : 'pr-members__row'} data-group={memberGroup(member)}>
             {canResearch && <td className="pr-members__pick">

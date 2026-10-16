@@ -9,7 +9,7 @@
 export const SECTIONS = ['offers', 'threads', 'echemi']
 
 export const MODES = [
-  ['members', 'Позиции'],
+  ['members', 'Только позиции'],
   ['offers', 'Предложения'],
   ['threads', 'Переписки'],
   ['echemi', 'Echemi'],
@@ -42,15 +42,11 @@ export function rowOpenByMode(mode, content) {
   return false
 }
 
-/** Whether a section of an opened position starts unfolded.
- *
- * A conversation waiting for a person is never folded away by a mode: it is
- * the one thing in the row somebody has to act on.
+/** Whether a section of an opened position starts unfolded: only the one
+ * the mode is about. A conversation waiting for a person says so in its
+ * folded header and on the Переписки button, so it does not open itself.
  */
-export function sectionOpenByMode(mode, section, { waiting = false } = {}) {
-  if (mode === 'all' || mode === section) return true
-  return section === 'threads' && waiting
-}
+export const sectionOpenByMode = (mode, section) => mode === 'all' || mode === section
 
 /** A person's choice wins over the mode's, until the mode changes. */
 export const resolveOpen = (overrides, key, byMode) => (overrides.has(key) ? overrides.get(key) : byMode)
