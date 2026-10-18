@@ -234,7 +234,20 @@ export function campaignConversationsFixture(campaignId) {
         automationPaused: false,
         answered: false,
         awaitingPerson: true,
-      }],
+      },
+      // And one that is not a letter at all: the supplier declined and the
+      // agent was stopped on it. «Отправить» cannot settle it; its page can.
+      ...(index === 0 ? [{
+        assignmentId: `NEG-${member.cardId}-${index}P`,
+        supplierId: suppliers[2].id,
+        supplierName: suppliers[2].name,
+        channel: 'email',
+        status: 'ACTIVE',
+        nextAction: 'CLARIFY',
+        automationPaused: true,
+        answered: true,
+        awaitingPerson: true,
+      }] : [])],
     }))
   return {
     campaignId: campaign.campaignId,
