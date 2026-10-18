@@ -111,24 +111,6 @@ function MemberSections({
   const lines = threadsWithOffers(offers, threads)
   const prices = priceRanges(offers)
   return <div className="pr-member-suppliers">
-    {/* First, because it is the first step: nobody is written to before it. */}
-    <Section
-      title="Согласование"
-      meta={reviewItem
-        ? reviewSummary(reviewItem)
-        : reviewLoading ? 'загружаем…' : (memberAwaitsReview(member) ? 'ждёт согласования' : 'кандидаты и RFQ')}
-      open={isOpen('review')}
-      onToggle={() => onToggle('review')}
-    >
-      <div className="pr-member-review">
-        {reviewItem
-          ? <ReviewItem review={review} item={reviewItem} links />
-          : <p className="pr-note">{reviewLoading
-            ? 'Загружаем согласование…'
-            : <>Согласование по этой позиции не найдено. <Link to={`/procurement/requests/${member.cardId}/sourcing`}>Поиск и кандидаты</Link> · <Link to={`/procurement/requests/${member.cardId}/rfq`}>RFQ</Link></>}</p>}
-      </div>
-    </Section>
-
     <Section
       title={`Предложения${offered.length ? ` (${offered.length})` : ''}`}
       meta={offered.length ? (prices.length ? prices.join(' · ') : 'цены нет') : (offersLoading ? 'загружаем…' : 'пока нет')}
@@ -194,6 +176,25 @@ function MemberSections({
         {needsMarketplaceAction(member) && browserAccess}
       </div>
     </Section>}
+
+    {/* Last: approved once at the start, while the offers above are what the
+        purchase is opened for. Its header still says when it waits. */}
+    <Section
+      title="Согласование"
+      meta={reviewItem
+        ? reviewSummary(reviewItem)
+        : reviewLoading ? 'загружаем…' : (memberAwaitsReview(member) ? 'ждёт согласования' : 'кандидаты и RFQ')}
+      open={isOpen('review')}
+      onToggle={() => onToggle('review')}
+    >
+      <div className="pr-member-review">
+        {reviewItem
+          ? <ReviewItem review={review} item={reviewItem} links />
+          : <p className="pr-note">{reviewLoading
+            ? 'Загружаем согласование…'
+            : <>Согласование по этой позиции не найдено. <Link to={`/procurement/requests/${member.cardId}/sourcing`}>Поиск и кандидаты</Link> · <Link to={`/procurement/requests/${member.cardId}/rfq`}>RFQ</Link></>}</p>}
+      </div>
+    </Section>
   </div>
 }
 

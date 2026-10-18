@@ -6,14 +6,16 @@
  * stays as they left it until the mode changes.
  */
 
-export const SECTIONS = ['review', 'offers', 'threads', 'echemi']
+export const SECTIONS = ['offers', 'threads', 'echemi', 'review']
 
 export const MODES = [
   ['members', 'Только позиции'],
-  ['review', 'Согласование'],
   ['offers', 'Предложения'],
   ['threads', 'Переписки'],
   ['echemi', 'Echemi'],
+  // Last, like its section: a step done once at the start, while the offers
+  // are what the purchase is opened for. When it waits, its badge says so.
+  ['review', 'Согласование'],
   ['all', 'Всё'],
 ]
 

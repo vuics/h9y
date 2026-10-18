@@ -1498,6 +1498,11 @@
 
 .pr-member-review { display: flex; flex-direction: column; gap: 10px; }
 .pr-member-review .pr-review-candidates { min-width: 720px; }
+/* The candidates in a position, drawn like its offers: the page's table a size down. */
+.pr-member-review__candidates { font-size: 13px; }
+.pr-member-review__candidates th { height: 32px; padding: 6px 12px; }
+.pr-member-review__candidates td { padding: 8px 12px; vertical-align: top; }
+.pr-member-review__candidates td strong { font-weight: 500; }
 .pr-member-review__scroll { overflow-x: auto; }
 .pr-review-links { display: flex; gap: 14px; margin: 0; font-size: 13px; }
 .pr-mode-toolbar .pr-review-identity-summary { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--pr-border); }

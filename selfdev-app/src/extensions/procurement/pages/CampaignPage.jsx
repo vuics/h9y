@@ -1074,11 +1074,12 @@ export default function CampaignPage() {
       </details>
 
       {/* What explains the run rather than asks for anything: kept, one click
-          away, so the page opens on what needs a person and what came in. */}
-      <details className="pr-more-details">
-        <summary>Подробнее: история закупки{unreachable.length > 0 ? ' и компании без адреса' : ''}</summary>
+          away, so the page opens on what needs a person and what came in. The
+          companies come first: they are something to fix; the history is not. */}
+      {unreachable.length > 0 && <details className="pr-more-details">
+        <summary>{`Компании без адреса (${unreachable.reduce((total, entry) => total + entry.suppliers.length, 0)})`}</summary>
         <div className="pr-stack">
-      {unreachable.length > 0 && <Card><CardHeader><div>
+      <Card><CardHeader><div>
         <CardTitle>Некому написать</CardTitle>
         <p>Эти компании вы подтвердили, но поиск не нашёл у них адреса в разрешённых каналах{channelsLabel ? ` (${channelsLabel})` : ''}. Допишите контакт на карточке поставщика — и запустите рассылку ещё раз.</p>
       </div></CardHeader><CardContent>
@@ -1098,9 +1099,14 @@ export default function CampaignPage() {
             </ul>
           </li>)}
         </ul>
-      </CardContent></Card>}
+      </CardContent></Card>
+        </div>
+      </details>}
 
-      <CampaignHistory events={campaign.events || []} members={members} />
+      <details className="pr-more-details">
+        <summary>История закупки</summary>
+        <div className="pr-stack">
+          <CampaignHistory events={campaign.events || []} members={members} />
         </div>
       </details>
     </div>

@@ -116,7 +116,7 @@ function VerdictRadios({ review, item, candidate }) {
 }
 
 function CandidateTable({ review, item, candidates, editable, scroll = false }) {
-  const table = <table className="pr-table pr-review-candidates"><thead><tr>
+  const table = <table className={scroll ? 'pr-table pr-review-candidates pr-member-review__candidates' : 'pr-table pr-review-candidates'}><thead><tr>
     <th>Компания</th><th>Оценка</th><th>Контакты</th><th>Решение</th>
   </tr></thead><tbody>{candidates.map(candidate => <tr key={candidate.candidateId}>
     <td>
@@ -129,8 +129,9 @@ function CandidateTable({ review, item, candidates, editable, scroll = false }) 
     <td>{candidate.contactCount || <span className="pr-import-missing">нет</span>}</td>
     <td>{editable ? <VerdictRadios review={review} item={item} candidate={candidate} /> : <StatusBadge status={candidate.reviewDecision} label={DECISION_LABEL[candidate.reviewDecision]} />}</td>
   </tr>)}</tbody></table>
-  // Inside a position the table is narrower than its columns: it scrolls on its own.
-  return scroll ? <div className="pr-member-review__scroll">{table}</div> : table
+  // Inside a position it is drawn like the offers above it, and scrolls on its
+  // own when narrower than its columns.
+  return scroll ? <div className="pr-table-wrap pr-member-review__scroll">{table}</div> : table
 }
 
 function IdentityBlock({ review, item }) {
