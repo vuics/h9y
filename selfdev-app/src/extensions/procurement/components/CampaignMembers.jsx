@@ -14,6 +14,7 @@ import { reviewBadges, reviewOpen } from '../lib/campaignReview'
 import { ReviewItem } from './CampaignReview'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { escalationKind } from '../lib/escalation'
+import { EscalationQuick } from './EscalationQuick'
 import {
   FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
   nextActions, requestsSummary,
@@ -107,8 +108,16 @@ function Section({ title, meta, open, onToggle, empty, children }) {
 function MemberSections({
   member, offers, threads, marketplace, marketplaceLabels, threadStatusLabels, offersLoading,
   isOpen, onToggle, renderMarketplaceActions, renderMarketplaceDetails, renderMarketplaceStatus, browserAccess,
-  review, reviewItem, reviewLoading, escalations = [],
+  review, reviewItem, reviewLoading, escalations = [], campaignId,
 }) {
+  // Which escalations are unfolded to decide them here.
+  const [deciding, setDeciding] = useState(() => new Set())
+  const toggleDeciding = id => setDeciding(current => {
+    const next = new Set(current)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    return next
+  })
   const { offered } = splitSuppliers(offers, threads)
   const lines = threadsWithOffers(offers, threads)
   const prices = priceRanges(offers)
@@ -190,13 +199,22 @@ function MemberSections({
       open={isOpen('escalations')}
       onToggle={() => onToggle('escalations')}
     >
-      <ul className="pr-supplier-lines">{escalations.map(item => <li key={item.id} className="pr-supplier-line">
-        {/* What is to be decided: the substance is the position itself. */}
-        <Link to={`/procurement/escalations/${item.id}`} title={escalationKind(item)}>{escalationKind(item)}</Link>
-        {item.supplierName && <span className="pr-supplier-line__channel">{item.supplierName}</span>}
-        <StatusBadge status={item.status} compact />
-        <RouterLinkButton className="pr-supplier-line__press" size="sm" variant="ghost" to={`/procurement/escalations/${item.id}`}>Решить</RouterLinkButton>
-      </li>)}</ul>
+      <ul className="pr-supplier-lines">{escalations.map(item => <React.Fragment key={item.id}>
+        <li className="pr-supplier-line">
+          {/* What is to be decided: the substance is the position itself. */}
+          <Link to={`/procurement/escalations/${item.id}`} title={escalationKind(item)}>{escalationKind(item)}</Link>
+          {/* The supplier leads to the conversation the case came from. */}
+          {item.supplierName && (item.negotiationId
+            ? <Link className="pr-supplier-line__channel" to={`/procurement/negotiations/${item.negotiationId}`} title="Открыть переписку">{item.supplierName}</Link>
+            : <span className="pr-supplier-line__channel">{item.supplierName}</span>)}
+          <StatusBadge status={item.status} compact />
+          <button type="button" className="pr-supplier-line__toggle" aria-expanded={deciding.has(item.id)} onClick={() => toggleDeciding(item.id)}>
+            {deciding.has(item.id) ? <ChevronDown size={13} /> : <ChevronRight size={13} />}Решить
+          </button>
+          {item.negotiationId && <RouterLinkButton className="pr-supplier-line__press" size="sm" variant="ghost" to={`/procurement/negotiations/${item.negotiationId}`}>Переписка</RouterLinkButton>}
+        </li>
+        {deciding.has(item.id) && <li className="pr-supplier-line__panel"><EscalationQuick escalation={item} campaignId={campaignId} /></li>}
+      </React.Fragment>)}</ul>
     </Section>
 
     {/* Last: approved once at the start, while the offers above are what the
@@ -459,6 +477,7 @@ export function CampaignMembers({
               reviewItem={reviewItem}
               reviewLoading={reviewLoading}
               escalations={escalationsByCard.get(member.cardId) || []}
+              campaignId={campaign.campaignId}
             />
           </td></tr>}
         </React.Fragment>

@@ -14,6 +14,8 @@ export const developmentCapabilities = {
       'ECHEMI_SUBMIT',
       'COMMUNICATION_READ',
       'ESCALATION_READ',
+      'ESCALATION_CLAIM',
+      'ESCALATION_RESOLVE',
       'AUDIT_READ',
       'SOURCING_RESEARCH',
       'SOURCING_REVIEW',
