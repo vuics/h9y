@@ -181,7 +181,8 @@ function MemberSections({
         purchase is opened for. Its header still says when it waits. */}
     <Section
       title="Согласование"
-      meta={reviewItem
+      // A summary while folded; open, the parts below say it themselves.
+      meta={isOpen('review') ? null : reviewItem
         ? reviewBadges(reviewItem).map(badge => <StatusBadge key={badge.label} status={badge.tone} label={badge.label} tone={badge.tone} compact />)
         : reviewLoading ? 'загружаем…' : (memberAwaitsReview(member) ? 'ждёт согласования' : 'кандидаты и RFQ')}
       open={isOpen('review')}

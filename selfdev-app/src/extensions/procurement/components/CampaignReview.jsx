@@ -2,11 +2,12 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { StatusBadge } from './StatusBadge'
+import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from './SourcingSettings'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, CircleAlert, ExternalLink, Refresh } from './icons'
+import { AlertTriangle, Check, ChevronDown, ChevronRight, CircleAlert, ExternalLink, Refresh } from './icons'
 import {
   CONCLUDED, DECISION_LABEL, MARKETPLACE_SKIPPED, RFQ_STATUS, SUGGESTED, VERDICTS,
   blockedText, dispatchProblems, dispatchTitle, mutationMessage, verdictKey,
@@ -155,16 +156,13 @@ function IdentityBlock({ review, item }) {
  * the RFQ pages when `links` is set.
  */
 export function ReviewItem({ review, item, links = false }) {
+  if (links) return <PositionReview review={review} item={item} />
   const { appliedById, revising, setRevising, opened, setOpened, rfqs, tickRfq, apply, canWriteCards } = review
   const result = appliedById.get(item.cardId)
   const open = item.candidates.filter(candidate => candidate.reviewDecision === 'UNREVIEWED')
   const decided = item.candidates.filter(candidate => candidate.reviewDecision !== 'UNREVIEWED')
   const hasRun = item.candidates.length > 0
   return <>
-    {links && <p className="pr-review-links">
-      <Link to={`/procurement/requests/${item.cardId}/sourcing`}>Поиск и кандидаты</Link>
-      <Link to={`/procurement/requests/${item.cardId}/rfq`}>RFQ</Link>
-    </p>}
     {result && <Alert>{result.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>{result.errors?.length ? 'Применено частично' : 'Применено'}</AlertTitle><AlertDescription>
       Подтверждено {result.verified?.length ?? 0}, стало поставщиками {result.promoted?.length ?? 0}{result.rfqApproved ? ', RFQ согласован' : ''}.
       {result.errors?.length > 0 && <ul className="pr-plain-list">{result.errors.map((error, index) => <li key={index}>{error.candidateId ? `${error.candidateId}: ` : ''}{error.message}</li>)}</ul>}
@@ -176,7 +174,7 @@ export function ReviewItem({ review, item, links = false }) {
       ? <p className="pr-note">{item.blockedBy ? <>Пока нечего согласовывать: {blockedText(item.blockedBy)}. </> : 'Поиск не нашёл кандидатов. '}<Link to={`/procurement/requests/${item.cardId}/sourcing`}>Открыть поиск</Link></p>
       : <>
         {open.length > 0 && <BulkVerdicts review={review} scope={[item]} />}
-        {open.length > 0 && <CandidateTable review={review} item={item} candidates={open} editable scroll={links} />}
+        {open.length > 0 && <CandidateTable review={review} item={item} candidates={open} editable />}
         {decided.length > 0 && <div className="pr-review-decided">
           <button type="button" className="pr-review-rfq__toggle" onClick={() => setRevising(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
             {revising[item.cardId] ? 'Свернуть принятые решения' : `Принятые решения (${decided.length}) — показать и изменить`}
@@ -185,7 +183,7 @@ export function ReviewItem({ review, item, links = false }) {
             {item.stage === 'OUTREACH' || item.stage === 'NEGOTIATION'
               ? <p className="pr-note">Запросы по этому веществу уже ушли. Новая роль или новый поставщик учтутся дальше, но уже отправленное письмо не отзывается.</p>
               : null}
-            <CandidateTable review={review} item={item} candidates={decided} editable scroll={links} />
+            <CandidateTable review={review} item={item} candidates={decided} editable />
           </>}
         </div>}
       </>}
@@ -218,6 +216,85 @@ export function ReviewItem({ review, item, links = false }) {
           : <p className="pr-note">{item.normalization ? 'RFQ появится, когда идентичность вещества будет подтверждена.' : 'RFQ ещё не подготовлен — нажмите «Подготовить RFQ» наверху.'}</p>}
     </div>}
   </>
+}
+
+const WRITTEN_TO = new Set(['VERIFIED_MANUFACTURER', 'VERIFIED_DISTRIBUTOR', 'PRICE_REQUEST'])
+
+/** One position's approval, drawn the way the purchase page draws a position:
+ * two parts, companies and RFQ, each under a one-line header that names it,
+ * says where it stands in coloured labels and carries its own way out to the
+ * page that goes deeper. The decided companies fold like a section does.
+ */
+function PositionReview({ review, item }) {
+  const { appliedById, revising, setRevising, opened, setOpened, rfqs, tickRfq, apply, canWriteCards } = review
+  const result = appliedById.get(item.cardId)
+  const open = item.candidates.filter(candidate => candidate.reviewDecision === 'UNREVIEWED')
+  const decided = item.candidates.filter(candidate => candidate.reviewDecision !== 'UNREVIEWED')
+  const approved = decided.filter(candidate => WRITTEN_TO.has(candidate.reviewDecision)).length
+  const folded = !revising[item.cardId]
+  const rfq = item.rfq
+  const rfqBadge = rfq?.status === 'APPROVED'
+    ? <StatusBadge status="complete" tone="complete" label="согласован" compact />
+    : rfq?.documentFingerprint
+      ? <StatusBadge status="warning" tone="warning" label="ждёт согласования" compact />
+      : <StatusBadge status="muted" tone="muted" label="не подготовлен" compact />
+  return <div className="pr-pos-review">
+    {result && <Alert>{result.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>{result.errors?.length ? 'Применено частично' : 'Применено'}</AlertTitle><AlertDescription>
+      Подтверждено {result.verified?.length ?? 0}, стало поставщиками {result.promoted?.length ?? 0}{result.rfqApproved ? ', RFQ согласован' : ''}.
+      {result.errors?.length > 0 && <ul className="pr-plain-list">{result.errors.map((error, index) => <li key={index}>{error.candidateId ? `${error.candidateId}: ` : ''}{error.message}</li>)}</ul>}
+    </AlertDescription></Alert>}
+
+    {item.normalization && <IdentityBlock review={review} item={item} />}
+
+    <div className="pr-pos-review__part">
+      <div className="pr-pos-review__head">
+        <b>Компании</b>
+        {open.length > 0 && !item.blockedBy && <StatusBadge status="warning" tone="warning" label={`${open.length} на решении`} compact />}
+        {approved > 0 && <StatusBadge status="complete" tone="complete" label={`подтверждено: ${approved}`} compact />}
+        {!item.candidates.length && <span className="pr-pos-review__muted">{item.blockedBy ? blockedText(item.blockedBy) : 'кандидатов нет'}</span>}
+        <RouterLinkButton className="pr-pos-review__out" size="sm" variant="ghost" to={`/procurement/requests/${item.cardId}/sourcing`}><ExternalLink size={13} />Поиск</RouterLinkButton>
+      </div>
+      {open.length > 0 && <BulkVerdicts review={review} scope={[item]} />}
+      {open.length > 0 && <CandidateTable review={review} item={item} candidates={open} editable scroll />}
+      {decided.length > 0 && <div className="pr-pos-review__fold">
+        <button type="button" className="pr-pos-review__fold-head" aria-expanded={!folded} onClick={() => setRevising(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
+          {folded ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+          <span>Принятые решения ({decided.length})</span>
+          <span className="pr-pos-review__muted">{folded ? 'показать и изменить' : 'свернуть'}</span>
+        </button>
+        {!folded && <>
+          {item.stage === 'OUTREACH' || item.stage === 'NEGOTIATION'
+            ? <p className="pr-note">Запросы по этому веществу уже ушли. Новая роль или новый поставщик учтутся дальше, но уже отправленное письмо не отзывается.</p>
+            : null}
+          <CandidateTable review={review} item={item} candidates={decided} editable scroll />
+        </>}
+      </div>}
+    </div>
+
+    {rfq && <div className="pr-pos-review__part">
+      <div className="pr-pos-review__head">
+        <b>RFQ</b>
+        {rfqBadge}
+        {rfq.subject && <Button className="pr-pos-review__out" size="sm" variant="ghost" onPress={() => setOpened(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>{opened[item.cardId] ? 'Скрыть текст' : 'Текст'}</Button>}
+        <RouterLinkButton className={rfq.subject ? undefined : 'pr-pos-review__out'} size="sm" variant="ghost" to={`/procurement/requests/${item.cardId}/rfq`}><ExternalLink size={13} />RFQ</RouterLinkButton>
+        {/* Last: the one thing on the line that may be cut short. */}
+        {rfq.subject && <span className="pr-pos-review__subject" title={rfq.subject}>{rfq.subject}</span>}
+      </div>
+      {opened[item.cardId] && rfq.bodyMarkdown && <pre className="pr-review-rfq__body">{rfq.bodyMarkdown}</pre>}
+      {rfq.status !== 'APPROVED' && (rfq.documentFingerprint
+        ? <label className="pr-pos-review__approve">
+          <input
+            type="checkbox"
+            checked={Boolean(rfqs[item.cardId])}
+            aria-label={`Согласовать RFQ по веществу ${item.title}`}
+            disabled={!canWriteCards || apply.isPending}
+            onChange={event => tickRfq(item.cardId, event.target.checked)}
+          />
+          <span>Согласовать этот текст</span>
+        </label>
+        : <p className="pr-note">{item.normalization ? 'RFQ появится, когда идентичность вещества будет подтверждена.' : 'RFQ ещё не подготовлен — «Подготовить RFQ» на панели внизу.'}</p>)}
+    </div>}
+  </div>
 }
 
 /** The approval's two presses, pinned to the bottom of the screen while there

@@ -1504,10 +1504,30 @@
 .pr-member-review__candidates td { padding: 8px 12px; vertical-align: top; }
 .pr-member-review__candidates td strong { font-weight: 500; }
 .pr-member-review__scroll { overflow-x: auto; }
-.pr-review-links { display: flex; gap: 14px; margin: 0; font-size: 13px; }
 .pr-mode-toolbar .pr-review-identity-summary { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--pr-border); }
 .pr-mode-toolbar .pr-review-identity-summary p { margin: 0; color: var(--pr-muted); font-size: 13px; }
 /* Pinned to the bottom while there is an approval to send: the press is never
    a long scroll back from the last company decided. */
 .pr-review-bar { position: sticky; bottom: 12px; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 10px 14px; border: 1px solid var(--pr-border); border-radius: 10px; background: var(--pr-card); box-shadow: 0 8px 24px rgba(15, 23, 42, .14); }
 .pr-review-bar > span { font-size: 13.5px; }
+
+/* A position's approval, in the page's own idiom: parts under one-line heads. */
+.pr-pos-review { display: flex; flex-direction: column; gap: 10px; }
+.pr-pos-review__part { display: flex; flex-direction: column; gap: 8px; }
+.pr-pos-review__part + .pr-pos-review__part { padding-top: 10px; border-top: 1px solid var(--pr-border); }
+.pr-pos-review__head { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; }
+.pr-pos-review__head > b { font-weight: 600; }
+.pr-pos-review__muted { color: var(--pr-muted); font-size: 12.5px; }
+.pr-pos-review__subject { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pr-muted); font-size: 12.5px; }
+.pr-pos-review__head { flex-wrap: wrap; row-gap: 4px; }
+.pr-pos-review__out { margin-left: 4px; }
+.pr-pos-review__head a[data-slot="button"], .pr-pos-review__head button[data-slot="button"] { height: 26px; padding: 0 8px; font-size: 12.5px; color: var(--pr-muted); }
+.pr-pos-review__head a[data-slot="button"]:hover, .pr-pos-review__head button[data-slot="button"]:hover { color: var(--pr-text); text-decoration: none; }
+.pr-pos-review .pr-review-bulk { margin: 0; gap: 6px; font-size: 12.5px; }
+.pr-pos-review .pr-review-bulk button[data-slot="button"] { height: 26px; padding: 0 8px; font-size: 12.5px; }
+.pr-pos-review__fold { display: flex; flex-direction: column; gap: 8px; }
+.pr-pos-review__fold-head { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 2px 0; border: 0; background: none; font: inherit; font-size: 13px; color: var(--pr-text); cursor: pointer; }
+.pr-pos-review__fold-head svg { color: var(--pr-muted); }
+.pr-pos-review__fold-head:hover > span:first-of-type { text-decoration: underline; }
+.pr-pos-review__approve { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; font-size: 13px; cursor: pointer; }
+.pr-pos-review .pr-review-rfq__body { margin: 0; }
