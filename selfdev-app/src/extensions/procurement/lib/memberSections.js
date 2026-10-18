@@ -6,13 +6,14 @@
  * stays as they left it until the mode changes.
  */
 
-export const SECTIONS = ['offers', 'threads', 'echemi', 'review']
+export const SECTIONS = ['offers', 'threads', 'echemi', 'escalations', 'review']
 
 export const MODES = [
   ['members', 'Только позиции'],
   ['offers', 'Предложения'],
   ['threads', 'Переписки'],
   ['echemi', 'Echemi'],
+  ['escalations', 'Эскалации'],
   // Last, like its section: a step done once at the start, while the offers
   // are what the purchase is opened for. When it waits, its badge says so.
   ['review', 'Согласование'],
@@ -34,8 +35,9 @@ export const memberAwaitsReview = member => member.stage === 'AWAITING_REVIEW'
   || ['CANDIDATE_REVIEW', 'RFQ_APPROVAL'].includes(member.waitingFor)
 
 /** What one position has to show in each section. */
-export const contentOf = ({ offers = [], threads = [], marketplace = null, review = false } = {}) => ({
+export const contentOf = ({ offers = [], threads = [], marketplace = null, review = false, escalations = [] } = {}) => ({
   review: review ? 1 : 0,
+  escalations: escalations.length,
   offers: offers.length,
   threads: threads.length,
   echemi: marketplace ? 1 : 0,

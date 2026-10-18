@@ -387,6 +387,19 @@ export const escalations = [
   { id: 'ESC-1038-12', cardId: 1038, cardTitle: cards[1].title, supplierId: 'SUP-A19F', supplierName: suppliers[0].name, status: 'IN_REVIEW', priority: 72, title: 'Требуется выбор аналога и грейда', recommendation: 'Специалисту сопоставить техническую спецификацию с областью применения.', risks: [{ category: 'GRADE_SELECTION', code: 'grade_ambiguity', reason: 'Найдено несколько несовпадающих силиконовых формул.', evidence: [] }], assignedTo: 'Алексей Орлов', createdAt: ago(22), updatedAt: ago(4) },
 ]
 
+// One open case on a purchase position, so the purchase page shows its
+// Эскалации section with something in it.
+escalations.push({
+  ...escalations[0],
+  id: 'ESC-90001-5',
+  cardId: 90001,
+  cardTitle: '1,3-Бутадиен',
+  negotiationId: 'NEG-90001-0F',
+  supplierId: 'SUP-A19F',
+  supplierName: suppliers[0].name,
+  status: 'OPEN',
+})
+
 export const activity = [
   { id: 'ACT-1', type: 'supplier_response', level: 'success', title: 'Ответ поставщика обработан', description: 'Обновлено предложение RESP-1042-01, ревизия 2.', entityType: 'proposal', entityId: 'RESP-1042-01', cardId: 1042, createdAt: ago(1) },
   { id: 'ACT-2', type: 'attachment_failure', level: 'error', title: 'Не удалось обработать вложение', description: 'Файл с паспортом качества не распознан. Автоматическая повторная попытка завершилась ошибкой.', entityType: 'negotiation', entityId: 'NEG-1042-B2', cardId: 1042, retryStatus: 'FAILED_FINAL', diagnostic: 'attachment_ingestion: unsupported embedded image encoding', createdAt: ago(2) },

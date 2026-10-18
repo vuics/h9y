@@ -1429,6 +1429,7 @@
 .pr-member-section__meta { display: inline-flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; color: var(--pr-muted); font-weight: 400; }
 .pr-member-section__body { padding: 2px 0 10px 22px; }
 .pr-supplier-line__offer { font-size: 12px; }
+.pr-supplier-line a[data-slot="button"].pr-supplier-line__press { height: 24px; padding: 0 8px; font-size: 12px; color: var(--pr-muted); }
 .pr-inline-confirm { flex-basis: 100%; }
 .pr-mode-toolbar { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid var(--pr-border); border-radius: 9px; background: var(--pr-card); }
 .pr-mode-toolbar .pr-marketplace-summary { margin: 0; }

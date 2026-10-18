@@ -12,6 +12,8 @@ import { offerBasis, offerNote, priceRanges, splitSuppliers, statusTally, thread
 import { contentOf, memberAwaitsReview, resolveOpen, rowOpenByMode, sectionOpenByMode } from '../lib/memberSections'
 import { reviewBadges, reviewOpen } from '../lib/campaignReview'
 import { ReviewItem } from './CampaignReview'
+import { RouterLinkButton } from '../../../components/RouterLinkButton'
+import { escalationKind } from '../lib/escalation'
 import {
   FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
   nextActions, requestsSummary,
@@ -105,7 +107,7 @@ function Section({ title, meta, open, onToggle, empty, children }) {
 function MemberSections({
   member, offers, threads, marketplace, marketplaceLabels, threadStatusLabels, offersLoading,
   isOpen, onToggle, renderMarketplaceActions, renderMarketplaceDetails, renderMarketplaceStatus, browserAccess,
-  review, reviewItem, reviewLoading,
+  review, reviewItem, reviewLoading, escalations = [],
 }) {
   const { offered } = splitSuppliers(offers, threads)
   const lines = threadsWithOffers(offers, threads)
@@ -177,6 +179,26 @@ function MemberSections({
       </div>
     </Section>}
 
+    {/* What only a person may decide on this position: amber, like
+        everything else that waits for you — red here means something broke. */}
+    <Section
+      title={`Эскалации${escalations.length ? ` (${escalations.length})` : ''}`}
+      meta={escalations.length
+        ? <StatusBadge status="warning" tone="warning" label={`${escalations.length} ${plural(escalations.length, 'ждёт', 'ждут', 'ждут')} решения`} compact />
+        : 'открытых нет'}
+      empty={!escalations.length}
+      open={isOpen('escalations')}
+      onToggle={() => onToggle('escalations')}
+    >
+      <ul className="pr-supplier-lines">{escalations.map(item => <li key={item.id} className="pr-supplier-line">
+        {/* What is to be decided: the substance is the position itself. */}
+        <Link to={`/procurement/escalations/${item.id}`} title={escalationKind(item)}>{escalationKind(item)}</Link>
+        {item.supplierName && <span className="pr-supplier-line__channel">{item.supplierName}</span>}
+        <StatusBadge status={item.status} compact />
+        <RouterLinkButton className="pr-supplier-line__press" size="sm" variant="ghost" to={`/procurement/escalations/${item.id}`}>Решить</RouterLinkButton>
+      </li>)}</ul>
+    </Section>
+
     {/* Last: approved once at the start, while the offers above are what the
         purchase is opened for. Its header still says when it waits. */}
     <Section
@@ -216,6 +238,8 @@ export function CampaignMembers({
   mode = 'members',
   // The approval, loaded once someone asks for it; asking is `onReviewWanted`.
   review = null, reviewLoading = false, onReviewWanted,
+  // Open escalations of this purchase, per position.
+  escalationsByCard = new Map(),
   // Searching chosen substances again: the page owns the mutation.
   canResearch, onResearch, researchPending,
 }) {
@@ -246,6 +270,7 @@ export function CampaignMembers({
       threads: conversationsByCard.get(member.cardId)?.conversations,
       marketplace: marketplaceByCard.get(member.cardId),
       review: reviewItem ? reviewOpen(reviewItem) : memberAwaitsReview(member),
+      escalations: escalationsByCard.get(member.cardId),
     })
   }
   const anyHas = rows.some(member => contentFor(member)[mode] > 0)
@@ -433,6 +458,7 @@ export function CampaignMembers({
               review={review}
               reviewItem={reviewItem}
               reviewLoading={reviewLoading}
+              escalations={escalationsByCard.get(member.cardId) || []}
             />
           </td></tr>}
         </React.Fragment>

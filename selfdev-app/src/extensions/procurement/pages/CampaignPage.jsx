@@ -299,7 +299,7 @@ export default function CampaignPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const {
-    canResearchSourcing, canQueueNegotiations, canOperateEchemi, canSubmitEchemi,
+    canResearchSourcing, canQueueNegotiations, canOperateEchemi, canSubmitEchemi, canReadEscalations,
   } = useProcurementPermissions()
 
   const query = useQuery({
@@ -370,6 +370,14 @@ export default function CampaignPage() {
   // The approval lives in the positions too. Loaded once it is asked for —
   // by its mode, by «Всё», or by opening one position's approval — because
   // it carries every candidate of every substance.
+  // Open escalations, one read for the whole page and laid out per position:
+  // the API filters by one card, and the open cases of an installation are few.
+  const escalationsFilters = { status: 'ACTIVE', page: 1, pageSize: 200 }
+  const escalationsQuery = useQuery({
+    queryKey: procurementKeys.escalations(escalationsFilters),
+    queryFn: ({ signal }) => procurementApi.escalations(escalationsFilters, signal),
+    enabled: canReadEscalations,
+  })
   const [reviewWanted, setReviewWanted] = useState(false)
   const review = useCampaignReview(campaignId, { enabled: view === 'review' || view === 'all' || reviewWanted })
   const reviewData = review.query.data
@@ -844,19 +852,28 @@ export default function CampaignPage() {
         </ul>
       </CardContent></Card>
   const reviewWaiting = members.filter(memberAwaitsReview).length
+  const memberCards = new Set(members.map(member => member.cardId))
+  const escalationsByCard = new Map()
+  for (const item of escalationsQuery.data?.items || []) {
+    if (!memberCards.has(item.cardId)) continue
+    escalationsByCard.set(item.cardId, [...(escalationsByCard.get(item.cardId) || []), item])
+  }
+  const escalationsOpen = [...escalationsByCard.values()].reduce((total, items) => total + items.length, 0)
   const failedAsks = asks.filter(ask => ask.key.startsWith('err-')).length
   // What only the per-substance list says: no verified supplier, no contact.
   const otherAsks = asks.filter(ask => ['SUPPLIER_EVIDENCE-', 'SUPPLIER_CONTACT-'].some(prefix => ask.key.startsWith(prefix))).length
-  const waitingTotal = reviewWaiting + awaitingPerson + pausedThreads + marketplaceNeedsReview + failedAsks + otherAsks
+  const waitingTotal = reviewWaiting + escalationsOpen + awaitingPerson + pausedThreads + marketplaceNeedsReview + failedAsks + otherAsks
   const modeCounts = {
     members: members.length,
     review: reviewWaiting,
+    escalations: escalationsOpen,
     offers: offerCounts.offers,
     threads: threadTotal,
     echemi: hasMarketplace ? marketplaceItems.length : 0,
   }
   const modeAlerts = {
     review: reviewWaiting > 0 && 'ждут вас',
+    escalations: escalationsOpen > 0 && `${escalationsOpen} ${plural(escalationsOpen, 'ждёт', 'ждут', 'ждут')} решения`,
     threads: [
       awaitingPerson > 0 && `${awaitingPerson} ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки`,
       pausedThreads > 0 && `${pausedThreads} на паузе`,
@@ -979,6 +996,7 @@ export default function CampaignPage() {
             {awaitingPerson > 0 && (canQueueNegotiations
               ? <Button size="sm" isDisabled={sendPrepared.isPending} onPress={() => { showView('threads'); sendPrepared.mutate() }}><Send className={sendPrepared.isPending ? 'pr-spin' : undefined} />{sendPrepared.isPending ? 'Отправляем…' : `Отправить ${awaitingPerson} ${plural(awaitingPerson, 'письмо', 'письма', 'писем')}`}</Button>
               : <Button size="sm" variant="outline" onPress={() => showView('threads')}>{`${awaitingPerson} ${plural(awaitingPerson, 'письмо готово', 'письма готовы', 'писем готовы')} к отправке`}</Button>)}
+            {escalationsOpen > 0 && <Button size="sm" variant="outline" onPress={() => showView('escalations')}>{`${escalationsOpen} ${plural(escalationsOpen, 'эскалация ждёт', 'эскалации ждут', 'эскалаций ждут')} решения`}</Button>}
             {pausedThreads > 0 && <Button size="sm" variant="outline" onPress={() => showView('threads')}>{`${pausedThreads} ${plural(pausedThreads, 'переписка', 'переписки', 'переписок')}: агент остановлен`}</Button>}
             {marketplaceNeedsReview > 0 && <Button size="sm" variant="outline" onPress={() => showView('echemi')}>{`${marketplaceNeedsReview} ${plural(marketplaceNeedsReview, 'заявка', 'заявки', 'заявок')} Echemi ждёт проверки`}</Button>}
             {failedAsks > 0 && <Button size="sm" variant="outline" onPress={() => { showView('members'); setFilter('failed') }}>{`${failedAsks} ${plural(failedAsks, 'позиция', 'позиции', 'позиций')} с ошибкой`}</Button>}
@@ -1060,6 +1078,7 @@ export default function CampaignPage() {
         review={reviewData ? review : null}
         reviewLoading={review.query.isLoading && review.query.fetchStatus !== 'idle'}
         onReviewWanted={() => setReviewWanted(true)}
+        escalationsByCard={escalationsByCard}
         browserAccess={canOperateEchemi ? <EchemiBrowserAccess
           access={browser.data}
           error={browser.error}

@@ -63,3 +63,10 @@ test('a mode with nothing anywhere opens every position', () => {
   assert.equal(rowOpenByMode('review', contentOf({}), { anyHas: true }), false)
   assert.equal(rowOpenByMode('members', contentOf({}), { anyHas: false }), false)
 })
+
+test('the escalation mode opens the positions with an open case', () => {
+  assert.equal(rowOpenByMode('escalations', contentOf({ escalations: [{ id: 'ESC-1' }] })), true)
+  assert.equal(rowOpenByMode('escalations', contentOf({ offers: [{}] })), false)
+  assert.equal(sectionOpenByMode('escalations', 'escalations'), true)
+  assert.equal(sectionOpenByMode('escalations', 'review'), false)
+})
