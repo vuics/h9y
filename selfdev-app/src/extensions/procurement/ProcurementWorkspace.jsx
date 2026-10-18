@@ -68,7 +68,7 @@ function writeClassic(value) {
   try { window.localStorage.setItem(CLASSIC_KEY, String(value)) } catch { /* the choice lasts this visit */ }
 }
 
-/** The counts the tabs carry: what waits for a person, and the offers in hand.
+/** The count the tabs carry: what waits for a person.
  *
  * Read from queries the pages already make, so a badge and the page it opens
  * never disagree. A figure the server does not report yet is left off rather
@@ -81,7 +81,6 @@ function useTabCounts() {
   const approvals = (campaigns.data?.items || []).filter(item => item.status !== 'CANCELLED' && item.progress?.awaitingReview > 0).length
   return {
     escalations: kpis.needsSpecialist == null ? null : kpis.needsSpecialist + approvals,
-    proposals: kpis.pricedProposals ?? null,
   }
 }
 

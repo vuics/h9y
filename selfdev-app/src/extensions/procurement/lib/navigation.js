@@ -1,20 +1,24 @@
-/** The workspace's navigation: three tabs for the work, everything else in one menu.
+/** The workspace's navigation: three tabs, everything else in one menu.
  *
- * A purchaser does three things — starts a search, answers what the agent may
- * not decide, reads the offers — so those are the tabs. Every other screen
- * stays one click away in "Все разделы" with its address unchanged: links in
- * letters, in the chat and in bookmarks keep working.
+ * The purchases are where the work happens. Escalations stay a tab for their
+ * counter as much as for the list: it shows the agent is waiting on a person
+ * from any screen, before a purchase is opened. The dashboard is the
+ * manager's view of whether the system works. The offers list moved to the
+ * menu: each position's offers are on its purchase, and a list across all of
+ * them is a reference, not a daily task. Every other screen stays one click
+ * away in "Все разделы" with its address unchanged: links in letters, in the
+ * chat and in bookmarks keep working.
  */
 
 export const PRIMARY_SECTIONS = [
   ['purchases', 'Закупки', '/procurement'],
   ['escalations', 'Эскалации', '/procurement/escalations'],
-  ['proposals', 'Предложения', '/procurement/proposals'],
+  ['dashboard', 'Дашборд', '/procurement/dashboard'],
 ]
 
 export const MORE_SECTIONS = [
+  ['proposals', 'Предложения', '/procurement/proposals'],
   ['overview', 'Обзор этапов', '/procurement/overview'],
-  ['dashboard', 'Дашборд', '/procurement/dashboard'],
   ['requests', 'Карточки позиций', '/procurement/requests'],
   ['suppliers', 'Поставщики', '/procurement/suppliers'],
   ['negotiations', 'Переговоры', '/procurement/negotiations'],

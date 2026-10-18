@@ -12,7 +12,14 @@ test('the root and every campaign page belong to purchases', () => {
 
 test('the three tabs own their detail pages', () => {
   assert.equal(sectionOf('/procurement/escalations/ESC-7'), 'escalations')
+  assert.equal(sectionOf('/procurement/dashboard'), 'dashboard')
+  assert.deepEqual(PRIMARY_SECTIONS.map(([id]) => id), ['purchases', 'escalations', 'dashboard'])
+})
+
+test('the offers list moved to the menu and keeps its address', () => {
   assert.equal(sectionOf('/procurement/proposals/compare'), 'proposals')
+  assert.equal(isPrimarySection('proposals'), false)
+  assert.ok(MORE_SECTIONS.some(([id, , path]) => id === 'proposals' && path === '/procurement/proposals'))
 })
 
 test('a screen behind «Все разделы» is named, not mistaken for a tab', () => {
