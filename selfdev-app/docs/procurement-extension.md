@@ -74,6 +74,14 @@ their own regression coverage.
 }
 ```
 
+When the procurement service does not answer — a restart, a deploy, a timeout,
+a 5xx — `selfdev-api` still answers, with `serviceAvailable: false` and an empty
+`permissions` list, because it could not ask. The workspace reads
+`serviceAvailable: false` before the permissions, so this is the state
+`service-unavailable` («Закупки перезапускаются», asked again every ten seconds),
+never `permission-denied`. «Нет доступа к закупкам» is shown only when the
+service answered and the required permissions are missing.
+
 Permissions use the identifiers already defined by `h9y-procurement`:
 `CARD_READ`, `CARD_WRITE`, `SOURCING_RESEARCH`, `SOURCING_REVIEW`,
 `COMMUNICATION_READ`, `ESCALATION_READ`,
