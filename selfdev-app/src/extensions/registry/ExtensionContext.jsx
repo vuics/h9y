@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 
 import conf from '../../conf'
@@ -22,6 +22,7 @@ const ExtensionContext = createContext({
   loading: true,
   navigation: [],
   getExtension: () => null,
+  refresh: () => {},
 })
 
 export const useExtensions = () => useContext(ExtensionContext)
@@ -32,6 +33,12 @@ export function ExtensionProvider({ children }) {
   const [manifests, setManifests] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Bumped to ask again; `quiet` keeps the page as it is while asking, so a
+  // retry every few seconds does not flash «Проверяем доступ…».
+  const [attempt, setAttempt] = useState({ count: 0, quiet: false })
+  const refresh = useCallback(({ quiet = true } = {}) => {
+    setAttempt(current => ({ count: current.count + 1, quiet }))
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -42,8 +49,7 @@ export function ExtensionProvider({ children }) {
         setLoading(!authChecked)
         return
       }
-      setLoading(true)
-      setError(null)
+      if (!attempt.quiet) setLoading(true)
       try {
         const loadedManifests = {}
         await Promise.all(Object.entries(manifestLoaders).map(async ([id, loader]) => {
@@ -58,6 +64,7 @@ export function ExtensionProvider({ children }) {
         if (!cancelled) {
           setManifests(loadedManifests)
           setCapabilities(response)
+          setError(null)
         }
       } catch (requestError) {
         if (!cancelled) {
@@ -70,7 +77,7 @@ export function ExtensionProvider({ children }) {
     }
     load()
     return () => { cancelled = true }
-  }, [authChecked, user?.email])
+  }, [authChecked, user?.email, attempt])
 
   const extensions = useMemo(() => {
     const capabilityMap = new Map(
@@ -103,7 +110,8 @@ export function ExtensionProvider({ children }) {
     navigation,
     getExtension: id => extensions[id] || null,
     usingDevelopmentFixtures: useDevFixtures,
-  }), [extensions, loading, navigation])
+    refresh,
+  }), [extensions, loading, navigation, refresh])
 
   return <ExtensionContext.Provider value={value}>{children}</ExtensionContext.Provider>
 }

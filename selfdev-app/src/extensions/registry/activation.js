@@ -11,6 +11,12 @@ export function evaluateExtensionActivation({
   if (capability.apiVersion !== EXTENSION_API_VERSION) {
     return { state: 'incompatible', active: false }
   }
+  // Before the permissions: an unreachable service reports none, and reading
+  // that as a refusal told people with access "Access denied" during every
+  // redeploy of the procurement service.
+  if (capability.serviceAvailable === false) {
+    return { state: 'service-unavailable', active: false }
+  }
   const permissions = new Set(capability.permissions || [])
   const missingPermissions = requiredPermissions.filter(
     permission => !permissions.has(permission),
@@ -18,10 +24,5 @@ export function evaluateExtensionActivation({
   if (missingPermissions.length) {
     return { state: 'permission-denied', active: false, missingPermissions }
   }
-  return {
-    state: capability.serviceAvailable === false
-      ? 'service-unavailable'
-      : 'active',
-    active: true,
-  }
+  return { state: 'active', active: true }
 }

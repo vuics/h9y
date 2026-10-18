@@ -21,3 +21,17 @@ test('incompatible API is rejected before loading the extension', () => {
 test('extension missing from the build cannot activate', () => {
   assert.equal(evaluateExtensionActivation({ buildAvailable: false, capability }).state, 'build-unavailable')
 })
+
+test('an unreachable service is unavailable, not a refusal', () => {
+  // What the API answers while the procurement service restarts: no
+  // permissions, because it could not ask.
+  const restarting = { ...capability, permissions: [], serviceAvailable: false }
+  const result = evaluateExtensionActivation({ buildAvailable: true, capability: restarting, requiredPermissions: ['CARD_READ'] })
+  assert.equal(result.state, 'service-unavailable')
+  assert.equal(result.active, false)
+})
+
+test('a service that answered without the permission is a refusal', () => {
+  const answered = { ...capability, permissions: [], serviceAvailable: true }
+  assert.equal(evaluateExtensionActivation({ buildAvailable: true, capability: answered, requiredPermissions: ['CARD_READ'] }).state, 'permission-denied')
+})
