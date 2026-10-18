@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
@@ -20,7 +20,9 @@ import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
 import { CampaignMembers } from '../components/CampaignMembers'
 import { groupOffersBySubstance } from '../lib/offers'
-import { MODES, modeOf } from '../lib/memberSections'
+import { MODES, memberAwaitsReview, modeOf } from '../lib/memberSections'
+import { useCampaignReview } from '../hooks/useCampaignReview'
+import { BulkVerdicts, IdentitySummary, ReviewAlerts, ReviewBar } from '../components/CampaignReview'
 import { offerTotals } from '../lib/campaignView'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -365,6 +367,20 @@ export default function CampaignPage() {
     else params.set('view', next)
     return params
   })
+  // The approval lives in the positions too. Loaded once it is asked for —
+  // by its mode, by «Всё», or by opening one position's approval — because
+  // it carries every candidate of every substance.
+  const [reviewWanted, setReviewWanted] = useState(false)
+  const review = useCampaignReview(campaignId, { enabled: view === 'review' || view === 'all' || reviewWanted })
+  const reviewData = review.query.data
+  // Leaving with decisions a person changed and did not send loses them.
+  const unsentReview = review.touched && review.decisions.length > 0
+  useEffect(() => {
+    if (!unsentReview) return undefined
+    const warn = event => { event.preventDefault(); event.returnValue = '' }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [unsentReview])
   const [showAsks, setShowAsks] = useState(false)
   const [editingSettings, setEditingSettings] = useState(false)
   const [savedEffects, setSavedEffects] = useState(null)
@@ -815,13 +831,16 @@ export default function CampaignPage() {
           </li>)}
         </ul>
       </CardContent></Card>
+  const reviewWaiting = members.filter(memberAwaitsReview).length
   const modeCounts = {
     members: members.length,
+    review: reviewWaiting,
     offers: offerCounts.offers,
     threads: threadTotal,
     echemi: hasMarketplace ? marketplaceItems.length : 0,
   }
   const modeAlerts = {
+    review: reviewWaiting > 0 && 'ждут вас',
     threads: awaitingPerson > 0 && `${awaitingPerson} ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки`,
     echemi: marketplaceNeedsReview > 0 && `${marketplaceNeedsReview} требует внимания`,
   }
@@ -937,7 +956,7 @@ export default function CampaignPage() {
           ].filter(Boolean).join(' · ')}</span>
           <div className="pr-inline-actions">
             {progress.awaitingReview > 0 && <>
-            <RouterLinkButton to={`/procurement/campaigns/${campaignId}/review`}>Согласовать {progress.awaitingReview} {plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')}</RouterLinkButton>
+            <Button onPress={() => showView('review')}>Согласовать {progress.awaitingReview} {plural(progress.awaitingReview, 'вещество', 'вещества', 'веществ')}</Button>
             {/* For a campaign approved before dispatch existed, and for the
                 substances whose first attempt failed on one supplier. Opening a
                 conversation that exists returns the one that exists, so this is
@@ -982,6 +1001,13 @@ export default function CampaignPage() {
 
       {/* The presses that act on the whole purchase, above the table in the
           mode they belong to, so the rows below stay about one position. */}
+      {(view === 'review' || view === 'all' || review.posted || review.dispatched || review.apply.error) && reviewData && <div className="pr-mode-toolbar">
+        <p className="pr-note">Кому пишем и что спрашиваем — по каждой позиции. Компании и тексты RFQ уже отмечены по рекомендации: проверьте, снимите лишнее и нажмите «Согласовать» внизу. Кандидат становится поставщиком только с этим подтверждением.</p>
+        <ReviewAlerts review={review} />
+        <IdentitySummary review={review} anchor={cardId => `#member-${cardId}`} />
+        <BulkVerdicts review={review} scope={review.items} />
+      </div>}
+      {(view === 'review' || view === 'all') && review.query.isLoading && <p className="pr-note">Загружаем согласование…</p>}
       {threadsOnTop && <div className="pr-mode-toolbar">{conversationsIntro}{conversationsToolbar}</div>}
       {marketplaceOnTop && <div className="pr-mode-toolbar">{marketplaceIntro}{marketplaceSummary}{marketplaceToolbar}</div>}
 
@@ -1008,6 +1034,9 @@ export default function CampaignPage() {
         renderMarketplaceDetails={marketplaceDetails}
         renderMarketplaceStatus={marketplaceBadge}
         mode={view}
+        review={reviewData ? review : null}
+        reviewLoading={review.query.isLoading && review.query.fetchStatus !== 'idle'}
+        onReviewWanted={() => setReviewWanted(true)}
         browserAccess={canOperateEchemi ? <EchemiBrowserAccess
           access={browser.data}
           error={browser.error}
@@ -1016,6 +1045,7 @@ export default function CampaignPage() {
           brief
         /> : null}
       />
+      {reviewData && (view === 'review' || view === 'all' || review.touched) && <ReviewBar review={review} />}
 
       {hasMarketplace && <details className="pr-more-details">
         <summary>{`Заявки на площадку (${marketplaceItems.length})`}{marketplaceNeedsReview > 0 ? ` · ${marketplaceNeedsReview} требует внимания` : ''}</summary>
@@ -1032,6 +1062,16 @@ export default function CampaignPage() {
 
         </div>
       </details>}
+
+      {/* The approval page it came from, kept until the approval in the
+          positions has been tried; the same decisions, on the same state. */}
+      <details className="pr-more-details">
+        <summary>Согласование на отдельной странице</summary>
+        <div className="pr-stack">
+          <p className="pr-note">То же согласование, что в режиме «Согласование» выше, одним списком на отдельной странице. Останется, пока новый вид не проверен.</p>
+          <div className="pr-inline-actions"><RouterLinkButton variant="outline" to={`/procurement/campaigns/${campaignId}/review`}>Открыть страницу согласования</RouterLinkButton></div>
+        </div>
+      </details>
 
       {/* What explains the run rather than asks for anything: kept, one click
           away, so the page opens on what needs a person and what came in. */}

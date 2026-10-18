@@ -48,15 +48,17 @@ export function nextActions(member, campaignId) {
   return actions
 }
 
+// `review` marks the presses the purchase page answers in place, by opening
+// the position's approval; `to` stays the page that answers it elsewhere.
 function ownAction(member, campaignId) {
   if (member.errorCode) {
     return { label: 'Открыть карточку', to: `/procurement/requests/${member.cardId}`, tone: 'danger' }
   }
   switch (member.waitingFor) {
     case 'CANDIDATE_REVIEW':
-      return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning' }
+      return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning', review: true }
     case 'RFQ_APPROVAL':
-      return { label: 'Согласовать RFQ', to: `/procurement/requests/${member.cardId}/rfq`, tone: 'warning' }
+      return { label: 'Согласовать RFQ', to: `/procurement/requests/${member.cardId}/rfq`, tone: 'warning', review: true }
     case 'SUPPLIER_EVIDENCE':
       return { label: 'Найти поставщика', to: `/procurement/requests/${member.cardId}/sourcing`, tone: 'warning' }
     case 'SUPPLIER_CONTACT':
@@ -67,7 +69,7 @@ function ownAction(member, campaignId) {
       break
   }
   if (member.stage === 'AWAITING_REVIEW') {
-    return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning' }
+    return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning', review: true }
   }
   return null
 }

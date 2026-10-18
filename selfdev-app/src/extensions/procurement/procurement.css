@@ -1383,9 +1383,10 @@
 .pr-members__row[data-group="failed"] td:first-child { box-shadow: inset 3px 0 0 var(--pr-danger); }
 .pr-members__row.is-open { background: var(--pr-surface-muted); }
 .pr-members__offers strong { display: block; }
-.procurement-shell a.pr-members__action { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 7px; background: var(--pr-text); color: var(--background); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.procurement-shell a.pr-members__action:hover { text-decoration: none; opacity: .9; }
-.procurement-shell a.pr-members__action[data-tone="danger"] { background: var(--pr-danger); }
+.procurement-shell .pr-members__action { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 7px; background: var(--pr-text); color: var(--background); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.procurement-shell .pr-members__action:hover { text-decoration: none; opacity: .9; }
+.procurement-shell button.pr-members__action { border: 0; cursor: pointer; font-family: inherit; line-height: inherit; }
+.procurement-shell .pr-members__action[data-tone="danger"] { background: var(--pr-danger); }
 /* An opened position reads as one block: its row and its sections share the
    tint and the coloured edge, the sections sit in a card under the name, and
    a heavier line closes the block before the next position. */
@@ -1441,8 +1442,8 @@
 .pr-row-menu__danger { color: var(--pr-danger); }
 .pr-row-menu__trigger { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 7px; background: none; color: var(--pr-muted); cursor: pointer; }
 .pr-row-menu__trigger:hover { background: var(--pr-surface-muted); color: var(--pr-text); }
-.procurement-shell a.pr-members__action[data-tone="muted"] { background: none; border: 1px solid var(--pr-border); color: var(--pr-muted); font-weight: 500; }
-.procurement-shell a.pr-members__action[data-tone="muted"]:hover { color: var(--pr-text); border-color: var(--pr-text); opacity: 1; }
+.procurement-shell .pr-members__action[data-tone="muted"] { background: none; border: 1px solid var(--pr-border); color: var(--pr-muted); font-weight: 500; }
+.procurement-shell .pr-members__action[data-tone="muted"]:hover { color: var(--pr-text); border-color: var(--pr-text); opacity: 1; }
 .pr-members__actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .pr-members__flag { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px; background: var(--pr-warning-soft); color: var(--pr-warning); font-size: 11px; font-weight: 700; }
 
@@ -1492,3 +1493,16 @@
 .pr-phase__legend button:hover { background: var(--pr-surface-muted); color: var(--pr-text); }
 .pr-phase__legend button.is-on { border-color: var(--pr-muted); background: var(--pr-surface-muted); color: var(--pr-text); }
 .pr-campaign-summary__phases { flex: 1 1 320px; min-width: 0; }
+
+/* ------------------------------------------- approval inside the purchase */
+
+.pr-member-review { display: flex; flex-direction: column; gap: 10px; }
+.pr-member-review .pr-review-candidates { min-width: 720px; }
+.pr-member-review__scroll { overflow-x: auto; }
+.pr-review-links { display: flex; gap: 14px; margin: 0; font-size: 13px; }
+.pr-mode-toolbar .pr-review-identity-summary { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--pr-border); }
+.pr-mode-toolbar .pr-review-identity-summary p { margin: 0; color: var(--pr-muted); font-size: 13px; }
+/* Pinned to the bottom while there is an approval to send: the press is never
+   a long scroll back from the last company decided. */
+.pr-review-bar { position: sticky; bottom: 12px; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 10px 14px; border: 1px solid var(--pr-border); border-radius: 10px; background: var(--pr-card); box-shadow: 0 8px 24px rgba(15, 23, 42, .14); }
+.pr-review-bar > span { font-size: 13.5px; }

@@ -115,8 +115,8 @@ function VerdictRadios({ review, item, candidate }) {
   })}</div>
 }
 
-function CandidateTable({ review, item, candidates, editable }) {
-  return <table className="pr-table pr-review-candidates"><thead><tr>
+function CandidateTable({ review, item, candidates, editable, scroll = false }) {
+  const table = <table className="pr-table pr-review-candidates"><thead><tr>
     <th>Компания</th><th>Оценка</th><th>Контакты</th><th>Решение</th>
   </tr></thead><tbody>{candidates.map(candidate => <tr key={candidate.candidateId}>
     <td>
@@ -129,6 +129,8 @@ function CandidateTable({ review, item, candidates, editable }) {
     <td>{candidate.contactCount || <span className="pr-import-missing">нет</span>}</td>
     <td>{editable ? <VerdictRadios review={review} item={item} candidate={candidate} /> : <StatusBadge status={candidate.reviewDecision} label={DECISION_LABEL[candidate.reviewDecision]} />}</td>
   </tr>)}</tbody></table>
+  // Inside a position the table is narrower than its columns: it scrolls on its own.
+  return scroll ? <div className="pr-member-review__scroll">{table}</div> : table
 }
 
 function IdentityBlock({ review, item }) {
@@ -173,7 +175,7 @@ export function ReviewItem({ review, item, links = false }) {
       ? <p className="pr-note">{item.blockedBy ? <>Пока нечего согласовывать: {blockedText(item.blockedBy)}. </> : 'Поиск не нашёл кандидатов. '}<Link to={`/procurement/requests/${item.cardId}/sourcing`}>Открыть поиск</Link></p>
       : <>
         {open.length > 0 && <BulkVerdicts review={review} scope={[item]} />}
-        {open.length > 0 && <CandidateTable review={review} item={item} candidates={open} editable />}
+        {open.length > 0 && <CandidateTable review={review} item={item} candidates={open} editable scroll={links} />}
         {decided.length > 0 && <div className="pr-review-decided">
           <button type="button" className="pr-review-rfq__toggle" onClick={() => setRevising(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
             {revising[item.cardId] ? 'Свернуть принятые решения' : `Принятые решения (${decided.length}) — показать и изменить`}
@@ -182,7 +184,7 @@ export function ReviewItem({ review, item, links = false }) {
             {item.stage === 'OUTREACH' || item.stage === 'NEGOTIATION'
               ? <p className="pr-note">Запросы по этому веществу уже ушли. Новая роль или новый поставщик учтутся дальше, но уже отправленное письмо не отзывается.</p>
               : null}
-            <CandidateTable review={review} item={item} candidates={decided} editable />
+            <CandidateTable review={review} item={item} candidates={decided} editable scroll={links} />
           </>}
         </div>}
       </>}

@@ -9,7 +9,9 @@ import { readableAgentError } from '../lib/agentText'
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
 import { offerBasis, offerNote, priceRanges, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
-import { contentOf, resolveOpen, rowOpenByMode, sectionOpenByMode } from '../lib/memberSections'
+import { contentOf, memberAwaitsReview, resolveOpen, rowOpenByMode, sectionOpenByMode } from '../lib/memberSections'
+import { reviewOpen, reviewSummary } from '../lib/campaignReview'
+import { ReviewItem } from './CampaignReview'
 import {
   FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
   nextActions, requestsSummary,
@@ -103,11 +105,30 @@ function Section({ title, meta, open, onToggle, empty, children }) {
 function MemberSections({
   member, offers, threads, marketplace, marketplaceLabels, threadStatusLabels, offersLoading,
   isOpen, onToggle, renderMarketplaceActions, renderMarketplaceDetails, renderMarketplaceStatus, browserAccess,
+  review, reviewItem, reviewLoading,
 }) {
   const { offered } = splitSuppliers(offers, threads)
   const lines = threadsWithOffers(offers, threads)
   const prices = priceRanges(offers)
   return <div className="pr-member-suppliers">
+    {/* First, because it is the first step: nobody is written to before it. */}
+    <Section
+      title="Согласование"
+      meta={reviewItem
+        ? reviewSummary(reviewItem)
+        : reviewLoading ? 'загружаем…' : (memberAwaitsReview(member) ? 'ждёт согласования' : 'кандидаты и RFQ')}
+      open={isOpen('review')}
+      onToggle={() => onToggle('review')}
+    >
+      <div className="pr-member-review">
+        {reviewItem
+          ? <ReviewItem review={review} item={reviewItem} links />
+          : <p className="pr-note">{reviewLoading
+            ? 'Загружаем согласование…'
+            : <>Согласование по этой позиции не найдено. <Link to={`/procurement/requests/${member.cardId}/sourcing`}>Поиск и кандидаты</Link> · <Link to={`/procurement/requests/${member.cardId}/rfq`}>RFQ</Link></>}</p>}
+      </div>
+    </Section>
+
     <Section
       title={`Предложения${offered.length ? ` (${offered.length})` : ''}`}
       meta={offered.length ? (prices.length ? prices.join(' · ') : 'цены нет') : (offersLoading ? 'загружаем…' : 'пока нет')}
@@ -191,6 +212,8 @@ export function CampaignMembers({
   renderMarketplaceActions, renderMarketplaceDetails, renderMarketplaceStatus, browserAccess,
   // How the table is read: which positions and sections a mode unfolds.
   mode = 'members',
+  // The approval, loaded once someone asks for it; asking is `onReviewWanted`.
+  review = null, reviewLoading = false, onReviewWanted,
   // Searching chosen substances again: the page owns the mutation.
   canResearch, onResearch, researchPending,
 }) {
@@ -280,14 +303,30 @@ export function CampaignMembers({
         const offers = offersByCard.get(member.cardId)
         const threads = conversationsByCard.get(member.cardId)
         const marketplace = marketplaceByCard.get(member.cardId)
-        const content = contentOf({ offers: offers?.offers, threads: threads?.conversations, marketplace })
+        const reviewItem = review?.items.find(item => item.cardId === member.cardId)
+        const content = contentOf({
+          offers: offers?.offers, threads: threads?.conversations, marketplace,
+          review: reviewItem ? reviewOpen(reviewItem) : memberAwaitsReview(member),
+        })
         const expanded = resolveOpen(current.rows, member.cardId, rowOpenByMode(mode, content))
         const toggle = () => setByHand('rows', member.cardId, !expanded)
         const sectionKey = section => `${member.cardId}:${section}`
         const isOpen = section => resolveOpen(current.sections, sectionKey(section), sectionOpenByMode(mode, section))
-        const toggleSection = section => setByHand('sections', sectionKey(section), !isOpen(section))
+        const toggleSection = section => {
+          if (section === 'review' && !isOpen(section)) onReviewWanted?.()
+          setByHand('sections', sectionKey(section), !isOpen(section))
+        }
+        // «Согласовать» in the row answers here: the position opens on its approval.
+        const openReview = () => {
+          onReviewWanted?.()
+          setManual(() => {
+            const rows = new Map(current.rows).set(member.cardId, true)
+            const sections = new Map(current.sections).set(sectionKey('review'), true)
+            return { ...current, rows, sections }
+          })
+        }
         return <React.Fragment key={member.cardId}>
-          <tr className={expanded ? 'pr-members__row is-open' : 'pr-members__row'} data-group={memberGroup(member)}>
+          <tr id={`member-${member.cardId}`} className={expanded ? 'pr-members__row is-open' : 'pr-members__row'} data-group={memberGroup(member)}>
             {canResearch && <td className="pr-members__pick">
               <input type="checkbox" checked={selected.has(member.cardId)} aria-label={`Выбрать: ${member.title}`} onChange={() => pick(member.cardId)} />
             </td>}
@@ -342,7 +381,9 @@ export function CampaignMembers({
                   and the column stops lining up with its own row. */}
               <div className="pr-members__actions">
                 {actions.length
-                  ? actions.map(item => <Link key={item.label} className="pr-members__action" data-tone={item.tone} to={item.to}>{item.label}</Link>)
+                  ? actions.map(item => (item.review && onReviewWanted
+                    ? <button key={item.label} type="button" className="pr-members__action" data-tone={item.tone} onClick={openReview}>{item.label}</button>
+                    : <Link key={item.label} className="pr-members__action" data-tone={item.tone} to={item.to}>{item.label}</Link>))
                   : <span className="pr-muted">—</span>}
               </div>
             </td>
@@ -378,6 +419,9 @@ export function CampaignMembers({
               renderMarketplaceDetails={renderMarketplaceDetails}
               renderMarketplaceStatus={renderMarketplaceStatus}
               browserAccess={browserAccess}
+              review={review}
+              reviewItem={reviewItem}
+              reviewLoading={reviewLoading}
             />
           </td></tr>}
         </React.Fragment>

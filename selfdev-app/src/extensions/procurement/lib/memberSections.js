@@ -6,10 +6,11 @@
  * stays as they left it until the mode changes.
  */
 
-export const SECTIONS = ['offers', 'threads', 'echemi']
+export const SECTIONS = ['review', 'offers', 'threads', 'echemi']
 
 export const MODES = [
   ['members', 'Только позиции'],
+  ['review', 'Согласование'],
   ['offers', 'Предложения'],
   ['threads', 'Переписки'],
   ['echemi', 'Echemi'],
@@ -24,8 +25,15 @@ export function modeOf(value) {
   return MODE_IDS.includes(value) ? value : 'members'
 }
 
+/** Whether a position waits for its approval, read from the purchase alone:
+ * the approval itself is loaded only when someone asks for it.
+ */
+export const memberAwaitsReview = member => member.stage === 'AWAITING_REVIEW'
+  || ['CANDIDATE_REVIEW', 'RFQ_APPROVAL'].includes(member.waitingFor)
+
 /** What one position has to show in each section. */
-export const contentOf = ({ offers = [], threads = [], marketplace = null } = {}) => ({
+export const contentOf = ({ offers = [], threads = [], marketplace = null, review = false } = {}) => ({
+  review: review ? 1 : 0,
   offers: offers.length,
   threads: threads.length,
   echemi: marketplace ? 1 : 0,
