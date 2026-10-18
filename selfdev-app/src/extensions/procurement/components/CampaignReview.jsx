@@ -275,7 +275,14 @@ function PositionReview({ review, item }) {
       <div className="pr-pos-review__head">
         <b>RFQ</b>
         {rfqBadge}
-        {rfq.subject && <Button className="pr-pos-review__out" size="sm" variant="ghost" onPress={() => setOpened(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>{opened[item.cardId] ? 'Скрыть текст' : 'Текст'}</Button>}
+        {/* A fold, drawn like the escalation's «Решить»: the chevron says
+            whether the letter is open. */}
+        {rfq.subject && <button
+          type="button"
+          className="pr-supplier-line__toggle pr-pos-review__out"
+          aria-expanded={Boolean(opened[item.cardId])}
+          onClick={() => setOpened(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}
+        >{opened[item.cardId] ? <ChevronDown size={13} /> : <ChevronRight size={13} />}Текст</button>}
         <RouterLinkButton className={rfq.subject ? undefined : 'pr-pos-review__out'} size="sm" variant="ghost" to={`/procurement/requests/${item.cardId}/rfq`}><ExternalLink size={13} />RFQ</RouterLinkButton>
         {/* Last: the one thing on the line that may be cut short. */}
         {rfq.subject && <span className="pr-pos-review__subject" title={rfq.subject}>{rfq.subject}</span>}
