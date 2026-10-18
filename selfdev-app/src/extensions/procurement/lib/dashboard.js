@@ -360,3 +360,39 @@ export function formatDelta(delta, { unit = '' } = {}) {
     arrow: delta.arrow,
   }
 }
+
+/** The first `limit` places, and the rest folded into one line.
+ *
+ * Unknown stays out of the fold: it is a data gap, not a small country, and
+ * folding it into «ещё 12 стран» would hide the one row that asks for work.
+ */
+export function foldTail(rows, limit) {
+  const places = rows.filter(row => !row.unknown)
+  const unknown = rows.filter(row => row.unknown)
+  const shown = places.slice(0, limit)
+  const hidden = places.slice(limit)
+  return {
+    shown: [...shown, ...unknown],
+    hidden,
+    rest: hidden.length
+      ? { places: hidden.length, count: hidden.reduce((sum, row) => sum + (row.count || 0), 0) }
+      : null,
+  }
+}
+
+/** Segments of one 100% bar: each with its share, empty ones dropped. */
+export function stackSegments(rows) {
+  const total = rows.reduce((sum, row) => sum + (row.count || 0), 0)
+  return rows
+    .filter(row => row.count > 0)
+    .map(row => ({ ...row, share: share(row.count, total) }))
+}
+
+/** Russian plural form: plural(5, 'страна', 'страны', 'стран') → 'стран'. */
+export function plural(count, one, few, many) {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
+}

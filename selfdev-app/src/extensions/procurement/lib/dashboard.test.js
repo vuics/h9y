@@ -349,3 +349,28 @@ test('the calendar rows are declarable by a person but not on the agent side', (
   assert.deepEqual(days.map(field => field.key), ['DAYS_TO_FIRST_REPLY', 'DAYS_TO_COMPLETE_QUOTE'])
   assert.ok(days.every(field => field.agentDeclared === false))
 })
+
+test('foldTail keeps the leaders, folds the rest and never folds unknown', async () => {
+  const { foldTail } = await import('./dashboard.js')
+  const rows = [
+    { country: 'Китай', count: 237 },
+    { country: 'США', count: 41 },
+    { country: 'Индия', count: 29 },
+    { country: 'Дания', count: 1 },
+    { country: 'Страна не указана', count: 9, unknown: true },
+  ]
+  const folded = foldTail(rows, 2)
+  assert.deepEqual(folded.shown.map(row => row.country), ['Китай', 'США', 'Страна не указана'])
+  assert.deepEqual(folded.rest, { places: 2, count: 30 })
+  assert.equal(foldTail(rows, 10).rest, null)
+})
+
+test('stackSegments shares a 100% bar and drops empty segments', async () => {
+  const { stackSegments } = await import('./dashboard.js')
+  const segments = stackSegments([
+    { stage: 'DONE', count: 3 },
+    { stage: 'FAILED', count: 0 },
+    { stage: 'OUTREACH', count: 1 },
+  ])
+  assert.deepEqual(segments.map(row => [row.stage, row.share]), [['DONE', 75], ['OUTREACH', 25]])
+})

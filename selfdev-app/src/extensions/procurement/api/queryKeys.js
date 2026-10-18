@@ -7,6 +7,7 @@ export const procurementKeys = {
   analyticsHandover: filters => [...procurementKeys.all, 'analytics-handover', filters],
   analyticsSupplyBase: () => [...procurementKeys.all, 'analytics-supply-base'],
   analyticsOfferQuality: () => [...procurementKeys.all, 'analytics-offer-quality'],
+  analyticsPortfolio: () => [...procurementKeys.all, 'analytics-portfolio'],
   analyticsTrends: days => [...procurementKeys.all, 'analytics-trends', days],
   analyticsChannelHealth: filters => [...procurementKeys.all, 'analytics-channel-health', filters],
   analyticsBenchmark: filters => [...procurementKeys.all, 'analytics-benchmark', filters],

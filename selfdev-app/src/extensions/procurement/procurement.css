@@ -1543,3 +1543,45 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-pos-review__fold-head:hover > span:first-of-type { text-decoration: underline; }
 .pr-pos-review__approve { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; font-size: 13px; cursor: pointer; }
 .pr-pos-review .pr-review-rfq__body { margin: 0; }
+
+/* Geography: the folded tail of countries. */
+.pr-geo__more { align-self: flex-start; border: 0; background: none; padding: 2px 0; color: var(--pr-accent); font: inherit; font-size: 12.5px; cursor: pointer; }
+.pr-geo__more:hover { text-decoration: underline; }
+
+/* The review backlog: one line across the page, only when people are the bottleneck. */
+.pr-review-banner { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 14px 16px; border-radius: 12px; background: var(--pr-warning-soft); color: var(--pr-text); border: 1px solid color-mix(in oklch, var(--pr-warning) 30%, transparent); }
+.pr-review-banner > svg { width: 20px; height: 20px; color: var(--pr-warning); margin-top: 1px; }
+.pr-review-banner strong { display: block; font-size: 14px; }
+.pr-review-banner span { display: block; margin-top: 2px; }
+.pr-review-banner small { display: block; margin-top: 4px; color: var(--pr-muted); font-size: 12px; }
+.pr-review-banner__link { white-space: nowrap; font-weight: 600; align-self: center; }
+@media (max-width: 560px) {
+  .pr-review-banner { grid-template-columns: auto 1fr; }
+  .pr-review-banner__link { grid-column: 2; }
+}
+
+/* Purchases in flight. */
+.pr-portfolio { display: flex; flex-direction: column; gap: 14px; }
+.pr-portfolio__totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pr-portfolio__totals > div { display: flex; flex-direction: column; padding: 10px 12px; border: 1px solid var(--pr-border); border-radius: 10px; }
+.pr-portfolio__totals > div[data-warn="true"] { border-color: color-mix(in oklch, var(--pr-warning) 45%, transparent); background: var(--pr-warning-soft); }
+.pr-portfolio__totals b { font-size: 22px; line-height: 1.2; }
+.pr-portfolio__totals span { color: var(--pr-muted); font-size: 12px; }
+.pr-stackbar { display: flex; gap: 2px; height: 14px; border-radius: 7px; overflow: hidden; background: var(--chart-track); }
+.pr-stackbar > i, .pr-portfolio__progress > i { display: block; height: 100%; }
+.pr-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--pr-muted); }
+.pr-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.pr-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.pr-legend b { color: var(--pr-text); }
+.pr-portfolio__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pr-portfolio__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 34%); gap: 6px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--pr-border); }
+.pr-portfolio__title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pr-portfolio__title a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.pr-portfolio__progress { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--chart-track); }
+.pr-portfolio__meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--pr-muted); }
+.pr-portfolio__meta b { color: var(--pr-text); }
+.pr-portfolio__waiting { color: var(--pr-warning); }
+@media (max-width: 560px) {
+  .pr-portfolio__totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pr-portfolio__row { grid-template-columns: 1fr; }
+}

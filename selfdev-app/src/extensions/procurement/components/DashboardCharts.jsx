@@ -24,10 +24,12 @@ import {
   decimal,
   durationIsReliable,
   durationWidth,
+  foldTail,
   formatDuration,
   monthLabel,
   niceTicks,
   percent,
+  plural,
   share,
   trafficLightSummary,
   worstFirst,
@@ -331,17 +333,45 @@ export function RoleChart({ data }) {
   )
 }
 
-/** Where the confirmed supply base sits. */
+/** How many countries the card lists before folding the tail into one line. */
+const GEOGRAPHY_LEADERS = 7
+
+function GeographyRow({ row, widest }) {
+  return (
+    <div className="pr-funnel__row">
+      <div className="pr-funnel__label">{row.country}</div>
+      <div className="pr-funnel__track" role="img" aria-label={`${row.country}: ${row.count}`}>
+        <div
+          className="pr-funnel__bar"
+          data-muted={row.unknown ? 'true' : undefined}
+          style={{ width: `${share(row.count, widest)}%` }}
+        />
+      </div>
+      <span className="pr-funnel__value"><b>{row.count}</b></span>
+    </div>
+  )
+}
+
+/** Where the supply base sits.
+ *
+ * The leaders and one folded line, so the card sits level with its neighbours:
+ * the long tail is one or two suppliers a country and reads better as a count
+ * than as twenty slivers. A map was considered and left out — with one country
+ * holding most of the base it shows one dark shape and a pale world.
+ */
 export function GeographyChart({ data }) {
+  const [expanded, setExpanded] = React.useState(false)
   const geography = data?.geography || { rows: [], unknown: 0, total: 0 }
   const widest = Math.max(1, ...geography.rows.map(row => row.count))
+  const folded = foldTail(geography.rows, GEOGRAPHY_LEADERS)
+  const countries = geography.countries ?? geography.rows.filter(row => !row.unknown).length
   return (
     <Card>
       <CardHeader>
         <CardTitle>География поставщиков</CardTitle>
         <p className="pr-muted">
-          Столбики, а не карта: при таком числе стран карта показывает меньше и
-          занимает вчетверо больше места.
+          {countries} {plural(countries, 'страна', 'страны', 'стран')}, {geography.total}{' '}
+          {plural(geography.total, 'поставщик', 'поставщика', 'поставщиков')} в справочнике.
         </p>
       </CardHeader>
       <CardContent>
@@ -350,22 +380,26 @@ export function GeographyChart({ data }) {
         ) : (
           <>
             <div className="pr-funnel">
-              {geography.rows.map(row => (
-                <div className="pr-funnel__row" key={row.country}>
-                  <div className="pr-funnel__label">{row.country}</div>
-                  <div
-                    className="pr-funnel__track"
-                    role="img"
-                    aria-label={`${row.country}: ${row.count}`}
-                  >
-                    <div
-                      className="pr-funnel__bar"
-                      data-muted={row.unknown ? 'true' : undefined}
-                      style={{ width: `${share(row.count, widest)}%` }}
-                    />
-                  </div>
-                  <span className="pr-funnel__value"><b>{row.count}</b></span>
-                </div>
+              {folded.shown.filter(row => !row.unknown).map(row => (
+                <GeographyRow key={row.country} row={row} widest={widest} />
+              ))}
+              {expanded && folded.hidden.map(row => (
+                <GeographyRow key={row.country} row={row} widest={widest} />
+              ))}
+              {folded.rest && (
+                <button
+                  type="button"
+                  className="pr-geo__more"
+                  aria-expanded={expanded}
+                  onClick={() => setExpanded(value => !value)}
+                >
+                  {expanded
+                    ? 'Свернуть'
+                    : `Ещё ${folded.rest.places} ${plural(folded.rest.places, 'страна', 'страны', 'стран')} · ${folded.rest.count} ${plural(folded.rest.count, 'поставщик', 'поставщика', 'поставщиков')}`}
+                </button>
+              )}
+              {folded.shown.filter(row => row.unknown).map(row => (
+                <GeographyRow key={row.country} row={row} widest={widest} />
               ))}
             </div>
             {geography.unknown > 0 && (

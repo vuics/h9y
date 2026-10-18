@@ -28,6 +28,11 @@ const emptySupplyBase = {
   awaitingReview: 0, candidateTotal: 0, supplierTotal: 0, sourcingAvailable: true,
 }
 
+const emptyPortfolio = {
+  available: true, total: 0, active: 0, statuses: [], positions: 0, stages: [],
+  waitingForPerson: 0, campaigns: [], truncated: false,
+}
+
 const emptyOfferQuality = { rows: [], total: 0, completeness: [], note: '' }
 
 const emptyTrends = { from: null, to: null, days: 14, series: {}, note: '' }
@@ -69,6 +74,10 @@ export const analyticsEndpoints = {
   analyticsSupplyBase: read(
     signal => request('/analytics/supply-base', { signal }),
     async () => emptySupplyBase,
+  ),
+  analyticsPortfolio: read(
+    signal => request('/analytics/portfolio', { signal }),
+    async () => emptyPortfolio,
   ),
   analyticsOfferQuality: read(
     signal => request('/analytics/offer-quality', { signal }),
