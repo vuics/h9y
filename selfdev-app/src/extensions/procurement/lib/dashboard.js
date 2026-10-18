@@ -396,3 +396,51 @@ export function plural(count, one, few, many) {
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
   return many
 }
+
+/** The benchmark rows the verdict is read on, in the order a manager asks. */
+const VERDICT_ROWS = [
+  ['DAYS_CARD_TO_PRICED_QUOTE', 'От заявки до цены', 'faster'],
+  ['QUOTES_RECEIVED', 'Котировок на позицию', 'more'],
+  ['VERIFIED_MANUFACTURERS', 'Производителей на позицию', 'more'],
+]
+
+function ratioText(ratio, kind) {
+  if (!ratio || ratio === 1) return null
+  const value = String(Number(Number(ratio).toFixed(1))).replace('.', ',')
+  return kind === 'faster' ? `в ${value} раза быстрее` : `в ${value} раза больше`
+}
+
+/** Agent against person in a few tiles, and one sentence over them.
+ *
+ * Only rows with both sides count towards the sentence: a row without a
+ * baseline is an unknown, and counting it either way would decide the pilot by
+ * omission.
+ */
+export function benchmarkVerdict(benchmark) {
+  const rows = benchmark?.rows || []
+  const tiles = VERDICT_ROWS.map(([key, label, kind]) => {
+    const row = rows.find(item => item.key === key)
+    if (!row) return null
+    const improved = row.delta?.improved
+    return {
+      key,
+      label,
+      unit: row.unit || '',
+      agent: row.agent?.value ?? null,
+      human: row.human?.value ?? null,
+      improved: improved == null ? null : improved,
+      text: improved ? ratioText(row.delta?.ratio, kind) : improved === false ? 'хуже, чем у человека' : null,
+    }
+  }).filter(Boolean)
+  const comparable = tiles.filter(tile => tile.agent != null && tile.human != null)
+  const better = comparable.filter(tile => tile.improved).length
+  let headline
+  if (!benchmark?.cases) {
+    headline = 'За период не было позиций в работе — сравнивать пока нечего.'
+  } else if (!comparable.length) {
+    headline = 'Цифры человека не введены — сравнивать не с чем. Их можно ввести в разделе «Человек и агент».'
+  } else {
+    headline = `Агент лучше человека по ${better} из ${comparable.length} сравнимых показателей.`
+  }
+  return { headline, tiles, cases: benchmark?.cases || 0, actions: benchmark?.specialistActions || null }
+}

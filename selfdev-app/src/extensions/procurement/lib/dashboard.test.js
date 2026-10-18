@@ -374,3 +374,27 @@ test('stackSegments shares a 100% bar and drops empty segments', async () => {
   ])
   assert.deepEqual(segments.map(row => [row.stage, row.share]), [['DONE', 75], ['OUTREACH', 25]])
 })
+
+test('benchmarkVerdict counts only rows with both sides and words the ratio', async () => {
+  const { benchmarkVerdict } = await import('./dashboard.js')
+  const verdict = benchmarkVerdict({
+    cases: 25,
+    rows: [
+      { key: 'DAYS_CARD_TO_PRICED_QUOTE', unit: 'дн', human: { value: 7 }, agent: { value: 3 }, delta: { ratio: 2.33, improved: true } },
+      { key: 'QUOTES_RECEIVED', unit: '', human: { value: 2 }, agent: { value: 1.5 }, delta: { ratio: 0.75, improved: false } },
+      { key: 'VERIFIED_MANUFACTURERS', unit: '', human: { value: null }, agent: { value: 4 }, delta: null },
+    ],
+    specialistActions: { total: 40, perCase: 1.6 },
+  })
+  assert.equal(verdict.headline, 'Агент лучше человека по 1 из 2 сравнимых показателей.')
+  assert.equal(verdict.tiles[0].text, 'в 2,3 раза быстрее')
+  assert.equal(verdict.tiles[1].text, 'хуже, чем у человека')
+  assert.equal(verdict.tiles[2].text, null)
+  assert.equal(verdict.actions.perCase, 1.6)
+})
+
+test('benchmarkVerdict says plainly when there is no baseline', async () => {
+  const { benchmarkVerdict } = await import('./dashboard.js')
+  const verdict = benchmarkVerdict({ cases: 3, rows: [{ key: 'QUOTES_RECEIVED', human: { value: null }, agent: { value: 2 } }] })
+  assert.match(verdict.headline, /не введены/)
+})

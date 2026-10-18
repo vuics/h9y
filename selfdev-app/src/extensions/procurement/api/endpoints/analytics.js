@@ -33,12 +33,19 @@ const emptyPortfolio = {
   waitingForPerson: 0, campaigns: [], truncated: false,
 }
 
+const emptyPrices = {
+  cards: 0, pricedCards: 0, comparedCards: 0, marketChecked: 0, marketCheckSize: 3,
+  spread: { median: null, sample: 0 },
+  negotiation: { revised: 0, lowered: 0, raised: 0, medianChange: null },
+  truncated: false, note: '',
+}
+
 const emptyOfferQuality = { rows: [], total: 0, completeness: [], note: '' }
 
 const emptyTrends = { from: null, to: null, days: 14, series: {}, note: '' }
 
 const emptyChannelHealth = {
-  window: null, series: [], totals: { failures: 0, quarantine: 0 },
+  window: null, series: [], totals: { failures: 0, quarantine: 0, sent: 0, received: 0, escalations: 0 },
   now: { stuck: 0, waiting: 0, unresolvedQuarantine: 0 },
   quarantineAvailable: true, seriesNote: '', stuckNote: '',
 }
@@ -78,6 +85,10 @@ export const analyticsEndpoints = {
   analyticsPortfolio: read(
     signal => request('/analytics/portfolio', { signal }),
     async () => emptyPortfolio,
+  ),
+  analyticsPrices: read(
+    signal => request('/analytics/prices', { signal }),
+    async () => emptyPrices,
   ),
   analyticsOfferQuality: read(
     signal => request('/analytics/offer-quality', { signal }),

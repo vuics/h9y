@@ -25,6 +25,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'GET', path: '/analytics/handover' },
   { method: 'GET', path: '/analytics/offer-quality' },
   { method: 'GET', path: '/analytics/portfolio' },
+  { method: 'GET', path: '/analytics/prices' },
   { method: 'GET', path: '/analytics/supply-base' },
   { method: 'GET', path: '/analytics/trends' },
   { method: 'GET', path: '/campaigns' },

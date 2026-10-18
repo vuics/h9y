@@ -31,6 +31,7 @@ import {
   percent,
   plural,
   share,
+  stackSegments,
   trafficLightSummary,
   worstFirst,
 } from '../lib/dashboard'
@@ -284,10 +285,23 @@ export function TrafficLightChart({ data }) {
   )
 }
 
-/** Manufacturer vs intermediary, among confirmed candidates only. */
+/** Role colours, the same here and in the monthly trend beside it. */
+const ROLE_COLORS = {
+  MANUFACTURER: 'var(--chart-1)',
+  BOTH: 'var(--chart-3)',
+  DISTRIBUTOR: 'var(--chart-2)',
+  UNKNOWN: 'var(--chart-track)',
+}
+
+/** Manufacturer vs intermediary, among confirmed candidates only.
+ *
+ * One bar split to 100%, not a row per role: the roles are parts of one whole,
+ * and four rows each drawn against the total looked four times emptier than
+ * the base is. A pie would say the same with less precise angles.
+ */
 export function RoleChart({ data }) {
   const roles = data?.roles || { rows: [], verifiedTotal: 0 }
-  const rows = (roles.rows || []).filter(row => row.count > 0)
+  const segments = stackSegments((roles.rows || []).map(row => ({ ...row, stage: row.role })))
   return (
     <Card>
       <CardHeader>
@@ -300,33 +314,37 @@ export function RoleChart({ data }) {
             Ни один кандидат ещё не подтверждён специалистом — подтверждать роль пока не у кого.
           </p>
         ) : (
-          <>
-            <div className="pr-funnel">
-              {rows.map(row => (
-                <div className="pr-funnel__row" key={row.role}>
-                  <div className="pr-funnel__label">{row.label}</div>
-                  <div
-                    className="pr-funnel__track"
-                    role="img"
-                    aria-label={`${row.label}: ${row.count} из ${roles.verifiedTotal}`}
-                  >
-                    <div
-                      className="pr-funnel__bar"
-                      data-muted={row.role === 'UNKNOWN' ? 'true' : undefined}
-                      style={{ width: `${share(row.count, roles.verifiedTotal)}%` }}
-                    />
-                  </div>
-                  <span className="pr-funnel__value">
-                    <b>{row.count}</b>
-                    <span>из {roles.verifiedTotal}</span>
-                  </span>
-                </div>
+          <div className="pr-portfolio">
+            <div className="pr-role__headline">
+              <b>{percent(roles.manufacturerShare)}</b>
+              <span>подтверждённых — производители</span>
+            </div>
+            <div
+              className="pr-stackbar pr-stackbar--tall"
+              role="img"
+              aria-label={segments.map(row => `${row.label}: ${row.count} из ${roles.verifiedTotal}`).join(', ')}
+            >
+              {segments.map(row => (
+                <i
+                  key={row.role}
+                  title={`${row.label}: ${row.count}`}
+                  data-muted={row.role === 'UNKNOWN' ? 'true' : undefined}
+                  style={{ width: `${row.share}%`, background: ROLE_COLORS[row.role] }}
+                />
               ))}
             </div>
-            <p className="pr-chart-note">
-              Доля подтверждённых производителей: <b>{percent(roles.manufacturerShare)}</b>
-            </p>
-          </>
+            <ul className="pr-role__legend">
+              {segments.map(row => (
+                <li key={row.role}>
+                  <i style={{ background: ROLE_COLORS[row.role] }} data-muted={row.role === 'UNKNOWN' ? 'true' : undefined} />
+                  <span>{row.label}</span>
+                  <b>{row.count}</b>
+                  <small>{percent(row.count / roles.verifiedTotal)}</small>
+                </li>
+              ))}
+            </ul>
+            <p className="pr-chart-note">Всего подтверждено специалистом: {roles.verifiedTotal}</p>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -415,6 +433,64 @@ export function GeographyChart({ data }) {
   )
 }
 
+/** What the prices came out at.
+ *
+ * Three numbers a buyer recognises: how much cheaper the best offer is than a
+ * typical one, how many positions had a real market check, and what the
+ * supplier's second word did to their first. Comparable offers only — the
+ * server never converts currencies, so a position without a common basis has
+ * no spread rather than an invented one.
+ */
+export function PriceOutcomeChart({ data }) {
+  const spread = data?.spread || {}
+  const negotiation = data?.negotiation || {}
+  const priced = data?.pricedCards || 0
+  const size = data?.marketCheckSize || 3
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Цены в предложениях</CardTitle>
+        <p className="pr-muted">Что получилось по цене, а не по переписке.</p>
+      </CardHeader>
+      <CardContent>
+        {priced === 0 ? (
+          <p className="pr-funnel__foot">Предложений с ценой ещё нет.</p>
+        ) : (
+          <div className="pr-verdict pr-verdict--three">
+            <div className="pr-verdict__tile">
+              <span>Лучшая цена ниже медианной</span>
+              <b>{spread.median == null ? '—' : percent(spread.median)}</b>
+              <small>
+                {spread.sample
+                  ? `медиана по ${spread.sample} ${plural(spread.sample, 'позиции', 'позициям', 'позициям')} с двумя и больше сопоставимыми ценами`
+                  : 'нет позиций с двумя сопоставимыми ценами'}
+              </small>
+            </div>
+            <div className="pr-verdict__tile">
+              <span>Рыночная проверка: {size}+ сопоставимых цены</span>
+              <b>{data.marketChecked} <small>из {priced}</small></b>
+              <div className="pr-portfolio__progress" role="img" aria-label={`${data.marketChecked} из ${priced}`}>
+                <i style={{ width: `${share(data.marketChecked, priced)}%`, background: 'var(--chart-1)' }} />
+              </div>
+              <small>позиций с ценой; две и больше — у {data.comparedCards}</small>
+            </div>
+            <div className="pr-verdict__tile" data-improved={negotiation.lowered ? 'true' : undefined}>
+              <span>Переговоры по цене</span>
+              <b>{negotiation.medianChange == null ? '—' : `${negotiation.medianChange < 0 ? '−' : '+'}${percent(Math.abs(negotiation.medianChange))}`}</b>
+              <small>
+                {negotiation.revised
+                  ? `цена пересмотрена в ${negotiation.revised} ${plural(negotiation.revised, 'предложении', 'предложениях', 'предложениях')}, снижена в ${negotiation.lowered}`
+                  : 'пересмотров цены пока не было'}
+              </small>
+            </div>
+          </div>
+        )}
+        {data?.note && <p className="pr-chart-note">{data.note}</p>}
+      </CardContent>
+    </Card>
+  )
+}
+
 /** Which conditions suppliers systematically leave out. */
 export function OfferGapsChart({ data }) {
   const rows = worstFirst(data?.rows || [])
@@ -466,6 +542,48 @@ export function OfferGapsChart({ data }) {
   )
 }
 
+/** Daily volume rows, one per series, stacked on a shared date axis.
+ *
+ * Separate rows rather than one chart: sends run in the hundreds and
+ * escalations in the dozens, and on a shared scale the smaller series would be
+ * a line along zero. The shared axis keeps the sequence visible — a wave of
+ * sending, then the replies, then the escalations they raise.
+ */
+const VOLUME_ROWS = [
+  ['sent', 'Отправлено', 'var(--chart-1)'],
+  ['received', 'Получено', 'var(--chart-3)'],
+  ['escalations', 'Эскалации', 'var(--chart-2)'],
+]
+
+function VolumeRow({ series, dataKey, label, color, total, last }) {
+  const peak = Math.max(0, ...series.map(point => point[dataKey] || 0))
+  const config = { [dataKey]: { label, color } }
+  return (
+    <div className="pr-volume__row">
+      <div className="pr-volume__label">
+        <span>{label}</span>
+        <b>{total ?? 0}</b>
+        <small>макс. {peak} в день</small>
+      </div>
+      <ChartContainer config={config} className="pr-volume__chart" style={{ height: last ? 74 : 54 }}>
+        <BarChart data={series} margin={{ top: 4, right: 16, bottom: 0, left: 16 }} barCategoryGap={1}>
+          <XAxis
+            dataKey="label"
+            hide={!last}
+            tickLine={false}
+            axisLine={false}
+            interval={axisInterval(series.length)}
+            tick={{ fontSize: 11 }}
+          />
+          <YAxis hide domain={[0, Math.max(1, peak)]} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Bar dataKey={dataKey} fill={`var(--color-${dataKey})`} radius={[2, 2, 0, 0]} isAnimationActive={false} />
+        </BarChart>
+      </ChartContainer>
+    </div>
+  )
+}
+
 /** Is the agent working right now, and what is stuck.
  *
  * Two series and three counters, kept visibly apart. Failures and quarantine are
@@ -478,6 +596,9 @@ export function ChannelHealthChart({ data }) {
     label: dayLabel(point.day),
     failures: point.failures,
     quarantine: point.quarantine,
+    sent: point.sent || 0,
+    received: point.received || 0,
+    escalations: point.escalations || 0,
   }))
   const config = {
     failures: { label: 'Сбои доставки', color: 'var(--chart-2)' },
@@ -486,24 +607,27 @@ export function ChannelHealthChart({ data }) {
   const peak = Math.max(...series.map(p => Math.max(p.failures, p.quarantine)), 0)
   const ticks = niceTicks(peak)
   const quiet = data?.totals && !data.totals.failures && !data.totals.quarantine
+  const volumeRows = VOLUME_ROWS.filter(([key]) => key !== 'escalations' || data?.escalationsAvailable !== false)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Здоровье каналов и очередь агента</CardTitle>
+        <CardTitle>Каналы и очередь агента</CardTitle>
         <p className="pr-muted">
-          Отвечает на вопрос «работает ли агент прямо сейчас» без чтения логов
-          контейнера.
+          Работает ли агент прямо сейчас и сколько через него проходит — без
+          чтения логов контейнера.
         </p>
       </CardHeader>
       <CardContent>
         <div className="pr-channel__now">
           {[
-            ['Застряло', data?.now?.stuck, 'ESCALATED или последняя ошибка воркера'],
-            ['Ждут поставщика', data?.now?.waiting, 'отправлено, ответа нет'],
-            ['Карантин открыт', data?.now?.unresolvedQuarantine, 'отправитель не опознан'],
-          ].map(([label, value, hint]) => (
-            <div className="pr-channel__stat" key={label} data-alarm={value > 0 ? 'true' : undefined}>
+            ['Застряло', data?.now?.stuck, 'ESCALATED или последняя ошибка воркера', true],
+            ['Ждут поставщика', data?.now?.waiting, 'отправлено, ответа нет', false],
+            ['Карантин открыт', data?.now?.unresolvedQuarantine, 'отправитель не опознан', true],
+          ].map(([label, value, hint, alarming]) => (
+            // Only states that need a person turn red: waiting for suppliers
+            // is the normal condition of outreach, not an alarm.
+            <div className="pr-channel__stat" key={label} data-alarm={alarming && value > 0 ? 'true' : undefined}>
               <strong>{value ?? '—'}</strong>
               <span>{label}</span>
               <small>{hint}</small>
@@ -511,6 +635,24 @@ export function ChannelHealthChart({ data }) {
           ))}
         </div>
 
+        {series.length > 0 && (
+          <div className="pr-volume">
+            {volumeRows.map(([key, label, color], index) => (
+              <VolumeRow
+                key={key}
+                series={series}
+                dataKey={key}
+                label={label}
+                color={color}
+                total={data?.totals?.[key]}
+                last={index === volumeRows.length - 1}
+              />
+            ))}
+          </div>
+        )}
+        {data?.volumeNote && <p className="pr-chart-note">{data.volumeNote}</p>}
+
+        <h4 className="pr-volume__heading">Сбои доставки и карантин</h4>
         {series.length > 0 && (
           <ChartContainer config={config} className="tw:aspect-[16/6] tw:w-full">
             <LineChart data={series} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>

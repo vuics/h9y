@@ -54,13 +54,14 @@ import {
   FirstReplyChart,
   GeographyChart,
   OfferGapsChart,
+  PriceOutcomeChart,
   RoleChart,
   RoleTrendChart,
   TrafficLightChart,
 } from '../components/DashboardCharts'
 import { BenchmarkChart } from '../components/BenchmarkChart'
 import { DashboardCsvButton, ExportableCard } from '../components/ChartExport'
-import { PortfolioCard, ReviewBacklogBanner } from '../components/DashboardPortfolio'
+import { PortfolioCard, ReviewBacklogBanner, VerdictCard } from '../components/DashboardPortfolio'
 
 const PERIODS = [
   ['7', '7 дней'],
@@ -475,7 +476,7 @@ function ChannelHealthSection({ params }) {
   if (query.isLoading) return <LoadingState rows={5} />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   return (
-    <ExportableCard title="Здоровье каналов и очередь агента">
+    <ExportableCard title="Каналы и очередь агента">
       <ChannelHealthChart data={query.data} />
     </ExportableCard>
   )
@@ -580,6 +581,22 @@ function HandoverSection({ params }) {
   )
 }
 
+/** The one-line answer to «is it better than a person», read off the benchmark.
+ *
+ * Shares the benchmark query with the detailed section below. A workspace
+ * without a baseline store has no benchmark at all, and then this says nothing
+ * rather than an error at the top of the page.
+ */
+function VerdictSection({ params }) {
+  const query = useQuery({
+    queryKey: procurementKeys.analyticsBenchmark(params),
+    queryFn: ({ signal }) => procurementApi.analyticsBenchmark(params, signal),
+  })
+  if (query.isLoading) return <LoadingState rows={3} />
+  if (query.isError) return null
+  return <ExportableCard title="Агент и человек — коротко"><VerdictCard data={query.data} /></ExportableCard>
+}
+
 /** What is in flight now, and the review queue if people are the bottleneck.
  *
  * Shares the supply-base query with the section further down, so the banner
@@ -629,6 +646,20 @@ function SupplyBaseSection() {
   )
 }
 
+function PriceSection() {
+  const query = useQuery({
+    queryKey: procurementKeys.analyticsPrices(),
+    queryFn: ({ signal }) => procurementApi.analyticsPrices(signal),
+  })
+  if (query.isLoading) return <LoadingState rows={3} />
+  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
+  return (
+    <ExportableCard title="Цены в предложениях">
+      <PriceOutcomeChart data={query.data} />
+    </ExportableCard>
+  )
+}
+
 function OfferQualitySection() {
   const query = useQuery({
     queryKey: procurementKeys.analyticsOfferQuality(),
@@ -670,6 +701,8 @@ export default function DashboardPage() {
 
       <NowSection />
 
+      <VerdictSection params={params} />
+
       <HeadlineTiles params={params} />
 
       <FunnelCard params={params} days={days} onDays={setDays} />
@@ -679,7 +712,7 @@ export default function DashboardPage() {
         {canReadEscalations && <BottlenecksCard />}
       </div>
 
-      <h3 className="pr-dash__section">Человек и агент</h3>
+      <h3 className="pr-dash__section" id="human-and-agent">Человек и агент</h3>
       <BenchmarkSection params={params} canEdit={canReviewSourcing} />
       {canReadEscalations && <HandoverSection params={params} />}
 
@@ -690,6 +723,7 @@ export default function DashboardPage() {
       <SupplyBaseSection />
 
       <h3 className="pr-dash__section">Качество предложений</h3>
+      <PriceSection />
       <OfferQualitySection />
 
       {canReadCommunications && (
