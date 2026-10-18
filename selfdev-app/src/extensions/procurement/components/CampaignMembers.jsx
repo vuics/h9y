@@ -10,7 +10,7 @@ import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
 import { offerBasis, offerNote, priceRanges, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
 import { contentOf, memberAwaitsReview, resolveOpen, rowOpenByMode, sectionOpenByMode } from '../lib/memberSections'
-import { reviewOpen, reviewSummary } from '../lib/campaignReview'
+import { reviewBadges, reviewOpen } from '../lib/campaignReview'
 import { ReviewItem } from './CampaignReview'
 import {
   FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
@@ -182,7 +182,7 @@ function MemberSections({
     <Section
       title="Согласование"
       meta={reviewItem
-        ? reviewSummary(reviewItem)
+        ? reviewBadges(reviewItem).map(badge => <StatusBadge key={badge.label} status={badge.tone} label={badge.label} tone={badge.tone} compact />)
         : reviewLoading ? 'загружаем…' : (memberAwaitsReview(member) ? 'ждёт согласования' : 'кандидаты и RFQ')}
       open={isOpen('review')}
       onToggle={() => onToggle('review')}

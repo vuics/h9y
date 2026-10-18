@@ -109,15 +109,30 @@ export const reviewOpen = item => Boolean(item && !item.blockedBy && (
   || (item.rfq && item.rfq.status !== 'APPROVED')
 ))
 
-/** "3 компании на решении · RFQ подготовлен, не согласован": one folded line. */
-export function reviewSummary(item) {
-  if (!item) return null
-  if (item.blockedBy) return blockedText(item.blockedBy)
-  const parts = []
-  if (item.normalization) parts.push('идентичность не подтверждена')
+// Verdicts that put a company on the list of those written to.
+const WRITTEN_TO = new Set(['VERIFIED_MANUFACTURER', 'VERIFIED_DISTRIBUTOR', 'PRICE_REQUEST'])
+// Stages that are past the approval: the position is not blocked, it is done.
+const PAST_APPROVAL = new Set(['STAGE_OUTREACH', 'STAGE_NEGOTIATION'])
+
+/** What the approval of one position has settled, as labels for its folded
+ * header, coloured by who has to act: green done, amber waiting for you,
+ * grey not yet, red wrong. The stage is in the table's own column; the
+ * header says what was approved.
+ */
+export function reviewBadges(item) {
+  if (!item) return []
+  const badges = []
+  if (item.normalization) badges.push({ tone: 'danger', label: 'идентичность не подтверждена' })
   const open = item.candidates.filter(candidate => candidate.reviewDecision === 'UNREVIEWED').length
-  if (open) parts.push(`${open} на решении`)
-  else if (item.candidates.length) parts.push('кандидаты решены')
-  if (item.rfq) parts.push(`RFQ ${RFQ_STATUS[item.rfq.status] || item.rfq.status}`)
-  return parts.join(' · ') || 'нечего согласовывать'
+  const approved = item.candidates.filter(candidate => WRITTEN_TO.has(candidate.reviewDecision)).length
+  if (open && !item.blockedBy) badges.push({ tone: 'warning', label: `${open} на решении` })
+  if (approved) badges.push({ tone: 'complete', label: `компаний подтверждено: ${approved}` })
+  if (item.rfq?.status === 'APPROVED') badges.push({ tone: 'complete', label: 'RFQ согласован' })
+  else if (item.rfq?.documentFingerprint) badges.push({ tone: 'warning', label: 'RFQ ждёт согласования' })
+  else if (item.rfq) badges.push({ tone: 'muted', label: 'RFQ не подготовлен' })
+  if (item.blockedBy && !PAST_APPROVAL.has(item.blockedBy) && !badges.length) {
+    badges.push({ tone: 'muted', label: blockedText(item.blockedBy) })
+  }
+  if (!badges.length) badges.push({ tone: 'muted', label: 'нечего согласовывать' })
+  return badges
 }
