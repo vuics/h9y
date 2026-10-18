@@ -30,7 +30,8 @@ const STATUSES = [
   { value: 'ALL', label: 'Все, включая решённые' },
 ]
 
-/** Purchases stopped at the one approval screen: part of "what waits for me". */
+/** Purchases stopped at their approval: part of "what waits for me". The press
+ * opens the purchase on its approval mode, where the approval now happens. */
 function PendingApprovals() {
   const query = useQuery({ queryKey: procurementKeys.campaigns(), queryFn: ({ signal }) => procurementApi.campaigns(signal) })
   const waiting = (query.data?.items || []).filter(item => item.status !== 'CANCELLED' && item.progress?.awaitingReview > 0)
@@ -40,8 +41,8 @@ function PendingApprovals() {
     <div className="pr-approval-list">{waiting.map(item => {
       const count = item.progress.awaitingReview
       return <Card key={item.campaignId} className="pr-approval"><CardContent>
-        <div><strong>{item.title}</strong><span>Кому пишем и что спрашиваем: ждут {count} {plural(count, 'вещество', 'вещества', 'веществ')}</span></div>
-        <RouterLinkButton to={`/procurement/campaigns/${item.campaignId}/review`}>Согласовать {count} {plural(count, 'вещество', 'вещества', 'веществ')}</RouterLinkButton>
+        <div><strong>{item.title}</strong><span>Кому пишем и что спрашиваем: ждут {count} {plural(count, 'позиция', 'позиции', 'позиций')}</span></div>
+        <RouterLinkButton to={`/procurement/campaigns/${item.campaignId}?view=review`}>Согласовать {count} {plural(count, 'позицию', 'позиции', 'позиций')}</RouterLinkButton>
       </CardContent></Card>
     })}</div>
   </section>
