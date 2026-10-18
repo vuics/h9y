@@ -236,6 +236,18 @@ export function CampaignMembers({
     ? members.filter(member => memberPhase(member, offersByCard) === phase)
     : filterMembers(members, filter)
 
+  // What each position has for each section, and whether any shown position
+  // has something for the mode at all.
+  const contentFor = member => {
+    const reviewItem = review?.items.find(item => item.cardId === member.cardId)
+    return contentOf({
+      offers: offersByCard.get(member.cardId)?.offers,
+      threads: conversationsByCard.get(member.cardId)?.conversations,
+      marketplace: marketplaceByCard.get(member.cardId),
+      review: reviewItem ? reviewOpen(reviewItem) : memberAwaitsReview(member),
+    })
+  }
+  const anyHas = rows.some(member => contentFor(member)[mode] > 0)
   const visible = rows.map(member => member.cardId)
   const allVisible = visible.length > 0 && visible.every(cardId => selected.has(cardId))
   const pick = cardId => setSelected(current => {
@@ -305,11 +317,8 @@ export function CampaignMembers({
         const threads = conversationsByCard.get(member.cardId)
         const marketplace = marketplaceByCard.get(member.cardId)
         const reviewItem = review?.items.find(item => item.cardId === member.cardId)
-        const content = contentOf({
-          offers: offers?.offers, threads: threads?.conversations, marketplace,
-          review: reviewItem ? reviewOpen(reviewItem) : memberAwaitsReview(member),
-        })
-        const expanded = resolveOpen(current.rows, member.cardId, rowOpenByMode(mode, content))
+        const content = contentFor(member)
+        const expanded = resolveOpen(current.rows, member.cardId, rowOpenByMode(mode, content, { anyHas }))
         const toggle = () => setByHand('rows', member.cardId, !expanded)
         const sectionKey = section => `${member.cardId}:${section}`
         const isOpen = section => resolveOpen(current.sections, sectionKey(section), sectionOpenByMode(mode, section))

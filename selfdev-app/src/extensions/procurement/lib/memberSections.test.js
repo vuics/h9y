@@ -57,3 +57,9 @@ test('a position waits for approval by its stage or by what it waits for', () =>
   assert.equal(memberAwaitsReview({ stage: 'SOURCING', waitingFor: 'RFQ_APPROVAL' }), true)
   assert.equal(memberAwaitsReview({ stage: 'NEGOTIATION', waitingFor: null }), false)
 })
+
+test('a mode with nothing anywhere opens every position', () => {
+  assert.equal(rowOpenByMode('review', contentOf({}), { anyHas: false }), true)
+  assert.equal(rowOpenByMode('review', contentOf({}), { anyHas: true }), false)
+  assert.equal(rowOpenByMode('members', contentOf({}), { anyHas: false }), false)
+})

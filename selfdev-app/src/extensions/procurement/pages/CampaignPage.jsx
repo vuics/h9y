@@ -987,14 +987,17 @@ export default function CampaignPage() {
           after that. The two blocks below the table stay until the modes
           have been tested by the people who use them. */}
       <div className="pr-view-switch" role="group" aria-label="Что раскрыть в таблице">
-        {MODES.filter(([id]) => id === 'members' || id === 'all' || modeCounts[id] > 0).map(([id, label]) => <button
+        {/* Every mode always, so the switch never changes shape; one with
+            nothing to show opens every position on its section. */}
+        {MODES.map(([id, label]) => <button
           key={id}
           type="button"
           aria-pressed={view === id}
           className={view === id ? 'is-on' : undefined}
           onClick={() => showView(id)}
         >
-          {label}{modeCounts[id] != null && <b>{modeCounts[id]}</b>}
+          {/* The approval counts what waits, and nothing waiting is no number. */}
+          {label}{modeCounts[id] != null && !(id === 'review' && !modeCounts[id]) && <b>{modeCounts[id]}</b>}
           {modeAlerts[id] && <span className="pr-view-switch__alert">{modeAlerts[id]}</span>}
         </button>)}
       </div>

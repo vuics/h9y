@@ -44,11 +44,13 @@ export const contentOf = ({ offers = [], threads = [], marketplace = null, revie
 /** Whether a mode opens a position: only when it has something for that mode.
  *
  * Opening all twenty-eight rows for offers would put twelve "no offers yet"
- * between the ones that have them.
+ * between the ones that have them. When no position has anything for the mode
+ * — a purchase whose approval is long done — every position opens instead, so
+ * the mode shows its section everywhere rather than an unchanged table.
  */
-export function rowOpenByMode(mode, content) {
+export function rowOpenByMode(mode, content, { anyHas = true } = {}) {
   if (mode === 'all') return true
-  if (SECTIONS.includes(mode)) return content[mode] > 0
+  if (SECTIONS.includes(mode)) return !anyHas || content[mode] > 0
   return false
 }
 
