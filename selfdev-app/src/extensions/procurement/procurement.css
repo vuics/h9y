@@ -1123,7 +1123,6 @@
 .pr-tevent p { margin: 0; font-size: 13px; }
 .pr-tevent__risks { list-style: none; margin: 0; padding: 0 0 0 10px; border-left: 2px solid var(--pr-border); display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .pr-tevent__resolve { display: flex; flex-direction: column; gap: 7px; }
-.pr-tevent__resolve select { font: inherit; border: 1px solid var(--pr-border); border-radius: 7px; padding: 5px 8px; background: var(--pr-card); }
 .pr-tevent__preparing { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .pr-diff { border-collapse: collapse; width: 100%; font-size: 12.5px; background: var(--pr-card); border: 1px solid var(--pr-border); border-radius: 8px; overflow: hidden; }
 .pr-diff th { text-align: left; color: var(--pr-muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
@@ -1436,7 +1435,9 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-escalation-quick { display: flex; flex-direction: column; gap: 8px; font-size: 13px; white-space: normal; }
 .pr-escalation-quick p { margin: 0; }
 .pr-escalation-quick__resolve { display: flex; flex-direction: column; gap: 6px; max-width: 560px; }
-.pr-escalation-quick__resolve select { align-self: flex-start; font: inherit; border: 1px solid var(--pr-border); border-radius: 7px; padding: 5px 8px; background: var(--pr-card); }
+/* A drawn chevron with room of its own: Chrome's native arrow sits flush
+   against the border and ignores the padding, so it looked shifted there. */
+.pr-escalation-quick__resolve select, .pr-tevent__resolve select { -webkit-appearance: none; appearance: none; align-self: flex-start; min-width: 220px; font: inherit; border: 1px solid var(--pr-border); border-radius: 7px; padding: 5px 30px 5px 10px; background-color: var(--pr-card); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 12px; cursor: pointer; }
 .pr-supplier-line a[data-slot="button"].pr-supplier-line__press { height: 24px; padding: 0 8px; font-size: 12px; color: var(--pr-muted); }
 .pr-inline-confirm { flex-basis: 100%; }
 .pr-mode-toolbar { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid var(--pr-border); border-radius: 9px; background: var(--pr-card); }
