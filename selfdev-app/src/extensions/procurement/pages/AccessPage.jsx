@@ -361,6 +361,8 @@ const EVENT_LABELS = {
   ORGANIZATION_CREATED: 'создана организация',
   ORGANIZATION_SUSPENDED: 'организация приостановлена',
   ORGANIZATION_REACTIVATED: 'организация возобновлена',
+  ECHEMI_ENABLED: 'включена Echemi',
+  ECHEMI_DISABLED: 'выключена Echemi',
   AGENT_BOUND: 'привязан агент',
   MEMBER_INVITED: 'приглашён участник',
   MEMBER_JOINED: 'участник вошёл',
@@ -394,13 +396,12 @@ function OrganizationEvents() {
 /** The installation operator's view: every organization, and creating one. */
 function OrganizationsAdmin({ organizations }) {
   const queryClient = useQueryClient()
-  const status = useMutation({
-    mutationFn: procurementApi.setOrganizationStatus,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: procurementKeys.organizations() })
-      queryClient.invalidateQueries({ queryKey: procurementKeys.organizationEvents() })
-    },
-  })
+  const refreshOrganizations = () => {
+    queryClient.invalidateQueries({ queryKey: procurementKeys.organizations() })
+    queryClient.invalidateQueries({ queryKey: procurementKeys.organizationEvents() })
+  }
+  const status = useMutation({ mutationFn: procurementApi.setOrganizationStatus, onSuccess: refreshOrganizations })
+  const echemi = useMutation({ mutationFn: procurementApi.setOrganizationEchemi, onSuccess: refreshOrganizations })
   const [form, setForm] = useState({ id: '', name: '', adminEmail: '' })
   const create = useMutation({
     mutationFn: procurementApi.createOrganization,
@@ -425,9 +426,22 @@ function OrganizationsAdmin({ organizations }) {
         <span>
           <strong>{item.name}</strong> <code>{item.id}</code>
           {item.status === 'SUSPENDED' && <> <Badge variant="outline">приостановлена</Badge></>}
+          {item.echemi && <> <Badge variant="outline">Echemi{item.echemiInstallationAccount ? ' · аккаунт установки' : ''}</Badge></>}
         </span>
         <span className="pr-inline-actions">
           <span className="pr-note">база {item.database}{item.agentIds?.length ? ` · агентов: ${item.agentIds.length}` : ''}</span>
+          {!item.echemiInstallationAccount && <Button
+            variant="ghost"
+            size="sm"
+            isDisabled={echemi.isPending}
+            onPress={() => {
+              const enabled = !item.echemi
+              const question = enabled
+                ? `Включить Echemi для «${item.name}»? Её агент должен войти со своим аккаунтом Echemi. Окно её браузера будет видно всем, у кого есть ссылка noVNC.`
+                : `Выключить Echemi для «${item.name}»?`
+              if (window.confirm(question)) echemi.mutate({ id: item.id, enabled })
+            }}
+          >{item.echemi ? 'Выключить Echemi' : 'Включить Echemi'}</Button>}
           <Button
             variant="ghost"
             size="sm"
@@ -442,10 +456,10 @@ function OrganizationsAdmin({ organizations }) {
           >{item.status === 'SUSPENDED' ? 'Возобновить' : 'Приостановить'}</Button>
         </span>
       </li>)}</ul>
-      {status.isError && <Alert>
+      {(status.isError || echemi.isError) && <Alert>
         <AlertTriangle />
-        <AlertTitle>Не удалось изменить статус</AlertTitle>
-        <AlertDescription>{mutationMessage(status.error)}</AlertDescription>
+        <AlertTitle>Не удалось изменить организацию</AlertTitle>
+        <AlertDescription>{mutationMessage(status.error || echemi.error)}</AlertDescription>
       </Alert>}
       <form
         className="pr-access-invite"

@@ -142,6 +142,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/organizations' },
   { method: 'GET', path: '/organizations/events' },
   { method: 'POST', path: '/organizations/{organization_id}/agents' },
+  { method: 'POST', path: '/organizations/{organization_id}/echemi' },
   { method: 'POST', path: '/organizations/{organization_id}/reactivate' },
   { method: 'POST', path: '/organizations/{organization_id}/suspend' },
   { method: 'GET', path: '/overview' },

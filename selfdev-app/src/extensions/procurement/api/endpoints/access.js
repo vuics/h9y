@@ -50,8 +50,8 @@ export const accessEndpoints = {
     async () => ({
       current: { id: 'demo', name: 'Демо-организация' },
       organizations: [
-        { id: 'demo', name: 'Демо-организация', status: 'ACTIVE', database: 'procurement', agentIds: ['agent-1'] },
-        { id: 'beta', name: 'Бета Химия', status: 'SUSPENDED', database: 'procurement_beta', agentIds: [] },
+        { id: 'demo', name: 'Демо-организация', status: 'ACTIVE', database: 'procurement', agentIds: ['agent-1'], echemi: true, echemiInstallationAccount: true },
+        { id: 'beta', name: 'Бета Химия', status: 'SUSPENDED', database: 'procurement_beta', agentIds: [], echemi: false, echemiInstallationAccount: false },
       ],
       superadmin: true,
     }),
@@ -60,6 +60,10 @@ export const accessEndpoints = {
   setOrganizationStatus: mutation(({ id, suspend }) => request(
     `/organizations/${encodeURIComponent(id)}/${suspend ? 'suspend' : 'reactivate'}`,
     { method: 'post' },
+  )),
+  setOrganizationEchemi: mutation(({ id, enabled }) => request(
+    `/organizations/${encodeURIComponent(id)}/echemi`,
+    { method: 'post', data: { enabled } },
   )),
   organizationEvents: read(
     signal => request('/organizations/events', { params: { limit: 100 }, signal }),
