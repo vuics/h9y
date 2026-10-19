@@ -1627,8 +1627,10 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-verdict__tile .pr-portfolio__progress { margin: 4px 0 2px; }
 @media (max-width: 900px) { .pr-verdict--three { grid-template-columns: 1fr; } }
 
-/* The organization this workspace shows; a select only for a person in several. */
-.pr-organization { display: inline-flex; align-items: center; height: 32px; padding: 0 10px; border: 1px solid var(--pr-border); border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--pr-text); background: var(--pr-card); }
+/* The organization this workspace shows; a select only for a person in several.
+   It shares a row with the sections menu, which never wraps apart. */
+.pr-workspace-menus { display: flex; gap: 7px; align-items: center; flex-wrap: nowrap; }
+.pr-organization { display: inline-flex; align-items: center; height: 36px; padding: 0 10px; border: 1px solid var(--pr-border); border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--pr-text); background: var(--pr-card); }
 .pr-organization select { border: 0; background: transparent; color: inherit; font: inherit; padding: 0; cursor: pointer; }
 .pr-organization--none { color: var(--pr-muted); font-weight: 400; }
 .pr-access-members { display: flex; flex-direction: column; gap: 10px; }
