@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, Check, ChevronDown, ChevronRight, CircleAlert, Clock, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
-import { normalizeSummary } from '../lib/normalizeSummary'
+import { normalizeSummary, prepareSummary } from '../lib/bulkSummary'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -408,6 +408,14 @@ export default function CampaignPage() {
     mutationFn: cardIds => procurementApi.researchCampaignCards(campaignId, cardIds),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) }),
   })
+  // RFQs for the chosen substances only; nothing is approved by writing them.
+  const prepareRfqs = useMutation({
+    mutationFn: cardIds => procurementApi.prepareCampaignRfqs(campaignId, cardIds),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaignReview(campaignId) })
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })
+    },
+  })
   const normalizeCards = useMutation({
     mutationFn: cardIds => procurementApi.normalizeCampaignCards(campaignId, cardIds),
     onSettled: () => queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) }),
@@ -491,7 +499,7 @@ export default function CampaignPage() {
     ),
   })
   const postToMarketplace = useMutation({
-    mutationFn: () => procurementApi.dispatchCampaignMarketplace(campaignId),
+    mutationFn: cardIds => procurementApi.dispatchCampaignMarketplace(campaignId, cardIds),
     onSuccess: result => queryClient.setQueryData(
       procurementKeys.campaignMarketplace(campaignId), result,
     ),
@@ -1091,6 +1099,16 @@ export default function CampaignPage() {
         normalizeNote={normalizeCards.error
           ? `Нормализация не выполнена: ${mutationMessage(normalizeCards.error)}`
           : normalizeCards.data && normalizeSummary(normalizeCards.data)}
+        canPrepareRfq={canWriteCards && campaign.status !== 'CANCELLED'}
+        onPrepareRfq={cardIds => prepareRfqs.mutate(cardIds)}
+        prepareRfqPending={prepareRfqs.isPending}
+        prepareRfqNote={prepareRfqs.error
+          ? `RFQ не подготовлены: ${mutationMessage(prepareRfqs.error)}`
+          : prepareRfqs.data && prepareSummary(prepareRfqs.data, prepareRfqs.variables?.length)}
+        canPostToMarketplace={canOperateEchemi && campaign.status !== 'CANCELLED'
+          && Boolean(marketplaceView?.enabled) && ['OUTREACH', 'NEGOTIATION'].includes(campaign.plan?.reach)}
+        onPostToMarketplace={cardIds => postToMarketplace.mutate(cardIds, { onSuccess: () => showView('echemi') })}
+        postToMarketplacePending={postToMarketplace.isPending || Boolean(marketplaceView?.running)}
         onRemoveMany={(cardIds, done) => removeCards.mutate(cardIds, { onSuccess: done })}
         removeManyPending={removeCards.isPending}
         removable={member => removable(member, campaign)}

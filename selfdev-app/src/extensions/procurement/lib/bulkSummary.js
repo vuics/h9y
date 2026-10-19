@@ -12,3 +12,16 @@ export function normalizeSummary(result) {
   if (tally.SKIPPED) parts.push(`уже были нормализованы: ${tally.SKIPPED}`)
   return parts.join('; ') || 'Нечего нормализовать'
 }
+
+// The same for «Подготовить RFQ (N)»: a substance that already had an RFQ is
+// neither prepared nor failed, so it is counted as the rest.
+export function prepareSummary(result, selected) {
+  const prepared = result?.prepared?.length || 0
+  const failed = result?.failed || []
+  const parts = []
+  if (failed.length) parts.push(`не подготовлено: ${failed.map(item => `#${item.cardId} (${item.message || item.code})`).join(', ')}`)
+  parts.push(`подготовлено RFQ: ${prepared}`)
+  const had = selected == null ? 0 : selected - prepared - failed.length
+  if (had > 0) parts.push(`уже были: ${had}`)
+  return parts.join('; ')
+}

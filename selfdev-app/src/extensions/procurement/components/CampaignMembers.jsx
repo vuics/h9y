@@ -264,6 +264,8 @@ export function CampaignMembers({
   // Normalizing and taking out several at once; also the page's mutations.
   canNormalize, onNormalize, normalizePending, normalizeNote,
   onRemoveMany, removeManyPending,
+  canPrepareRfq, onPrepareRfq, prepareRfqPending, prepareRfqNote,
+  canPostToMarketplace, onPostToMarketplace, postToMarketplacePending,
 }) {
   // What a person opened or folded by hand; a new mode starts from its own rules.
   const [manual, setManual] = useState(() => ({ mode, rows: new Map(), sections: new Map() }))
@@ -350,6 +352,18 @@ export function CampaignMembers({
         isDisabled={normalizePending}
         onPress={() => onNormalize([...selected])}
       >{normalizePending ? 'Проверяем в PubChem…' : `Нормализовать (${selected.size})`}</Button>}
+      {canPrepareRfq && <Button
+        size="sm"
+        variant="outline"
+        isDisabled={prepareRfqPending}
+        onPress={() => onPrepareRfq([...selected])}
+      >{prepareRfqPending ? 'Готовим RFQ…' : `Подготовить RFQ (${selected.size})`}</Button>}
+      {canPostToMarketplace && <Button
+        size="sm"
+        variant="outline"
+        isDisabled={postToMarketplacePending}
+        onPress={() => onPostToMarketplace([...selected])}
+      >{postToMarketplacePending ? 'Выставляем на Echemi…' : `Выставить на Echemi (${selected.size})`}</Button>}
       {canRemove && removableSelected.length > 0 && <Button
         size="sm"
         variant="outline"
@@ -358,8 +372,9 @@ export function CampaignMembers({
         onPress={() => onRemoveMany(removableSelected, () => setSelected(new Set()))}
       >{removeManyPending ? 'Убираем…' : `Убрать из закупки (${removableSelected.length})`}</Button>}
       <Button size="sm" variant="ghost" onPress={() => setSelected(new Set())}>Снять выбор</Button>
-      <span className="pr-muted">Искать заново — с текущими настройками закупки: глубина, движки, запросы; ненормализованные вещества сначала нормализуются. Найденное сольётся с прежним поиском; решения по кандидатам сохранятся. Вещества, где поиск уже идёт, пропускаются.{canRemove && removableSelected.length < selected.size && ' Убрать можно только позиции, по которым ещё ничего не отправлено.'}</span>
+      <span className="pr-muted">Искать заново — с текущими настройками закупки: глубина, движки, запросы; ненормализованные вещества сначала нормализуются. Найденное сольётся с прежним поиском; решения по кандидатам сохранятся. Вещества, где поиск уже идёт, пропускаются.{canPrepareRfq && ' Подготовить RFQ — только черновики, ничего не согласуется; у кого RFQ уже есть, те не трогаются.'}{canPostToMarketplace && ' Выставить на Echemi — только позиции с согласованным RFQ; заявки уходят по одной через общий браузер.'}{canRemove && removableSelected.length < selected.size && ' Убрать можно только позиции, по которым ещё ничего не отправлено.'}</span>
       {normalizeNote && <span className="pr-members__bulk-note" role="status">{normalizeNote}</span>}
+      {prepareRfqNote && <span className="pr-members__bulk-note" role="status">{prepareRfqNote}</span>}
     </div>}
 
     <div className="pr-table-wrap"><table className="pr-table pr-members__table">

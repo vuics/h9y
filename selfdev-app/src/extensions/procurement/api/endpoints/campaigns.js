@@ -51,8 +51,9 @@ export const campaignEndpoints = {
     (campaignId, signal) => request(`/campaigns/${id(campaignId)}/review`, { signal }),
     async campaignId => (await fixtures()).campaignReviewFixture(campaignId),
   ),
-  prepareCampaignRfqs: mutation(campaignId =>
-    request(`/campaigns/${id(campaignId)}/review/prepare`, { method: 'post' })),
+  // With cardIds only for those substances; without, for the whole campaign.
+  prepareCampaignRfqs: mutation((campaignId, cardIds) =>
+    request(`/campaigns/${id(campaignId)}/review/prepare`, { method: 'post', ...(cardIds ? { data: { cardIds } } : {}) })),
   applyCampaignReview: mutation((campaignId, decisions) =>
     request(`/campaigns/${id(campaignId)}/review`, { method: 'post', data: { decisions } })),
   // Approving already dispatches. This is for the campaigns approved before it
@@ -73,8 +74,8 @@ export const campaignEndpoints = {
     (campaignId, signal) => request(`/campaigns/${id(campaignId)}/marketplace`, { signal }),
     async campaignId => (await fixtures()).campaignMarketplaceFixture(campaignId),
   ),
-  dispatchCampaignMarketplace: mutation(campaignId =>
-    request(`/campaigns/${id(campaignId)}/marketplace`, { method: 'post' })),
+  dispatchCampaignMarketplace: mutation((campaignId, cardIds) =>
+    request(`/campaigns/${id(campaignId)}/marketplace`, { method: 'post', ...(cardIds ? { data: { cardIds } } : {}) })),
   // The marketplace half of "отправить все подготовленные": the forms are
   // filled and checked, and this is the one press that puts them on the
   // platform instead of one approval per substance.
