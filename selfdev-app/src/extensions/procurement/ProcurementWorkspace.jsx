@@ -8,6 +8,7 @@ import { useProcurementPermissions } from './hooks/useProcurementPermissions'
 import { ProcurementErrorBoundary } from './components/ProcurementErrorBoundary'
 import { MessageSquare } from './components/icons'
 import { AllSectionsMenu } from './components/AllSectionsMenu'
+import { OrganizationSwitcher } from './components/OrganizationSwitcher'
 import { procurementApi } from './api/client'
 import { procurementKeys } from './api/queryKeys'
 import { CLASSIC_SECTIONS, MORE_SECTIONS, PRIMARY_SECTIONS, sectionLabel, sectionOf } from './lib/navigation'
@@ -95,7 +96,7 @@ function Workspace() {
   const selected = tabs.some(([id]) => id === section) ? section : null
   const changeClassic = value => { setClassic(value); writeClassic(value) }
   return <div className="procurement-host"><div className="pr-host-menu"><Menubar /></div><main className="procurement-shell">
-    <header className="pr-workspace-header pr-workspace-header--compact"><div><h1>ИИ-ассистент закупок</h1></div><div className="pr-inline-actions"><RouterLinkButton to="/chat?context=procurement" variant="outline"><MessageSquare size={16} />Спросить агента</RouterLinkButton><AllSectionsMenu canManageAccess={canManageAccess} classic={classic} onClassicChange={changeClassic} /></div></header>
+    <header className="pr-workspace-header pr-workspace-header--compact"><div><h1>ИИ-ассистент закупок</h1></div><div className="pr-inline-actions"><OrganizationSwitcher /><RouterLinkButton to="/chat?context=procurement" variant="outline"><MessageSquare size={16} />Спросить агента</RouterLinkButton><AllSectionsMenu canManageAccess={canManageAccess} classic={classic} onClassicChange={changeClassic} /></div></header>
     {usingDevelopmentFixtures && <div className="pr-fixture-banner" role="status">Режим визуальной разработки: показаны явно включённые демонстрационные данные, не данные production.</div>}
     {/* Links rather than a tab widget: a screen from «Все разделы» selects no
         tab, and a widget that must always select one kept jumping back to the

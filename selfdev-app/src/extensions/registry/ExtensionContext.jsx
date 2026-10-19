@@ -4,6 +4,7 @@ import axios from 'axios'
 import conf from '../../conf'
 import { useIndexContext } from '../../components/IndexContext'
 import { evaluateExtensionActivation } from './activation'
+import { organizationHeaders } from '../procurement/lib/organization'
 
 const buildIncludesProcurement = import.meta.env.VITE_BUILD_PROCUREMENT === 'true'
 const extensionLoaders = buildIncludesProcurement
@@ -58,6 +59,10 @@ export function ExtensionProvider({ children }) {
         const response = useDevFixtures && developmentCapabilitiesLoader
           ? (await developmentCapabilitiesLoader()).developmentCapabilities
           : (await axios.get(`${conf.api.url}/extensions`, {
+            // The permissions reported depend on the organization a person
+            // works in, so the capability check must ask about the same one
+            // the procurement requests will use.
+            headers: organizationHeaders(),
             withCredentials: true,
             timeout: 10000,
           })).data

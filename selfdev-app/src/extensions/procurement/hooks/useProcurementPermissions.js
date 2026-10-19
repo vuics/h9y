@@ -36,5 +36,10 @@ export function useProcurementPermissions() {
     // cannot keep offering a feature the installation turned off.
     simulationEnabled: features.supplierSimulation !== false,
     echemiSubmissionEnabled: features.echemiSubmission === true,
+    // Several organizations on this installation; the Echemi account works
+    // for one of them, and the others are not offered the marketplace.
+    organizationsEnabled: features.organizations === true,
+    echemiAvailable: features.echemi !== false,
+    organization: capability?.organization || null,
   }
 }

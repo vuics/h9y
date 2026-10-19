@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { identityHeaders, normalizeFeatures } from './extensions.js'
+import { identityHeaders, normalizeFeatures, organizationHeader } from './extensions.js'
 import conf from '../conf.js'
 import { isAllowedProcurementRequest, isReadableProcurementPath, normalizeProcurementResponse, timeoutFor } from './procurement.js'
 
@@ -152,4 +152,15 @@ test('deployment switches reach the browser as booleans', () => {
   assert.deepEqual(normalizeFeatures({ supplierSimulation: true }), { supplierSimulation: true })
   assert.deepEqual(normalizeFeatures(undefined), {})
   assert.deepEqual(normalizeFeatures({ nested: { a: 1 } }), {})
+})
+
+test('gateway forwards a well-formed organization choice and nothing else', () => {
+  assert.deepEqual(
+    organizationHeader({ headers: { 'x-procurement-organization': 'beta_2' } }),
+    { 'x-procurement-organization': 'beta_2' },
+  )
+  assert.deepEqual(organizationHeader({ headers: { 'x-procurement-organization': 'Beta' } }), {})
+  assert.deepEqual(organizationHeader({ headers: { 'x-procurement-organization': 'a/../b' } }), {})
+  assert.deepEqual(organizationHeader({ headers: {} }), {})
+  assert.deepEqual(organizationHeader(undefined), {})
 })

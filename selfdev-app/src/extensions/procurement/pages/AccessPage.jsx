@@ -274,6 +274,148 @@ function GrantForm({ vocabulary, principal, onSubmit, pending, error }) {
   </form>
 }
 
+/** Who belongs to this organization, and adding someone by exact email.
+ *
+ * The page never lists the installation's other accounts. Adding is always an
+ * invitation and is answered the same way whether the address has an account
+ * or not; the person gets access on their next sign-in with that email.
+ */
+function MembersPanel({ vocabulary, organization, invitations }) {
+  const queryClient = useQueryClient()
+  const [email, setEmail] = useState('')
+  const [roles, setRoles] = useState([])
+  const [notice, setNotice] = useState(null)
+  const refresh = () => queryClient.invalidateQueries({ queryKey: procurementKeys.all.concat('access-principals') })
+  const invite = useMutation({
+    mutationFn: procurementApi.inviteMember,
+    onSuccess: result => { setNotice(result?.message || 'Приглашение сохранено.'); setEmail(''); setRoles([]); refresh() },
+  })
+  const withdraw = useMutation({ mutationFn: procurementApi.removeMember, onSuccess: refresh })
+  const offered = vocabulary.roles.filter(entry => vocabulary.grantableRoles.includes(entry.role))
+  const toggle = role => setRoles(current => current.includes(role)
+    ? current.filter(item => item !== role)
+    : [...current, role])
+
+  return <Card>
+    <CardHeader>
+      <div>
+        <CardTitle>Участники организации{organization ? ` «${organization.name}»` : ''}</CardTitle>
+        <p className="pr-note">
+          Здесь видны только участники вашей организации. Добавьте человека по
+          точному email — доступ появится, когда он войдёт в систему с этим адресом.
+        </p>
+      </div>
+    </CardHeader>
+    <CardContent className="pr-access-members">
+      <form
+        className="pr-access-invite"
+        onSubmit={event => {
+          event.preventDefault()
+          setNotice(null)
+          invite.mutate({ email: email.trim(), roles })
+        }}
+      >
+        <label className="pr-form-field">
+          <span>Email</span>
+          <Input type="email" required value={email} onChange={event => setEmail(event.target.value)} />
+        </label>
+        <fieldset>
+          <legend className="pr-note">Роли при входе</legend>
+          {offered.map(entry => <label key={entry.role}>
+            <input type="checkbox" checked={roles.includes(entry.role)} onChange={() => toggle(entry.role)} />
+            {' '}{entry.label}
+          </label>)}
+        </fieldset>
+        <Button type="submit" isDisabled={invite.isPending || !email.trim()}>
+          <Check size={15} />{invite.isPending ? 'Сохранение…' : 'Добавить'}
+        </Button>
+      </form>
+      {notice && <p className="pr-note" role="status">{notice}</p>}
+      {invite.isError && <Alert>
+        <AlertTriangle />
+        <AlertTitle>Не удалось добавить</AlertTitle>
+        <AlertDescription>{mutationMessage(invite.error)}</AlertDescription>
+      </Alert>}
+      {invitations.length > 0 && <>
+        <h4>Ожидают входа</h4>
+        <ul className="pr-access-invitations">{invitations.map(item => <li key={item.email}>
+          <span>
+            <strong>{item.email}</strong>
+            {item.pendingRoles.length > 0 && <span className="pr-note"> · {item.pendingRoles.join(', ')}</span>}
+          </span>
+          <Button variant="ghost" size="sm" isDisabled={withdraw.isPending} onPress={() => withdraw.mutate({ email: item.email })}>
+            <Trash size={14} />Отозвать приглашение
+          </Button>
+        </li>)}</ul>
+      </>}
+      {withdraw.isError && <Alert>
+        <AlertTriangle />
+        <AlertTitle>Не удалось отозвать приглашение</AlertTitle>
+        <AlertDescription>{mutationMessage(withdraw.error)}</AlertDescription>
+      </Alert>}
+    </CardContent>
+  </Card>
+}
+
+/** The installation operator's view: every organization, and creating one. */
+function OrganizationsAdmin({ organizations }) {
+  const queryClient = useQueryClient()
+  const [form, setForm] = useState({ id: '', name: '', adminEmail: '' })
+  const create = useMutation({
+    mutationFn: procurementApi.createOrganization,
+    onSuccess: () => {
+      setForm({ id: '', name: '', adminEmail: '' })
+      queryClient.invalidateQueries({ queryKey: procurementKeys.organizations() })
+    },
+  })
+  const field = name => event => setForm(current => ({ ...current, [name]: event.target.value }))
+  return <Card>
+    <CardHeader>
+      <div>
+        <CardTitle>Организации установки</CardTitle>
+        <p className="pr-note">
+          Видно только оператору платформы. У каждой организации своя база
+          данных; данные одной недоступны другой.
+        </p>
+      </div>
+    </CardHeader>
+    <CardContent className="pr-access-members">
+      <ul className="pr-access-invitations">{organizations.map(item => <li key={item.id}>
+        <span><strong>{item.name}</strong> <code>{item.id}</code></span>
+        <span className="pr-note">база {item.database}{item.agentIds?.length ? ` · агентов: ${item.agentIds.length}` : ''}</span>
+      </li>)}</ul>
+      <form
+        className="pr-access-invite"
+        onSubmit={event => { event.preventDefault(); create.mutate(form) }}
+      >
+        <label className="pr-form-field">
+          <span>Идентификатор (латиница)</span>
+          <Input required value={form.id} pattern="[a-z][a-z0-9_]{1,31}" onChange={field('id')} />
+        </label>
+        <label className="pr-form-field">
+          <span>Название</span>
+          <Input required value={form.name} onChange={field('name')} />
+        </label>
+        <label className="pr-form-field">
+          <span>Email администратора</span>
+          <Input type="email" required value={form.adminEmail} onChange={field('adminEmail')} />
+        </label>
+        <Button type="submit" isDisabled={create.isPending}>
+          <Check size={15} />{create.isPending ? 'Создание…' : 'Создать организацию'}
+        </Button>
+      </form>
+      {create.isSuccess && <p className="pr-note" role="status">
+        Организация создана. Администратор получит доступ при следующем входе с указанным email.
+      </p>}
+      {create.isError && <Alert>
+        <AlertTriangle />
+        <AlertTitle>Не удалось создать организацию</AlertTitle>
+        <AlertDescription>{mutationMessage(create.error)}</AlertDescription>
+      </Alert>}
+    </CardContent>
+  </Card>
+}
+
 function PrincipalDetail({ principalKey, vocabulary, onClose }) {
   const queryClient = useQueryClient()
   const query = useQuery({
@@ -286,6 +428,11 @@ function PrincipalDetail({ principalKey, vocabulary, onClose }) {
   }
   const grant = useMutation({ mutationFn: procurementApi.grantAccess, onSuccess: invalidate })
   const revoke = useMutation({ mutationFn: procurementApi.revokeAccess, onSuccess: invalidate })
+  const { organizationsEnabled } = useProcurementPermissions()
+  const remove = useMutation({
+    mutationFn: procurementApi.removeMember,
+    onSuccess: () => { invalidate(); onClose() },
+  })
 
   if (query.isLoading) return <LoadingState />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
@@ -297,9 +444,26 @@ function PrincipalDetail({ principalKey, vocabulary, onClose }) {
         <CardTitle>{principal.displayName}</CardTitle>
         <p className="pr-note">{principal.email} · <code>{principal.principalKey}</code></p>
       </div>
-      <Button variant="ghost" size="sm" onPress={onClose}>Закрыть</Button>
+      <div className="pr-inline-actions">
+        {organizationsEnabled && <Button
+          variant="outline"
+          size="sm"
+          isDisabled={remove.isPending}
+          onPress={() => {
+            if (window.confirm(`Удалить ${principal.email} из организации? Все его назначения здесь будут отозваны.`)) {
+              remove.mutate({ email: principal.email })
+            }
+          }}
+        ><Trash size={14} />Удалить из организации</Button>}
+        <Button variant="ghost" size="sm" onPress={onClose}>Закрыть</Button>
+      </div>
     </CardHeader>
     <CardContent>
+      {remove.isError && <Alert>
+        <AlertTriangle />
+        <AlertTitle>Не удалось удалить из организации</AlertTitle>
+        <AlertDescription>{mutationMessage(remove.error)}</AlertDescription>
+      </Alert>}
       {principal.platformRoleNames.length > 0 && <Alert>
         <CircleAlert />
         <AlertTitle>Роли платформы: {principal.platformRoleNames.join(', ')}</AlertTitle>
@@ -340,7 +504,7 @@ function PrincipalDetail({ principalKey, vocabulary, onClose }) {
 }
 
 export default function AccessPage() {
-  const { canManageAccess } = useProcurementPermissions()
+  const { canManageAccess, organizationsEnabled, organization } = useProcurementPermissions()
   const [search, setSearch] = useState('')
   const [applied, setApplied] = useState('')
   const [selected, setSelected] = useState(null)
@@ -354,6 +518,11 @@ export default function AccessPage() {
     queryKey: procurementKeys.accessPrincipals({ search: applied }),
     queryFn: ({ signal }) => procurementApi.accessPrincipals({ search: applied }, signal),
     enabled: canManageAccess,
+  })
+  const organizations = useQuery({
+    queryKey: procurementKeys.organizations(),
+    queryFn: ({ signal }) => procurementApi.organizations(signal),
+    enabled: organizationsEnabled,
   })
 
   if (!canManageAccess) {
@@ -378,7 +547,15 @@ export default function AccessPage() {
 
     <AccessLegend roles={vocabulary.data.roles} />
 
-    {!vocabulary.data.scopeAgentId && <Alert>
+    {organizations.data?.superadmin && <OrganizationsAdmin organizations={organizations.data.organizations} />}
+
+    {organizationsEnabled && <MembersPanel
+      vocabulary={vocabulary.data}
+      organization={organizations.data?.current || organization}
+      invitations={principals.data.invitations || []}
+    />}
+
+    {!organizationsEnabled && !vocabulary.data.scopeAgentId && <Alert>
       <CircleAlert />
       <AlertTitle>Назначения действуют во всей установке</AlertTitle>
       <AlertDescription>
@@ -404,7 +581,7 @@ export default function AccessPage() {
     </p>}
 
     {rows.length === 0
-      ? <EmptyState title="Пользователи не найдены" />
+      ? <EmptyState title={organizationsEnabled ? 'В организации пока никого не найдено' : 'Пользователи не найдены'} />
       : <div className="pr-access-list">{rows.map(row => <button
         type="button"
         key={row.principalKey}

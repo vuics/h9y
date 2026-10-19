@@ -10,6 +10,8 @@
 // segments and reach an endpoint that is not listed here.
 
 export const PROCUREMENT_ENDPOINTS = [
+  { method: 'POST', path: '/access/members' },
+  { method: 'POST', path: '/access/members/remove' },
   { method: 'GET', path: '/access/principals' },
   { method: 'GET', path: '/access/principals/{principal_key}' },
   { method: 'POST', path: '/access/principals/{principal_key}/grants' },
@@ -136,6 +138,9 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/prepare' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/preview' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/submit' },
+  { method: 'GET', path: '/organizations' },
+  { method: 'POST', path: '/organizations' },
+  { method: 'POST', path: '/organizations/{organization_id}/agents' },
   { method: 'GET', path: '/overview' },
   { method: 'GET', path: '/overview/board' },
   { method: 'GET', path: '/proposals' },

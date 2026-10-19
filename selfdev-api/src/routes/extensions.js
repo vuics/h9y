@@ -22,6 +22,18 @@ export function normalizeFeatures(features) {
 
 const router = Router()
 
+// The organization a person picked in the workspace, when they belong to
+// several. Forwarded only in its own shape; the procurement service decides
+// whether the person may work there and ignores the choice otherwise, so a
+// forged value can at most select one's own organization.
+const ORGANIZATION_HEADER = 'x-procurement-organization'
+const ORGANIZATION_ID = /^[a-z][a-z0-9_]{1,31}$/
+
+function organizationHeader(req) {
+  const value = String(req?.headers?.[ORGANIZATION_HEADER] || '').trim()
+  return ORGANIZATION_ID.test(value) ? { [ORGANIZATION_HEADER]: value } : {}
+}
+
 function identityHeaders(user) {
   return {
     'x-selfdev-subject-id': String(user?._id || ''),
@@ -70,7 +82,7 @@ router.get('/', checkAuth, async (req, res) => {
   }
   try {
     const response = await axios.get(`${conf.procurement.serviceUrl}/capabilities`, {
-      headers: identityHeaders(req.user),
+      headers: { ...identityHeaders(req.user), ...organizationHeader(req) },
       timeout: conf.procurement.timeoutMs,
     })
     const capability = response.data || {}
@@ -83,6 +95,11 @@ router.get('/', checkAuth, async (req, res) => {
         apiVersion: Number(capability.apiVersion),
         permissions: Array.isArray(capability.permissions) ? capability.permissions : [],
         features: normalizeFeatures(capability.features),
+        // Which organization this person works in; null on an installation
+        // with a single organization or for someone added to none yet.
+        organization: capability.organization && typeof capability.organization === 'object'
+          ? { id: String(capability.organization.id || ''), name: String(capability.organization.name || '') }
+          : null,
         serviceAvailable: true,
         reason: capability.reason,
       }],
@@ -108,5 +125,5 @@ router.get('/', checkAuth, async (req, res) => {
   }
 })
 
-export { identityHeaders }
+export { identityHeaders, organizationHeader }
 export default router

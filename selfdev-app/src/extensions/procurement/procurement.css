@@ -1626,3 +1626,14 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-verdict__tile > b > small { font-size: 13px; font-weight: 400; color: var(--pr-muted); }
 .pr-verdict__tile .pr-portfolio__progress { margin: 4px 0 2px; }
 @media (max-width: 900px) { .pr-verdict--three { grid-template-columns: 1fr; } }
+
+/* The organization this workspace shows; a select only for a person in several. */
+.pr-organization { display: inline-flex; align-items: center; height: 32px; padding: 0 10px; border: 1px solid var(--pr-border); border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--pr-text); background: var(--pr-card); }
+.pr-organization select { border: 0; background: transparent; color: inherit; font: inherit; padding: 0; cursor: pointer; }
+.pr-organization--none { color: var(--pr-muted); font-weight: 400; }
+.pr-access-members { display: flex; flex-direction: column; gap: 10px; }
+.pr-access-invite { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.pr-access-invite .pr-form-field { min-width: 240px; }
+.pr-access-invite fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.pr-access-invitations { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.pr-access-invitations li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 10px; border: 1px dashed var(--pr-border); border-radius: 7px; }

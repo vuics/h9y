@@ -30,6 +30,19 @@ export const accessEndpoints = {
     `/access/principals/${encodeURIComponent(principalKey)}/grants`,
     { method: 'post', data: body },
   )),
+  inviteMember: mutation(({ email, roles }) => request(
+    '/access/members',
+    { method: 'post', data: { email, roles } },
+  )),
+  removeMember: mutation(({ email }) => request(
+    '/access/members/remove',
+    { method: 'post', data: { email } },
+  )),
+  organizations: read(
+    signal => request('/organizations', { signal }),
+    async () => ({ current: null, organizations: [], superadmin: false }),
+  ),
+  createOrganization: mutation(body => request('/organizations', { method: 'post', data: body })),
   revokeAccess: mutation(({ principalKey, bindingId }) => request(
     `/access/principals/${encodeURIComponent(principalKey)}/grants/revoke`,
     { method: 'post', data: { bindingId } },

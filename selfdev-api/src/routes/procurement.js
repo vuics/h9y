@@ -3,7 +3,7 @@ import axios from 'axios'
 
 import conf from '../conf.js'
 import { checkAuth } from '../middleware/check-auth.js'
-import { identityHeaders } from './extensions.js'
+import { identityHeaders, organizationHeader } from './extensions.js'
 import { PROCUREMENT_ENDPOINTS } from './procurementEndpoints.js'
 import { isDenied } from './procurementGatewayPolicy.js'
 
@@ -115,7 +115,7 @@ router.all('*', checkAuth, async (req, res) => {
       url: `${conf.procurement.serviceUrl}${req.path}`,
       params: req.query,
       data: req.method === 'GET' ? undefined : req.body,
-      headers: identityHeaders(req.user),
+      headers: { ...identityHeaders(req.user), ...organizationHeader(req) },
       timeout: timeoutFor(req.path),
       validateStatus: () => true,
       ...(binaryResponse ? { responseType: 'arraybuffer' } : {}),
