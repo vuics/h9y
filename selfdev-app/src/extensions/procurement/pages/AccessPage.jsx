@@ -357,9 +357,50 @@ function MembersPanel({ vocabulary, organization, invitations }) {
   </Card>
 }
 
+const EVENT_LABELS = {
+  ORGANIZATION_CREATED: 'создана организация',
+  ORGANIZATION_SUSPENDED: 'организация приостановлена',
+  ORGANIZATION_REACTIVATED: 'организация возобновлена',
+  AGENT_BOUND: 'привязан агент',
+  MEMBER_INVITED: 'приглашён участник',
+  MEMBER_JOINED: 'участник вошёл',
+  MEMBER_REMOVED: 'участник удалён',
+  OPERATOR_VISIT: 'оператор работал в организации',
+}
+
+/** What happened to organizations, newest first: the operator's own actions included. */
+function OrganizationEvents() {
+  const events = useQuery({
+    queryKey: procurementKeys.organizationEvents(),
+    queryFn: ({ signal }) => procurementApi.organizationEvents(signal),
+  })
+  return <details className="pr-access-legend">
+    <summary>Журнал организаций</summary>
+    {events.isLoading && <LoadingState />}
+    {events.isError && <ErrorState error={events.error} onRetry={events.refetch} />}
+    {events.data && (events.data.events.length === 0
+      ? <p className="pr-note">Пока ничего не произошло.</p>
+      : <ul className="pr-access-invitations">{events.data.events.map(item => <li key={`${item.at}-${item.kind}-${item.actor}`}>
+        <span>
+          <strong>{EVENT_LABELS[item.kind] || item.kind}</strong> <code>{item.organizationId}</code>
+          {item.details?.email && <span className="pr-note"> · {item.details.email}</span>}
+          {item.details?.agent_id && <span className="pr-note"> · агент {item.details.agent_id}</span>}
+        </span>
+        <span className="pr-note">{item.at ? new Date(item.at).toLocaleString('ru-RU') : ''} · {item.actor}</span>
+      </li>)}</ul>)}
+  </details>
+}
+
 /** The installation operator's view: every organization, and creating one. */
 function OrganizationsAdmin({ organizations }) {
   const queryClient = useQueryClient()
+  const status = useMutation({
+    mutationFn: procurementApi.setOrganizationStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: procurementKeys.organizations() })
+      queryClient.invalidateQueries({ queryKey: procurementKeys.organizationEvents() })
+    },
+  })
   const [form, setForm] = useState({ id: '', name: '', adminEmail: '' })
   const create = useMutation({
     mutationFn: procurementApi.createOrganization,
@@ -381,9 +422,31 @@ function OrganizationsAdmin({ organizations }) {
     </CardHeader>
     <CardContent className="pr-access-members">
       <ul className="pr-access-invitations">{organizations.map(item => <li key={item.id}>
-        <span><strong>{item.name}</strong> <code>{item.id}</code></span>
-        <span className="pr-note">база {item.database}{item.agentIds?.length ? ` · агентов: ${item.agentIds.length}` : ''}</span>
+        <span>
+          <strong>{item.name}</strong> <code>{item.id}</code>
+          {item.status === 'SUSPENDED' && <> <Badge variant="outline">приостановлена</Badge></>}
+        </span>
+        <span className="pr-inline-actions">
+          <span className="pr-note">база {item.database}{item.agentIds?.length ? ` · агентов: ${item.agentIds.length}` : ''}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            isDisabled={status.isPending}
+            onPress={() => {
+              const suspend = item.status !== 'SUSPENDED'
+              const question = suspend
+                ? `Приостановить «${item.name}»? Никто из организации не сможет работать, её агенты остановятся. Данные не удаляются.`
+                : `Возобновить «${item.name}»?`
+              if (window.confirm(question)) status.mutate({ id: item.id, suspend })
+            }}
+          >{item.status === 'SUSPENDED' ? 'Возобновить' : 'Приостановить'}</Button>
+        </span>
       </li>)}</ul>
+      {status.isError && <Alert>
+        <AlertTriangle />
+        <AlertTitle>Не удалось изменить статус</AlertTitle>
+        <AlertDescription>{mutationMessage(status.error)}</AlertDescription>
+      </Alert>}
       <form
         className="pr-access-invite"
         onSubmit={event => { event.preventDefault(); create.mutate(form) }}
@@ -412,6 +475,7 @@ function OrganizationsAdmin({ organizations }) {
         <AlertTitle>Не удалось создать организацию</AlertTitle>
         <AlertDescription>{mutationMessage(create.error)}</AlertDescription>
       </Alert>}
+      <OrganizationEvents />
     </CardContent>
   </Card>
 }

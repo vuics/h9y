@@ -59,6 +59,7 @@ export const procurementKeys = {
   autoTriageSettings: () => [...procurementKeys.all, 'auto-triage-settings'],
   accessVocabulary: () => [...procurementKeys.all, 'access-vocabulary'],
   organizations: () => [...procurementKeys.all, 'organizations'],
+  organizationEvents: () => [...procurementKeys.all, 'organization-events'],
   accessPrincipals: filters => [...procurementKeys.all, 'access-principals', filters],
   accessPrincipal: key => [...procurementKeys.all, 'access-principal', String(key)],
 }

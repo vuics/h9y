@@ -21,7 +21,7 @@ import { SelectField } from '../components/SelectField'
 export default function EchemiPage() {
   const { requestId } = useParams()
   const queryClient = useQueryClient()
-  const { canOperateEchemi, canSubmitEchemi, canWriteSuppliers } = useProcurementPermissions()
+  const { canOperateEchemi, canSubmitEchemi, canWriteSuppliers, echemiAvailable } = useProcurementPermissions()
   const [delivery, setDelivery] = useState(initialEchemiDelivery())
   const [operation, setOperation] = useState(null)
   // The buttons are down the page and the answer to them is rendered at the
@@ -35,7 +35,7 @@ export default function EchemiPage() {
   }, [operation])
   const [approveConfirmed, setApproveConfirmed] = useState('')
   const [submitConfirmed, setSubmitConfirmed] = useState('')
-  const query = useQuery({ queryKey: procurementKeys.echemi(requestId), queryFn: ({ signal }) => procurementApi.echemi(requestId, signal) })
+  const query = useQuery({ queryKey: procurementKeys.echemi(requestId), queryFn: ({ signal }) => procurementApi.echemi(requestId, signal), enabled: echemiAvailable })
   const browserAccess = useQuery({
     queryKey: procurementKeys.echemiBrowserAccess(requestId),
     queryFn: ({ signal }) => procurementApi.echemiBrowserAccess(requestId, signal),
@@ -95,6 +95,12 @@ export default function EchemiPage() {
 
   const eligible = useMemo(() => query.data?.search.results.filter(item => item.eligible_for_inquiry) || [], [query.data])
 
+  if (!echemiAvailable) {
+    return <EmptyState
+      title="Echemi недоступна для вашей организации"
+      description="Аккаунт площадки в этой установке работает на другую организацию. Ищите поставщиков через открытые источники."
+    />
+  }
   if (query.isLoading) return <LoadingState />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   if (!query.data) return <EmptyState title="Карточка не найдена" />

@@ -6,13 +6,16 @@ export function useProcurementPermissions() {
   const permissions = capability?.permissions || []
   const features = capability?.features || {}
   const set = new Set(permissions)
+  // The installation's Echemi account works for one organization; elsewhere
+  // the marketplace controls are not offered at all, whatever the role says.
+  const echemiAvailable = features.echemi !== false
   return {
     canReadCards: set.has('CARD_READ'),
     canWriteCards: set.has('CARD_WRITE'),
     canWriteSuppliers: set.has('SUPPLIER_WRITE'),
     canQualifySuppliers: set.has('SUPPLIER_QUALIFY'),
-    canOperateEchemi: set.has('ECHEMI_OPERATE'),
-    canSubmitEchemi: set.has('ECHEMI_SUBMIT'),
+    canOperateEchemi: echemiAvailable && set.has('ECHEMI_OPERATE'),
+    canSubmitEchemi: echemiAvailable && set.has('ECHEMI_SUBMIT'),
     canResearchSourcing: set.has('SOURCING_RESEARCH'),
     canReviewSourcing: set.has('SOURCING_REVIEW'),
     canReadCommunications: set.has('COMMUNICATION_READ'),
@@ -39,7 +42,7 @@ export function useProcurementPermissions() {
     // Several organizations on this installation; the Echemi account works
     // for one of them, and the others are not offered the marketplace.
     organizationsEnabled: features.organizations === true,
-    echemiAvailable: features.echemi !== false,
+    echemiAvailable,
     organization: capability?.organization || null,
   }
 }

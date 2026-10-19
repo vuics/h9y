@@ -19,7 +19,11 @@ export const developmentCapabilities = {
       'AUDIT_READ',
       'SOURCING_RESEARCH',
       'SOURCING_REVIEW',
+      // Shows the access page with its organization panels.
+      'EXPERT_REGISTRY_MANAGE',
     ],
+    features: { organizations: true, echemi: true },
+    organization: { id: 'demo', name: 'Демо-организация' },
     serviceAvailable: true,
     reason: 'Explicit local development fixture mode',
   }],

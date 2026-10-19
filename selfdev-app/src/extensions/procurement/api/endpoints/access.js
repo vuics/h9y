@@ -20,7 +20,12 @@ export const accessEndpoints = {
   ),
   accessPrincipals: read(
     (filters, signal) => request('/access/principals', { params: { search: filters?.search }, signal }),
-    async () => ({ principals: [], scopeAgentId: null, truncated: false }),
+    async () => ({
+      principals: [],
+      invitations: [{ email: 'buyer@demo.example', pendingRoles: ['PROCUREMENT_USER'], invitedAt: '2026-10-19T09:00:00Z' }],
+      scopeAgentId: null,
+      truncated: false,
+    }),
   ),
   accessPrincipal: read(
     (principalKey, signal) => request(`/access/principals/${encodeURIComponent(principalKey)}`, { signal }),
@@ -40,9 +45,29 @@ export const accessEndpoints = {
   )),
   organizations: read(
     signal => request('/organizations', { signal }),
-    async () => ({ current: null, organizations: [], superadmin: false }),
+    // Two organizations and the operator's panel, so the switcher and the
+    // operator controls can be seen without a multi-tenant backend.
+    async () => ({
+      current: { id: 'demo', name: 'Демо-организация' },
+      organizations: [
+        { id: 'demo', name: 'Демо-организация', status: 'ACTIVE', database: 'procurement', agentIds: ['agent-1'] },
+        { id: 'beta', name: 'Бета Химия', status: 'SUSPENDED', database: 'procurement_beta', agentIds: [] },
+      ],
+      superadmin: true,
+    }),
   ),
   createOrganization: mutation(body => request('/organizations', { method: 'post', data: body })),
+  setOrganizationStatus: mutation(({ id, suspend }) => request(
+    `/organizations/${encodeURIComponent(id)}/${suspend ? 'suspend' : 'reactivate'}`,
+    { method: 'post' },
+  )),
+  organizationEvents: read(
+    signal => request('/organizations/events', { params: { limit: 100 }, signal }),
+    async () => ({ events: [
+      { kind: 'ORGANIZATION_SUSPENDED', organizationId: 'beta', actor: 'USER:operator', details: {}, at: '2026-10-19T09:30:00Z' },
+      { kind: 'MEMBER_INVITED', organizationId: 'demo', actor: 'USER:admin', details: { email: 'buyer@demo.example' }, at: '2026-10-19T09:00:00Z' },
+    ] }),
+  ),
   revokeAccess: mutation(({ principalKey, bindingId }) => request(
     `/access/principals/${encodeURIComponent(principalKey)}/grants/revoke`,
     { method: 'post', data: { bindingId } },
