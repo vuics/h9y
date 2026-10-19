@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from './StatusBadge'
 import { CampaignMemberProgress } from './CampaignMemberProgress'
+import { NormalizedMark } from './NormalizedMark'
 import { ChevronDown, ChevronRight, MoreVertical } from './icons'
 import { readableAgentError } from '../lib/agentText'
 import { formatPrice } from '../lib/price'
@@ -400,6 +401,7 @@ export function CampaignMembers({
               <div className="pr-primary-meta">
                 <Link to={`/procurement/requests/${member.cardId}`}>#{member.cardId}</Link>
                 <span>· CAS {member.casNumber || 'не указан'}</span>
+                <NormalizedMark normalized={member.normalized} />
                 {needsMarketplaceAction(member) && <span className="pr-members__flag" title="Заявка на площадке ждёт человека — раскройте строку">Echemi</span>}
               </div>
             </td>
@@ -444,7 +446,7 @@ export function CampaignMembers({
             <td className="pr-members__menu">
               <RowMenu label={`Ещё по веществу: ${member.title}`}>
                 <Link to={`/procurement/requests/${member.cardId}`} role="menuitem">Карточка позиции</Link>
-                {member.sourcingRunId && <Link to={`/procurement/requests/${member.cardId}/sourcing`} role="menuitem">Поиск и кандидаты</Link>}
+                <Link to={`/procurement/requests/${member.cardId}/sourcing`} role="menuitem">Поиск поставщиков</Link>
                 <Link to={`/procurement/requests/${member.cardId}/rfq`} role="menuitem">RFQ</Link>
                 {offers?.offers.length > 0 && <Link to={`/procurement/proposals/compare?cardId=${member.cardId}`} role="menuitem">Сравнить предложения ({offers.offers.length})</Link>}
                 {member.escalationCount > 0 && <Link to={`/procurement/escalations?cardId=${member.cardId}`} role="menuitem">Эскалации ({member.escalationCount})</Link>}

@@ -1619,3 +1619,6 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-agent-binding .pr-form-field { margin: 0; }
 .pr-agent-binding select { width: 100%; }
 @media (max-width: 760px) { .pr-agent-binding { grid-template-columns: 1fr; gap: 4px; } }
+.pr-normalized-mark { display: inline-flex; align-items: center; flex: none; color: color-mix(in oklch, var(--pr-status-green) 70%, var(--pr-muted)); opacity: .85; vertical-align: middle; cursor: default; }
+.pr-normalized-mark svg { display: block; }
+.pr-inline-meta { display: inline-flex; align-items: center; gap: 4px; }

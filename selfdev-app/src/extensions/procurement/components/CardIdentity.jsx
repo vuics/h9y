@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
+import { NormalizedMark } from './NormalizedMark'
 
 // Which substance a screen is about. Both proposal screens are reached with a
 // card id in the URL and then talk only about suppliers and figures, so the
@@ -22,6 +23,7 @@ export function CardIdentity({ cardId }) {
     <Link to={`/procurement/requests/${cardId}`}>Карточка #{cardId}</Link>
     {name && <><span aria-hidden="true"> · </span><strong>{name}</strong></>}
     {card?.casNumber && <><span aria-hidden="true"> · </span><span>CAS {card.casNumber}</span></>}
+    <NormalizedMark normalized={card?.normalizationStatus === 'NORMALIZED'} />
     {card?.targetVolume && <><span aria-hidden="true"> · </span><span>{card.targetVolume}</span></>}
   </p>
 }

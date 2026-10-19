@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Check, FileCheck, MessageSquare, Refresh, Search, Send, Trash } from '../components/icons'
+import { NormalizedMark } from '../components/NormalizedMark'
 
 export default function RequestDetailPage() {
   const { requestId } = useParams()
@@ -77,7 +78,7 @@ export default function RequestDetailPage() {
       <Button variant="outline" isDisabled={remove.isPending} onPress={() => setConfirmingDelete(false)}>Отмена</Button>
     </>
     : <Button variant="outline" onPress={() => setConfirmingDelete(true)}><Trash />Удалить</Button>)}</>
-  return <DetailLayout backTo="/procurement/requests" backLabel="Все карточки" eyebrow={`Карточка #${card.id}`} title={card.title} status={<StatusBadge status={card.stage} />} meta={<>Обновлено {card.updatedAt ? new Date(card.updatedAt).toLocaleString('ru-RU') : '—'}</>} actions={actions} warnings={warnings}>
+  return <DetailLayout backTo="/procurement/requests" backLabel="Все карточки" eyebrow={<span className="pr-inline-meta">Карточка #{card.id} <NormalizedMark normalized={card.normalizationStatus === 'NORMALIZED'} /></span>} title={card.title} status={<StatusBadge status={card.stage} />} meta={<>Обновлено {card.updatedAt ? new Date(card.updatedAt).toLocaleString('ru-RU') : '—'}</>} actions={actions} warnings={warnings}>
     <div className="pr-detail-grid"><Card><CardHeader><CardTitle>Исходные требования</CardTitle></CardHeader><CardContent><DefinitionGrid items={[{ label: 'CAS-номер', value: card.casNumber }, { label: 'Вещество', value: card.substanceName }, { label: 'Чистота / грейд', value: card.purity }, { label: 'Целевой объём', value: card.targetVolume }, { label: 'Нормализация', value: <StatusBadge status={card.normalizationStatus} /> }, { label: 'RFQ', value: <StatusBadge status={card.rfqStatus} /> }]} /></CardContent></Card>
       <Card><CardHeader><CardTitle>Связанные сущности</CardTitle></CardHeader><CardContent className="pr-related"><Link to={`/procurement/requests/${card.id}/sourcing`}><strong>{card.sourcing?.candidateCount ?? 'Запустить'}</strong><span>кандидатов из открытых источников</span></Link><Link to={`/procurement/suppliers?cardId=${card.id}`}><strong>{card.supplierCount ?? '—'}</strong><span>поставщиков</span></Link><Link to={`/procurement/negotiations?cardId=${card.id}`}><strong>Открыть</strong><span>переговоры</span></Link><Link to={`/procurement/proposals?cardId=${card.id}`}><strong>{card.proposalCount ?? '—'}</strong><span>предложений</span></Link></CardContent></Card></div>
     <Card><CardHeader><CardTitle>Состояние данных</CardTitle></CardHeader><CardContent><DefinitionGrid items={[{ label: 'Готовность', value: <StatusBadge status={card.completeness} /> }, { label: 'Текущий этап', value: <StatusBadge status={card.stage} /> }, { label: 'Следующий шаг', value: card.normalizationStatus !== 'NORMALIZED' ? 'Проверить CAS и название через PubChem' : card.stage === 'SOURCING' ? 'Подготовить RFQ и перейти к поиску поставщиков' : card.stage === 'COMPARISON' ? 'Рассмотрение предложений специалистом' : 'Продолжение переговоров и сбор недостающих данных' }]} />{card.normalization && <PubChemResult

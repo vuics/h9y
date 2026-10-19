@@ -31,3 +31,14 @@ test('the agent is named as the agent, with what it could not do', () => {
 test('an unknown kind is still shown rather than dropped', () => {
   assert.equal(historyLine({ kind: 'SOMETHING_NEW' }).text, 'SOMETHING_NEW')
 })
+
+test('the campaign says when it normalized a substance and when it searched without', () => {
+  assert.equal(
+    historyLine({ kind: 'NORMALIZED', data: { title: 'LiTFSI', preferredName: 'Lithium bis(trifluoromethanesulfonyl)imide' } }).text,
+    'LiTFSI: вещество нормализовано по PubChem (Lithium bis(trifluoromethanesulfonyl)imide)',
+  )
+  const failed = historyLine({ kind: 'NORMALIZATION_FAILED', data: { title: 'TBAPF6', code: 'NORMALIZATION_FAILED' } })
+  assert.equal(failed.main, true)
+  assert.equal(failed.text, 'TBAPF6: нормализация не удалась (NORMALIZATION_FAILED) — ищем по данным карточки')
+  assert.equal(historyLine({ kind: 'NORMALIZATION_UNCONFIRMED', data: { title: 'TBAPF6' } }).main, true)
+})
