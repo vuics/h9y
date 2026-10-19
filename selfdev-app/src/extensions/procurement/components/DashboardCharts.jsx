@@ -20,6 +20,7 @@ import {
 import { CircleAlert } from './icons'
 import {
   axisInterval,
+  channelChartPoints,
   dayLabel,
   decimal,
   durationIsReliable,
@@ -30,6 +31,7 @@ import {
   niceTicks,
   percent,
   plural,
+  seriesTotals,
   share,
   stackSegments,
   trafficLightSummary,
@@ -542,72 +544,49 @@ export function OfferGapsChart({ data }) {
   )
 }
 
-/** Daily volume rows, one per series, stacked on a shared date axis.
- *
- * Separate rows rather than one chart: sends run in the hundreds and
- * escalations in the dozens, and on a shared scale the smaller series would be
- * a line along zero. The shared axis keeps the sequence visible — a wave of
- * sending, then the replies, then the escalations they raise.
- */
-const VOLUME_ROWS = [
-  ['sent', 'Отправлено', 'var(--chart-1)'],
-  ['received', 'Получено', 'var(--chart-3)'],
-  ['escalations', 'Эскалации', 'var(--chart-2)'],
+/** The five daily series, each one switchable. Volume first, incidents after. */
+const CHANNEL_SERIES = [
+  ['sent', 'Отправлено сообщений', 'var(--chart-1)', true],
+  ['received', 'Получено', 'var(--chart-3)', true],
+  ['escalations', 'Эскалации', 'var(--chart-2)', true],
+  ['failures', 'Сбои доставки', 'var(--pr-bad, #d03b3b)', false],
+  ['quarantine', 'Карантин', 'var(--pr-purple, #69528f)', false],
 ]
 
-function VolumeRow({ series, dataKey, label, color, total, last }) {
-  const peak = Math.max(0, ...series.map(point => point[dataKey] || 0))
-  const config = { [dataKey]: { label, color } }
-  return (
-    <div className="pr-volume__row">
-      <div className="pr-volume__label">
-        <span>{label}</span>
-        <b>{total ?? 0}</b>
-        <small>макс. {peak} в день</small>
-      </div>
-      <ChartContainer config={config} className="pr-volume__chart" style={{ height: last ? 74 : 54 }}>
-        <BarChart data={series} margin={{ top: 4, right: 16, bottom: 0, left: 16 }} barCategoryGap={1}>
-          <XAxis
-            dataKey="label"
-            hide={!last}
-            tickLine={false}
-            axisLine={false}
-            interval={axisInterval(series.length)}
-            tick={{ fontSize: 11 }}
-          />
-          <YAxis hide domain={[0, Math.max(1, peak)]} />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar dataKey={dataKey} fill={`var(--color-${dataKey})`} radius={[2, 2, 0, 0]} isAnimationActive={false} />
-        </BarChart>
-      </ChartContainer>
-    </div>
-  )
-}
+/** Series that carry no channel, and so ignore the channel filter. */
+const CHANNEL_FREE = new Set(['escalations', 'failures', 'quarantine'])
 
-/** Is the agent working right now, and what is stuck.
+const CHANNEL_FILTERS = [['all', 'Все каналы']]
+
+/** Is the agent working right now, and how much goes through it.
  *
- * Two series and three counters, kept visibly apart. Failures and quarantine are
- * timestamped events and plot as a daily line; "stuck" is a current state with
- * no recorded history, so it sits beside the chart as a number rather than being
- * drawn as a trend nobody measured.
+ * One chart rather than one per series: the toggles pick what to look at and
+ * the axis rescales to what is picked, so a day with two delivery failures is
+ * a visible peak once sends are switched off, instead of a line along zero
+ * under a few hundred messages. "Stuck" stays out of the chart — it is a
+ * current state, and there is no record of what it was last week.
  */
 export function ChannelHealthChart({ data }) {
-  const series = (data?.series || []).map(point => ({
-    label: dayLabel(point.day),
-    failures: point.failures,
-    quarantine: point.quarantine,
-    sent: point.sent || 0,
-    received: point.received || 0,
-    escalations: point.escalations || 0,
-  }))
-  const config = {
-    failures: { label: 'Сбои доставки', color: 'var(--chart-2)' },
-    quarantine: { label: 'Карантин неопознанных', color: 'var(--chart-3)' },
-  }
-  const peak = Math.max(...series.map(p => Math.max(p.failures, p.quarantine)), 0)
+  const [channel, setChannel] = React.useState('all')
+  const [shown, setShown] = React.useState(
+    () => new Set(CHANNEL_SERIES.filter(([, , , on]) => on).map(([key]) => key)),
+  )
+  const available = CHANNEL_SERIES.filter(([key]) => key !== 'escalations' || data?.escalationsAvailable !== false)
+  const points = channelChartPoints(data?.series, channel)
+  const totals = seriesTotals(points, available.map(([key]) => key))
+  const chart = points.map(point => ({ ...point, label: dayLabel(point.day) }))
+  const visible = available.filter(([key]) => shown.has(key))
+  const peak = Math.max(0, ...chart.flatMap(point => visible.map(([key]) => point[key])))
   const ticks = niceTicks(peak)
-  const quiet = data?.totals && !data.totals.failures && !data.totals.quarantine
-  const volumeRows = VOLUME_ROWS.filter(([key]) => key !== 'escalations' || data?.escalationsAvailable !== false)
+  const config = Object.fromEntries(available.map(([key, label, color]) => [key, { label, color }]))
+  const filters = [...CHANNEL_FILTERS, ...(data?.channels || []).map(row => [row.channel, row.label])]
+
+  const toggle = key => setShown(current => {
+    const next = new Set(current)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    return next
+  })
 
   return (
     <Card>
@@ -635,71 +614,95 @@ export function ChannelHealthChart({ data }) {
           ))}
         </div>
 
-        {series.length > 0 && (
-          <div className="pr-volume">
-            {volumeRows.map(([key, label, color], index) => (
-              <VolumeRow
+        {filters.length > 1 && (
+          <div className="pr-channel__filter" role="radiogroup" aria-label="Канал">
+            {filters.map(([key, label]) => (
+              <button
                 key={key}
-                series={series}
-                dataKey={key}
-                label={label}
-                color={color}
-                total={data?.totals?.[key]}
-                last={index === volumeRows.length - 1}
-              />
+                type="button"
+                role="radio"
+                aria-checked={channel === key}
+                data-active={channel === key ? 'true' : undefined}
+                onClick={() => setChannel(key)}
+              >
+                {label}
+              </button>
             ))}
           </div>
         )}
-        {data?.volumeNote && <p className="pr-chart-note">{data.volumeNote}</p>}
 
-        <h4 className="pr-volume__heading">Сбои доставки и карантин</h4>
-        {series.length > 0 && (
-          <ChartContainer config={config} className="tw:aspect-[16/6] tw:w-full">
-            <LineChart data={series} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+        <div className="pr-channel__series" role="group" aria-label="Что показать на графике">
+          {available.map(([key, label, color]) => (
+            <label key={key} className="pr-channel__toggle" data-on={shown.has(key) ? 'true' : undefined}>
+              <input type="checkbox" checked={shown.has(key)} onChange={() => toggle(key)} />
+              <i style={{ background: color }} />
+              <span>{label}</span>
+              <b>{totals[key]}</b>
+              {channel !== 'all' && CHANNEL_FREE.has(key) && <small>все каналы</small>}
+            </label>
+          ))}
+        </div>
+
+        {chart.length > 0 && visible.length > 0 && (
+          <ChartContainer config={config} className="tw:aspect-[16/7] tw:w-full">
+            <LineChart data={chart} margin={{ top: 8, right: 12, bottom: 8, left: 0 }}>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                interval={axisInterval(series.length)}
+                interval={axisInterval(chart.length)}
                 tick={{ fontSize: 11 }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
-                width={28}
+                width={36}
                 domain={[0, ticks[ticks.length - 1]]}
                 ticks={ticks}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <ChartLegend content={<ChartLegendContent />} />
               {/* Straight segments, not a spline: a monotone curve through
                   0, 0, 16, 0, 0 bulges above zero on the days either side, and
                   those days had no incidents at all. Counts do not interpolate. */}
-              <Line
-                type="linear" dataKey="failures" stroke="var(--color-failures)"
-                strokeWidth={2} dot={false} activeDot={{ r: 4 }}
-              />
-              <Line
-                type="linear" dataKey="quarantine" stroke="var(--color-quarantine)"
-                strokeWidth={2} dot={false} activeDot={{ r: 4 }}
-              />
+              {visible.map(([key]) => (
+                <Line
+                  key={key}
+                  type="linear"
+                  dataKey={key}
+                  stroke={`var(--color-${key})`}
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                  isAnimationActive={false}
+                />
+              ))}
             </LineChart>
           </ChartContainer>
         )}
-
-        {quiet && (
-          <p className="pr-chart-note">
-            За период ни одного сбоя доставки и ни одного неопознанного сообщения.
-            Для этого графика пустой ряд — это и есть ответ.
-          </p>
+        {visible.length === 0 && (
+          <p className="pr-funnel__foot">Выберите хотя бы один ряд, чтобы увидеть график.</p>
         )}
-        <p className="pr-chart-note">
-          За период: сбоев <b>{data?.totals?.failures ?? 0}</b>, в карантин попало{' '}
-          <b>{data?.totals?.quarantine ?? 0}</b>
-        </p>
-        <p className="pr-chart-note">{data?.seriesNote}</p>
+
+        {(data?.channels || []).length > 0 && (
+          <table className="pr-channel__table">
+            <thead>
+              <tr><th>Канал</th><th>Отправлено</th><th>Получено</th></tr>
+            </thead>
+            <tbody>
+              {data.channels.map(row => (
+                <tr key={row.channel}>
+                  <td>{row.label}</td>
+                  <td>{row.sent}</td>
+                  <td>{row.received}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {data?.volumeNote && <p className="pr-chart-note">{data.volumeNote}</p>}
+        {data?.seriesNote && <p className="pr-chart-note">{data.seriesNote}</p>}
       </CardContent>
     </Card>
   )

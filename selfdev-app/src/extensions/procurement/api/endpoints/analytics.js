@@ -28,11 +28,6 @@ const emptySupplyBase = {
   awaitingReview: 0, candidateTotal: 0, supplierTotal: 0, sourcingAvailable: true,
 }
 
-const emptyPortfolio = {
-  available: true, total: 0, active: 0, statuses: [], positions: 0, stages: [],
-  waitingForPerson: 0, campaigns: [], truncated: false,
-}
-
 const emptyPrices = {
   cards: 0, pricedCards: 0, comparedCards: 0, marketChecked: 0, marketCheckSize: 3,
   spread: { median: null, sample: 0 },
@@ -81,10 +76,6 @@ export const analyticsEndpoints = {
   analyticsSupplyBase: read(
     signal => request('/analytics/supply-base', { signal }),
     async () => emptySupplyBase,
-  ),
-  analyticsPortfolio: read(
-    signal => request('/analytics/portfolio', { signal }),
-    async () => emptyPortfolio,
   ),
   analyticsPrices: read(
     signal => request('/analytics/prices', { signal }),

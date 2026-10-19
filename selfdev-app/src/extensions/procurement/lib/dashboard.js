@@ -444,3 +444,24 @@ export function benchmarkVerdict(benchmark) {
   }
   return { headline, tiles, cases: benchmark?.cases || 0, actions: benchmark?.specialistActions || null }
 }
+
+/** The channel series as one chart reads them: volume for the chosen channel,
+ *  incidents always for all of them, since neither carries a channel. */
+export function channelChartPoints(series, channel = 'all') {
+  return (series || []).map(point => {
+    const picked = channel === 'all' ? point : (point.channels?.[channel] || { sent: 0, received: 0 })
+    return {
+      day: point.day,
+      sent: picked.sent || 0,
+      received: picked.received || 0,
+      escalations: point.escalations || 0,
+      failures: point.failures || 0,
+      quarantine: point.quarantine || 0,
+    }
+  })
+}
+
+/** Totals of each series over the points, for the toggles' labels. */
+export function seriesTotals(points, keys) {
+  return Object.fromEntries(keys.map(key => [key, points.reduce((sum, point) => sum + (point[key] || 0), 0)]))
+}

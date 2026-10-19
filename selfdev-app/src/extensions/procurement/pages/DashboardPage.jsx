@@ -61,7 +61,7 @@ import {
 } from '../components/DashboardCharts'
 import { BenchmarkChart } from '../components/BenchmarkChart'
 import { DashboardCsvButton, ExportableCard } from '../components/ChartExport'
-import { PortfolioCard, ReviewBacklogBanner, VerdictCard } from '../components/DashboardPortfolio'
+import { VerdictCard } from '../components/DashboardVerdict'
 
 const PERIODS = [
   ['7', '7 дней'],
@@ -597,38 +597,6 @@ function VerdictSection({ params }) {
   return <ExportableCard title="Агент и человек — коротко"><VerdictCard data={query.data} /></ExportableCard>
 }
 
-/** What is in flight now, and the review queue if people are the bottleneck.
- *
- * Shares the supply-base query with the section further down, so the banner
- * and the traffic light can never disagree about the same queue.
- */
-function NowSection() {
-  const [supplyBase, portfolio] = useQueries({
-    queries: [
-      {
-        queryKey: procurementKeys.analyticsSupplyBase(),
-        queryFn: ({ signal }) => procurementApi.analyticsSupplyBase(signal),
-      },
-      {
-        queryKey: procurementKeys.analyticsPortfolio(),
-        queryFn: ({ signal }) => procurementApi.analyticsPortfolio(signal),
-      },
-    ],
-  })
-  return (
-    <>
-      <ReviewBacklogBanner supplyBase={supplyBase.data} portfolio={portfolio.data} />
-      {portfolio.isLoading ? (
-        <LoadingState rows={4} />
-      ) : portfolio.isError ? (
-        <ErrorState error={portfolio.error} onRetry={portfolio.refetch} />
-      ) : (
-        <ExportableCard title="Закупки в работе"><PortfolioCard data={portfolio.data} /></ExportableCard>
-      )}
-    </>
-  )
-}
-
 function SupplyBaseSection() {
   const query = useQuery({
     queryKey: procurementKeys.analyticsSupplyBase(),
@@ -698,8 +666,6 @@ export default function DashboardPage() {
         </div>
         <DashboardCsvButton params={params} />
       </div>
-
-      <NowSection />
 
       <VerdictSection params={params} />
 

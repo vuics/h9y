@@ -398,3 +398,16 @@ test('benchmarkVerdict says plainly when there is no baseline', async () => {
   const verdict = benchmarkVerdict({ cases: 3, rows: [{ key: 'QUOTES_RECEIVED', human: { value: null }, agent: { value: 2 } }] })
   assert.match(verdict.headline, /не введены/)
 })
+
+test('channelChartPoints filters volume by channel and leaves incidents whole', async () => {
+  const { channelChartPoints, seriesTotals } = await import('./dashboard.js')
+  const series = [
+    { day: '2026-10-01', sent: 10, received: 4, escalations: 2, failures: 1, quarantine: 3,
+      channels: { email: { sent: 7, received: 3 }, echemi: { sent: 1, received: 1 } } },
+    { day: '2026-10-02', sent: 5, received: 1, escalations: 0, failures: 0, quarantine: 1, channels: {} },
+  ]
+  const email = channelChartPoints(series, 'email')
+  assert.deepEqual(email[0], { day: '2026-10-01', sent: 7, received: 3, escalations: 2, failures: 1, quarantine: 3 })
+  assert.equal(email[1].sent, 0)
+  assert.deepEqual(seriesTotals(channelChartPoints(series), ['sent', 'quarantine']), { sent: 15, quarantine: 4 })
+})

@@ -1548,43 +1548,11 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-geo__more { align-self: flex-start; border: 0; background: none; padding: 2px 0; color: var(--pr-accent); font: inherit; font-size: 12.5px; cursor: pointer; }
 .pr-geo__more:hover { text-decoration: underline; }
 
-/* The review backlog: one line across the page, only when people are the bottleneck. */
-.pr-review-banner { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 14px 16px; border-radius: 12px; background: var(--pr-warning-soft); color: var(--pr-text); border: 1px solid color-mix(in oklch, var(--pr-warning) 30%, transparent); }
-.pr-review-banner > svg { width: 20px; height: 20px; color: var(--pr-warning); margin-top: 1px; }
-.pr-review-banner strong { display: block; font-size: 14px; }
-.pr-review-banner span { display: block; margin-top: 2px; }
-.pr-review-banner small { display: block; margin-top: 4px; color: var(--pr-muted); font-size: 12px; }
-.pr-review-banner__link { white-space: nowrap; font-weight: 600; align-self: center; }
-@media (max-width: 560px) {
-  .pr-review-banner { grid-template-columns: auto 1fr; }
-  .pr-review-banner__link { grid-column: 2; }
-}
-
-/* Purchases in flight. */
+/* A 100% bar and a thin progress bar, shared by the role and price cards. */
 .pr-portfolio { display: flex; flex-direction: column; gap: 14px; }
-.pr-portfolio__totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.pr-portfolio__totals > div { display: flex; flex-direction: column; padding: 10px 12px; border: 1px solid var(--pr-border); border-radius: 10px; }
-.pr-portfolio__totals > div[data-warn="true"] { border-color: color-mix(in oklch, var(--pr-warning) 45%, transparent); background: var(--pr-warning-soft); }
-.pr-portfolio__totals b { font-size: 22px; line-height: 1.2; }
-.pr-portfolio__totals span { color: var(--pr-muted); font-size: 12px; }
 .pr-stackbar { display: flex; gap: 2px; height: 14px; border-radius: 7px; overflow: hidden; background: var(--chart-track); }
 .pr-stackbar > i, .pr-portfolio__progress > i { display: block; height: 100%; }
-.pr-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--pr-muted); }
-.pr-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.pr-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.pr-legend b { color: var(--pr-text); }
-.pr-portfolio__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.pr-portfolio__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 34%); gap: 6px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--pr-border); }
-.pr-portfolio__title { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.pr-portfolio__title a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .pr-portfolio__progress { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--chart-track); }
-.pr-portfolio__meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--pr-muted); }
-.pr-portfolio__meta b { color: var(--pr-text); }
-.pr-portfolio__waiting { color: var(--pr-warning); }
-@media (max-width: 560px) {
-  .pr-portfolio__totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pr-portfolio__row { grid-template-columns: 1fr; }
-}
 
 /* Roles: one bar split to 100%, with a legend that carries the numbers. */
 .pr-stackbar--tall { height: 22px; border-radius: 8px; }
@@ -1599,16 +1567,21 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-role__legend i { width: 12px; height: 12px; border-radius: 3px; }
 .pr-role__legend small { color: var(--pr-muted); text-align: right; font-size: 12px; }
 
-/* Channel volume: small multiples on a shared date axis. */
-.pr-volume { display: flex; flex-direction: column; gap: 4px; margin-top: 14px; }
-.pr-volume__row { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; align-items: end; }
-.pr-volume__label { display: flex; flex-direction: column; padding-bottom: 4px; }
-.pr-volume__label span { font-size: 12.5px; }
-.pr-volume__label b { font-size: 18px; line-height: 1.2; }
-.pr-volume__label small { color: var(--pr-muted); font-size: 11px; }
-.pr-volume__chart { width: 100%; aspect-ratio: auto !important; }
-.pr-volume__row:last-child .pr-volume__label { padding-bottom: 24px; }
-.pr-volume__heading { margin: 18px 0 4px; font-size: 13px; font-weight: 600; }
+/* Channels: one chart, a channel filter and a switch per series. */
+.pr-channel__filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 10px; }
+.pr-channel__filter button { border: 1px solid var(--pr-border); background: var(--pr-card); color: var(--pr-text); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.pr-channel__filter button[data-active="true"] { background: var(--pr-text); color: var(--pr-card); border-color: var(--pr-text); }
+.pr-channel__series { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 8px; }
+.pr-channel__toggle { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--pr-border); border-radius: 8px; font-size: 12.5px; cursor: pointer; opacity: .55; user-select: none; }
+.pr-channel__toggle[data-on="true"] { opacity: 1; border-color: var(--pr-border-strong); }
+.pr-channel__toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.pr-channel__toggle:focus-within { outline: 2px solid var(--pr-accent); outline-offset: 1px; }
+.pr-channel__toggle i { width: 10px; height: 10px; border-radius: 3px; }
+.pr-channel__toggle small { color: var(--pr-muted); font-size: 11px; }
+.pr-channel__table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12.5px; }
+.pr-channel__table th, .pr-channel__table td { padding: 5px 0; border-top: 1px solid var(--pr-border); text-align: right; }
+.pr-channel__table th:first-child, .pr-channel__table td:first-child { text-align: left; }
+.pr-channel__table th { color: var(--pr-muted); font-weight: 500; }
 
 /* Agent against person, in one line and a few tiles. */
 .pr-verdict__headline { margin: 2px 0 0; font-size: 15px; font-weight: 600; color: var(--pr-text); }
