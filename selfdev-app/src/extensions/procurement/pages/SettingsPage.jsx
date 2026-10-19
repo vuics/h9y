@@ -8,6 +8,7 @@ import { procurementKeys } from '../api/queryKeys'
 import { LoadingState, ErrorState } from '../components/AsyncState'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { AutoTriageCard, SearchConcurrencyCard, SendingLimitsCard } from '../components/SendingLimits'
+import { AgentBindingCard } from '../components/AgentBindingCard'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -139,7 +140,7 @@ function SenderEditor({ sender, index, setDraft, canEdit, defaultSenderId, onUse
 
 export default function SettingsPage() {
   const queryClient = useQueryClient()
-  const { canManageBuyerSettings, canManageSenders, echemiSubmissionEnabled } = useProcurementPermissions()
+  const { canManageBuyerSettings, canManageSenders, echemiSubmissionEnabled, canManageAccess, organizationsEnabled } = useProcurementPermissions()
   const query = useQuery({ queryKey: procurementKeys.buyerSettings(), queryFn: ({ signal }) => procurementApi.buyerSettings(signal) })
   const [draft, setDraft] = useState(null)
   const [profileLoading, setProfileLoading] = useState(false)
@@ -328,6 +329,8 @@ export default function SettingsPage() {
 
     <SearchConcurrencyCard canEdit={canManageBuyerSettings} />
     <AutoTriageCard canEdit={canManageBuyerSettings} />
+    {/* Administrators only: who works for which organization is an access decision. */}
+    {organizationsEnabled && canManageAccess && <AgentBindingCard />}
 
     <div ref={saveErrorRef}>
       {save.isError && <Alert variant="destructive"><AlertTriangle /><AlertTitle>Настройки не сохранены</AlertTitle><AlertDescription>

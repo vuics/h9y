@@ -61,6 +61,22 @@ export const accessEndpoints = {
     `/organizations/${encodeURIComponent(id)}/${suspend ? 'suspend' : 'reactivate'}`,
     { method: 'post' },
   )),
+  organizationAgents: read(
+    signal => request('/organizations/agents', { signal }),
+    async () => ({
+      agents: [
+        { id: 'agent-1', name: 'demo-procurement', kind: 'PROCUREMENT', deployed: true, owner: 'admin@demo.example', ownedByMe: true, binding: 'EXPLICIT', organization: { id: 'demo', name: 'Демо-организация' } },
+        { id: 'agent-2', name: 'demo-negotiator', kind: 'NEGOTIATOR', deployed: true, owner: 'buyer@demo.example', ownedByMe: false, binding: 'NONE', organization: null },
+        { id: 'agent-3', name: 'elsewhere-negotiator', kind: 'NEGOTIATOR', deployed: false, owner: 'buyer@demo.example', ownedByMe: false, binding: 'EXPLICIT', organization: { hidden: true } },
+      ],
+      organizations: [{ id: 'demo', name: 'Демо-организация' }],
+      superadmin: false,
+    }),
+  ),
+  bindAgent: mutation(({ agentId, organizationId }) => request(
+    `/organizations/agents/${encodeURIComponent(agentId)}`,
+    { method: 'post', data: { organizationId } },
+  )),
   setOrganizationEchemi: mutation(({ id, enabled }) => request(
     `/organizations/${encodeURIComponent(id)}/echemi`,
     { method: 'post', data: { enabled } },

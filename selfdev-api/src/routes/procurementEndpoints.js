@@ -140,6 +140,8 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/negotiations/{negotiation_id}/web-form/submit' },
   { method: 'GET', path: '/organizations' },
   { method: 'POST', path: '/organizations' },
+  { method: 'GET', path: '/organizations/agents' },
+  { method: 'POST', path: '/organizations/agents/{agent_id}' },
   { method: 'GET', path: '/organizations/events' },
   { method: 'POST', path: '/organizations/{organization_id}/agents' },
   { method: 'POST', path: '/organizations/{organization_id}/echemi' },
