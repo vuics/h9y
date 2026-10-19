@@ -1622,3 +1622,4 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-normalized-mark { display: inline-flex; align-items: center; flex: none; color: color-mix(in oklch, var(--pr-status-green) 70%, var(--pr-muted)); opacity: .85; vertical-align: middle; cursor: default; }
 .pr-normalized-mark svg { display: block; }
 .pr-inline-meta { display: inline-flex; align-items: center; gap: 4px; }
+.pr-members__bulk-note { flex-basis: 100%; color: var(--pr-text); font-size: 13px; }

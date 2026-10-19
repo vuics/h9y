@@ -261,6 +261,9 @@ export function CampaignMembers({
   escalationsByCard = new Map(),
   // Searching chosen substances again: the page owns the mutation.
   canResearch, onResearch, researchPending,
+  // Normalizing and taking out several at once; also the page's mutations.
+  canNormalize, onNormalize, normalizePending, normalizeNote,
+  onRemoveMany, removeManyPending,
 }) {
   // What a person opened or folded by hand; a new mode starts from its own rules.
   const [manual, setManual] = useState(() => ({ mode, rows: new Map(), sections: new Map() }))
@@ -310,6 +313,9 @@ export function CampaignMembers({
     return next
   })
   const columns = canResearch ? 9 : 8
+  const removableSelected = canRemove
+    ? members.filter(member => selected.has(member.cardId) && removable(member)).map(member => member.cardId)
+    : []
 
   return <section className="pr-members">
     <div className="pr-members__filters" role="group" aria-label="Показать вещества">
@@ -338,8 +344,22 @@ export function CampaignMembers({
         isDisabled={researchPending}
         onPress={() => onResearch([...selected], () => setSelected(new Set()))}
       >{researchPending ? 'Запускаем…' : `Искать заново (${selected.size})`}</Button>
+      {canNormalize && <Button
+        size="sm"
+        variant="outline"
+        isDisabled={normalizePending}
+        onPress={() => onNormalize([...selected])}
+      >{normalizePending ? 'Проверяем в PubChem…' : `Нормализовать (${selected.size})`}</Button>}
+      {canRemove && removableSelected.length > 0 && <Button
+        size="sm"
+        variant="outline"
+        className="pr-row-menu__danger"
+        isDisabled={removeManyPending}
+        onPress={() => onRemoveMany(removableSelected, () => setSelected(new Set()))}
+      >{removeManyPending ? 'Убираем…' : `Убрать из закупки (${removableSelected.length})`}</Button>}
       <Button size="sm" variant="ghost" onPress={() => setSelected(new Set())}>Снять выбор</Button>
-      <span className="pr-muted">С текущими настройками закупки — глубина, движки, запросы. Найденное сольётся с прежним поиском; решения по кандидатам сохранятся. Вещества, где поиск уже идёт, пропускаются.</span>
+      <span className="pr-muted">Искать заново — с текущими настройками закупки: глубина, движки, запросы; ненормализованные вещества сначала нормализуются. Найденное сольётся с прежним поиском; решения по кандидатам сохранятся. Вещества, где поиск уже идёт, пропускаются.{canRemove && removableSelected.length < selected.size && ' Убрать можно только позиции, по которым ещё ничего не отправлено.'}</span>
+      {normalizeNote && <span className="pr-members__bulk-note" role="status">{normalizeNote}</span>}
     </div>}
 
     <div className="pr-table-wrap"><table className="pr-table pr-members__table">

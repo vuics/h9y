@@ -44,6 +44,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/campaigns/{campaign_id}/marketplace/{card_id}/resend' },
   { method: 'POST', path: '/campaigns/{campaign_id}/members' },
   { method: 'POST', path: '/campaigns/{campaign_id}/members/{card_id}/remove' },
+  { method: 'POST', path: '/campaigns/{campaign_id}/normalize' },
   { method: 'POST', path: '/campaigns/{campaign_id}/outreach' },
   { method: 'POST', path: '/campaigns/{campaign_id}/pause' },
   { method: 'POST', path: '/campaigns/{campaign_id}/research' },

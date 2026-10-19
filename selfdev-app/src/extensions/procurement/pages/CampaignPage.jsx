@@ -28,7 +28,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, CircleAlert, Clock, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
+import { AlertTriangle, Check, ChevronDown, ChevronRight, CircleAlert, Clock, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
+import { normalizeSummary } from '../lib/normalizeSummary'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
  *
@@ -300,6 +301,7 @@ export default function CampaignPage() {
   const queryClient = useQueryClient()
   const {
     canResearchSourcing, canQueueNegotiations, canOperateEchemi, canSubmitEchemi, canReadEscalations,
+    canWriteCards,
   } = useProcurementPermissions()
 
   const query = useQuery({
@@ -405,6 +407,22 @@ export default function CampaignPage() {
   const research = useMutation({
     mutationFn: cardIds => procurementApi.researchCampaignCards(campaignId, cardIds),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) }),
+  })
+  const normalizeCards = useMutation({
+    mutationFn: cardIds => procurementApi.normalizeCampaignCards(campaignId, cardIds),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) }),
+  })
+  // One request per position, one after another: the server takes them out
+  // one at a time anyway, and a refusal stops the rest rather than leaving
+  // the selection half done without saying where.
+  const removeCards = useMutation({
+    mutationFn: async cardIds => {
+      let result = null
+      for (const cardId of cardIds) result = await procurementApi.removeCampaignCard(campaignId, cardId)
+      return result
+    },
+    onSuccess: result => { if (result) accept(result) },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) }),
   })
   const removeCard = useMutation({
     mutationFn: cardId => procurementApi.removeCampaignCard(campaignId, cardId),
@@ -917,6 +935,7 @@ export default function CampaignPage() {
         {research.data.started.length > 0 && <>Ход поиска видно в строках таблицы; когда он закончится, найденное сольётся с прежним. </>}
         {research.data.skipped.length > 0 && <>Пропущено: {research.data.skipped.map(item => `#${item.cardId} — ${item.code === 'SEARCH_RUNNING' ? 'поиск уже идёт' : item.code === 'NOT_IN_CAMPAIGN' ? 'не в закупке' : item.message || item.code}`).join('; ')}.</>}
       </AlertDescription></Alert>}
+      {removeCards.error && <Alert><AlertTriangle /><AlertTitle>Убраны не все выбранные вещества</AlertTitle><AlertDescription>{removeCards.error?.response?.data?.detail?.message || mutationMessage(removeCards.error)}</AlertDescription></Alert>}
       {research.error && <Alert><AlertTriangle /><AlertTitle>Поиск не запущен</AlertTitle><AlertDescription>{mutationMessage(research.error)}</AlertDescription></Alert>}
       {cancel.data?.effects && <Alert><Check /><AlertTitle>Закупка остановлена</AlertTitle><AlertDescription>
         Закрыто переговоров: {cancel.data.effects.cancelledNegotiations}, отклонено неотправленных писем: {cancel.data.effects.rejectedDrafts}. Вещества, которые ведёт другая закупка, не затронуты; история переписки сохранена.
@@ -1001,7 +1020,7 @@ export default function CampaignPage() {
             {marketplaceNeedsReview > 0 && <Button size="sm" variant="outline" onPress={() => showView('echemi')}>{`${marketplaceNeedsReview} ${plural(marketplaceNeedsReview, 'заявка', 'заявки', 'заявок')} Echemi ждёт проверки`}</Button>}
             {failedAsks > 0 && <Button size="sm" variant="outline" onPress={() => { showView('members'); setFilter('failed') }}>{`${failedAsks} ${plural(failedAsks, 'позиция', 'позиции', 'позиций')} с ошибкой`}</Button>}
             {otherAsks > 0 && <Button size="sm" variant="outline" onPress={() => setShowAsks(true)}>{`ещё ${otherAsks}: найти поставщика или контакт`}</Button>}
-            <Button variant="ghost" size="sm" onPress={() => setShowAsks(value => !value)}>{showAsks ? 'Свернуть' : 'По позициям'}</Button>
+            <Button variant="ghost" size="sm" aria-expanded={showAsks} onPress={() => setShowAsks(value => !value)}>{showAsks ? <ChevronDown size={14} /> : <ChevronRight size={14} />}По позициям</Button>
           </div>
         </div>
         {showAsks && <ul className="pr-campaign-asks__list">
@@ -1066,6 +1085,14 @@ export default function CampaignPage() {
         canResearch={canResearchSourcing && campaign.status !== 'CANCELLED'}
         onResearch={(cardIds, done) => research.mutate(cardIds, { onSuccess: done })}
         researchPending={research.isPending}
+        canNormalize={canWriteCards && campaign.status !== 'CANCELLED'}
+        onNormalize={cardIds => normalizeCards.mutate(cardIds)}
+        normalizePending={normalizeCards.isPending}
+        normalizeNote={normalizeCards.error
+          ? `Нормализация не выполнена: ${mutationMessage(normalizeCards.error)}`
+          : normalizeCards.data && normalizeSummary(normalizeCards.data)}
+        onRemoveMany={(cardIds, done) => removeCards.mutate(cardIds, { onSuccess: done })}
+        removeManyPending={removeCards.isPending}
         removable={member => removable(member, campaign)}
         onRemove={cardId => removeCard.mutate(cardId)}
         removePending={removeCard.isPending}

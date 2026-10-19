@@ -31,6 +31,9 @@ export const campaignEndpoints = {
     request(`/campaigns/${id(campaignId)}/members`, { method: 'post', data: { cardIds } })),
   researchCampaignCards: mutation((campaignId, cardIds) =>
     request(`/campaigns/${id(campaignId)}/research`, { method: 'post', data: { cardIds } })),
+  // Presses «Нормализовать» on the chosen cards; the answer has one outcome per card.
+  normalizeCampaignCards: mutation((campaignId, cardIds) =>
+    request(`/campaigns/${id(campaignId)}/normalize`, { method: 'post', data: { cardIds } })),
   removeCampaignCard: mutation((campaignId, cardId) =>
     request(`/campaigns/${id(campaignId)}/members/${id(cardId)}/remove`, { method: 'post' })),
   cancelCampaign: mutation(campaignId =>
