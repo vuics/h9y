@@ -8,9 +8,12 @@ import { selectOrganization } from '../lib/organization'
 
 /** The organization this workspace shows, and the switch for a person in several.
  *
- * Switching reloads the page rather than refetching in place: every cached
- * list, the capability check and the permissions belong to the organization
- * they were read in, and a page that mixed two would be worse than a reload.
+ * Switching reloads rather than refetching in place: every cached list, the
+ * capability check and the permissions belong to the organization they were
+ * read in, and a page that mixed two would be worse than a reload. It reloads
+ * the workspace home, not the current address: a campaign or a card open in
+ * one organization does not exist in the next, and reopening it there would
+ * greet the person with "not found".
  */
 export function OrganizationSwitcher() {
   const { organizationsEnabled, organization } = useProcurementPermissions()
@@ -34,7 +37,7 @@ export function OrganizationSwitcher() {
       value={current?.id || ''}
       onChange={event => {
         selectOrganization(event.target.value)
-        window.location.reload()
+        window.location.assign('/procurement')
       }}
     >
       {!current && <option value="">— выберите организацию —</option>}
