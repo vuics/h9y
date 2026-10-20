@@ -6,16 +6,16 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from './SourcingSettings'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, Check, ChevronDown, ChevronRight, CircleAlert, ExternalLink, Refresh } from './icons'
 import {
-  CONCLUDED, DECISION_LABEL, MARKETPLACE_SKIPPED, RFQ_STATUS, SUGGESTED, VERDICTS,
+  CONCLUDED, DECISION_LABEL, MARKETPLACE_SKIPPED, SUGGESTED, VERDICTS,
   blockedText, dispatchProblems, dispatchTitle, mutationMessage, verdictKey,
 } from '../lib/campaignReview'
 
-/** The parts of a campaign's approval, for the approval page and the purchase
- * page alike. Each takes `review`, the state of `useCampaignReview`, so a
- * decision made in one is the same decision in the other.
+/** The parts of a campaign's approval, drawn in the purchase page's positions
+ * and its «Согласование» mode. Each takes `review`, the state of
+ * `useCampaignReview`, so a decision made in one is the same decision in the
+ * other.
  */
 
 /** What the last press answered, and what this person may not do. */
@@ -41,10 +41,8 @@ export function ReviewAlerts({ review }) {
   </>
 }
 
-/** The substances whose identity is unsettled, settled in bulk where safe.
- * A card on the approval page, a plain block in the purchase page's strip.
- */
-export function IdentitySummary({ review, card = false, anchor = cardId => `#review-${cardId}` }) {
+/** The substances whose identity is unsettled, settled in bulk where safe. */
+export function IdentitySummary({ review }) {
   const { identityItems, confirmable, identity, canWriteCards } = review
   if (!identityItems.length) return null
   const busy = identity.isPending
@@ -55,14 +53,8 @@ export function IdentitySummary({ review, card = false, anchor = cardId => `#rev
       <Button isDisabled={busy} onPress={() => identity.mutate({ action: 'recheck', cardIds: identityItems.map(item => item.cardId) })}><Refresh className={busy ? 'pr-spin' : undefined} />{busy ? 'Проверяем…' : `Перепроверить в PubChem (${identityItems.length})`}</Button>
       {confirmable.length > 0 && <Button variant="outline" isDisabled={busy} onPress={() => identity.mutate({ action: 'confirm', cardIds: confirmable.map(item => item.cardId) })}>Подтвердить как в карточке ({confirmable.length})</Button>}
     </div>}
-    <ul className="pr-plain-list">{identityItems.map(item => <li key={item.cardId}><a href={anchor(item.cardId)}>#{item.cardId} {item.title}</a> — {item.normalization.casMatches === false ? 'CAS не совпадает с названием' : 'название не совпадает с PubChem'}</li>)}</ul>
+    <ul className="pr-plain-list">{identityItems.map(item => <li key={item.cardId}><a href={`#member-${item.cardId}`}>#{item.cardId} {item.title}</a> — {item.normalization.casMatches === false ? 'CAS не совпадает с названием' : 'название не совпадает с PubChem'}</li>)}</ul>
   </>
-  if (card) {
-    return <Card className="pr-review-identity-summary"><CardHeader><div>
-      <CardTitle>{title}</CardTitle>
-      {text}
-    </div></CardHeader><CardContent>{body}</CardContent></Card>
-  }
   return <div className="pr-review-identity-summary"><strong>{title}</strong>{text}{body}</div>
 }
 
@@ -151,81 +143,15 @@ function IdentityBlock({ review, item }) {
   </div>
 }
 
-/** Everything one substance asks to be approved: its identity, its companies,
- * the companies already decided, and its RFQ — with the way to the search and
- * the RFQ pages when `links` is set.
- */
-export function ReviewItem({ review, item, links = false }) {
-  if (links) return <PositionReview review={review} item={item} />
-  const { appliedById, revising, setRevising, opened, setOpened, rfqs, tickRfq, apply, canWriteCards } = review
-  const result = appliedById.get(item.cardId)
-  const open = item.candidates.filter(candidate => candidate.reviewDecision === 'UNREVIEWED')
-  const decided = item.candidates.filter(candidate => candidate.reviewDecision !== 'UNREVIEWED')
-  const hasRun = item.candidates.length > 0
-  return <>
-    {result && <Alert>{result.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>{result.errors?.length ? 'Применено частично' : 'Применено'}</AlertTitle><AlertDescription>
-      Подтверждено {result.verified?.length ?? 0}, стало поставщиками {result.promoted?.length ?? 0}{result.rfqApproved ? ', RFQ согласован' : ''}.
-      {result.errors?.length > 0 && <ul className="pr-plain-list">{result.errors.map((error, index) => <li key={index}>{error.candidateId ? `${error.candidateId}: ` : ''}{error.message}</li>)}</ul>}
-    </AlertDescription></Alert>}
-
-    {item.normalization && <IdentityBlock review={review} item={item} />}
-
-    {!hasRun
-      ? <p className="pr-note">{item.blockedBy ? <>Пока нечего согласовывать: {blockedText(item.blockedBy)}. </> : 'Поиск не нашёл кандидатов. '}<Link to={`/procurement/requests/${item.cardId}/sourcing`}>Открыть поиск</Link></p>
-      : <>
-        {open.length > 0 && <BulkVerdicts review={review} scope={[item]} />}
-        {open.length > 0 && <CandidateTable review={review} item={item} candidates={open} editable />}
-        {decided.length > 0 && <div className="pr-review-decided">
-          <button type="button" className="pr-review-rfq__toggle" onClick={() => setRevising(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
-            {revising[item.cardId] ? 'Свернуть принятые решения' : `Принятые решения (${decided.length}) — показать и изменить`}
-          </button>
-          {revising[item.cardId] && <>
-            {item.stage === 'OUTREACH' || item.stage === 'NEGOTIATION'
-              ? <p className="pr-note">Запросы по этому веществу уже ушли. Новая роль или новый поставщик учтутся дальше, но уже отправленное письмо не отзывается.</p>
-              : null}
-            <CandidateTable review={review} item={item} candidates={decided} editable />
-          </>}
-        </div>}
-      </>}
-
-    {item.rfq && <div className="pr-review-rfq">
-      <header>
-        <strong>Запрос предложения (RFQ)</strong>
-        <span>{RFQ_STATUS[item.rfq?.status] || item.rfq?.status || '—'}</span>
-      </header>
-      {item.rfq?.subject && <>
-        <button type="button" className="pr-review-rfq__toggle" onClick={() => setOpened(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}>
-          {opened[item.cardId] ? 'Свернуть текст' : 'Показать текст'}
-        </button>
-        <p className="pr-review-rfq__subject">{item.rfq.subject}</p>
-        {opened[item.cardId] && <pre className="pr-review-rfq__body">{item.rfq.bodyMarkdown}</pre>}
-      </>}
-      {item.rfq?.status === 'APPROVED'
-        ? <p className="pr-note">Согласован. Изменение карточки или текста снимает согласование.</p>
-        : item.rfq?.documentFingerprint
-          ? <label className="pr-review-rfq__approve">
-            <input
-              type="checkbox"
-              checked={Boolean(rfqs[item.cardId])}
-              aria-label={`Согласовать RFQ по веществу ${item.title}`}
-              disabled={!canWriteCards || apply.isPending}
-              onChange={event => tickRfq(item.cardId, event.target.checked)}
-            />
-            <span>Согласовать этот текст</span>
-          </label>
-          : <p className="pr-note">{item.normalization ? 'RFQ появится, когда идентичность вещества будет подтверждена.' : 'RFQ ещё не подготовлен — нажмите «Подготовить RFQ» наверху.'}</p>}
-    </div>}
-  </>
-}
-
 const WRITTEN_TO = new Set(['VERIFIED_MANUFACTURER', 'VERIFIED_DISTRIBUTOR', 'PRICE_REQUEST'])
 
-/** One position's approval, drawn the way the purchase page draws a position:
+/** Everything one substance asks to be approved, drawn the way the purchase
+ * page draws a position:
  * two parts, companies and RFQ, each under a one-line header that names it,
  * says where it stands in coloured labels and carries its own way out to the
  * page that goes deeper. The decided companies fold like a section does.
  */
-function PositionReview({ review, item }) {
+export function ReviewItem({ review, item }) {
   const { appliedById, revising, setRevising, opened, setOpened, rfqs, tickRfq, apply, canWriteCards } = review
   const result = appliedById.get(item.cardId)
   const open = item.candidates.filter(candidate => candidate.reviewDecision === 'UNREVIEWED')

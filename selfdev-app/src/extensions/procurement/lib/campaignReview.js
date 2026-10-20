@@ -64,12 +64,6 @@ const BLOCKED_LABEL = {
   STAGE_NEGOTIATION: 'идут переговоры',
 }
 
-export const RFQ_STATUS = {
-  NOT_PREPARED: 'не подготовлен',
-  PREPARED: 'подготовлен, не согласован',
-  APPROVED: 'согласован',
-}
-
 export const mutationMessage = error => error?.response?.data?.message || error?.message
 export const blockedText = code => BLOCKED_LABEL[code] || code
 

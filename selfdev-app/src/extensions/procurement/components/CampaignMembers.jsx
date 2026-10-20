@@ -231,7 +231,7 @@ function MemberSections({
     >
       <div className="pr-member-review">
         {reviewItem
-          ? <ReviewItem review={review} item={reviewItem} links />
+          ? <ReviewItem review={review} item={reviewItem} />
           : <p className="pr-note">{reviewLoading
             ? 'Загружаем согласование…'
             : <>Согласование по этой позиции не найдено. <Link to={`/procurement/requests/${member.cardId}/sourcing`}>Поиск и кандидаты</Link> · <Link to={`/procurement/requests/${member.cardId}/rfq`}>RFQ</Link></>}</p>}

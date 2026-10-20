@@ -1012,7 +1012,7 @@ export default function CampaignPage() {
       {(view === 'review' || view === 'all' || review.posted || review.dispatched || review.apply.error) && reviewData && <div className="pr-mode-toolbar">
         <p className="pr-note">Кому пишем и что спрашиваем — по каждой позиции. Компании и тексты RFQ уже отмечены по рекомендации: проверьте, снимите лишнее и нажмите «Согласовать» внизу. Кандидат становится поставщиком только с этим подтверждением.</p>
         <ReviewAlerts review={review} />
-        <IdentitySummary review={review} anchor={cardId => `#member-${cardId}`} />
+        <IdentitySummary review={review} />
         <BulkVerdicts review={review} scope={review.items} />
       </div>}
       {(view === 'review' || view === 'all') && review.query.isLoading && <p className="pr-note">Загружаем согласование…</p>}

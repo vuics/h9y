@@ -62,8 +62,8 @@ function seedRfqs(items, current) {
  * Both halves of the same question — who do we write to, and what do we ask
  * them — held once for the whole campaign, so that "Согласовать" is one
  * submission and a reload never leaves half the decisions applied and half on
- * screen. The approval page and the purchase page read the same hook, so a
- * decision behaves the same in either.
+ * screen. The purchase page's positions and its «Согласование» mode read the
+ * same hook, so a decision behaves the same in either.
  *
  * `enabled: false` keeps the review unread: it carries every candidate of every
  * substance, which the purchase page needs only once someone asks for it.
