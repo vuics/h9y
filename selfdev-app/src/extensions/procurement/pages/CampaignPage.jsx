@@ -28,7 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, ChevronDown, CircleAlert, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
+import { AlertTriangle, Check, ChevronsLeft, ChevronsRight, CircleAlert, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
 import { normalizeSummary, prepareSummary } from '../lib/bulkSummary'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
@@ -310,20 +310,10 @@ export default function CampaignPage() {
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
   }, [unsentReview])
-  const [moreOpen, setMoreOpen] = useState(false)
-  // Closed by a click anywhere else or Esc, as a menu is; no hover on a phone.
-  useEffect(() => {
-    if (!moreOpen) return undefined
-    const close = event => {
-      if (event.type === 'keydown' ? event.key === 'Escape' : !event.target.closest?.('.pr-view-switch__more')) setMoreOpen(false)
-    }
-    document.addEventListener('mousedown', close)
-    document.addEventListener('keydown', close)
-    return () => {
-      document.removeEventListener('mousedown', close)
-      document.removeEventListener('keydown', close)
-    }
-  }, [moreOpen])
+  // The other modes, laid out in the same line when asked for — not a menu
+  // inside the switch. Opened by itself when one of them is the mode.
+  const [moreOpen, setMoreOpen] = useState(() => !PRIMARY_MODES.includes(modeOf(searchParams.get('view'))))
+  useEffect(() => { if (!PRIMARY_MODES.includes(view)) setMoreOpen(true) }, [view])
   const [editingSettings, setEditingSettings] = useState(false)
   const [savedEffects, setSavedEffects] = useState(null)
   // The generated name lists the first substances ("… и ещё 23"), which stops
@@ -905,37 +895,37 @@ export default function CampaignPage() {
           className={view === id ? 'is-on' : undefined}
           onClick={() => showView(id)}
         >
-          {label}{modeCounts[id] != null && <b>{modeCounts[id]}</b>}
+          {label}
+          {/* What waits is amber: the one count that asks for something. */}
+          {id === 'waiting' && modeCounts[id] > 0
+            ? <span className="pr-view-switch__alert">{modeCounts[id]}</span>
+            : modeCounts[id] != null && <b>{modeCounts[id]}</b>}
         </button>)}
-        {/* The rest of the modes, one press away: each unfolds one kind of
-            section everywhere. Its alerts still show on the press. */}
-        <div className="pr-view-switch__more">
-          <button
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={moreOpen}
-            className={PRIMARY_MODES.includes(view) ? undefined : 'is-on'}
-            onClick={() => setMoreOpen(value => !value)}
-          >
-            {PRIMARY_MODES.includes(view) ? 'Ещё' : MODES.find(([id]) => id === view)?.[1]}
-            {!PRIMARY_MODES.includes(view) && modeCounts[view] != null && !(view === 'review' && !modeCounts[view]) && <b>{modeCounts[view]}</b>}
-            {MODES.some(([id]) => !PRIMARY_MODES.includes(id) && id !== view && modeAlerts[id]) && <span className="pr-view-switch__dot" aria-label="есть, что ждёт" />}
-            <ChevronDown size={14} />
-          </button>
-          {moreOpen && <div className="pr-view-switch__menu" role="menu">
-            {MODES.filter(([id]) => !PRIMARY_MODES.includes(id)).map(([id, label]) => <button
-              key={id}
-              type="button"
-              role="menuitemradio"
-              aria-checked={view === id}
-              className={view === id ? 'is-on' : undefined}
-              onClick={() => { setMoreOpen(false); showView(id) }}
-            >
-              <span>{label}{modeCounts[id] != null && !(id === 'review' && !modeCounts[id]) && <b>{modeCounts[id]}</b>}</span>
-              {modeAlerts[id] && <span className="pr-view-switch__alert">{modeAlerts[id]}</span>}
-            </button>)}
-          </div>}
-        </div>
+        {/* The rest of the modes in the same line, one press away: each
+            unfolds one kind of section everywhere. Folded, the press marks
+            when one of them waits. */}
+        {moreOpen && MODES.filter(([id]) => !PRIMARY_MODES.includes(id)).map(([id, label]) => <button
+          key={id}
+          type="button"
+          aria-pressed={view === id}
+          className={view === id ? 'is-on' : undefined}
+          onClick={() => showView(id)}
+        >
+          {label}{modeCounts[id] != null && !(id === 'review' && !modeCounts[id]) && <b>{modeCounts[id]}</b>}
+          {modeAlerts[id] && <span className="pr-view-switch__alert">{modeAlerts[id]}</span>}
+        </button>)}
+        <button
+          type="button"
+          // Folded over the mode in use, the press stands for it.
+          className={!moreOpen && !PRIMARY_MODES.includes(view) ? 'pr-view-switch__toggle is-on' : 'pr-view-switch__toggle'}
+          aria-expanded={moreOpen}
+          title={moreOpen ? 'Показать только основные режимы' : 'Показать остальные режимы'}
+          onClick={() => setMoreOpen(value => !value)}
+        >
+          {moreOpen
+            ? <><ChevronsLeft size={14} />Меньше</>
+            : <>Ещё{MODES.some(([id]) => !PRIMARY_MODES.includes(id) && modeAlerts[id]) && <span className="pr-view-switch__dot" aria-label="есть, что ждёт" />}<ChevronsRight size={14} /></>}
+        </button>
       </div>
 
       {/* The presses that act on the whole purchase, above the table in the

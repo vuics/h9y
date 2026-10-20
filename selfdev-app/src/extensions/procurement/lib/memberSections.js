@@ -9,13 +9,15 @@
 export const SECTIONS = ['offers', 'threads', 'echemi', 'escalations', 'review']
 
 export const MODES = [
-  // First and the default: only the positions where a person is needed, each
-  // open on exactly what waits. The customer asked for three buttons; these
-  // are the three — what is mine to do, what came in, what we are buying.
+  // Left to right from the most folded to the most open, and the first is the
+  // default: a calm list, with Ждут вас counted beside it. The customer asked
+  // for three buttons; these are the three — what we are buying, what is mine
+  // to do, what came in.
+  ['members', 'Позиции'],
+  // Only the positions where a person is needed, each open on what waits.
   ['waiting', 'Ждут вас'],
   ['offers', 'Предложения'],
-  ['members', 'Позиции'],
-  // The rest, one menu away: each unfolds one kind of section everywhere.
+  // The rest, one press away: each unfolds one kind of section everywhere.
   ['threads', 'Переписки'],
   ['echemi', 'Echemi'],
   ['escalations', 'Эскалации'],
@@ -25,14 +27,14 @@ export const MODES = [
   ['all', 'Всё'],
 ]
 
-export const PRIMARY_MODES = ['waiting', 'offers', 'members']
+export const PRIMARY_MODES = ['members', 'waiting', 'offers']
 
 const MODE_IDS = MODES.map(([id]) => id)
 
 /** The mode in the address; links from before the switch said "marketplace". */
 export function modeOf(value) {
   if (value === 'marketplace') return 'echemi'
-  return MODE_IDS.includes(value) ? value : 'waiting'
+  return MODE_IDS.includes(value) ? value : 'members'
 }
 
 /** Whether a position waits for its approval, read from the purchase alone:

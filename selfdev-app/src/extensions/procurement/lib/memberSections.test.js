@@ -9,8 +9,8 @@ const bare = contentOf({})
 test('the address names the mode; anything else reads as positions', () => {
   assert.equal(modeOf('offers'), 'offers')
   assert.equal(modeOf('marketplace'), 'echemi')
-  assert.equal(modeOf(null), 'waiting')
-  assert.equal(modeOf('nonsense'), 'waiting')
+  assert.equal(modeOf(null), 'members')
+  assert.equal(modeOf('nonsense'), 'members')
 })
 
 test('positions opens nothing; all opens every row', () => {
