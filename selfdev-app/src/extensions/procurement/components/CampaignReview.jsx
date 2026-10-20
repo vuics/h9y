@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Check, ChevronDown, ChevronRight, CircleAlert, ExternalLink, Refresh } from './icons'
 import {
-  CONCLUDED, DECISION_LABEL, MARKETPLACE_SKIPPED, SUGGESTED, VERDICTS,
+  DECISION_LABEL, MARKETPLACE_SKIPPED, VERDICTS, suggestedVerdict,
   blockedText, dispatchProblems, dispatchTitle, mutationMessage, verdictKey,
 } from '../lib/campaignReview'
 
@@ -88,8 +88,9 @@ function VerdictRadios({ review, item, candidate }) {
   const decided = candidate.reviewDecision !== 'UNREVIEWED'
   const current = verdicts[key] ?? (decided ? candidate.reviewDecision : undefined)
   return <div className="pr-review-verdicts">{VERDICTS.map(([value, label]) => {
-    const suggested = !decided && SUGGESTED[candidate.role] === value
-    const concluded = CONCLUDED.has(candidate.role)
+    const suggestion = suggestedVerdict(candidate)
+    const suggested = !decided && suggestion.value === value
+    const concluded = suggestion.reason === 'рекомендую'
     return <label key={value}>
       <input
         type="radio"
@@ -103,7 +104,7 @@ function VerdictRadios({ review, item, candidate }) {
       <span>{label}</span>
       {suggested && (concluded
         ? <em className="pr-review-suggested">рекомендую</em>
-        : <em className="pr-review-suggested pr-review-suggested--unknown">нет данных</em>)}
+        : <em className="pr-review-suggested pr-review-suggested--unknown">{suggestion.reason}</em>)}
     </label>
   })}</div>
 }

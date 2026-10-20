@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import { useProcurementPermissions } from './useProcurementPermissions'
-import { SUGGESTED, mutationMessage, verdictKey } from '../lib/campaignReview'
+import { mutationMessage, suggestedVerdict, verdictKey } from '../lib/campaignReview'
 
 // Said when the specialist vouches from the approval. Required by the API, and
 // true: they confirmed the card's own CAS and name against what PubChem showed.
@@ -31,9 +31,7 @@ function seedVerdicts(items, current) {
       if (candidate.reviewDecision !== 'UNREVIEWED') continue
       const key = verdictKey(item.cardId, candidate.candidateId)
       if (key in next) continue
-      const suggested = SUGGESTED[candidate.role]
-      if (!suggested) continue
-      next[key] = suggested
+      next[key] = suggestedVerdict(candidate).value
       changed = true
     }
   }
@@ -207,8 +205,7 @@ export function useCampaignReview(campaignId, { enabled = true } = {}) {
     setVerdicts(current => {
       const next = { ...current }
       for (const [item, candidate] of openTargets(scope)) {
-        const suggested = SUGGESTED[candidate.role]
-        if (suggested) next[verdictKey(item.cardId, candidate.candidateId)] = suggested
+        next[verdictKey(item.cardId, candidate.candidateId)] = suggestedVerdict(candidate).value
       }
       return next
     })

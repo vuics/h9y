@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { reviewBadges, reviewOpen, verdictKey } from './campaignReview.js'
+import { reviewBadges, reviewOpen, suggestedVerdict, verdictKey } from './campaignReview.js'
 
 const candidate = (decision = 'UNREVIEWED') => ({ candidateId: 'C', reviewDecision: decision })
 const item = extra => ({ cardId: 1, candidates: [], rfq: null, normalization: null, blockedBy: null, ...extra })
@@ -30,4 +30,13 @@ test('the folded header says what was approved, coloured by who acts', () => {
   assert.deepEqual(labels(item({ blockedBy: 'STAGE_SOURCING' })), ['muted:поиск ещё идёт'])
   assert.deepEqual(labels(item({ normalization: { reasons: [] }, rfq: { status: 'NOT_PREPARED' } })), ['danger:идентичность не подтверждена', 'muted:RFQ не подготовлен'])
   assert.deepEqual(labels(item({})), ['muted:нечего согласовывать'])
+})
+
+test('a company starts on its concluded role, else a price request, else evidence', () => {
+  assert.deepEqual(suggestedVerdict({ role: 'MANUFACTURER', contactCount: 0 }), { value: 'VERIFIED_MANUFACTURER', reason: 'рекомендую' })
+  assert.deepEqual(suggestedVerdict({ role: 'DISTRIBUTOR', contactCount: 2 }), { value: 'VERIFIED_DISTRIBUTOR', reason: 'рекомендую' })
+  assert.deepEqual(suggestedVerdict({ role: 'UNKNOWN', contactCount: 2, preliminaryStatus: 'YELLOW' }), { value: 'PRICE_REQUEST', reason: 'есть контакт' })
+  assert.deepEqual(suggestedVerdict({ role: 'UNKNOWN', contactCount: 0 }), { value: 'NEEDS_MORE_EVIDENCE', reason: 'нет данных' })
+  // High risk is a person's call even with someone to write to.
+  assert.deepEqual(suggestedVerdict({ role: 'UNKNOWN', contactCount: 3, preliminaryStatus: 'RED' }), { value: 'NEEDS_MORE_EVIDENCE', reason: 'нет данных' })
 })

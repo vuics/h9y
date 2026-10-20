@@ -29,6 +29,23 @@ export const SUGGESTED = {
   UNKNOWN: 'NEEDS_MORE_EVIDENCE',
 }
 
+/** The verdict a company starts on, and why — the dot the specialist confirms
+ * or moves.
+ *
+ * The role the evidence concluded, where it concluded one. Otherwise a price
+ * request when there is someone to write to: the company enters the directory
+ * unverified and its offer says so, which costs a letter and can bring the
+ * offer the purchase is run for. With nobody to write to, or with a high-risk
+ * score, evidence is needed first — writing to a company the evidence flags
+ * is a person's call, and a rejection on no grounds is worse than a pause.
+ */
+export function suggestedVerdict(candidate) {
+  const concluded = SUGGESTED[candidate?.role]
+  if (concluded && concluded !== 'NEEDS_MORE_EVIDENCE') return { value: concluded, reason: 'рекомендую' }
+  if (candidate?.contactCount > 0 && candidate?.preliminaryStatus !== 'RED') return { value: 'PRICE_REQUEST', reason: 'есть контакт' }
+  return { value: 'NEEDS_MORE_EVIDENCE', reason: 'нет данных' }
+}
+
 // Only where the evidence actually concluded something. The rest are parked,
 // and the row has to say so: marking all 121 "рекомендую" would erase the one
 // distinction the screen exists to preserve — where there is a finding and

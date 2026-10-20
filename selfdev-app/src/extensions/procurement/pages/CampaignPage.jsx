@@ -20,7 +20,7 @@ import { CampaignHistory } from '../components/CampaignHistory'
 import { CampaignMembers } from '../components/CampaignMembers'
 import { groupOffersBySubstance } from '../lib/offers'
 import { MODES, PRIMARY_MODES, memberAwaitsReview, modeOf, waitingOf } from '../lib/memberSections'
-import { needsMarketplaceAction } from '../lib/campaignView'
+import { marketplaceWaits } from '../lib/campaignView'
 import { useCampaignReview } from '../hooks/useCampaignReview'
 import { BulkVerdicts, IdentitySummary, ReviewAlerts, ReviewBar } from '../components/CampaignReview'
 import { offerTotals } from '../lib/campaignView'
@@ -442,6 +442,35 @@ export default function CampaignPage() {
   // One substance's marketplace presses, used in its row in the table and in
   // the box below it: the same question asked in two places must not be two
   // different sets of buttons.
+  // The next step of a request that waits for a person, pressed in its own
+  // position. Filling the form is per request; sending is the batch the
+  // platform takes, confirmed here once for every form that is ready.
+  const marketplaceStepActions = item => {
+    if (item.status === 'PREPARED' && canOperateEchemi) {
+      return <div className="pr-inline-actions">
+        <Button size="sm" isDisabled={busyMarketplace} onPress={() => postToMarketplace.mutate([item.cardId])}>
+          <Send className={busyMarketplace ? 'pr-spin' : undefined} />{marketplaceView?.running ? 'Работаем…' : 'Заполнить форму'}
+        </Button>
+      </div>
+    }
+    if (item.status === 'AWAITING_APPROVAL' && canSubmitEchemi && marketplaceAwaiting > 0) {
+      return <div className="pr-inline-actions">
+        {confirmSend
+          ? <>
+            <span className="pr-muted">{`Отправка необратима: ${marketplaceAwaiting} ${plural(marketplaceAwaiting, 'заявку', 'заявки', 'заявок')} увидят все продавцы Echemi.`}</span>
+            <Button size="sm" variant="outline" isDisabled={busyMarketplace} onPress={() => setConfirmSend(false)}>Отмена</Button>
+            <Button size="sm" isDisabled={busyMarketplace} onPress={() => { setConfirmSend(false); submitMarketplace.mutate() }}>
+              <Send className={busyMarketplace ? 'pr-spin' : undefined} />{`Да, отправить ${marketplaceAwaiting}`}
+            </Button>
+          </>
+          : <Button size="sm" isDisabled={busyMarketplace} onPress={() => setConfirmSend(true)}>
+            <Send className={busyMarketplace ? 'pr-spin' : undefined} />
+            {marketplaceView?.running ? 'Отправляем…' : `Согласовать и отправить готовые (${marketplaceAwaiting})`}
+          </Button>}
+      </div>
+    }
+    return null
+  }
   const marketplaceActions = item => item.status === 'NEEDS_REVIEW' && canSubmitEchemi && item.inquiryId
     ? <div className="pr-inline-actions">
           {/* The question the browser could not answer, put to the party
@@ -486,7 +515,7 @@ export default function CampaignPage() {
               </>}
           <Link to={`/procurement/requests/${item.cardId}/echemi`}>открыть карточку</Link>
     </div>
-    : null
+    : marketplaceStepActions(item)
 
   if (query.isLoading) return <LoadingState />
   if (query.isError && !query.data) return <ErrorState error={query.error} onRetry={query.refetch} />
@@ -555,12 +584,10 @@ export default function CampaignPage() {
 
   // A press in a row asks or answers in the strip above the table, whatever
   // the mode: a confirmation shown only in a folded block below is lost.
-  const marketplaceAsking = Boolean((repostAsk && !repostInRow) || confirmSend
+  const marketplaceAsking = Boolean((repostAsk && !repostInRow)
     || repostMarketplace.error || repostMarketplace.data?.reposting?.length
     || collectMarketplaceQuotes.error || resendMarketplace.error || resendMarketplace.data?.confirmed
     || confirmMarketplace.error || postToMarketplace.error || submitMarketplace.error)
-  // Whether Echemi waits for a person: Ждут вас says so in its one line.
-  const marketplaceWaits = marketplaceNeedsReview > 0 || marketplaceAwaiting > 0 || marketplacePending > 0
   const marketplaceOnTop = hasMarketplace && (view === 'echemi' || view === 'all' || marketplaceAsking)
   const threadsOnTop = conversations.length > 0 && (view === 'threads' || view === 'all' || Boolean(sendPrepared.data || sendPrepared.error))
   // Asked where it was pressed: beside the one request, or above the table
@@ -753,11 +780,11 @@ export default function CampaignPage() {
     threads: conversationsByCard.get(member.cardId)?.conversations || [],
     unreachable: unreachableByCard.get(member.cardId) || [],
     escalations: escalationsByCard.get(member.cardId) || [],
-    echemi: needsMarketplaceAction(member),
+    echemi: marketplaceWaits(member, marketplaceByCard.get(member.cardId)),
     review: memberAwaitsReview(member),
     error: Boolean(member.errorCode),
   }).waits).length
-  const waitingPresses = (awaitingPerson > 0 && canQueueNegotiations) || marketplaceWaits
+  const waitingPresses = (awaitingPerson > 0 && canQueueNegotiations)
     || (progress.awaitingReview > 0 && undispatched > 0 && canQueueNegotiations)
   const modeCounts = {
     waiting: waitingPositions,
@@ -940,12 +967,12 @@ export default function CampaignPage() {
       {/* For a purchase approved before dispatch existed, and for substances
           whose first attempt failed on one supplier. Opening a conversation
           that exists returns the one that exists, so it is safe to press twice. */}
-      {/* Waiting for you keeps its purchase-wide presses to one short line:
-          the details are in the positions below and in each press's own mode. */}
+      {/* Waiting for you keeps its purchase-wide presses to one short line,
+          and only real ones: a press that merely switched mode was a detour.
+          Echemi's steps are pressed in the position's own Echemi section. */}
       {view === 'waiting' && waitingPresses && <div className="pr-mode-toolbar pr-waiting-actions"><div className="pr-inline-actions">
         <span className="pr-muted">На всю закупку:</span>
         {awaitingPerson > 0 && canQueueNegotiations && <Button size="sm" isDisabled={sendPrepared.isPending} onPress={() => sendPrepared.mutate()}><Send className={sendPrepared.isPending ? 'pr-spin' : undefined} />{sendPrepared.isPending ? 'Отправляем…' : `Отправить ${awaitingPerson} ${plural(awaitingPerson, 'письмо', 'письма', 'писем')}`}</Button>}
-        {marketplaceWaits && <Button size="sm" variant="outline" onPress={() => showView('echemi')}>{`Echemi: ${marketplaceNeedsReview + marketplaceAwaiting + marketplacePending} ${plural(marketplaceNeedsReview + marketplaceAwaiting + marketplacePending, 'заявка ждёт', 'заявки ждут', 'заявок ждут')}`}</Button>}
         {/* For a purchase approved before dispatch existed, and for substances
             whose first attempt failed on one supplier. Opening a conversation
             that exists returns the one that exists, so it is safe to press twice. */}

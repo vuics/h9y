@@ -78,6 +78,12 @@ function ownAction(member, campaignId) {
 export const needsMarketplaceAction = member =>
   ['NEEDS_REVIEW', 'HUMAN_ACTION_REQUIRED', 'FAILED', 'STALE'].includes(member.marketplaceStatus)
 
+/** Whether a position's Echemi request waits for a person: held by the
+ * platform, or ready for the next press — its form to fill, or to be sent.
+ */
+export const marketplaceWaits = (member, item) => needsMarketplaceAction(member)
+  || ['PREPARED', 'AWAITING_APPROVAL'].includes(item?.status)
+
 /** "9 · 7 · 1": candidates found, of them with contacts, verified suppliers. */
 export function foundSummary(member) {
   if (!member.candidateCount) return '—'

@@ -17,7 +17,7 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { escalationKind } from '../lib/escalation'
 import { EscalationQuick } from './EscalationQuick'
 import {
-  filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
+  filterMembers, foundSummary, marketplaceWaits, memberGroup, needsMarketplaceAction,
   nextActions, requestsSummary,
 } from '../lib/campaignView'
 import { plural } from './SourcingSettings'
@@ -317,7 +317,7 @@ export function CampaignMembers({
       escalations,
       waiting: waitingOf({
         threads, unreachable, escalations,
-        echemi: needsMarketplaceAction(member),
+        echemi: marketplaceWaits(member, marketplaceByCard.get(member.cardId)),
         review: reviewWaits,
         error: Boolean(member.errorCode),
       }),
