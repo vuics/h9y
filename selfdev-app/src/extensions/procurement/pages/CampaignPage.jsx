@@ -9,7 +9,6 @@ import { LoadingState, ErrorState, EmptyState } from '../components/AsyncState'
 import { StatusBadge } from '../components/StatusBadge'
 import { CampaignStatusBadge } from '../components/CampaignStatusBadge'
 import { CopyableId } from '../components/CopyableId'
-import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from '../components/SourcingSettings'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
@@ -184,7 +183,7 @@ function MarketplaceQuotes({ quotations }) {
 const ASKS = {
   CANDIDATE_REVIEW: {
     label: 'подтвердить кандидатов',
-    to: campaignId => `/procurement/campaigns/${campaignId}/review`,
+    to: campaignId => `/procurement/campaigns/${campaignId}?view=review`,
   },
   RFQ_APPROVAL: {
     label: 'подготовить и согласовать RFQ',
@@ -600,7 +599,6 @@ export default function CampaignPage() {
   const unsentCards = new Set(threadRows.filter(thread => thread.status === 'READY').map(thread => thread.cardId))
   const unreachable = threadsView?.unreachable || []
   const channelsLabel = (threadsView?.channels || []).map(item => CHANNEL_LABEL[item] || item).join(', ')
-  const hasEchemi = (threadsView?.channels || []).includes('ECHEMI')
   const marketplaceView = postToMarketplace.data || marketplace.data
   const marketplaceItems = marketplaceView?.items || []
   // What is left to post, not merely that something is: a specialist reading
@@ -805,36 +803,6 @@ export default function CampaignPage() {
                     : ''}{readableAgentError(item.error)}
                 </span>}
   </>
-  const marketplaceCard = marketplaceView?.enabled && marketplaceItems.length > 0 && <Card><CardHeader><div>
-        {marketplaceIntro}
-        {marketplaceSummary}
-      </div></CardHeader><CardContent>
-        {marketplaceOnTop ? <p className="pr-note">Действия по всем заявкам — над таблицей.</p> : marketplaceToolbar}
-
-        <ul className="pr-campaign-threads">
-          {marketplaceItems.map(item => <li key={item.cardId}>
-            <div className="pr-campaign-threads__head">
-              <Link to={`/procurement/requests/${item.cardId}`}>{item.title}</Link>
-              <span>#{item.cardId}{item.casNumber ? ` · CAS ${item.casNumber}` : ''}</span>
-              <StatusBadge
-                status={MARKETPLACE_POSTED.has(item.status) ? 'SUBMITTED' : item.status}
-                label={MARKETPLACE_STATUS[item.status] || item.status}
-                tone={marketplaceTone(item)}
-              />
-            </div>
-            {/* Echemi asks a person to pass its check, and the automation is
-                not allowed to answer that for them — so the request is left
-                exactly where it stopped and this is the way back. Sending it
-                by hand in noVNC is the specialist's job; recording that it
-                went is what stops the campaign from showing a live request as
-                a failure for ever. */}
-            {marketplaceActions(item)}
-            {(item.platformInquiryId || item.error || item.platformMessage) && <ul>
-              <li>{marketplaceDetails(item)}</li>
-            </ul>}
-          </li>)}
-        </ul>
-      </CardContent></Card>
   const conversationsToolbar = <>
         {sendPrepared.error && <Alert><AlertTriangle /><AlertTitle>Отправка не выполнена</AlertTitle><AlertDescription>{mutationMessage(sendPrepared.error)}</AlertDescription></Alert>}
         {sendPrepared.data && <Alert>{sendPrepared.data.errors?.length ? <CircleAlert /> : <Check />}<AlertTitle>Отправлено: {sendPrepared.data.sent?.length ?? 0}</AlertTitle><AlertDescription>
@@ -849,34 +817,6 @@ export default function CampaignPage() {
           </Button>
         </div>}
   </>
-  const conversationsCard = conversations.length > 0 && <Card><CardHeader><div>
-        {conversationsIntro}
-        {/* A marketplace request is not in this list on purpose: it has no
-            contact behind it and no thread. It has its own block above. */}
-        {hasEchemi && <p className="pr-note">Заявки на площадку Echemi — отдельным блоком выше: у них нет адресата и переписки, одна заявка на вещество видна всем продавцам сразу. Здесь только переписка с контактами.</p>}
-      </div></CardHeader><CardContent>
-        {threadsOnTop ? <p className="pr-note">Действия по всем перепискам — над таблицей.</p> : conversationsToolbar}
-
-        {/* Grouped by substance and linked, because the number on its own sent
-            the specialist to the negotiations list to find these by hand. */}
-        <ul className="pr-campaign-threads">
-          {conversations.map(item => <li key={item.cardId}>
-            <div className="pr-campaign-threads__head">
-              <Link to={`/procurement/requests/${item.cardId}`}>{item.title}</Link>
-              <span>#{item.cardId}{item.casNumber ? ` · CAS ${item.casNumber}` : ''}</span>
-            </div>
-            <ul>
-              {item.conversations.map(thread => <li key={thread.assignmentId}>
-                <Link to={`/procurement/negotiations/${thread.assignmentId}`}>{thread.supplierName || thread.assignmentId}</Link>
-                <span className="pr-primary-meta">{thread.channel}{thread.answered ? ' · есть ответ' : ''}</span>
-                {thread.awaitingPerson
-                  ? <StatusBadge status="NEEDS_REVIEW" label={thread.automationPaused ? 'агент остановлен' : 'ждёт отправки'} />
-                  : <StatusBadge status={thread.status} label={THREAD_STATUS[thread.status] || thread.status} />}
-              </li>)}
-            </ul>
-          </li>)}
-        </ul>
-      </CardContent></Card>
   const reviewWaiting = members.filter(memberAwaitsReview).length
   const memberCards = new Set(members.map(member => member.cardId))
   const escalationsByCard = new Map()
@@ -1133,32 +1073,6 @@ export default function CampaignPage() {
         /> : null}
       />
       {reviewData && (view === 'review' || view === 'all' || review.touched) && <ReviewBar review={review} />}
-
-      {hasMarketplace && <details className="pr-more-details">
-        <summary>{`Заявки на площадку (${marketplaceItems.length})`}{marketplaceNeedsReview > 0 ? ` · ${marketplaceNeedsReview} требует внимания` : ''}</summary>
-        <div className="pr-stack">
-      {marketplaceCard}
-
-        </div>
-      </details>}
-
-      {conversations.length > 0 && <details className="pr-more-details">
-        <summary>{`Все переписки закупки (${threadTotal})`}{awaitingPerson > 0 ? ` · ${awaitingPerson} ${plural(awaitingPerson, 'ждёт', 'ждут', 'ждут')} отправки` : ''}</summary>
-        <div className="pr-stack">
-      {conversationsCard}
-
-        </div>
-      </details>}
-
-      {/* The approval page it came from, kept until the approval in the
-          positions has been tried; the same decisions, on the same state. */}
-      <details className="pr-more-details">
-        <summary>Согласование на отдельной странице</summary>
-        <div className="pr-stack">
-          <p className="pr-note">То же согласование, что в режиме «Согласование» выше, одним списком на отдельной странице. Останется, пока новый вид не проверен.</p>
-          <div className="pr-inline-actions"><RouterLinkButton variant="outline" to={`/procurement/campaigns/${campaignId}/review`}>Открыть страницу согласования</RouterLinkButton></div>
-        </div>
-      </details>
 
       {/* What explains the run rather than asks for anything: kept, one click
           away, so the page opens on what needs a person and what came in. The

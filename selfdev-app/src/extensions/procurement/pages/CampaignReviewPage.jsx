@@ -18,8 +18,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
  * approved against the fingerprint of the document displayed here. What this
  * screen removes is the two hundred page loads, not the decision.
  *
- * The purchase page now carries the same approval in each position; this page
- * stays, on the same state and blocks, until that one has been tried.
+ * The purchase page now carries the same approval in each position, and no
+ * link leads here any more: the page answers its old address only, for a
+ * bookmark, on the same state and blocks, and goes once nobody needs that.
  */
 export default function CampaignReviewPage() {
   const { campaignId } = useParams()

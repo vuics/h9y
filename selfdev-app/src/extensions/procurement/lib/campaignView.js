@@ -56,7 +56,7 @@ function ownAction(member, campaignId) {
   }
   switch (member.waitingFor) {
     case 'CANDIDATE_REVIEW':
-      return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning', review: true }
+      return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}?view=review`, tone: 'warning', review: true }
     case 'RFQ_APPROVAL':
       return { label: 'Согласовать RFQ', to: `/procurement/requests/${member.cardId}/rfq`, tone: 'warning', review: true }
     case 'SUPPLIER_EVIDENCE':
@@ -69,7 +69,7 @@ function ownAction(member, campaignId) {
       break
   }
   if (member.stage === 'AWAITING_REVIEW') {
-    return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}/review`, tone: 'warning', review: true }
+    return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}?view=review`, tone: 'warning', review: true }
   }
   return null
 }
