@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { contentOf, memberAwaitsReview, modeOf, resolveOpen, rowOpenByMode, sectionOpenByMode } from './memberSections.js'
+import { contentOf, memberAwaitsReview, modeOf, resolveOpen, rowOpenByMode, sectionOpenByMode, waitingOf } from './memberSections.js'
 
 const withOffers = contentOf({ offers: [{}, {}], threads: [{}], marketplace: { status: 'POSTED' } })
 const bare = contentOf({})
@@ -9,8 +9,8 @@ const bare = contentOf({})
 test('the address names the mode; anything else reads as positions', () => {
   assert.equal(modeOf('offers'), 'offers')
   assert.equal(modeOf('marketplace'), 'echemi')
-  assert.equal(modeOf(null), 'members')
-  assert.equal(modeOf('nonsense'), 'members')
+  assert.equal(modeOf(null), 'waiting')
+  assert.equal(modeOf('nonsense'), 'waiting')
 })
 
 test('positions opens nothing; all opens every row', () => {
@@ -69,4 +69,26 @@ test('the escalation mode opens the positions with an open case', () => {
   assert.equal(rowOpenByMode('escalations', contentOf({ offers: [{}] })), false)
   assert.equal(sectionOpenByMode('escalations', 'escalations'), true)
   assert.equal(sectionOpenByMode('escalations', 'review'), false)
+})
+
+test('waiting opens a position on each section that waits, and nothing else', () => {
+  const waiting = waitingOf({ threads: [{ awaitingPerson: true }], escalations: [{ id: 'E' }] })
+  const content = contentOf({ threads: [{}], escalations: [{}], offers: [{}], waiting })
+  assert.equal(rowOpenByMode('waiting', content), true)
+  assert.equal(sectionOpenByMode('waiting', 'threads', content), true)
+  assert.equal(sectionOpenByMode('waiting', 'escalations', content), true)
+  assert.equal(sectionOpenByMode('waiting', 'offers', content), false)
+})
+
+test('a company with nowhere to write to waits in its conversations', () => {
+  const waiting = waitingOf({ unreachable: [{ supplierId: 'S' }] })
+  assert.deepEqual([...waiting.sections], ['threads'])
+  assert.equal(contentOf({ unreachable: [{}] }).threads, 1)
+})
+
+test('a card in error waits without opening a section', () => {
+  const waiting = waitingOf({ error: true })
+  assert.equal(waiting.waits, true)
+  assert.equal(rowOpenByMode('waiting', contentOf({ waiting })), false)
+  assert.equal(waitingOf({}).waits, false)
 })

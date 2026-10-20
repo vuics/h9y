@@ -19,7 +19,8 @@ import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
 import { CampaignMembers } from '../components/CampaignMembers'
 import { groupOffersBySubstance } from '../lib/offers'
-import { MODES, memberAwaitsReview, modeOf } from '../lib/memberSections'
+import { MODES, PRIMARY_MODES, memberAwaitsReview, modeOf, waitingOf } from '../lib/memberSections'
+import { needsMarketplaceAction } from '../lib/campaignView'
 import { useCampaignReview } from '../hooks/useCampaignReview'
 import { BulkVerdicts, IdentitySummary, ReviewAlerts, ReviewBar } from '../components/CampaignReview'
 import { offerTotals } from '../lib/campaignView'
@@ -27,7 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, ChevronDown, ChevronRight, CircleAlert, Clock, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
+import { AlertTriangle, Check, ChevronDown, CircleAlert, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
 import { normalizeSummary, prepareSummary } from '../lib/bulkSummary'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
@@ -50,13 +51,6 @@ const MEMBER_STAGE = {
   SKIPPED: 'Пропущено',
 }
 
-
-const CHANNEL_LABEL = {
-  EMAIL: 'почта',
-  WHATSAPP: 'WhatsApp',
-  ECHEMI: 'Echemi',
-  WEB_FORM: 'формы на сайтах',
-}
 
 const REACH_LABEL = {
   SOURCING: 'только поиск',
@@ -178,84 +172,6 @@ function MarketplaceQuotes({ quotations }) {
   </span>
 }
 
-// What each kind of wait is called when it is addressed to the specialist
-// rather than described in a table cell, and where pressing it takes them.
-const ASKS = {
-  CANDIDATE_REVIEW: {
-    label: 'подтвердить кандидатов',
-    to: campaignId => `/procurement/campaigns/${campaignId}?view=review`,
-  },
-  RFQ_APPROVAL: {
-    label: 'подготовить и согласовать RFQ',
-    to: (campaignId, cardId) => `/procurement/requests/${cardId}/rfq`,
-  },
-  // Dead ends the approval screen cannot settle: every candidate is decided
-  // and none verified, or the verified ones cannot be reached. They used to
-  // read "на согласовании" and lead to a page with nothing to approve.
-  SUPPLIER_EVIDENCE: {
-    label: 'нет подтверждённого поставщика — найти или подтвердить',
-    to: (campaignId, cardId) => `/procurement/requests/${cardId}/sourcing`,
-  },
-  SUPPLIER_CONTACT: {
-    label: 'у поставщиков нет контакта — добавить',
-    to: (campaignId, cardId) => `/procurement/requests/${cardId}`,
-  },
-  MESSAGE_APPROVAL: {
-    label: 'отправить подготовленные письма',
-    // The letters, not the card. A specialist told to send something has to
-    // land where sending happens; the card is where the requirement is
-    // written, and from there they were on their own to find six threads in
-    // the negotiations list.
-    to: (campaignId, cardId) => `/procurement/negotiations?cardId=${cardId}`,
-  },
-}
-
-/** Everything the campaign is waiting on a person for, in one list.
- *
- * The information was on the page already — spread across a status badge, a
- * table column and an error code — which meant reading the whole table to find
- * out whether anything was owed at all. A campaign of two hundred substances
- * makes that impossible rather than tedious.
- */
-function asksOf(members, campaignId) {
-  return members.flatMap(member => {
-    // The platform stopped and asked for a person. That ask belongs in the
-    // list of things waiting for one, not only in the marketplace block
-    // further down the page: a specialist scanning "Ждут вас" is scanning for
-    // exactly this, and a request stuck behind a check nobody is told about is
-    // a request that never goes out.
-    if (member.marketplaceStatus === 'NEEDS_REVIEW') {
-      return [{
-        key: `mkt-${member.cardId}`,
-        cardId: member.cardId,
-        title: member.title,
-        text: 'закончить заявку на площадке',
-        to: `/procurement/requests/${member.cardId}/echemi`,
-        blocking: true,
-      }]
-    }
-    if (member.errorCode) {
-      return [{
-        key: `err-${member.cardId}`,
-        cardId: member.cardId,
-        title: member.title,
-        text: errorText(member.errorCode),
-        to: `/procurement/requests/${member.cardId}`,
-        blocking: true,
-      }]
-    }
-    const ask = ASKS[member.waitingFor]
-    if (!ask) return []
-    return [{
-      key: `${member.waitingFor}-${member.cardId}`,
-      cardId: member.cardId,
-      title: member.title,
-      text: ask.label,
-      to: ask.to(campaignId, member.cardId),
-      blocking: false,
-    }]
-  })
-}
 const mutationMessage = error => error?.response?.data?.message || error?.message
 
 // The server's own rule, repeated so the button is offered only where it can
@@ -380,7 +296,11 @@ export default function CampaignPage() {
     enabled: canReadEscalations,
   })
   const [reviewWanted, setReviewWanted] = useState(false)
-  const review = useCampaignReview(campaignId, { enabled: view === 'review' || view === 'all' || reviewWanted })
+  // Waiting for you holds the approvals too, so it loads them when one waits.
+  const anyAwaitsReview = (query.data?.members || []).some(memberAwaitsReview)
+  const review = useCampaignReview(campaignId, {
+    enabled: view === 'review' || view === 'all' || reviewWanted || (view === 'waiting' && anyAwaitsReview),
+  })
   const reviewData = review.query.data
   // Leaving with decisions a person changed and did not send loses them.
   const unsentReview = review.touched && review.decisions.length > 0
@@ -390,7 +310,20 @@ export default function CampaignPage() {
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
   }, [unsentReview])
-  const [showAsks, setShowAsks] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  // Closed by a click anywhere else or Esc, as a menu is; no hover on a phone.
+  useEffect(() => {
+    if (!moreOpen) return undefined
+    const close = event => {
+      if (event.type === 'keydown' ? event.key === 'Escape' : !event.target.closest?.('.pr-view-switch__more')) setMoreOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', close)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', close)
+    }
+  }, [moreOpen])
   const [editingSettings, setEditingSettings] = useState(false)
   const [savedEffects, setSavedEffects] = useState(null)
   // The generated name lists the first substances ("… и ещё 23"), which stops
@@ -596,9 +529,7 @@ export default function CampaignPage() {
   const threadRows = (threadsView?.items || []).flatMap(item => item.conversations.map(thread => ({ ...thread, cardId: item.cardId })))
   const awaitingPerson = threadRows.filter(thread => thread.status === 'READY').length
   const pausedThreads = threadRows.filter(thread => thread.automationPaused && thread.status !== 'READY').length
-  const unsentCards = new Set(threadRows.filter(thread => thread.status === 'READY').map(thread => thread.cardId))
   const unreachable = threadsView?.unreachable || []
-  const channelsLabel = (threadsView?.channels || []).map(item => CHANNEL_LABEL[item] || item).join(', ')
   const marketplaceView = postToMarketplace.data || marketplace.data
   const marketplaceItems = marketplaceView?.items || []
   // What is left to post, not merely that something is: a specialist reading
@@ -614,10 +545,6 @@ export default function CampaignPage() {
   const busyMarketplace = postToMarketplace.isPending
     || submitMarketplace.isPending
     || Boolean(marketplaceView?.running)
-  // "Отправить подготовленные письма" only where a letter is in fact unsent:
-  // a substance whose letters are queued or gone owes nothing.
-  const asks = asksOf(members, campaignId)
-    .filter(ask => !ask.key.startsWith('MESSAGE_APPROVAL-') || !threadsView || unsentCards.has(ask.cardId))
   const conversationsByCard = new Map(conversations.map(item => [item.cardId, item]))
   const marketplaceQuotes = marketplaceView?.quotations
   const repostable = marketplaceItems.filter(item => item.repostable).map(item => item.cardId)
@@ -642,6 +569,8 @@ export default function CampaignPage() {
     || repostMarketplace.error || repostMarketplace.data?.reposting?.length
     || collectMarketplaceQuotes.error || resendMarketplace.error || resendMarketplace.data?.confirmed
     || confirmMarketplace.error || postToMarketplace.error || submitMarketplace.error)
+  // Whether Echemi waits for a person: Ждут вас says so in its one line.
+  const marketplaceWaits = marketplaceNeedsReview > 0 || marketplaceAwaiting > 0 || marketplacePending > 0
   const marketplaceOnTop = hasMarketplace && (view === 'echemi' || view === 'all' || marketplaceAsking)
   const threadsOnTop = conversations.length > 0 && (view === 'threads' || view === 'all' || Boolean(sendPrepared.data || sendPrepared.error))
   // Asked where it was pressed: beside the one request, or above the table
@@ -825,11 +754,23 @@ export default function CampaignPage() {
     escalationsByCard.set(item.cardId, [...(escalationsByCard.get(item.cardId) || []), item])
   }
   const escalationsOpen = [...escalationsByCard.values()].reduce((total, items) => total + items.length, 0)
-  const failedAsks = asks.filter(ask => ask.key.startsWith('err-')).length
-  // What only the per-substance list says: no verified supplier, no contact.
-  const otherAsks = asks.filter(ask => ['SUPPLIER_EVIDENCE-', 'SUPPLIER_CONTACT-'].some(prefix => ask.key.startsWith(prefix))).length
-  const waitingTotal = reviewWaiting + escalationsOpen + awaitingPerson + pausedThreads + marketplaceNeedsReview + failedAsks + otherAsks
+  // The confirmed companies with no address in the allowed channels, per
+  // position: they wait in that position's conversations.
+  const unreachableByCard = new Map(unreachable.map(entry => [entry.cardId, entry.suppliers]))
+  // Counted by the same rule the table opens by, so the number on the button
+  // is the number of positions it shows.
+  const waitingPositions = members.filter(member => waitingOf({
+    threads: conversationsByCard.get(member.cardId)?.conversations || [],
+    unreachable: unreachableByCard.get(member.cardId) || [],
+    escalations: escalationsByCard.get(member.cardId) || [],
+    echemi: needsMarketplaceAction(member),
+    review: memberAwaitsReview(member),
+    error: Boolean(member.errorCode),
+  }).waits).length
+  const waitingPresses = (awaitingPerson > 0 && canQueueNegotiations) || marketplaceWaits
+    || (progress.awaitingReview > 0 && undispatched > 0 && canQueueNegotiations)
   const modeCounts = {
+    waiting: waitingPositions,
     members: members.length,
     review: reviewWaiting,
     escalations: escalationsOpen,
@@ -936,75 +877,65 @@ export default function CampaignPage() {
             onSelect={key => setFilter(key ? `${PHASE_FILTER}${key}` : 'all')}
           />
         </div>
-        <div className="pr-campaign-summary__chips">
-          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.candidateTotal} кандидатов</button>
-          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.contactTotal} с контактами</button>
-          <button type="button" className="pr-chip" onClick={() => setFilter('all')}>{progress.verifiedTotal ?? 0} подтверждено</button>
-          <button type="button" className="pr-chip" onClick={() => setFilter('working')}>{progress.requestTotal ?? 0} запросов</button>
+        {/* Reference, not presses: one muted line. */}
+        <p className="pr-campaign-summary__line">
+          {[
+            `${progress.candidateTotal} кандидатов`,
+            `${progress.contactTotal} с контактами`,
+            `${progress.verifiedTotal ?? 0} подтверждено`,
+            `${progress.requestTotal ?? 0} запросов`,
+          ].join(' · ')}
+          {' · '}
           {/* Counted from the offers themselves: a substance answered through
               the marketplace has no conversation to count an answer on. */}
-          <Link className="pr-chip" to="/procurement/proposals">{offerCounts.offers} {plural(offerCounts.offers, 'предложение', 'предложения', 'предложений')}{offerCounts.priced > 0 ? `, ${offerCounts.priced} с ценой` : ''}</Link>
-          {progress.failed > 0 && <button type="button" className="pr-chip pr-chip--danger" onClick={() => setFilter('failed')}>{progress.failed} с ошибкой</button>}
-        </div>
+          <Link to="/procurement/proposals">{offerCounts.offers} {plural(offerCounts.offers, 'предложение', 'предложения', 'предложений')}{offerCounts.priced > 0 ? `, ${offerCounts.priced} с ценой` : ''}</Link>
+          {progress.failed > 0 && <> · <span className="pr-import-missing">{progress.failed} с ошибкой</span></>}
+        </p>
       </div>
 
-      {/* One line of what waits for a person, one press per kind of thing, each
-          answered on this page. The per-substance list is one click away. */}
-      {waitingTotal > 0 && <div className="pr-campaign-waiting">
-        <div className="pr-campaign-waiting__line">
-          <b>Ждут вас:</b>
-          <div className="pr-inline-actions">
-            {reviewWaiting > 0 && <Button size="sm" onPress={() => showView('review')}>Согласовать {reviewWaiting} {plural(reviewWaiting, 'позицию', 'позиции', 'позиций')}</Button>}
-            {/* For a campaign approved before dispatch existed, and for the
-                substances whose first attempt failed on one supplier. Opening a
-                conversation that exists returns the one that exists, so this is
-                safe to press twice. */}
-            {progress.awaitingReview > 0 && undispatched > 0 && canQueueNegotiations && <Button size="sm" variant="outline" isDisabled={dispatch.isPending} onPress={() => dispatch.mutate()}><Send className={dispatch.isPending ? 'pr-spin' : undefined} />{dispatch.isPending ? 'Отправляем…' : `Отправить запросы (${undispatched})`}</Button>}
-            {awaitingPerson > 0 && (canQueueNegotiations
-              ? <Button size="sm" isDisabled={sendPrepared.isPending} onPress={() => { showView('threads'); sendPrepared.mutate() }}><Send className={sendPrepared.isPending ? 'pr-spin' : undefined} />{sendPrepared.isPending ? 'Отправляем…' : `Отправить ${awaitingPerson} ${plural(awaitingPerson, 'письмо', 'письма', 'писем')}`}</Button>
-              : <Button size="sm" variant="outline" onPress={() => showView('threads')}>{`${awaitingPerson} ${plural(awaitingPerson, 'письмо готово', 'письма готовы', 'писем готовы')} к отправке`}</Button>)}
-            {escalationsOpen > 0 && <Button size="sm" variant="outline" onPress={() => showView('escalations')}>{`${escalationsOpen} ${plural(escalationsOpen, 'эскалация ждёт', 'эскалации ждут', 'эскалаций ждут')} решения`}</Button>}
-            {pausedThreads > 0 && <Button size="sm" variant="outline" onPress={() => showView('threads')}>{`${pausedThreads} ${plural(pausedThreads, 'переписка', 'переписки', 'переписок')}: агент остановлен`}</Button>}
-            {marketplaceNeedsReview > 0 && <Button size="sm" variant="outline" onPress={() => showView('echemi')}>{`${marketplaceNeedsReview} ${plural(marketplaceNeedsReview, 'заявка', 'заявки', 'заявок')} Echemi ждёт проверки`}</Button>}
-            {failedAsks > 0 && <Button size="sm" variant="outline" onPress={() => { showView('members'); setFilter('failed') }}>{`${failedAsks} ${plural(failedAsks, 'позиция', 'позиции', 'позиций')} с ошибкой`}</Button>}
-            {otherAsks > 0 && <Button size="sm" variant="outline" onPress={() => setShowAsks(true)}>{`ещё ${otherAsks}: найти поставщика или контакт`}</Button>}
-            <Button variant="ghost" size="sm" aria-expanded={showAsks} onPress={() => setShowAsks(value => !value)}>{showAsks ? <ChevronDown size={14} /> : <ChevronRight size={14} />}По позициям</Button>
-          </div>
-        </div>
-        {showAsks && <ul className="pr-campaign-asks__list">
-          {asks.map(ask => <li key={ask.key} className={ask.blocking ? 'is-blocked' : undefined}>
-            {ask.blocking ? <CircleAlert size={13} /> : <Clock size={13} />}
-            <Link to={ask.to}>{ask.title}</Link>
-            <span>#{ask.cardId}</span>
-            <b>{ask.text}</b>
-          </li>)}
-          {threadRows.filter(thread => thread.automationPaused && thread.status !== 'READY').map(thread => <li key={thread.assignmentId}>
-            <Clock size={13} />
-            <Link to={`/procurement/negotiations/${thread.assignmentId}`}>{thread.supplierName || thread.assignmentId}</Link>
-            <span>#{thread.cardId}</span>
-            <b>агент остановлен — закрыть или возобновить</b>
-          </li>)}
-        </ul>}
-      </div>}
-
-      {/* One list of positions, read five ways: a mode unfolds what it is
-          about and folds the rest, and a person can open anything by hand
-          after that. The two blocks below the table stay until the modes
-          have been tested by the people who use them. */}
-      <div className="pr-view-switch" role="group" aria-label="Что раскрыть в таблице">
-        {/* Every mode always, so the switch never changes shape; one with
-            nothing to show opens every position on its section. */}
-        {MODES.map(([id, label]) => <button
+      {/* One list of positions and one switch to read it by: Ждут вас — only
+          what needs a person, open on what waits; Предложения; Позиции; and
+          the other modes under Ещё. It replaces the waiting banner and the
+          filter chips that asked the same question twice. */}
+      <div className="pr-view-switch" role="group" aria-label="Что показать в таблице">
+        {MODES.filter(([id]) => PRIMARY_MODES.includes(id)).map(([id, label]) => <button
           key={id}
           type="button"
           aria-pressed={view === id}
           className={view === id ? 'is-on' : undefined}
           onClick={() => showView(id)}
         >
-          {/* The approval counts what waits, and nothing waiting is no number. */}
-          {label}{modeCounts[id] != null && !(id === 'review' && !modeCounts[id]) && <b>{modeCounts[id]}</b>}
-          {modeAlerts[id] && <span className="pr-view-switch__alert">{modeAlerts[id]}</span>}
+          {label}{modeCounts[id] != null && <b>{modeCounts[id]}</b>}
         </button>)}
+        {/* The rest of the modes, one press away: each unfolds one kind of
+            section everywhere. Its alerts still show on the press. */}
+        <div className="pr-view-switch__more">
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={moreOpen}
+            className={PRIMARY_MODES.includes(view) ? undefined : 'is-on'}
+            onClick={() => setMoreOpen(value => !value)}
+          >
+            {PRIMARY_MODES.includes(view) ? 'Ещё' : MODES.find(([id]) => id === view)?.[1]}
+            {!PRIMARY_MODES.includes(view) && modeCounts[view] != null && !(view === 'review' && !modeCounts[view]) && <b>{modeCounts[view]}</b>}
+            {MODES.some(([id]) => !PRIMARY_MODES.includes(id) && id !== view && modeAlerts[id]) && <span className="pr-view-switch__dot" aria-label="есть, что ждёт" />}
+            <ChevronDown size={14} />
+          </button>
+          {moreOpen && <div className="pr-view-switch__menu" role="menu">
+            {MODES.filter(([id]) => !PRIMARY_MODES.includes(id)).map(([id, label]) => <button
+              key={id}
+              type="button"
+              role="menuitemradio"
+              aria-checked={view === id}
+              className={view === id ? 'is-on' : undefined}
+              onClick={() => { setMoreOpen(false); showView(id) }}
+            >
+              <span>{label}{modeCounts[id] != null && !(id === 'review' && !modeCounts[id]) && <b>{modeCounts[id]}</b>}</span>
+              {modeAlerts[id] && <span className="pr-view-switch__alert">{modeAlerts[id]}</span>}
+            </button>)}
+          </div>}
+        </div>
       </div>
 
       {/* The presses that act on the whole purchase, above the table in the
@@ -1015,7 +946,21 @@ export default function CampaignPage() {
         <IdentitySummary review={review} />
         <BulkVerdicts review={review} scope={review.items} />
       </div>}
-      {(view === 'review' || view === 'all') && review.query.isLoading && <p className="pr-note">Загружаем согласование…</p>}
+      {(view === 'review' || view === 'all' || (view === 'waiting' && reviewWaiting > 0)) && review.query.isLoading && <p className="pr-note">Загружаем согласование…</p>}
+      {/* For a purchase approved before dispatch existed, and for substances
+          whose first attempt failed on one supplier. Opening a conversation
+          that exists returns the one that exists, so it is safe to press twice. */}
+      {/* Waiting for you keeps its purchase-wide presses to one short line:
+          the details are in the positions below and in each press's own mode. */}
+      {view === 'waiting' && waitingPresses && <div className="pr-mode-toolbar pr-waiting-actions"><div className="pr-inline-actions">
+        <span className="pr-muted">На всю закупку:</span>
+        {awaitingPerson > 0 && canQueueNegotiations && <Button size="sm" isDisabled={sendPrepared.isPending} onPress={() => sendPrepared.mutate()}><Send className={sendPrepared.isPending ? 'pr-spin' : undefined} />{sendPrepared.isPending ? 'Отправляем…' : `Отправить ${awaitingPerson} ${plural(awaitingPerson, 'письмо', 'письма', 'писем')}`}</Button>}
+        {marketplaceWaits && <Button size="sm" variant="outline" onPress={() => showView('echemi')}>{`Echemi: ${marketplaceNeedsReview + marketplaceAwaiting + marketplacePending} ${plural(marketplaceNeedsReview + marketplaceAwaiting + marketplacePending, 'заявка ждёт', 'заявки ждут', 'заявок ждут')}`}</Button>}
+        {/* For a purchase approved before dispatch existed, and for substances
+            whose first attempt failed on one supplier. Opening a conversation
+            that exists returns the one that exists, so it is safe to press twice. */}
+        {progress.awaitingReview > 0 && undispatched > 0 && canQueueNegotiations && <Button size="sm" variant="outline" isDisabled={dispatch.isPending} onPress={() => dispatch.mutate()}><Send className={dispatch.isPending ? 'pr-spin' : undefined} />{dispatch.isPending ? 'Отправляем…' : `Отправить запросы (${undispatched})`}</Button>}
+      </div></div>}
       {threadsOnTop && <div className="pr-mode-toolbar">{conversationsIntro}{conversationsToolbar}</div>}
       {marketplaceOnTop && <div className="pr-mode-toolbar">{marketplaceIntro}{marketplaceSummary}{marketplaceToolbar}</div>}
 
@@ -1064,6 +1009,8 @@ export default function CampaignPage() {
         reviewLoading={review.query.isLoading && review.query.fetchStatus !== 'idle'}
         onReviewWanted={() => setReviewWanted(true)}
         escalationsByCard={escalationsByCard}
+        unreachableByCard={unreachableByCard}
+        onModeChange={showView}
         browserAccess={canOperateEchemi ? <EchemiBrowserAccess
           access={browser.data}
           error={browser.error}
@@ -1072,38 +1019,10 @@ export default function CampaignPage() {
           brief
         /> : null}
       />
-      {reviewData && (view === 'review' || view === 'all' || review.touched) && <ReviewBar review={review} />}
+      {reviewData && (view === 'review' || view === 'all' || (view === 'waiting' && reviewWaiting > 0) || review.touched) && <ReviewBar review={review} />}
 
       {/* What explains the run rather than asks for anything: kept, one click
-          away, so the page opens on what needs a person and what came in. The
-          companies come first: they are something to fix; the history is not. */}
-      {unreachable.length > 0 && <details className="pr-more-details">
-        <summary>{`Компании без адреса (${unreachable.reduce((total, entry) => total + entry.suppliers.length, 0)})`}</summary>
-        <div className="pr-stack">
-      <Card><CardHeader><div>
-        <CardTitle>Некому написать</CardTitle>
-        <p>Эти компании вы подтвердили, но поиск не нашёл у них адреса в разрешённых каналах{channelsLabel ? ` (${channelsLabel})` : ''}. Допишите контакт на карточке поставщика — и запустите рассылку ещё раз.</p>
-      </div></CardHeader><CardContent>
-        <ul className="pr-campaign-threads">
-          {unreachable.map(entry => <li key={entry.cardId}>
-            <div className="pr-campaign-threads__head">
-              <Link to={`/procurement/requests/${entry.cardId}`}>{entry.title}</Link>
-              <span>#{entry.cardId}</span>
-            </div>
-            <ul>
-              {entry.suppliers.map(supplier => <li key={supplier.supplierId}>
-                <Link to={`/procurement/suppliers/${supplier.supplierId}`}>{supplier.name}</Link>
-                <span className="pr-primary-meta">{supplier.otherChannels?.length
-                  ? `отвечает в других каналах: ${supplier.otherChannels.join(', ')}`
-                  : 'контактов нет вовсе'}</span>
-              </li>)}
-            </ul>
-          </li>)}
-        </ul>
-      </CardContent></Card>
-        </div>
-      </details>}
-
+          away, so the page opens on what needs a person and what came in. */}
       <details className="pr-more-details">
         <summary>История закупки</summary>
         <div className="pr-stack">

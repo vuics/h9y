@@ -10,14 +10,14 @@ import { readableAgentError } from '../lib/agentText'
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
 import { offerBasis, offerNote, priceRanges, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
-import { contentOf, memberAwaitsReview, resolveOpen, rowOpenByMode, sectionOpenByMode } from '../lib/memberSections'
+import { contentOf, memberAwaitsReview, resolveOpen, rowOpenByMode, sectionOpenByMode, waitingOf } from '../lib/memberSections'
 import { reviewBadges, reviewOpen } from '../lib/campaignReview'
 import { ReviewItem } from './CampaignReview'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { escalationKind } from '../lib/escalation'
 import { EscalationQuick } from './EscalationQuick'
 import {
-  FILTERS, filterCounts, filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
+  filterMembers, foundSummary, memberGroup, needsMarketplaceAction,
   nextActions, requestsSummary,
 } from '../lib/campaignView'
 import { plural } from './SourcingSettings'
@@ -109,7 +109,7 @@ function Section({ title, meta, open, onToggle, empty, children }) {
 function MemberSections({
   member, offers, threads, marketplace, marketplaceLabels, threadStatusLabels, offersLoading,
   isOpen, onToggle, renderMarketplaceActions, renderMarketplaceDetails, renderMarketplaceStatus, browserAccess,
-  review, reviewItem, reviewLoading, escalations = [], campaignId,
+  review, reviewItem, reviewLoading, escalations = [], campaignId, unreachable = [],
 }) {
   // Which escalations are unfolded to decide them here.
   const [deciding, setDeciding] = useState(() => new Set())
@@ -158,12 +158,24 @@ function MemberSections({
 
     <Section
       title={`Переписки${threads.length ? ` (${threads.length})` : ''}`}
-      meta={threads.length ? statusTally(threads, thread => threadLabel(thread, threadStatusLabels)) : 'пока нет'}
-      empty={!threads.length}
+      meta={threads.length || unreachable.length
+        ? [threads.length ? statusTally(threads, thread => threadLabel(thread, threadStatusLabels)) : '', unreachable.length ? `${unreachable.length} без адреса` : ''].filter(Boolean).join(' · ')
+        : 'пока нет'}
+      empty={!threads.length && !unreachable.length}
       open={isOpen('threads')}
       onToggle={() => onToggle('threads')}
     >
-      <ul className="pr-supplier-lines">{lines.map(({ thread, offer }) => <SupplierLine key={thread.assignmentId} thread={thread} offer={offer} labels={threadStatusLabels} />)}</ul>
+      <ul className="pr-supplier-lines">
+        {lines.map(({ thread, offer }) => <SupplierLine key={thread.assignmentId} thread={thread} offer={offer} labels={threadStatusLabels} />)}
+        {/* Confirmed, and nowhere to write to in the allowed channels: the one
+            thing to do is give them an address, on the supplier's card. */}
+        {unreachable.map(supplier => <li key={supplier.supplierId} className="pr-supplier-line is-waiting">
+          <Link to={`/procurement/suppliers/${supplier.supplierId}`} title={supplier.name}>{supplier.name}</Link>
+          <StatusBadge status="warning" tone="warning" label="нет адреса" compact />
+          <span className="pr-primary-meta">{supplier.otherChannels?.length ? `отвечает в других каналах: ${supplier.otherChannels.join(', ')}` : 'контактов нет вовсе'}</span>
+          <RouterLinkButton className="pr-supplier-line__press" size="sm" variant="ghost" to={`/procurement/suppliers/${supplier.supplierId}`}>Добавить контакт</RouterLinkButton>
+        </li>)}
+      </ul>
     </Section>
 
     {marketplace && <Section
@@ -259,6 +271,10 @@ export function CampaignMembers({
   review = null, reviewLoading = false, onReviewWanted,
   // Open escalations of this purchase, per position.
   escalationsByCard = new Map(),
+  // Confirmed companies with no address in the allowed channels, per position.
+  unreachableByCard = new Map(),
+  // Where the empty «Ждут вас» points next.
+  onModeChange,
   // Searching chosen substances again: the page owns the mutation.
   canResearch, onResearch, researchPending,
   // Normalizing and taking out several at once; also the page's mutations.
@@ -278,10 +294,9 @@ export function CampaignMembers({
     return next
   })
   const [selected, setSelected] = useState(() => new Set())
-  const counts = filterCounts(members)
   // A legend entry above the table picks the substances of one phase.
   const phase = phaseOfFilter(filter)
-  const rows = phase
+  const phaseRows = phase
     ? members.filter(member => memberPhase(member, offersByCard) === phase)
     : filterMembers(members, filter)
 
@@ -289,14 +304,27 @@ export function CampaignMembers({
   // has something for the mode at all.
   const contentFor = member => {
     const reviewItem = review?.items.find(item => item.cardId === member.cardId)
+    const threads = conversationsByCard.get(member.cardId)?.conversations || []
+    const unreachable = unreachableByCard.get(member.cardId) || []
+    const escalations = escalationsByCard.get(member.cardId) || []
+    const reviewWaits = reviewItem ? reviewOpen(reviewItem) : memberAwaitsReview(member)
     return contentOf({
       offers: offersByCard.get(member.cardId)?.offers,
-      threads: conversationsByCard.get(member.cardId)?.conversations,
+      threads,
+      unreachable,
       marketplace: marketplaceByCard.get(member.cardId),
-      review: reviewItem ? reviewOpen(reviewItem) : memberAwaitsReview(member),
-      escalations: escalationsByCard.get(member.cardId),
+      review: reviewWaits,
+      escalations,
+      waiting: waitingOf({
+        threads, unreachable, escalations,
+        echemi: needsMarketplaceAction(member),
+        review: reviewWaits,
+        error: Boolean(member.errorCode),
+      }),
     })
   }
+  // Waiting for you is the positions where a person is needed, and no others.
+  const rows = mode === 'waiting' ? phaseRows.filter(member => contentFor(member).waiting.waits) : phaseRows
   const anyHas = rows.some(member => contentFor(member)[mode] > 0)
   const visible = rows.map(member => member.cardId)
   const allVisible = visible.length > 0 && visible.every(cardId => selected.has(cardId))
@@ -320,24 +348,24 @@ export function CampaignMembers({
     : []
 
   return <section className="pr-members">
-    <div className="pr-members__filters" role="group" aria-label="Показать вещества">
-      {FILTERS.filter(([id]) => id === 'all' || counts[id] > 0).map(([id, label]) => <button
-        key={id}
-        type="button"
-        className={filter === id ? 'pr-chip is-on' : 'pr-chip'}
-        data-filter={id}
-        aria-pressed={filter === id}
-        onClick={() => onFilterChange(id)}
-      >{label} <b>{counts[id]}</b></button>)}
-      {phase && <button
+    {/* The one filter left: a phase picked on the bar above, said here with
+        the way back. Everything else is a mode of the switch. */}
+    {phase && <div className="pr-members__filters" role="group" aria-label="Показать вещества">
+      <button
         type="button"
         className="pr-chip is-on"
         data-filter={filter}
         aria-pressed="true"
         title="Показать все"
         onClick={() => onFilterChange('all')}
-      >{phaseLabel(phase)} <b>{rows.length}</b> ✕</button>}
-    </div>
+      >{phaseLabel(phase)} <b>{rows.length}</b> ✕</button>
+    </div>}
+
+    {mode === 'waiting' && !rows.length && <div className="pr-waiting-empty">
+      <b>Сейчас ничего не ждёт вас.</b>
+      <span>Агент ведёт переписку сам; как только понадобится решение, позиция появится здесь.</span>
+      {onModeChange && <Button size="sm" variant="outline" onPress={() => onModeChange('offers')}>Смотреть предложения</Button>}
+    </div>}
 
     {canResearch && selected.size > 0 && <div className="pr-members__bulk" role="region" aria-label="Выбранные вещества">
       <span>Выбрано: <b>{selected.size}</b></span>
@@ -377,7 +405,7 @@ export function CampaignMembers({
       {prepareRfqNote && <span className="pr-members__bulk-note" role="status">{prepareRfqNote}</span>}
     </div>}
 
-    <div className="pr-table-wrap"><table className="pr-table pr-members__table">
+    {(rows.length > 0 || mode !== 'waiting') && <div className="pr-table-wrap"><table className="pr-table pr-members__table">
       <thead><tr>
         {canResearch && <th className="pr-members__pick">
           <input type="checkbox" checked={allVisible} aria-label="Выбрать все показанные вещества" onChange={pickVisible} />
@@ -401,7 +429,7 @@ export function CampaignMembers({
         const expanded = resolveOpen(current.rows, member.cardId, rowOpenByMode(mode, content, { anyHas }))
         const toggle = () => setByHand('rows', member.cardId, !expanded)
         const sectionKey = section => `${member.cardId}:${section}`
-        const isOpen = section => resolveOpen(current.sections, sectionKey(section), sectionOpenByMode(mode, section))
+        const isOpen = section => resolveOpen(current.sections, sectionKey(section), sectionOpenByMode(mode, section, content))
         const toggleSection = section => {
           if (section === 'review' && !isOpen(section)) onReviewWanted?.()
           setByHand('sections', sectionKey(section), !isOpen(section))
@@ -514,12 +542,13 @@ export function CampaignMembers({
               reviewItem={reviewItem}
               reviewLoading={reviewLoading}
               escalations={escalationsByCard.get(member.cardId) || []}
+              unreachable={unreachableByCard.get(member.cardId) || []}
               campaignId={campaign.campaignId}
             />
           </td></tr>}
         </React.Fragment>
       })}</tbody>
-    </table></div>
-    {!rows.length && <p className="pr-note">Под этот фильтр веществ нет.</p>}
+    </table></div>}
+    {!rows.length && mode !== 'waiting' && <p className="pr-note">Под этот фильтр веществ нет.</p>}
   </section>
 }
