@@ -39,9 +39,13 @@ export function modeOf(value) {
 
 /** Whether a position waits for its approval, read from the purchase alone:
  * the approval itself is loaded only when someone asks for it.
+ *
+ * An RFQ regenerated after the letters went out waits too: the position has
+ * moved on, but its queued letters are held until the new text is approved.
  */
 export const memberAwaitsReview = member => member.stage === 'AWAITING_REVIEW'
   || ['CANDIDATE_REVIEW', 'RFQ_APPROVAL'].includes(member.waitingFor)
+  || member.rfqAwaitingApproval === true
 
 /** Which sections of a position wait for a person, and whether it waits at all.
  *
