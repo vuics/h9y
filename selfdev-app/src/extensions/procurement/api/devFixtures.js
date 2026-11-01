@@ -35,8 +35,27 @@ const defaultQueryTemplates = [
   '"{name}" environmental permit regulator',
 ]
 
+const laboratoryQueryTemplates = ['{name} купить', '{name} {cas} купить', '{cas} реактив купить']
+
 export const sourcingQueryTemplates = {
   templates: defaultQueryTemplates.map((template, index) => ({ id: `QT-FIXTURE-${index}`, template, enabled: true })),
+  profiles: [
+    {
+      id: 'production',
+      name: 'Производство',
+      templates: defaultQueryTemplates.map((template, index) => ({ id: `QT-FIXTURE-${index}`, template, enabled: true })),
+      defaultTemplates: defaultQueryTemplates,
+      isDefault: true,
+    },
+    {
+      id: 'laboratory',
+      name: 'Лаборатория',
+      templates: laboratoryQueryTemplates.map((template, index) => ({ id: `QT-LAB-${index}`, template, enabled: true })),
+      defaultTemplates: laboratoryQueryTemplates,
+      isDefault: true,
+    },
+  ],
+  defaultProfileId: 'production',
   variables: ['cas', 'name'],
   defaultTemplates: defaultQueryTemplates,
   synonymLimit: 3,

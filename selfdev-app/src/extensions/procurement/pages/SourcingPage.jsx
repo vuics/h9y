@@ -19,6 +19,7 @@ import { depthOfRun,
   sourcesPerSubstance,
   useSourcingSettings,
 } from '../components/SourcingSettings'
+import { profileSettings } from '../lib/sourcingProfiles'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -271,7 +272,7 @@ export default function SourcingPage() {
     if (run?.id) queryClient.setQueryData(procurementKeys.sourcingRun(run.id), run)
     queryClient.invalidateQueries({ queryKey: procurementKeys.card(requestId) })
   }
-  const settings = useSourcingSettings()
+  const settings = profileSettings(useSourcingSettings(), sourcing.profileId)
   const effectiveQueryIds = sourcing.queryIds ?? settings.defaultQueryIds
   const effectiveEngineIds = (sourcing.engineIds ?? settings.availableEngineIds)
     .filter(id => settings.availableEngineIds.includes(id))

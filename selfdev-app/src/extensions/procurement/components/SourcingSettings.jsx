@@ -3,8 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { multipliedBySynonyms, profileOfPlan } from '../lib/sourcingProfiles'
 import { EnginePicker } from './EnginePicker'
 import { QueryPlanPanel } from './QueryPlanPanel'
+import { SelectField } from './SelectField'
 
 /** The settings a search runs with — the same ones for one card and for two hundred.
  *
@@ -64,7 +68,7 @@ export const sourcesPerSubstance = (depth, queryCount, ceiling = 300) =>
  */
 export const effectiveQueryCount = (templates, selectedIds, synonymLimit = 0) => {
   const selected = templates.filter(item => selectedIds.includes(item.id))
-  const byName = selected.filter(item => String(item.template).includes('{name}')).length
+  const byName = selected.filter(item => multipliedBySynonyms(item.template)).length
   return selected.length + byName * Math.max(0, synonymLimit)
 }
 
@@ -104,6 +108,10 @@ export function useSourcingSettings() {
     mutationFn: payload => procurementApi.saveSourcingQueryTemplates(payload),
     onSuccess: data => queryClient.setQueryData(procurementKeys.sourcingQueryTemplates(), data),
   })
+  const saveDefaultProfile = useMutation({
+    mutationFn: profileId => procurementApi.saveDefaultQueryProfile(profileId),
+    onSuccess: data => queryClient.setQueryData(procurementKeys.sourcingQueryTemplates(), data),
+  })
   const templates = queryTemplates.data?.templates || []
   const engineList = engines.data?.engines || []
   const availableEngineIds = engineList.filter(item => item.available).map(item => item.id)
@@ -119,7 +127,10 @@ export function useSourcingSettings() {
     synonymLimit: queryTemplates.data?.synonymLimit ?? 0,
     defaultSynonymLimit: queryTemplates.data?.defaultSynonymLimit ?? 3,
     maxSynonymLimit: queryTemplates.data?.maxSynonymLimit ?? 10,
+    profiles: queryTemplates.data?.profiles || [],
+    defaultProfileId: queryTemplates.data?.defaultProfileId ?? null,
     saveTemplates,
+    saveDefaultProfile,
     isLoading: queryTemplates.isLoading || engines.isLoading,
   }
 }
@@ -141,6 +152,28 @@ export function SourcingSettings({
   const patch = fields => onChange({ ...value, ...fields })
 
   return <>
+    {settings.profiles.length > 1 && <div className="pr-query-profile">
+      <SelectField
+        label="Профиль закупки"
+        selectedKey={settings.profileId}
+        isDisabled={disabled}
+        // The selection belongs to the list it was made in.
+        onSelectionChange={profileId => patch({ profileId, queryIds: null })}
+        hint={<small>От профиля зависят поисковые запросы ниже. Запрос на русском ищет по российскому сегменту интернета.</small>}
+      >
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>{settings.profiles.map(profile => <SelectItem key={profile.id} id={profile.id} textValue={profile.name}>
+          {profile.name}{profile.id === settings.defaultProfileId ? ' (по умолчанию)' : ''}
+        </SelectItem>)}</SelectContent>
+      </SelectField>
+      {canEdit && settings.profileId !== settings.defaultProfileId && <Button
+        variant="outline"
+        size="sm"
+        isDisabled={disabled || settings.saveDefaultProfile.isPending}
+        onPress={() => settings.saveDefaultProfile.mutate(settings.profileId)}
+      >Сделать профилем по умолчанию</Button>}
+      {settings.saveDefaultProfile.error && <small className="pr-import-missing">Профиль по умолчанию не сохранён.</small>}
+    </div>}
     <label className="pr-sourcing-probe">
       <input
         type="checkbox"
@@ -195,6 +228,8 @@ export function SourcingSettings({
       })}
     />
     <QueryPlanPanel
+      // Another profile is another list: an open editor must not carry over.
+      key={settings.profileId}
       templates={templates}
       isDefault={settings.isDefault}
       selectedIds={queryIds}
@@ -205,7 +240,7 @@ export function SourcingSettings({
       })}
       onSave={async (payload, synonymLimit) => {
         try {
-          await saveTemplates.mutateAsync({ templates: payload, synonymLimit })
+          await saveTemplates.mutateAsync({ templates: payload, synonymLimit, profileId: settings.profileId })
           onTemplatesSaved?.()
           return true
         } catch { return false }
@@ -213,6 +248,7 @@ export function SourcingSettings({
       onReset={() => saveTemplates.mutate({
         templates: settings.defaultTemplates.map(template => ({ template, enabled: true })),
         synonymLimit: settings.defaultSynonymLimit,
+        profileId: settings.profileId,
       })}
       isSaving={saveTemplates.isPending}
       saveError={saveTemplates.error}
@@ -245,6 +281,7 @@ export const defaultSourcingValue = ({ campaign = false } = {}) => ({
   siteProbe: true,
   engineIds: null,
   queryIds: null,
+  profileId: null,
 })
 
 /** The panel's value for a plan already stored on a campaign.
@@ -262,6 +299,7 @@ export const sourcingValueFromPlan = (plan, settings) => {
     siteProbe: plan?.siteProbe ?? true,
     engineIds: plan?.engineIds ?? null,
     queryIds: plan?.queryTemplateIds ?? null,
+    profileId: profileOfPlan(plan),
   }
 }
 

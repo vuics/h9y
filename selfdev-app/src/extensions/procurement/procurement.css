@@ -1627,3 +1627,8 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-waiting-empty span { color: var(--pr-muted); }
 .pr-waiting-actions { padding: 8px 12px; }
 .pr-view-switch button.pr-view-switch__toggle { gap: 4px; color: var(--pr-muted); }
+
+/* A purchase profile: which list of queries a search runs with. */
+.pr-query-profile { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 12px; }
+.pr-query-profile .pr-form-field { flex: 1 1 280px; max-width: 420px; }
+.pr-query-profile small { color: var(--pr-muted); font-size: 11px; }

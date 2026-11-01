@@ -87,13 +87,19 @@ export const sourcingEndpoints = {
   stopSourcingContacts: mutation(runId => request(`/sourcing/${id(runId)}/contacts/stop`, { method: 'post' })),
   retrySourcingSource: mutation((runId, sourceId) =>
     request(`/sourcing/${id(runId)}/sources/${id(sourceId)}/retry`, { method: 'post' })),
-  saveSourcingQueryTemplates: mutation(({ templates, synonymLimit }) =>
+  saveSourcingQueryTemplates: mutation(({ templates, synonymLimit, profileId }) =>
     request('/sourcing/query-templates', {
       method: 'put',
       // Absent leaves the stored limit alone; 0 is a real value and must reach
       // the API as one, so this checks for undefined rather than for falsiness.
-      data: synonymLimit === undefined ? { templates } : { templates, synonymLimit },
+      data: {
+        templates,
+        ...(synonymLimit === undefined ? {} : { synonymLimit }),
+        ...(profileId ? { profileId } : {}),
+      },
     })),
+  saveDefaultQueryProfile: mutation(profileId =>
+    request('/sourcing/query-templates/default-profile', { method: 'put', data: { profileId } })),
   addSourcingSource: mutation((runId, url) =>
     request(`/sourcing/${id(runId)}/sources`, { method: 'post', data: { url } })),
   reviewSourcingCandidate: mutation((runId, candidateId, payload) =>

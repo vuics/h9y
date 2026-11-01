@@ -168,6 +168,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'GET', path: '/sourcing/engines' },
   { method: 'GET', path: '/sourcing/query-templates' },
   { method: 'PUT', path: '/sourcing/query-templates' },
+  { method: 'PUT', path: '/sourcing/query-templates/default-profile' },
   { method: 'GET', path: '/sourcing/{run_id}' },
   { method: 'POST', path: '/sourcing/{run_id}/cancel' },
   { method: 'POST', path: '/sourcing/{run_id}/candidates/{candidate_id}/promote' },

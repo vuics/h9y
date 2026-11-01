@@ -14,6 +14,7 @@ import {
   sourcingValueFromPlan,
   useSourcingSettings,
 } from './SourcingSettings'
+import { profileSettings } from '../lib/sourcingProfiles'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -116,11 +117,12 @@ export function CampaignLaunchPanel({
   const [expanded, setExpanded] = useState(!compact)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const settings = useSourcingSettings()
+  const sharedSettings = useSourcingSettings()
   // Set before the request leaves, not after React re-renders: a second press
   // in the same frame still sees `isPending` false and would launch again.
   const inFlight = useRef(false)
   const [sourcing, setSourcing] = useState(() => defaultSourcingValue({ campaign: true }))
+  const settings = profileSettings(sharedSettings, sourcing.profileId)
   const [reach, setReach] = useState(plan?.reach || 'OUTREACH')
   const [channels, setChannels] = useState(plan?.channels || ['EMAIL', 'WHATSAPP', 'ECHEMI', 'WEB_FORM'])
   const [approveRfq, setApproveRfq] = useState(plan?.approveRfq ?? true)
@@ -154,6 +156,7 @@ export function CampaignLaunchPanel({
       settings.maxAnalysedSources,
     ),
     siteProbe: sourcing.siteProbe,
+    ...(settings.profileId ? { queryProfileId: settings.profileId } : {}),
     ...(sourcing.queryIds ?? settings.defaultQueryIds).length
       ? { queryTemplateIds: sourcing.queryIds ?? settings.defaultQueryIds }
       : {},
