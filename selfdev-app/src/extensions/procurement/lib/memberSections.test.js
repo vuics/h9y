@@ -25,6 +25,27 @@ test('a mode opens only the positions that have something for it', () => {
   assert.equal(rowOpenByMode('echemi', bare), false)
 })
 
+test('site prices are their own section, not counted as offers', () => {
+  const onlySites = contentOf({ webPrices: 14 })
+  const both = contentOf({ offers: [{}], webPrices: 14 })
+  assert.equal(modeOf('webPrices'), 'webPrices')
+  assert.equal(onlySites.offers, 0)
+  assert.equal(rowOpenByMode('offers', onlySites), false)
+  assert.equal(rowOpenByMode('webPrices', onlySites), true)
+  assert.equal(sectionOpenByMode('webPrices', 'webPrices', onlySites), true)
+  assert.equal(sectionOpenByMode('offers', 'webPrices', both), false)
+})
+
+test('from the plain list a position opens on its offers, or on site prices without them', () => {
+  const onlySites = contentOf({ webPrices: 14 })
+  const both = contentOf({ offers: [{}], webPrices: 14 })
+  assert.equal(sectionOpenByMode('members', 'webPrices', onlySites), true)
+  assert.equal(sectionOpenByMode('members', 'offers', onlySites), false)
+  assert.equal(sectionOpenByMode('members', 'webPrices', both), false)
+  assert.equal(sectionOpenByMode('members', 'offers', both), true)
+  assert.equal(sectionOpenByMode('members', 'webPrices', contentOf({})), false)
+})
+
 test('a mode unfolds its own section and folds the others', () => {
   assert.equal(sectionOpenByMode('offers', 'offers'), true)
   assert.equal(sectionOpenByMode('offers', 'echemi'), false)

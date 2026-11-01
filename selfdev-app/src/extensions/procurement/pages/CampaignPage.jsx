@@ -795,6 +795,7 @@ export default function CampaignPage() {
     review: reviewWaiting,
     escalations: escalationsOpen,
     offers: offerCounts.offers,
+    webPrices: members.filter(member => member.webPriceCount > 0).length,
     threads: threadTotal,
     echemi: hasMarketplace ? marketplaceItems.length : 0,
   }

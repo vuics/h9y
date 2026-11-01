@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { memberStep, memberStepCounts, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, webOfferRows, webPriceLine } from './memberSteps.js'
+import { memberStep, memberStepCounts, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, webOfferRows, webPriceLine, webPriceSummary } from './memberSteps.js'
 
 test('a position stands on the step its stage has reached', () => {
   assert.equal(memberStep({ stage: 'QUEUED' }), 'search')
@@ -89,6 +89,14 @@ test('the row says how many sellers publish a price, and what prices', () => {
   assert.equal(
     webPriceLine({ webPriceCount: 1, webPrices: { currency: 'RUB', unit: 'мл', min: 96.67, max: 96.67, median: null } }),
     'На сайтах: 1 продавец · 96,67 ₽/мл',
+  )
+})
+
+test('the section header says the prices alone: its title holds the count', () => {
+  assert.equal(webPriceSummary({ webPriceCount: 1 }), null)
+  assert.equal(
+    webPriceSummary({ webPriceCount: 19, webPrices: { currency: 'RUB', unit: 'мл', min: 2.72, max: 116, median: 13 } }),
+    '2,72–116 ₽/мл · медиана 13 ₽/мл',
   )
 })
 

@@ -53,7 +53,7 @@ export function WebOffers({ cardId }) {
   if (query.isLoading) return <p className="pr-note">Загружаем цены с сайтов…</p>
   if (!rows.length) return null
   return <div className="pr-member-offers pr-web-offers">
-    <p className="pr-note"><b>Цены с сайтов.</b> Как опубликовано на странице; это не коммерческое предложение, наличие и цену подтвердит поставщик.</p>
+    <p className="pr-note">Как опубликовано на странице; это не коммерческое предложение, наличие и цену подтвердит поставщик.</p>
     <PriceStrip rows={rows} />
     <div className="pr-table-wrap"><table className="pr-table pr-member-offers__table">
       <thead><tr><th>Продавец</th><th>Цена</th><th>Фасовка</th><th>За единицу</th><th>Чистота</th><th>Бренд</th><th>Наличие</th></tr></thead>

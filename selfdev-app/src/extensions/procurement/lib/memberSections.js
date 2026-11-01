@@ -1,12 +1,12 @@
 /** How the purchase table is read: one list of positions, folded differently.
  *
  * A mode does not swap the table for another one. It decides which positions
- * are opened and which of their three sections — offers, conversations,
+ * are opened and which of their sections — offers, site prices, conversations,
  * Echemi — start unfolded. Whatever a person opens or folds by hand afterwards
  * stays as they left it until the mode changes.
  */
 
-export const SECTIONS = ['offers', 'threads', 'echemi', 'escalations', 'review']
+export const SECTIONS = ['offers', 'webPrices', 'threads', 'echemi', 'escalations', 'review']
 
 export const MODES = [
   // Left to right from the most folded to the most open, and the first is the
@@ -18,6 +18,9 @@ export const MODES = [
   ['waiting', 'Ждут вас'],
   ['offers', 'Предложения'],
   // The rest, one press away: each unfolds one kind of section everywhere.
+  // Site prices are no offers: nothing can be ordered on them until a supplier
+  // confirms, and only the positions that have them are listed.
+  ['webPrices', 'Цены с сайтов'],
   ['threads', 'Переписки'],
   ['echemi', 'Echemi'],
   ['escalations', 'Эскалации'],
@@ -67,7 +70,8 @@ export function waitingOf({ threads = [], unreachable = [], escalations = [], ec
 export const contentOf = ({ offers = [], webPrices = 0, threads = [], marketplace = null, review = false, escalations = [], unreachable = [], waiting = null } = {}) => ({
   review: review ? 1 : 0,
   escalations: escalations.length,
-  offers: offers.length + webPrices,
+  offers: offers.length,
+  webPrices: webPrices || 0,
   threads: threads.length + unreachable.length,
   echemi: marketplace ? 1 : 0,
   waiting: waiting || { sections: new Set(), waits: false },
@@ -90,10 +94,12 @@ export function rowOpenByMode(mode, content, { anyHas = true } = {}) {
 /** Whether a section of an opened position starts unfolded: only the one
  * the mode is about — or, waiting for you, each one that waits. A conversation waiting for a person says so in its
  * folded header and on the Переписки button, so it does not open itself. A position
- * opened from the plain list opens on its prices: they are what it is opened for.
+ * opened from the plain list opens on its prices: they are what it is opened for,
+ * the offers when there are any, the prices from sites until then.
  */
 export const sectionOpenByMode = (mode, section, content) => mode === 'all' || mode === section
   || (mode === 'members' && section === 'offers' && (content?.offers || 0) > 0)
+  || (mode === 'members' && section === 'webPrices' && !content?.offers && (content?.webPrices || 0) > 0)
   || (mode === 'waiting' && Boolean(content?.waiting.sections.has(section)))
 
 /** A person's choice wins over the mode's, until the mode changes. */

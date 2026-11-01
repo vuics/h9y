@@ -9,7 +9,7 @@ import { NormalizedMark } from './NormalizedMark'
 import { ChevronDown, ChevronRight, MoreVertical } from './icons'
 import { readableAgentError } from '../lib/agentText'
 import { memberPhase, phaseLabel, phaseOfFilter } from '../lib/campaignPhases'
-import { memberStep, stepLabel, stepOfFilter, webPriceLine } from '../lib/memberSteps'
+import { memberStep, stepLabel, stepOfFilter, webPriceLine, webPriceSummary } from '../lib/memberSteps'
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
 import { offerBasis, offerNote, priceSummary, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
@@ -128,11 +128,10 @@ function MemberSections({
   return <div className="pr-member-suppliers">
     <Section
       title={`Предложения${offered.length ? ` (${offered.length})` : ''}`}
-      meta={[
-        offered.length ? (prices.length ? prices.join(' · ') : 'цены нет') : null,
-        webPrices ? `цены на сайтах: ${webPrices}` : null,
-      ].filter(Boolean).join(' · ') || (offersLoading ? 'загружаем…' : 'пока нет')}
-      empty={!offered.length && !webPrices}
+      meta={offered.length
+        ? (prices.length ? prices.join(' · ') : 'цены нет')
+        : (offersLoading ? 'загружаем…' : 'пока нет')}
+      empty={!offered.length}
       open={isOpen('offers')}
       onToggle={() => onToggle('offers')}
     >
@@ -160,7 +159,17 @@ function MemberSections({
         </table></div>
         <Link className="pr-member-offers__compare" to={`/procurement/proposals/compare?cardId=${member.cardId}`}>Сравнить все {offered.length} →</Link>
       </div>}
-      {webPrices > 0 && isOpen('offers') && <WebOffers cardId={member.cardId} />}
+    </Section>
+
+    {/* Apart from the offers: what a site publishes, not what a supplier offered. */}
+    <Section
+      title={`Цены с сайтов${webPrices ? ` (${webPrices})` : ''}`}
+      meta={webPrices ? webPriceSummary(member) : 'пока нет'}
+      empty={!webPrices}
+      open={isOpen('webPrices')}
+      onToggle={() => onToggle('webPrices')}
+    >
+      <WebOffers cardId={member.cardId} />
     </Section>
 
     <Section
@@ -335,7 +344,12 @@ export function CampaignMembers({
     })
   }
   // Waiting for you is the positions where a person is needed, and no others.
-  const rows = mode === 'waiting' ? stepRows.filter(member => contentFor(member).waiting.waits) : stepRows
+  // Prices from sites likewise: a position without them has nothing to read here.
+  const rows = mode === 'waiting'
+    ? stepRows.filter(member => contentFor(member).waiting.waits)
+    : mode === 'webPrices'
+      ? stepRows.filter(member => contentFor(member).webPrices > 0)
+      : stepRows
   const anyHas = rows.some(member => contentFor(member)[mode] > 0)
   const visible = rows.map(member => member.cardId)
   const allVisible = visible.length > 0 && visible.every(cardId => selected.has(cardId))
@@ -378,6 +392,11 @@ export function CampaignMembers({
       {onModeChange && <Button size="sm" variant="outline" onPress={() => onModeChange('offers')}>Смотреть предложения</Button>}
     </div>}
 
+    {mode === 'webPrices' && !rows.length && <div className="pr-waiting-empty">
+      <b>Цен с сайтов здесь пока нет.</b>
+      <span>Они появятся, когда поиск найдёт страницы продавцов с ценой на это вещество.</span>
+    </div>}
+
     {canResearch && selected.size > 0 && <div className="pr-members__bulk" role="region" aria-label="Выбранные вещества">
       <span>Выбрано: <b>{selected.size}</b></span>
       <Button
@@ -416,7 +435,7 @@ export function CampaignMembers({
       {prepareRfqNote && <span className="pr-members__bulk-note" role="status">{prepareRfqNote}</span>}
     </div>}
 
-    {(rows.length > 0 || mode !== 'waiting') && <div className="pr-table-wrap"><table className="pr-table pr-members__table">
+    {(rows.length > 0 || !['waiting', 'webPrices'].includes(mode)) && <div className="pr-table-wrap"><table className="pr-table pr-members__table">
       <thead><tr>
         {canResearch && <th className="pr-members__pick">
           <input type="checkbox" checked={allVisible} aria-label="Выбрать все показанные вещества" onChange={pickVisible} />
@@ -512,7 +531,7 @@ export function CampaignMembers({
                   setManual(() => ({
                     ...current,
                     rows: new Map(current.rows).set(member.cardId, true),
-                    sections: new Map(current.sections).set(sectionKey('offers'), true),
+                    sections: new Map(current.sections).set(sectionKey('webPrices'), true),
                   }))
                 }}
               >{webPriceLine(member)}</button>}
@@ -572,6 +591,6 @@ export function CampaignMembers({
         </React.Fragment>
       })}</tbody>
     </table></div>}
-    {!rows.length && mode !== 'waiting' && <p className="pr-note">Под этот фильтр веществ нет.</p>}
+    {!rows.length && !['waiting', 'webPrices'].includes(mode) && <p className="pr-note">Под этот фильтр веществ нет.</p>}
   </section>
 }

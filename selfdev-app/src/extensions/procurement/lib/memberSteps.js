@@ -116,14 +116,11 @@ const sellerWord = count => {
   return 'продавцов'
 }
 
-/** The position's row on its site prices. A position searched before the summary
- * was stored has only the count. */
-export function webPriceLine(member) {
-  const count = member.webPriceCount || 0
-  if (!count) return null
-  const head = `На сайтах: ${count} ${sellerWord(count)}`
+/** A position's site prices in a few words. A position searched before the summary
+ * was stored has only the count, so nothing to say here. */
+export function webPriceSummary(member) {
   const prices = member.webPrices
-  if (!prices) return head
+  if (!prices) return null
   const unit = prices.unit ? `/${prices.unit}` : ''
   const sign = prices.currency === 'RUB' ? '₽' : prices.currency || ''
   const number = value => Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 2 })
@@ -131,10 +128,16 @@ export function webPriceLine(member) {
     ? `${number(prices.min)} ${sign}${unit}`
     : `${number(prices.min)}–${number(prices.max)} ${sign}${unit}`
   return [
-    head,
     range.trim(),
     prices.median != null ? `медиана ${money(prices.median, prices.currency)}${unit}` : null,
   ].filter(Boolean).join(' · ')
+}
+
+/** The position's row on its site prices. */
+export function webPriceLine(member) {
+  const count = member.webPriceCount || 0
+  if (!count) return null
+  return [`На сайтах: ${count} ${sellerWord(count)}`, webPriceSummary(member)].filter(Boolean).join(' · ')
 }
 
 /** Site prices placed on one log scale, for the strip above their table: from 2 to
