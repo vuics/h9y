@@ -64,10 +64,10 @@ export function waitingOf({ threads = [], unreachable = [], escalations = [], ec
 }
 
 /** What one position has to show in each section. */
-export const contentOf = ({ offers = [], threads = [], marketplace = null, review = false, escalations = [], unreachable = [], waiting = null } = {}) => ({
+export const contentOf = ({ offers = [], webPrices = 0, threads = [], marketplace = null, review = false, escalations = [], unreachable = [], waiting = null } = {}) => ({
   review: review ? 1 : 0,
   escalations: escalations.length,
-  offers: offers.length,
+  offers: offers.length + webPrices,
   threads: threads.length + unreachable.length,
   echemi: marketplace ? 1 : 0,
   waiting: waiting || { sections: new Set(), waits: false },
@@ -89,9 +89,11 @@ export function rowOpenByMode(mode, content, { anyHas = true } = {}) {
 
 /** Whether a section of an opened position starts unfolded: only the one
  * the mode is about — or, waiting for you, each one that waits. A conversation waiting for a person says so in its
- * folded header and on the Переписки button, so it does not open itself.
+ * folded header and on the Переписки button, so it does not open itself. A position
+ * opened from the plain list opens on its prices: they are what it is opened for.
  */
 export const sectionOpenByMode = (mode, section, content) => mode === 'all' || mode === section
+  || (mode === 'members' && section === 'offers' && (content?.offers || 0) > 0)
   || (mode === 'waiting' && Boolean(content?.waiting.sections.has(section)))
 
 /** A person's choice wins over the mode's, until the mode changes. */

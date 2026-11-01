@@ -1,12 +1,13 @@
-/** One substance's way from the search to a price, as a row of steps.
+/** The purchase's way from the search to a price, as a row of steps above its
+ * positions.
  *
- * The table says where a substance stands in the machine's words. This says it
- * in the buyer's: what is finished, what is asked of them now, and what the
- * agent does once they have answered. Read only from what the page already has,
- * so it cannot disagree with the rest of the row.
+ * Each position stands on exactly one step, the furthest it has reached, so the
+ * counts add up to the list and pressing a step filters it. A repeated search does
+ * not send a position with answers back: a count that jumped backwards would read
+ * as lost work, and the row's own bar shows the search.
  */
 export const MEMBER_STEPS = [
-  ['search', 'Поиск поставщиков'],
+  ['search', 'Поиск'],
   ['companies', 'Кому писать'],
   ['rfq', 'Текст запроса'],
   ['send', 'Рассылка'],
@@ -14,106 +15,92 @@ export const MEMBER_STEPS = [
   ['result', 'Цены'],
 ]
 
-const SEARCH = 0
-const COMPANIES = 1
-const RFQ = 2
-const SEND = 3
-const REPLIES = 4
-const RESULT = 5
+/** Off the way: a position here is not further along or behind any step. */
+export const SIDE_STEPS = [
+  ['failed', 'Сбой'],
+  ['skipped', 'Исключены'],
+]
 
-/** The step a substance is on, and whether the agent or the buyer holds it. */
-function position(member) {
-  if (member.errorCode || member.stage === 'FAILED') {
-    const at = member.requestCount ? SEND : member.candidateCount ? COMPANIES : SEARCH
-    return { at, status: 'failed' }
-  }
+const ALL_STEPS = [...MEMBER_STEPS, ...SIDE_STEPS]
+
+export const STEP_FILTER = 'step:'
+
+export const stepOfFilter = filter =>
+  typeof filter === 'string' && filter.startsWith(STEP_FILTER) ? filter.slice(STEP_FILTER.length) : null
+
+export const stepLabel = step => ALL_STEPS.find(([id]) => id === step)?.[1] || step
+
+const present = value => value != null && String(value).trim() !== ''
+
+const hasPrice = (member, offers) =>
+  (offers?.priced || 0) > 0
+  || (member.webPriceCount || 0) > 0
+  // A price without a unit cannot be compared, but a buyer has it all the same.
+  || (Array.isArray(offers?.offers) && offers.offers.some(offer => present(offer.price)))
+
+const REACH_END = { SOURCING: 'search', CONTACTS: 'companies' }
+
+function waitingStep(member) {
   switch (member.waitingFor) {
-    case 'SUPPLIER_EVIDENCE': return { at: SEARCH, status: 'waiting' }
+    case 'SUPPLIER_EVIDENCE': return 'search'
     case 'CANDIDATE_REVIEW':
-    case 'SUPPLIER_CONTACT': return { at: COMPANIES, status: 'waiting' }
-    case 'RFQ_APPROVAL': return { at: RFQ, status: 'waiting' }
-    case 'MESSAGE_APPROVAL': return { at: SEND, status: 'waiting' }
+    case 'SUPPLIER_CONTACT': return 'companies'
+    case 'RFQ_APPROVAL': return 'rfq'
+    case 'MESSAGE_APPROVAL': return 'send'
     default: break
   }
-  switch (member.stage) {
-    case 'AWAITING_REVIEW':
-      return { at: member.rfqAwaitingApproval ? RFQ : COMPANIES, status: 'waiting' }
-    case 'OUTREACH': return { at: SEND, status: 'working' }
-    case 'NEGOTIATION': return { at: member.requestCount ? REPLIES : SEND, status: 'working' }
-    case 'DONE': return { at: REPLIES, status: 'working' }
-    default: return { at: SEARCH, status: 'working' }
-  }
+  if (member.stage === 'AWAITING_REVIEW') return member.rfqAwaitingApproval ? 'rfq' : 'companies'
+  return null
 }
 
-function sentence(member, plan, { at, status }, { answered, priced, stopped }) {
-  if (status === 'failed') return { now: 'На этом шаге произошёл сбой.', next: 'Откройте карточку позиции: там причина и повтор.' }
-  if (priced) return { now: 'Есть цены — можно сравнивать предложения.', next: 'Агент продолжит открытые переписки.' }
-  if (stopped) return { now: 'Закупка настроена без рассылки: агент дальше не идёт.', next: 'Чтобы написать поставщикам, измените настройки закупки.' }
-  if (status === 'waiting') {
-    if (member.waitingFor === 'SUPPLIER_EVIDENCE') return { now: 'Поиск не нашёл подходящих поставщиков.', next: 'Найдите поставщика вручную или запустите поиск снова.' }
-    if (member.waitingFor === 'SUPPLIER_CONTACT') return { now: 'У выбранных компаний нет контактов.', next: 'Добавьте контакт, и агент сможет написать.' }
-    if (at === COMPANIES) {
-      return {
-        now: 'Подтвердите, кому писать.',
-        next: plan?.approveRfq === false
-          ? 'После подтверждения агент сразу напишет выбранным компаниям.'
-          : 'Затем вы проверите текст запроса. Письма пока не уходят.',
-      }
-    }
-    if (at === RFQ) {
-      const count = member.verifiedCount
-      return {
-        now: 'Проверьте текст запроса.',
-        next: count
-          ? `После согласования агент напишет подтверждённым компаниям: ${count}.`
-          : 'После согласования агент напишет подтверждённым компаниям.',
-      }
-    }
-    return { now: 'Проверьте письма перед отправкой.', next: 'После подтверждения они уйдут поставщикам.' }
-  }
-  if (at === SEARCH) {
-    return {
-      now: 'Агент ищет поставщиков и собирает контакты.',
-      next: plan?.confirmCandidates === false ? 'Дальше он сам выберет компании по найденным доказательствам.' : 'Дальше вы подтвердите, кому писать.',
-    }
-  }
-  if (at === SEND) return { now: 'Агент отправляет запросы.', next: 'От вас ничего не нужно. Ответы появятся здесь.' }
-  if (answered) return { now: 'Есть ответы, но цены пока нет.', next: 'Подробности в предложениях и переписках ниже.' }
-  return { now: 'Запросы отправлены, ждём ответы поставщиков.', next: 'От вас ничего не нужно. Ответы появятся здесь.' }
-}
-
-/** `offers` is the page's tally for this substance: its offers and how many of
- * them carry a price. An answer can arrive on the marketplace with no letter to
- * count it on, so the offers are read as well as the member's own counters. */
-export function memberSteps(member, plan = {}, offers = {}) {
+/** The one step a position stands on. `offers` is the page's tally for it. */
+export function memberStep(member, offers = {}, plan = {}) {
+  if (member.errorCode || member.stage === 'FAILED') return 'failed'
+  if (['SKIPPED', 'REMOVED', 'CANCELLED'].includes(member.stage)) return 'skipped'
+  if (hasPrice(member, offers)) return 'result'
   const offerCount = Array.isArray(offers?.offers) ? offers.offers.length : offers?.offers || 0
-  const priced = (offers?.priced || 0) > 0
-  const answered = member.responseCount > 0 || offerCount > 0
-  const current = position(member)
-  // Finished with nothing sent: the plan stopped before the letters, so what
-  // comes after is not late, it is not going to happen.
-  const stopped = member.stage === 'DONE' && !member.requestCount && !answered
-  const lastInReach = plan?.reach === 'SOURCING' ? SEARCH : plan?.reach === 'CONTACTS' ? COMPANIES : RESULT
-
-  const steps = MEMBER_STEPS.map(([id, label], index) => {
-    let status = 'todo'
-    if (index < current.at) status = 'done'
-    else if (index === current.at) status = current.status
-    if (stopped) status = index <= Math.min(lastInReach, RFQ) ? 'done' : 'off'
-    else if (index > lastInReach) status = 'off'
-    return { id, label, status }
-  })
-  if (current.status !== 'failed' && !stopped) {
-    if (answered) steps[REPLIES].status = 'done'
-    if (priced) steps[RESULT].status = 'done'
-    if (answered || priced) for (const index of [SEARCH, COMPANIES, RFQ, SEND]) steps[index].status = 'done'
+  if (member.responseCount > 0 || offerCount > 0) return 'replies'
+  const waiting = waitingStep(member)
+  if (waiting) return waiting
+  switch (member.stage) {
+    case 'OUTREACH': return 'send'
+    case 'NEGOTIATION': return member.requestCount ? 'replies' : 'send'
+    case 'DONE':
+      if (member.requestCount) return 'replies'
+      return REACH_END[plan?.reach] || 'rfq'
+    default: return 'search'
   }
-  return { steps, ...sentence(member, plan, current, { answered, priced, stopped }) }
 }
 
-/** The row's stage in words that hold once letters have gone: "Готово" beside
- * "агент работает" and no price read as a purchase with nothing left to do. */
-export function memberStageLabel(member, labels) {
-  if (member.stage === 'DONE' && member.requestCount) return 'Запросы отправлены'
-  return labels[member.stage] || member.stage
+/** Whether a person is what the position is waiting for on its step. */
+export const memberWaitsOnStep = member =>
+  !member.errorCode && member.stage !== 'FAILED' && Boolean(waitingStep(member))
+
+/** Each step's count, how many of them wait for a person, and whether the purchase
+ * was set up to reach it. */
+export function memberStepCounts(members = [], offersByCard = new Map(), plan = {}) {
+  const counts = Object.fromEntries(ALL_STEPS.map(([id]) => [id, { count: 0, waiting: 0 }]))
+  for (const member of members) {
+    const step = memberStep(member, offersByCard.get(member.cardId), plan)
+    counts[step].count += 1
+    if (step !== 'result' && step !== 'replies' && memberWaitsOnStep(member)) counts[step].waiting += 1
+  }
+  return counts
+}
+
+export function stepsBeyondReach(plan = {}) {
+  const end = REACH_END[plan?.reach]
+  if (!end) return new Set()
+  const at = MEMBER_STEPS.findIndex(([id]) => id === end)
+  return new Set(MEMBER_STEPS.slice(at + 1).map(([id]) => id))
+}
+
+/** What a site publishes across a position's candidates, cheapest per millilitre
+ * or gram first; a price with no pack to divide by comes after those. */
+export function webOfferRows(run) {
+  const rows = (run?.candidates || []).flatMap(candidate =>
+    (candidate.webOffers || []).map(offer => ({ ...offer, seller: candidate.name, candidateId: candidate.id })))
+  const rank = value => (value == null ? Number.POSITIVE_INFINITY : value)
+  return rows.sort((left, right) =>
+    rank(left.unitPrice) - rank(right.unitPrice) || rank(left.amount) - rank(right.amount))
 }

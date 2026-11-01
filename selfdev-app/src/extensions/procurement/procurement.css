@@ -1494,7 +1494,7 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-phase__legend button { display: inline-flex; align-items: center; gap: 5px; margin: -3px -6px; padding: 3px 6px; border: 1px solid transparent; border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
 .pr-phase__legend button:hover { background: var(--pr-surface-muted); color: var(--pr-text); }
 .pr-phase__legend button.is-on { border-color: var(--pr-muted); background: var(--pr-surface-muted); color: var(--pr-text); }
-.pr-campaign-summary__phases { flex: 1 1 320px; min-width: 0; }
+.pr-campaign-summary__phases { flex: 1 1 100%; min-width: 0; }
 
 /* ------------------------------------------- approval inside the purchase */
 
@@ -1647,19 +1647,33 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-query-profile-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
 .pr-query-profile-form .pr-form-field { flex: 1 1 260px; max-width: 420px; }
 
-/* One substance's way to a price: finished, held by the agent, held by the buyer. */
-.pr-member-steps { margin: 2px 0 12px; }
-.pr-member-steps__list { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 0; }
-.pr-member-steps__list li { position: relative; min-width: 0; padding: 7px 10px; border: 1px solid var(--pr-border); border-radius: 7px; background: var(--pr-surface); }
-.pr-member-steps__list li strong, .pr-member-steps__list li span { display: block; }
-.pr-member-steps__list li strong { font-size: 12px; font-weight: 650; }
-.pr-member-steps__list li span { color: var(--pr-muted); font-size: 11px; margin-top: 1px; }
-.pr-member-steps__list li.is-done { border-color: #1f7a4d; background: color-mix(in oklch, #1f7a4d 10%, var(--background)); }
-.pr-member-steps__list li.is-working { border-color: var(--pr-progress); background: color-mix(in oklch, var(--pr-progress) 10%, var(--background)); }
-.pr-member-steps__list li.is-waiting { border-color: var(--pr-warning); border-width: 2px; padding: 6px 9px; background: var(--pr-warning-soft); }
-.pr-member-steps__list li.is-failed { border-color: var(--pr-danger); background: var(--pr-danger-soft); }
-.pr-member-steps__list li.is-todo strong { color: var(--pr-muted); font-weight: 500; }
-.pr-member-steps__list li.is-off { border-style: dashed; opacity: .6; }
-.pr-member-steps__list li.is-off strong { color: var(--pr-muted); font-weight: 500; }
-.pr-member-steps > p { margin: 8px 0 0; font-size: 13px; }
-@media (max-width: 800px) { .pr-member-steps__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* The purchase's steps above its positions: what stands where, and a filter. */
+.pr-steps { display: flex; flex: 1 1 100%; min-width: 0; align-items: stretch; gap: 22px; margin: 2px 0 8px; }
+.pr-steps ol, .pr-steps ul { display: flex; list-style: none; margin: 0; padding: 0; gap: 4px; }
+.pr-steps ol { flex: 1 1 0; min-width: 0; gap: 18px; }
+.pr-steps ol li { position: relative; flex: 1 1 0; min-width: 0; }
+/* The arrows say it is one process; the side steps stand apart, without any. */
+.pr-steps ol li:not(:last-child)::after { content: "→"; position: absolute; top: 50%; right: -15px; transform: translateY(-50%); color: var(--pr-muted); font-size: 13px; line-height: 1; pointer-events: none; }
+.pr-steps__step { display: flex; flex-direction: column; gap: 1px; width: 100%; height: 100%; padding: 6px 10px; border: 1px solid var(--pr-border); border-radius: 7px; background: var(--pr-surface); color: var(--pr-text); font: inherit; text-align: left; cursor: pointer; }
+.pr-steps__step span { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-steps__step b { font-size: 18px; font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.pr-steps__step:disabled { cursor: default; }
+.pr-steps__step.is-empty { color: var(--pr-muted); }
+.pr-steps__step.is-empty b { font-weight: 500; }
+.pr-steps__step.is-off { border-style: dashed; color: var(--pr-muted); opacity: .6; }
+.pr-steps__step.is-working { border-color: var(--pr-progress); background: var(--pr-progress-soft); }
+.pr-steps__step.is-waiting { border-color: var(--pr-warning); background: var(--pr-warning-soft); }
+.pr-steps__step.is-priced { border-color: var(--pr-accent); background: var(--pr-accent-soft); }
+.pr-steps__step.is-failed { border-color: var(--pr-danger); background: var(--pr-danger-soft); }
+.pr-steps__step:not(:disabled):hover { border-color: var(--pr-text); }
+.pr-steps__step.is-on { outline: 2px solid var(--pr-text); outline-offset: 1px; }
+@media (max-width: 800px) { .pr-steps { flex-direction: column; gap: 6px; } .pr-steps ol { flex: none; flex-wrap: wrap; } .pr-steps ol li { flex: 1 1 26%; } .pr-steps ol li:nth-child(3n)::after { content: none; } }
+
+/* Prices a site publishes, under the ones suppliers sent. */
+.pr-web-offers { margin-top: 10px; }
+.pr-web-offers > .pr-note { margin: 0 0 6px; }
+.pr-web-offers a { display: inline-flex; align-items: center; gap: 3px; }
+.pr-candidate-offers { margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; }
+.pr-candidate-offers li + li { margin-top: 3px; }
+.pr-candidate-offer { color: var(--pr-text); font-size: 12px; font-weight: 600; }
+.pr-sourcing-candidates .pr-candidate-offer { display: block; margin: -3px 0 5px; }

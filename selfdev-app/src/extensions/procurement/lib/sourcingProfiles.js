@@ -27,6 +27,12 @@ export const DEPTHS = [
   { id: 'MAX', perQuery: 10, label: 'Максимальный', detail: 'По 10 — это потолок, выше поисковые движки не отдают.' },
 ]
 
+/** What a candidate's rating is about. */
+export const RATINGS = [
+  { id: 'SELLER', label: 'Продавец', detail: 'Где купить: вещество на сайте компании, цена, наличие, поставщик в России.' },
+  { id: 'MAKER', label: 'Производитель', detail: 'Кто производит: официальный сайт, заявленное производство, разрешения. Торговцы получают меньше баллов.' },
+]
+
 export const plural = (count, one, few, many) => {
   const mod10 = count % 10
   const mod100 = count % 100
@@ -47,6 +53,7 @@ export function effectiveSourcing(value, settings) {
     engineIds: (value.engineIds ?? profile.engineIds ?? available).filter(id => available.includes(id)),
     queryIds: value.queryIds ?? settings.defaultQueryIds ?? [],
     synonymLimit: value.synonymLimit ?? settings.synonymLimit ?? 0,
+    ratingMode: value.ratingMode ?? profile.ratingMode ?? 'MAKER',
   }
 }
 
@@ -65,6 +72,7 @@ export function profileChanges(value, settings) {
     ...(value.profileDepth && current.depth !== saved.depth ? { depth: current.depth } : {}),
     ...(current.siteProbe !== saved.siteProbe ? { siteProbe: current.siteProbe } : {}),
     ...(sameSet(current.engineIds, saved.engineIds) ? {} : { engineIds: current.engineIds }),
+    ...(current.ratingMode !== saved.ratingMode ? { ratingMode: current.ratingMode } : {}),
   }
 }
 
@@ -90,6 +98,7 @@ export function profileSummary(value, settings) {
     current.engineIds.map(label).join(', ') || 'нет доступных источников',
     `глубина «${DEPTHS.find(item => item.id === current.depth)?.label ?? current.depth}»`,
     current.siteProbe ? 'сайт проверяем' : 'сайт не проверяем',
+    `рейтинг: ${RATINGS.find(item => item.id === current.ratingMode)?.label.toLowerCase() ?? current.ratingMode}`,
     ...(missing.length ? [`недоступно: ${missing.map(label).join(', ')}`] : []),
   ]
 }

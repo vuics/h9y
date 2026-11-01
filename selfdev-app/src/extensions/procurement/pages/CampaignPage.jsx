@@ -13,7 +13,9 @@ import { plural } from '../components/SourcingSettings'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { EchemiBrowserAccess } from '../components/EchemiBrowserAccess'
 import { CampaignPhaseBar, memberPhases } from '../components/CampaignPhaseBar'
+import { CampaignStepsBar } from '../components/CampaignStepsBar'
 import { PHASE_FILTER, phaseOfFilter } from '../lib/campaignPhases'
+import { memberStepCounts } from '../lib/memberSteps'
 import { CampaignLaunchPanel } from '../components/CampaignLaunchPanel'
 import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
@@ -578,6 +580,7 @@ export default function CampaignPage() {
   )
   const offerCounts = offerTotals(offersByCard)
   const phases = memberPhases(members, offersByCard)
+  const steps = memberStepCounts(members, offersByCard, campaign.plan)
 
   const threadTotal = conversations.reduce((total, item) => total + item.conversations.length, 0)
   const hasMarketplace = Boolean(marketplaceView?.enabled && marketplaceItems.length > 0)
@@ -885,6 +888,7 @@ export default function CampaignPage() {
           person for. The table is what the page is opened for, so everything
           above it is a summary, never a block to scroll past. */}
       <div className="pr-campaign-summary">
+        <CampaignStepsBar counts={steps} plan={campaign.plan} filter={filter} onFilterChange={setFilter} />
         <div className="pr-campaign-summary__phases">
           <CampaignPhaseBar
             counts={phases}

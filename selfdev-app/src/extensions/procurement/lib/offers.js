@@ -18,6 +18,17 @@ const amount = value => {
 const trimNumber = value => (Number.isInteger(value) ? String(value) : String(Number(value.toFixed(4))))
 
 /** "831.51–1200 USD/KG", one span per currency and unit, most offers first. */
+/** What a position's section header says about its prices. A price that cannot be
+ * compared is still a price: "цены нет" beside 1630 RMB in the table contradicts
+ * the table, so such a price is named, with what it lacks. */
+export function priceSummary(offers) {
+  const comparable = priceRanges(offers)
+  const rest = offers
+    .filter(offer => !hasComparablePrice(offer) && String(offer.price ?? '').trim())
+    .map(offer => `${offer.price}${offer.currency ? ` ${offer.currency}` : ''}, единица не указана`)
+  return [...comparable, ...rest]
+}
+
 export function priceRanges(offers) {
   const spans = new Map()
   for (const offer of offers) {

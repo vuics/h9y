@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { StatusBadge } from './StatusBadge'
+import { webOfferPrice, webOfferStock } from './WebOffers'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { plural } from './SourcingSettings'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -109,6 +110,11 @@ function VerdictRadios({ review, item, candidate }) {
   })}</div>
 }
 
+const bestOfferLine = offers => {
+  const best = offers[0]
+  return [webOfferPrice(best), best.pack, webOfferStock(best)].filter(Boolean).join(' · ') + (offers.length > 1 ? ` · ещё ${offers.length - 1}` : '')
+}
+
 function CandidateTable({ review, item, candidates, editable, scroll = false }) {
   const table = <table className={scroll ? 'pr-table pr-review-candidates pr-member-review__candidates' : 'pr-table pr-review-candidates'}><thead><tr>
     <th>Компания</th><th>Оценка</th><th>Контакты</th><th>Решение</th>
@@ -116,6 +122,7 @@ function CandidateTable({ review, item, candidates, editable, scroll = false }) 
     <td>
       <strong>{candidate.name}</strong>
       <div className="pr-primary-meta">{candidate.country || '—'}{candidate.productPage && <> · <a href={candidate.productPage.url} target="_blank" rel="noreferrer" title={candidate.productPage.quote}><ExternalLink size={12} />{candidate.productPage.ownSite ? 'страница вещества' : `вещество на ${candidate.productPage.domain}`}</a></>}{candidate.website && <> · <a href={candidate.website} target="_blank" rel="noreferrer"><ExternalLink size={12} />сайт</a></>}{candidate.promotedSupplierId && <> · <Link to={`/procurement/suppliers/${candidate.promotedSupplierId}`}>в справочнике</Link></>}</div>
+      {candidate.webOffers?.[0] && <div className="pr-candidate-offer">{bestOfferLine(candidate.webOffers)}</div>}
       {editable && candidate.signals.length > 0 && <ul className="pr-review-signals">{candidate.signals.map((signal, index) => <li key={index}>{signal}</li>)}</ul>}
       {editable && candidate.risks.length > 0 && <ul className="pr-review-signals pr-review-signals--risk">{candidate.risks.map((risk, index) => <li key={index}>{risk}</li>)}</ul>}
     </td>

@@ -74,15 +74,15 @@ const laboratory = {
   synonymLimit: 0,
   availableEngineIds: ['brave', 'ddgs', 'echemi'],
   engineList: [{ id: 'brave', label: 'Brave' }, { id: 'ddgs', label: 'DuckDuckGo' }, { id: 'echemi', label: 'Echemi' }, { id: 'openserp', label: 'OpenSERP' }],
-  profileValues: { depth: 'NORMAL', engineIds: ['brave', 'ddgs'], siteProbe: false, synonymLimit: 0 },
+  profileValues: { depth: 'NORMAL', engineIds: ['brave', 'ddgs'], siteProbe: false, synonymLimit: 0, ratingMode: 'SELLER' },
 }
 
 test('a launch follows its profile until it chooses otherwise', () => {
   assert.deepEqual(effectiveSourcing({}, laboratory), {
-    depth: 'NORMAL', siteProbe: false, engineIds: ['brave', 'ddgs'], queryIds: ['R', 'S'], synonymLimit: 0,
+    depth: 'NORMAL', siteProbe: false, engineIds: ['brave', 'ddgs'], queryIds: ['R', 'S'], synonymLimit: 0, ratingMode: 'SELLER',
   })
-  const own = effectiveSourcing({ depth: 'MAX', siteProbe: true, engineIds: ['echemi'], queryIds: ['R'], synonymLimit: 2 }, laboratory)
-  assert.deepEqual(own, { depth: 'MAX', siteProbe: true, engineIds: ['echemi'], queryIds: ['R'], synonymLimit: 2 })
+  const own = effectiveSourcing({ depth: 'MAX', siteProbe: true, engineIds: ['echemi'], queryIds: ['R'], synonymLimit: 2, ratingMode: 'MAKER' }, laboratory)
+  assert.deepEqual(own, { depth: 'MAX', siteProbe: true, engineIds: ['echemi'], queryIds: ['R'], synonymLimit: 2, ratingMode: 'MAKER' })
 })
 
 test('a profile with every source follows what the installation has', () => {
@@ -94,8 +94,8 @@ test('only what differs from the profile is offered for saving', () => {
   const value = { profileDepth: true }
   assert.deepEqual(profileChanges(value, laboratory), {})
   assert.deepEqual(profileChanges({ ...value, depth: 'NORMAL', siteProbe: false, engineIds: ['ddgs', 'brave'] }, laboratory), {})
-  assert.deepEqual(profileChanges({ ...value, depth: 'MAX', siteProbe: true, engineIds: ['brave'] }, laboratory), {
-    depth: 'MAX', siteProbe: true, engineIds: ['brave'],
+  assert.deepEqual(profileChanges({ ...value, depth: 'MAX', siteProbe: true, engineIds: ['brave'], ratingMode: 'MAKER' }, laboratory), {
+    depth: 'MAX', siteProbe: true, engineIds: ['brave'], ratingMode: 'MAKER',
   })
   // Unchecked queries are this run's alone.
   assert.deepEqual(profileChanges({ ...value, queryIds: ['R'] }, laboratory), {})
@@ -105,7 +105,7 @@ test('only what differs from the profile is offered for saving', () => {
 
 test('the summary says what this launch will do', () => {
   assert.deepEqual(profileSummary({}, laboratory), [
-    '2 запроса, поиск по России', 'Brave, DuckDuckGo', 'глубина «Обычный»', 'сайт не проверяем',
+    '2 запроса, поиск по России', 'Brave, DuckDuckGo', 'глубина «Обычный»', 'сайт не проверяем', 'рейтинг: продавец',
   ])
   assert.equal(profileSummary({ queryIds: ['R'] }, laboratory)[0], '1 из 2 запросов, поиск по России')
   const gone = { ...laboratory, profileValues: { ...laboratory.profileValues, engineIds: ['brave', 'openserp'] } }

@@ -1,58 +1,76 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { memberStageLabel, memberSteps } from './memberSteps.js'
+import { memberStep, memberStepCounts, memberWaitsOnStep, stepOfFilter, stepsBeyondReach, webOfferRows } from './memberSteps.js'
 
-const statuses = result => result.steps.map(step => step.status)
-
-test('a search in progress: the agent holds the first step, the rest is ahead', () => {
-  const result = memberSteps({ stage: 'SOURCING' }, { confirmCandidates: true })
-  assert.deepEqual(statuses(result), ['working', 'todo', 'todo', 'todo', 'todo', 'todo'])
-  assert.equal(result.next, 'Дальше вы подтвердите, кому писать.')
+test('a position stands on the step its stage has reached', () => {
+  assert.equal(memberStep({ stage: 'QUEUED' }), 'search')
+  assert.equal(memberStep({ stage: 'SOURCING' }), 'search')
+  assert.equal(memberStep({ stage: 'AWAITING_REVIEW' }), 'companies')
+  assert.equal(memberStep({ stage: 'AWAITING_REVIEW', rfqAwaitingApproval: true }), 'rfq')
+  assert.equal(memberStep({ stage: 'OUTREACH' }), 'send')
+  assert.equal(memberStep({ stage: 'NEGOTIATION', requestCount: 2 }), 'replies')
+  assert.equal(memberStep({ stage: 'DONE', requestCount: 2 }), 'replies')
 })
 
-test('waiting for the company decision says the letters have not gone', () => {
-  const result = memberSteps({ stage: 'AWAITING_REVIEW', waitingFor: 'CANDIDATE_REVIEW' })
-  assert.deepEqual(statuses(result), ['done', 'waiting', 'todo', 'todo', 'todo', 'todo'])
-  assert.match(result.next, /Письма пока не уходят/)
+test('the furthest step wins, so a repeated search does not send a position back', () => {
+  assert.equal(memberStep({ stage: 'SOURCING', responseCount: 1 }), 'replies')
+  assert.equal(memberStep({ stage: 'AWAITING_REVIEW', responseCount: 1 }), 'replies')
+  assert.equal(memberStep({ stage: 'SOURCING', webPriceCount: 3 }), 'result')
 })
 
-test('waiting for the RFQ says how many companies it goes to', () => {
-  const result = memberSteps({ stage: 'AWAITING_REVIEW', waitingFor: 'RFQ_APPROVAL', verifiedCount: 3 })
-  assert.deepEqual(statuses(result), ['done', 'done', 'waiting', 'todo', 'todo', 'todo'])
-  assert.equal(result.next, 'После согласования агент напишет подтверждённым компаниям: 3.')
+test('any price counts: an offer, a price with no unit, a price on a site', () => {
+  assert.equal(memberStep({ stage: 'NEGOTIATION' }, { priced: 1 }), 'result')
+  assert.equal(memberStep({ stage: 'NEGOTIATION' }, { offers: [{ price: '1630', currency: 'RMB' }], priced: 0 }), 'result')
+  assert.equal(memberStep({ stage: 'NEGOTIATION', requestCount: 1 }, { offers: [{ price: null }], priced: 0 }), 'replies')
+  assert.equal(memberStep({ stage: 'DONE', webPriceCount: 1 }), 'result')
 })
 
-test('sent, no answer yet: not finished, whatever the stage is called', () => {
-  const result = memberSteps({ stage: 'DONE', requestCount: 3 })
-  assert.deepEqual(statuses(result), ['done', 'done', 'done', 'done', 'working', 'todo'])
-  assert.equal(result.now, 'Запросы отправлены, ждём ответы поставщиков.')
+test('a failure and an exclusion stand off the way', () => {
+  assert.equal(memberStep({ stage: 'FAILED', webPriceCount: 3 }), 'failed')
+  assert.equal(memberStep({ stage: 'SOURCING', errorCode: 'X' }), 'failed')
+  assert.equal(memberStep({ stage: 'SKIPPED' }), 'skipped')
 })
 
-test('an answer without a price leaves the last step open', () => {
-  const result = memberSteps({ stage: 'DONE', requestCount: 2, responseCount: 1 }, {}, { offers: [{}], priced: 0 })
-  assert.deepEqual(statuses(result), ['done', 'done', 'done', 'done', 'done', 'todo'])
-  assert.equal(result.now, 'Есть ответы, но цены пока нет.')
+test('finished with nothing sent stands where the purchase was set to stop', () => {
+  assert.equal(memberStep({ stage: 'DONE' }, {}, { reach: 'SOURCING' }), 'search')
+  assert.equal(memberStep({ stage: 'DONE' }, {}, { reach: 'CONTACTS' }), 'companies')
+  assert.deepEqual([...stepsBeyondReach({ reach: 'CONTACTS' })], ['rfq', 'send', 'replies', 'result'])
+  assert.deepEqual([...stepsBeyondReach({ reach: 'OUTREACH' })], [])
 })
 
-test('a price finishes the row, even from the marketplace with no letter counted', () => {
-  const result = memberSteps({ stage: 'NEGOTIATION', requestCount: 0 }, {}, { offers: [{}], priced: 1 })
-  assert.deepEqual(statuses(result), ['done', 'done', 'done', 'done', 'done', 'done'])
+test('the counts add up to the list and say what waits for a person', () => {
+  const members = [
+    { cardId: 1, stage: 'SOURCING' },
+    { cardId: 2, stage: 'AWAITING_REVIEW' },
+    { cardId: 3, stage: 'AWAITING_REVIEW', rfqAwaitingApproval: true },
+    { cardId: 4, stage: 'NEGOTIATION', requestCount: 1 },
+    { cardId: 5, stage: 'NEGOTIATION', requestCount: 1 },
+    { cardId: 6, stage: 'FAILED' },
+  ]
+  const counts = memberStepCounts(members, new Map([[5, { priced: 1 }]]))
+  assert.deepEqual(counts.search, { count: 1, waiting: 0 })
+  assert.deepEqual(counts.companies, { count: 1, waiting: 1 })
+  assert.deepEqual(counts.rfq, { count: 1, waiting: 1 })
+  assert.equal(counts.replies.count, 1)
+  assert.equal(counts.result.count, 1)
+  assert.equal(counts.failed.count, 1)
+  assert.equal(Object.values(counts).reduce((sum, step) => sum + step.count, 0), members.length)
+  assert.equal(memberWaitsOnStep({ stage: 'SOURCING' }), false)
 })
 
-test('a plan that stops at the search shows the rest as not happening', () => {
-  const result = memberSteps({ stage: 'DONE' }, { reach: 'SOURCING' })
-  assert.deepEqual(statuses(result), ['done', 'off', 'off', 'off', 'off', 'off'])
+test('the filter reads the step back', () => {
+  assert.equal(stepOfFilter('step:rfq'), 'rfq')
+  assert.equal(stepOfFilter('all'), null)
 })
 
-test('a failure marks the step it happened on', () => {
-  const result = memberSteps({ stage: 'FAILED', candidateCount: 4 })
-  assert.deepEqual(statuses(result), ['done', 'failed', 'todo', 'todo', 'todo', 'todo'])
-})
-
-test('the row does not call a substance with letters out finished', () => {
-  const labels = { DONE: 'Готово', OUTREACH: 'Рассылка' }
-  assert.equal(memberStageLabel({ stage: 'DONE', requestCount: 2 }, labels), 'Запросы отправлены')
-  assert.equal(memberStageLabel({ stage: 'DONE' }, labels), 'Готово')
-  assert.equal(memberStageLabel({ stage: 'OUTREACH' }, labels), 'Рассылка')
+test('site prices read cheapest per unit first, a price with no pack after them', () => {
+  const rows = webOfferRows({ candidates: [
+    { id: 'A', name: 'Дорогой', webOffers: [{ id: '1', amount: 500, unitPrice: 50 }] },
+    { id: 'B', name: 'Без фасовки', webOffers: [{ id: '2', amount: 10, unitPrice: null }] },
+    { id: 'C', name: 'Дешёвый', webOffers: [{ id: '3', amount: 900, unitPrice: 9 }] },
+    { id: 'D', name: 'Без цен' },
+  ] })
+  assert.deepEqual(rows.map(row => row.seller), ['Дешёвый', 'Дорогой', 'Без фасовки'])
+  assert.deepEqual(webOfferRows(null), [])
 })

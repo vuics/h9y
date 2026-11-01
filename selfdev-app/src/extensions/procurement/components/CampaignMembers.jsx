@@ -4,14 +4,15 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from './StatusBadge'
 import { CampaignMemberProgress } from './CampaignMemberProgress'
-import { MemberSteps } from './MemberSteps'
+import { WebOffers } from './WebOffers'
 import { NormalizedMark } from './NormalizedMark'
 import { ChevronDown, ChevronRight, MoreVertical } from './icons'
 import { readableAgentError } from '../lib/agentText'
-import { memberStageLabel } from '../lib/memberSteps'
+import { memberPhase, phaseLabel, phaseOfFilter } from '../lib/campaignPhases'
+import { memberStep, stepLabel, stepOfFilter } from '../lib/memberSteps'
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
-import { offerBasis, offerNote, priceRanges, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
+import { offerBasis, offerNote, priceSummary, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
 import { contentOf, memberAwaitsReview, resolveOpen, rowOpenByMode, sectionOpenByMode, waitingOf } from '../lib/memberSections'
 import { reviewBadges, reviewOpen } from '../lib/campaignReview'
 import { ReviewItem } from './CampaignReview'
@@ -23,7 +24,6 @@ import {
   nextActions, requestsSummary,
 } from '../lib/campaignView'
 import { plural } from './SourcingSettings'
-import { memberPhase, phaseLabel, phaseOfFilter } from '../lib/campaignPhases'
 
 /** The per-substance actions nobody needs while reading the table.
  *
@@ -123,16 +123,20 @@ function MemberSections({
   })
   const { offered } = splitSuppliers(offers, threads)
   const lines = threadsWithOffers(offers, threads)
-  const prices = priceRanges(offers)
+  const prices = priceSummary(offers)
+  const webPrices = member.webPriceCount || 0
   return <div className="pr-member-suppliers">
     <Section
       title={`Предложения${offered.length ? ` (${offered.length})` : ''}`}
-      meta={offered.length ? (prices.length ? prices.join(' · ') : 'цены нет') : (offersLoading ? 'загружаем…' : 'пока нет')}
-      empty={!offered.length}
+      meta={[
+        offered.length ? (prices.length ? prices.join(' · ') : 'цены нет') : null,
+        webPrices ? `цены на сайтах: ${webPrices}` : null,
+      ].filter(Boolean).join(' · ') || (offersLoading ? 'загружаем…' : 'пока нет')}
+      empty={!offered.length && !webPrices}
       open={isOpen('offers')}
       onToggle={() => onToggle('offers')}
     >
-      <div className="pr-member-offers">
+      {offered.length > 0 && <div className="pr-member-offers">
         <div className="pr-table-wrap"><table className="pr-table pr-member-offers__table">
           <thead><tr>
             <th>Поставщик</th><th>Цена</th><th>Базис</th><th>Количество</th><th>Чистота</th><th>Срок</th><th>Примечание</th>
@@ -155,7 +159,8 @@ function MemberSections({
           </tr>)}</tbody>
         </table></div>
         <Link className="pr-member-offers__compare" to={`/procurement/proposals/compare?cardId=${member.cardId}`}>Сравнить все {offered.length} →</Link>
-      </div>
+      </div>}
+      {webPrices > 0 && isOpen('offers') && <WebOffers cardId={member.cardId} />}
     </Section>
 
     <Section
@@ -296,11 +301,14 @@ export function CampaignMembers({
     return next
   })
   const [selected, setSelected] = useState(() => new Set())
-  // A legend entry above the table picks the substances of one phase.
+  // A step or a phase above the table picks the positions standing on it.
+  const step = stepOfFilter(filter)
   const phase = phaseOfFilter(filter)
-  const phaseRows = phase
-    ? members.filter(member => memberPhase(member, offersByCard) === phase)
-    : filterMembers(members, filter)
+  const stepRows = step
+    ? members.filter(member => memberStep(member, offersByCard.get(member.cardId), campaign?.plan) === step)
+    : phase
+      ? members.filter(member => memberPhase(member, offersByCard) === phase)
+      : filterMembers(members, filter)
 
   // What each position has for each section, and whether any shown position
   // has something for the mode at all.
@@ -312,6 +320,7 @@ export function CampaignMembers({
     const reviewWaits = reviewItem ? reviewOpen(reviewItem) : memberAwaitsReview(member)
     return contentOf({
       offers: offersByCard.get(member.cardId)?.offers,
+      webPrices: member.webPriceCount,
       threads,
       unreachable,
       marketplace: marketplaceByCard.get(member.cardId),
@@ -326,7 +335,7 @@ export function CampaignMembers({
     })
   }
   // Waiting for you is the positions where a person is needed, and no others.
-  const rows = mode === 'waiting' ? phaseRows.filter(member => contentFor(member).waiting.waits) : phaseRows
+  const rows = mode === 'waiting' ? stepRows.filter(member => contentFor(member).waiting.waits) : stepRows
   const anyHas = rows.some(member => contentFor(member)[mode] > 0)
   const visible = rows.map(member => member.cardId)
   const allVisible = visible.length > 0 && visible.every(cardId => selected.has(cardId))
@@ -350,9 +359,9 @@ export function CampaignMembers({
     : []
 
   return <section className="pr-members">
-    {/* The one filter left: a phase picked on the bar above, said here with
+    {/* The one filter left: a step or a phase picked above, said here with
         the way back. Everything else is a mode of the switch. */}
-    {phase && <div className="pr-members__filters" role="group" aria-label="Показать вещества">
+    {(step || phase) && <div className="pr-members__filters" role="group" aria-label="Показать вещества">
       <button
         type="button"
         className="pr-chip is-on"
@@ -360,7 +369,7 @@ export function CampaignMembers({
         aria-pressed="true"
         title="Показать все"
         onClick={() => onFilterChange('all')}
-      >{phaseLabel(phase)} <b>{rows.length}</b> ✕</button>
+      >{step ? stepLabel(step) : phaseLabel(phase)} <b>{rows.length}</b> ✕</button>
     </div>}
 
     {mode === 'waiting' && !rows.length && <div className="pr-waiting-empty">
@@ -471,7 +480,7 @@ export function CampaignMembers({
               </div>
             </td>
             <td><div className="pr-member-stage-cell">
-              <StatusBadge status={member.stage} label={memberStageLabel(member, stageLabels)} />
+              <StatusBadge status={member.stage} label={member.stage === 'FAILED' ? stageLabels[member.stage] : stepLabel(memberStep(member, offers, campaign.plan))} />
               <CampaignMemberProgress
                 stage={member.stage}
                 stepProgress={member.stepProgress}
@@ -492,9 +501,11 @@ export function CampaignMembers({
                       <strong>{offers.prices[0]}</strong>
                       <span className="pr-primary-meta">{offers.priced} с ценой из {offers.offers.length} · сравнить</span>
                     </>
-                    : <span className="pr-primary-meta">{offers.offers.length} {plural(offers.offers.length, 'ответ', 'ответа', 'ответов')}, цены нет · сравнить</span>}
+                    : <span className="pr-primary-meta">{offers.offers.length} {plural(offers.offers.length, 'ответ', 'ответа', 'ответов')}, {priceSummary(offers.offers)[0] || 'цены нет'} · сравнить</span>}
                 </Link>
-                : <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
+                : member.webPriceCount > 0
+                  ? <span className="pr-primary-meta">цены на сайтах: {member.webPriceCount}</span>
+                  : <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
             </td>
             <td>
               {/* The flex box is inside the cell, not the cell itself: a
@@ -526,7 +537,6 @@ export function CampaignMembers({
             </td>
           </tr>
           {expanded && <tr className="pr-members__details" data-group={memberGroup(member)}><td colSpan={columns}>
-            <MemberSteps member={member} plan={campaign.plan} offers={offers} />
             <MemberSections
               member={member}
               offers={offers?.offers || []}

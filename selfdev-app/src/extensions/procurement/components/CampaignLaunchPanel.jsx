@@ -155,6 +155,7 @@ export function CampaignLaunchPanel({
     ),
     siteProbe: current.siteProbe,
     synonymLimit: current.synonymLimit,
+    ratingMode: current.ratingMode,
     ...(settings.profileId ? { queryProfileId: settings.profileId } : {}),
     ...current.queryIds.length ? { queryTemplateIds: current.queryIds } : {},
     ...current.engineIds.length ? { engineIds: current.engineIds } : {},

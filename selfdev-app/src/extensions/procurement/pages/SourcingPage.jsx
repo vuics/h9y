@@ -21,6 +21,7 @@ import { depthOfRun,
 } from '../components/SourcingSettings'
 import { effectiveSourcing, profileSettings } from '../lib/sourcingProfiles'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
+import { webOfferPrice, webOfferStock, webOfferUnitPrice } from '../components/WebOffers'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -44,7 +45,7 @@ const evidenceLabels = {
   MANUFACTURER_ROLE: 'Признак производства', DISTRIBUTOR_ROLE: 'Признак дистрибуции', PRODUCTION_CAPACITY: 'Производственные мощности',
   INVESTMENT_PROJECT: 'Инвестиционный проект', EXPORT_AUTHORIZATION: 'Экспортная лицензия', EXPORT_EXPERIENCE: 'Экспортный опыт',
   ENVIRONMENTAL_PERMIT: 'Экологическое разрешение', QUALITY_CERTIFICATION: 'Сертификат качества', REGULATORY_REGISTRATION: 'Регистрация у регулятора',
-  CONTACT: 'Контакт', REFERENCE_STANDARDS_SCOPE: 'Аналитические стандарты, не сырьё',
+  CONTACT: 'Контакт', PRICE_OFFER: 'Цена на сайте', REFERENCE_STANDARDS_SCOPE: 'Аналитические стандарты, не сырьё',
   NEGATIVE_RISK: 'Негативный риск', PRODUCT_MISMATCH: 'Несоответствие продукта',
 }
 
@@ -281,7 +282,7 @@ export default function SourcingPage() {
       current.queryIds,
       current.engineIds,
       current.siteProbe,
-      { synonymLimit: current.synonymLimit, ...(settings.profileId ? { queryProfileId: settings.profileId } : {}) },
+      { synonymLimit: current.synonymLimit, ratingMode: current.ratingMode, ...(settings.profileId ? { queryProfileId: settings.profileId } : {}) },
     ),
     onSuccess: accept,
   })
@@ -400,6 +401,10 @@ export default function SourcingPage() {
             <Card><CardHeader><div><CardTitle>{candidate.name}</CardTitle><p>{candidate.aliases?.length ? `Также: ${candidate.aliases.join(', ')}` : 'Другие названия не найдены'}</p></div><StatusBadge status={candidate.preliminaryStatus} /></CardHeader><CardContent>
               <div className="pr-sourcing-identity"><Score candidate={candidate} /><div><span>Предполагаемая роль</span><strong>{statusLabel(candidate.role)}</strong></div><div><span>Страна</span><strong>{candidate.country || 'Не определена'}</strong></div>{externalUrl(candidate.website) && <a href={externalUrl(candidate.website)} target="_blank" rel="noreferrer"><ExternalLink />Сайт компании</a>}</div>
               <KnownSupplierNote known={candidate.knownSupplier} requestedCas={run.requestedCas} />
+              {candidate.webOffers?.length > 0 && <ul className="pr-candidate-offers">{candidate.webOffers.map(offer => <li key={offer.id}>
+                <a href={offer.url} target="_blank" rel="noreferrer" title={offer.quote}>{webOfferPrice(offer)}</a>
+                {[offer.pack, webOfferUnitPrice(offer), offer.purity, offer.brand, webOfferStock(offer)].filter(Boolean).map(part => ` · ${part}`).join('')}
+              </li>)}</ul>}
               <div className="pr-sourcing-signal-grid"><SignalList title="Надёжность" items={candidate.reliabilitySignals} tone="good" /><SignalList title="Риски" items={candidate.riskSignals} tone="risk" /><SignalList title="Пробелы" items={candidate.evidenceGaps} tone="gap" /></div>
               <ContactList contacts={candidate.contacts} />
               <ScoreExplanation candidate={candidate} />

@@ -5,6 +5,7 @@ import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import {
   DEPTHS,
+  RATINGS,
   effectiveSourcing,
   multipliedBySynonyms,
   planProfile,
@@ -152,7 +153,7 @@ export function SourcingSettings({
   const patch = fields => onChange({ ...value, ...fields })
   // The settings that follow the profile, cleared so they follow another or a
   // saved one. The depth stays where this form does not take it from the profile.
-  const followProfile = { engineIds: null, siteProbe: null, synonymLimit: null, ...(value.profileDepth ? { depth: null } : {}) }
+  const followProfile = { engineIds: null, siteProbe: null, synonymLimit: null, ratingMode: null, ...(value.profileDepth ? { depth: null } : {}) }
   const changes = profileChanges(value, settings)
   const changed = Object.keys(changes).length > 0
 
@@ -261,6 +262,20 @@ export function SourcingSettings({
           Открывать каталог и страницу «О компании» у тех, кто заявил производство: каталог на тысячи веществ и описание вида «поставщик аналитических стандартов» видны только там. Читается правилами, без обращения к модели.
         </span>
       </label>
+      <fieldset className="pr-depth-picker">
+        <legend>Как оценивать кандидатов</legend>
+        {RATINGS.map(rating => <label key={rating.id} className={current.ratingMode === rating.id ? 'is-selected' : undefined}>
+          <input
+            type="radio"
+            name="sourcing-rating"
+            aria-label={`Рейтинг: ${rating.label}`}
+            checked={current.ratingMode === rating.id}
+            disabled={disabled}
+            onChange={() => patch({ ratingMode: rating.id })}
+          />
+          <span><strong>{rating.label}</strong>{rating.detail}</span>
+        </label>)}
+      </fieldset>
       {changed && <div className="pr-query-profile-form">
         <p className="pr-query-profile-note">Эти изменения пока относятся только к этому запуску.</p>
         {canEdit && settings.profileId && <Button
@@ -297,6 +312,7 @@ export const defaultSourcingValue = ({ campaign = false } = {}) => ({
   engineIds: null,
   queryIds: null,
   synonymLimit: null,
+  ratingMode: null,
   profileId: null,
   planProfileDeleted: false,
 })
@@ -318,6 +334,7 @@ export const sourcingValueFromPlan = (plan, settings) => {
     siteProbe: plan?.siteProbe ?? null,
     engineIds: plan?.engineIds ?? null,
     synonymLimit: plan?.synonymLimit ?? null,
+    ratingMode: plan?.ratingMode ?? null,
     queryIds: profile.deleted ? null : plan?.queryTemplateIds ?? null,
     profileId: profile.profileId,
     planProfileDeleted: profile.deleted,
