@@ -15,8 +15,8 @@ import { CampaignPhaseBar, phaseSummary } from '../components/CampaignPhaseBar'
 const REACH = {
   SOURCING: 'только поиск',
   CONTACTS: 'поиск и контакты',
-  OUTREACH: 'до рассылки запросов',
-  NEGOTIATION: 'до сравнимых предложений',
+  OUTREACH: 'цель: рассылка запросов',
+  NEGOTIATION: 'цель: сравнимые предложения',
 }
 
 /** One purchase as a line: what it is, how far it got, what it is doing. */

@@ -55,8 +55,8 @@ const MEMBER_STAGE = {
 const REACH_LABEL = {
   SOURCING: 'только поиск',
   CONTACTS: 'поиск и контакты',
-  OUTREACH: 'до рассылки запросов',
-  NEGOTIATION: 'до сравнимых предложений',
+  OUTREACH: 'цель: рассылка запросов',
+  NEGOTIATION: 'цель: сравнимые предложения',
 }
 
 const ERROR_LABEL = {

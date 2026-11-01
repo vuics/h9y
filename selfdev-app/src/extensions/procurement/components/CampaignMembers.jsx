@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from './StatusBadge'
 import { CampaignMemberProgress } from './CampaignMemberProgress'
+import { MemberSteps } from './MemberSteps'
 import { NormalizedMark } from './NormalizedMark'
 import { ChevronDown, ChevronRight, MoreVertical } from './icons'
 import { readableAgentError } from '../lib/agentText'
+import { memberStageLabel } from '../lib/memberSteps'
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
 import { offerBasis, offerNote, priceRanges, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
@@ -469,7 +471,7 @@ export function CampaignMembers({
               </div>
             </td>
             <td><div className="pr-member-stage-cell">
-              <StatusBadge status={member.stage} label={stageLabels[member.stage] || member.stage} />
+              <StatusBadge status={member.stage} label={memberStageLabel(member, stageLabels)} />
               <CampaignMemberProgress
                 stage={member.stage}
                 stepProgress={member.stepProgress}
@@ -524,6 +526,7 @@ export function CampaignMembers({
             </td>
           </tr>
           {expanded && <tr className="pr-members__details" data-group={memberGroup(member)}><td colSpan={columns}>
+            <MemberSteps member={member} plan={campaign.plan} offers={offers} />
             <MemberSections
               member={member}
               offers={offers?.offers || []}

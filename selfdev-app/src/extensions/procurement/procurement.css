@@ -1632,3 +1632,20 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-query-profile { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 12px; }
 .pr-query-profile .pr-form-field { flex: 1 1 280px; max-width: 420px; }
 .pr-query-profile small { color: var(--pr-muted); font-size: 11px; }
+
+/* One substance's way to a price: finished, held by the agent, held by the buyer. */
+.pr-member-steps { margin: 2px 0 12px; }
+.pr-member-steps__list { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 0; }
+.pr-member-steps__list li { position: relative; min-width: 0; padding: 7px 10px; border: 1px solid var(--pr-border); border-radius: 7px; background: var(--pr-surface); }
+.pr-member-steps__list li strong, .pr-member-steps__list li span { display: block; }
+.pr-member-steps__list li strong { font-size: 12px; font-weight: 650; }
+.pr-member-steps__list li span { color: var(--pr-muted); font-size: 11px; margin-top: 1px; }
+.pr-member-steps__list li.is-done { border-color: #1f7a4d; background: color-mix(in oklch, #1f7a4d 10%, var(--background)); }
+.pr-member-steps__list li.is-working { border-color: var(--pr-progress); background: color-mix(in oklch, var(--pr-progress) 10%, var(--background)); }
+.pr-member-steps__list li.is-waiting { border-color: var(--pr-warning); border-width: 2px; padding: 6px 9px; background: var(--pr-warning-soft); }
+.pr-member-steps__list li.is-failed { border-color: var(--pr-danger); background: var(--pr-danger-soft); }
+.pr-member-steps__list li.is-todo strong { color: var(--pr-muted); font-weight: 500; }
+.pr-member-steps__list li.is-off { border-style: dashed; opacity: .6; }
+.pr-member-steps__list li.is-off strong { color: var(--pr-muted); font-weight: 500; }
+.pr-member-steps > p { margin: 8px 0 0; font-size: 13px; }
+@media (max-width: 800px) { .pr-member-steps__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
