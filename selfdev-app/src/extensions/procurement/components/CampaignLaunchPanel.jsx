@@ -14,7 +14,7 @@ import {
   sourcingValueFromPlan,
   useSourcingSettings,
 } from './SourcingSettings'
-import { profileSettings } from '../lib/sourcingProfiles'
+import { effectiveSourcing, profileSettings } from '../lib/sourcingProfiles'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -138,7 +138,9 @@ export function CampaignLaunchPanel({
   }, [editing, plan, settings])
 
   // The plan as the API takes it, for a launch and for a change alike.
-  const planPayload = () => ({
+  const planPayload = () => {
+    const current = effectiveSourcing(sourcing, settings)
+    return {
     reach,
     channels,
     approveRfq,
@@ -147,23 +149,17 @@ export function CampaignLaunchPanel({
     // Depth is chosen as results-per-query; the API takes the analysis
     // budget, which is that spread back over the queries it will issue.
     maxResults: sourcesPerSubstance(
-      sourcing.depth,
-      effectiveQueryCount(
-        settings.templates,
-        sourcing.queryIds ?? settings.defaultQueryIds,
-        settings.synonymLimit,
-      ),
+      current.depth,
+      effectiveQueryCount(settings.templates, current.queryIds, current.synonymLimit),
       settings.maxAnalysedSources,
     ),
-    siteProbe: sourcing.siteProbe,
+    siteProbe: current.siteProbe,
+    synonymLimit: current.synonymLimit,
     ...(settings.profileId ? { queryProfileId: settings.profileId } : {}),
-    ...(sourcing.queryIds ?? settings.defaultQueryIds).length
-      ? { queryTemplateIds: sourcing.queryIds ?? settings.defaultQueryIds }
-      : {},
-    ...(sourcing.engineIds ?? settings.availableEngineIds).length
-      ? { engineIds: sourcing.engineIds ?? settings.availableEngineIds }
-      : {},
-  })
+    ...current.queryIds.length ? { queryTemplateIds: current.queryIds } : {},
+    ...current.engineIds.length ? { engineIds: current.engineIds } : {},
+    }
+  }
 
   const start = useMutation({
     mutationFn: () => {

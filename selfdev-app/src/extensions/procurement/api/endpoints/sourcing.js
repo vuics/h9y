@@ -72,7 +72,7 @@ export const sourcingEndpoints = {
     signal => request('/sourcing/query-templates', { signal }),
     async () => (await fixtures()).sourcingQueryTemplates,
   ),
-  startSourcing: mutation((cardId, maxResults = 20, queryTemplateIds, engineIds, siteProbe = true) =>
+  startSourcing: mutation((cardId, maxResults = 20, queryTemplateIds, engineIds, siteProbe = true, profile = {}) =>
     request(`/cards/${id(cardId)}/sourcing/runs`, {
       method: 'post',
       data: {
@@ -80,6 +80,7 @@ export const sourcingEndpoints = {
         ...(queryTemplateIds ? { queryTemplateIds } : {}),
         ...(engineIds ? { engineIds } : {}),
         siteProbe,
+        ...profile,
       },
     })),
   cancelSourcing: mutation(runId => request(`/sourcing/${id(runId)}/cancel`, { method: 'post' })),
@@ -100,6 +101,12 @@ export const sourcingEndpoints = {
     })),
   saveDefaultQueryProfile: mutation(profileId =>
     request('/sourcing/query-templates/default-profile', { method: 'put', data: { profileId } })),
+  createQueryProfile: mutation(({ name, copyFrom }) =>
+    request('/sourcing/query-templates/profiles', { method: 'post', data: { name, copyFrom } })),
+  updateQueryProfile: mutation((profileId, fields) =>
+    request(`/sourcing/query-templates/profiles/${id(profileId)}`, { method: 'put', data: fields })),
+  deleteQueryProfile: mutation(profileId =>
+    request(`/sourcing/query-templates/profiles/${id(profileId)}/delete`, { method: 'post' })),
   addSourcingSource: mutation((runId, url) =>
     request(`/sourcing/${id(runId)}/sources`, { method: 'post', data: { url } })),
   reviewSourcingCandidate: mutation((runId, candidateId, payload) =>

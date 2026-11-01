@@ -46,6 +46,7 @@ export const sourcingQueryTemplates = {
       templates: defaultQueryTemplates.map((template, index) => ({ id: `QT-FIXTURE-${index}`, template, enabled: true })),
       defaultTemplates: defaultQueryTemplates,
       isDefault: true,
+      settings: { depth: 'NORMAL', engineIds: null, siteProbe: true, synonymLimit: 3 },
     },
     {
       id: 'laboratory',
@@ -53,6 +54,15 @@ export const sourcingQueryTemplates = {
       templates: laboratoryQueryTemplates.map((template, index) => ({ id: `QT-LAB-${index}`, template, enabled: true })),
       defaultTemplates: laboratoryQueryTemplates,
       isDefault: true,
+      settings: { depth: 'NORMAL', engineIds: ['brave', 'ddgs'], siteProbe: false, synonymLimit: 0 },
+    },
+    {
+      id: 'QP-FIXTURE',
+      name: 'Пилотная партия',
+      templates: [{ id: 'QT-PILOT-0', template: '{name} пилотная партия', enabled: true }],
+      defaultTemplates: [],
+      isDefault: false,
+      settings: { depth: 'FAST', engineIds: ['brave'], siteProbe: true, synonymLimit: 1 },
     },
   ],
   defaultProfileId: 'production',

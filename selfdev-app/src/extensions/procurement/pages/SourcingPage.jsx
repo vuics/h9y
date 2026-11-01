@@ -19,7 +19,7 @@ import { depthOfRun,
   sourcesPerSubstance,
   useSourcingSettings,
 } from '../components/SourcingSettings'
-import { profileSettings } from '../lib/sourcingProfiles'
+import { effectiveSourcing, profileSettings } from '../lib/sourcingProfiles'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -273,11 +273,16 @@ export default function SourcingPage() {
     queryClient.invalidateQueries({ queryKey: procurementKeys.card(requestId) })
   }
   const settings = profileSettings(useSourcingSettings(), sourcing.profileId)
-  const effectiveQueryIds = sourcing.queryIds ?? settings.defaultQueryIds
-  const effectiveEngineIds = (sourcing.engineIds ?? settings.availableEngineIds)
-    .filter(id => settings.availableEngineIds.includes(id))
+  const current = effectiveSourcing(sourcing, settings)
   const start = useMutation({
-    mutationFn: () => procurementApi.startSourcing(requestId, sourcesPerSubstance(sourcing.depth, effectiveQueryCount(settings.templates, effectiveQueryIds, settings.synonymLimit), settings.maxAnalysedSources), effectiveQueryIds, effectiveEngineIds, sourcing.siteProbe),
+    mutationFn: () => procurementApi.startSourcing(
+      requestId,
+      sourcesPerSubstance(current.depth, effectiveQueryCount(settings.templates, current.queryIds, current.synonymLimit), settings.maxAnalysedSources),
+      current.queryIds,
+      current.engineIds,
+      current.siteProbe,
+      { synonymLimit: current.synonymLimit, ...(settings.profileId ? { queryProfileId: settings.profileId } : {}) },
+    ),
     onSuccess: accept,
   })
   const cancel = useMutation({

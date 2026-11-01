@@ -76,8 +76,8 @@ export function QueryPlanPanel({
           <strong>Поисковые запросы</strong>
           <span>
             {isEditing
-              ? 'Галочка задаёт, входит ли запрос в план по умолчанию. Список общий для всех карточек.'
-              : `В этот запуск войдёт ${selectedCount} из ${templates.length}. Снятая галочка не меняет общий список.`}
+              ? 'Галочка задаёт, входит ли запрос в план этого профиля по умолчанию. Профиль общий для всех карточек.'
+              : `В этот запуск войдёт ${selectedCount} из ${templates.length}. Снятая галочка не меняет список профиля.`}
           </span>
           {!isEditing && synonymQueries > 0 && (
             <span>
@@ -181,9 +181,9 @@ export function QueryPlanPanel({
               </small>
             </label>
             <div className="pr-inline-actions">
-              {!isDefault && <Button variant="ghost" size="sm" isDisabled={isSaving} onPress={onReset}>Вернуть стандартные</Button>}
+              {!isDefault && onReset && <Button variant="ghost" size="sm" isDisabled={isSaving} onPress={onReset}>Вернуть стандартные</Button>}
               <Button variant="outline" isDisabled={isSaving} onPress={cancelEditing}>Отмена</Button>
-              <Button type="submit" isDisabled={isSaving}>{isSaving ? 'Сохранение…' : 'Сохранить для всех карточек'}</Button>
+              <Button type="submit" isDisabled={isSaving}>{isSaving ? 'Сохранение…' : 'Сохранить в профиле'}</Button>
             </div>
           </div>
         )}
