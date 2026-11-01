@@ -1673,6 +1673,18 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-web-offers { margin-top: 10px; }
 .pr-web-offers > .pr-note { margin: 0 0 6px; }
 .pr-web-offers a { display: inline-flex; align-items: center; gap: 3px; }
+.pr-members__web-prices { display: block; margin-top: 3px; padding: 0; border: 0; background: none; color: var(--pr-muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.pr-members__web-prices:hover { color: var(--pr-text); text-decoration: underline; }
+.pr-price-strip { display: flex; align-items: center; gap: 12px; margin: 6px 0 12px; }
+.pr-price-strip__end { flex: none; color: var(--pr-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pr-price-strip__track { position: relative; flex: 1; min-width: 120px; height: 32px; margin: 18px 6px 0; }
+.pr-price-strip__track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--pr-border); }
+.pr-price-strip__point { position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--pr-progress); box-shadow: 0 0 0 2px var(--pr-card); }
+/* A bigger target than the mark, and the mark says which one is under the pointer. */
+.pr-price-strip__point::after { content: ""; position: absolute; inset: -6px; }
+.pr-price-strip__point:hover, .pr-price-strip__point:focus-visible { background: var(--pr-text); z-index: 1; }
+.pr-price-strip__median { position: absolute; top: 4px; bottom: 4px; width: 2px; margin-left: -1px; background: var(--pr-text); }
+.pr-price-strip__median span { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 3px; color: var(--pr-text); font-size: 12px; font-style: normal; white-space: nowrap; }
 .pr-candidate-offers { margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; }
 .pr-candidate-offers li + li { margin-top: 3px; }
 .pr-candidate-offer { color: var(--pr-text); font-size: 12px; font-weight: 600; }

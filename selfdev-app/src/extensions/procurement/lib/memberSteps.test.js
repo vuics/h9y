@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { memberStep, memberStepCounts, memberWaitsOnStep, stepOfFilter, stepsBeyondReach, webOfferRows } from './memberSteps.js'
+import { memberStep, memberStepCounts, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, webOfferRows, webPriceLine } from './memberSteps.js'
 
 test('a position stands on the step its stage has reached', () => {
   assert.equal(memberStep({ stage: 'QUEUED' }), 'search')
@@ -73,4 +73,33 @@ test('site prices read cheapest per unit first, a price with no pack after them'
   ] })
   assert.deepEqual(rows.map(row => row.seller), ['Дешёвый', 'Дорогой', 'Без фасовки'])
   assert.deepEqual(webOfferRows(null), [])
+})
+
+test('the row says how many sellers publish a price, and what prices', () => {
+  assert.equal(webPriceLine({}), null)
+  assert.equal(webPriceLine({ webPriceCount: 1 }), 'На сайтах: 1 продавец')
+  assert.equal(
+    webPriceLine({ webPriceCount: 19, webPrices: { currency: 'RUB', unit: 'мл', min: 2.72, max: 116, median: 13 } }),
+    'На сайтах: 19 продавцов · 2,72–116 ₽/мл · медиана 13 ₽/мл',
+  )
+  assert.equal(
+    webPriceLine({ webPriceCount: 2, webPrices: { currency: 'RUB', unit: null, min: 210, max: 11700, median: null } }),
+    'На сайтах: 2 продавца · 210–11\u00a0700 ₽',
+  )
+  assert.equal(
+    webPriceLine({ webPriceCount: 1, webPrices: { currency: 'RUB', unit: 'мл', min: 96.67, max: 96.67, median: null } }),
+    'На сайтах: 1 продавец · 96,67 ₽/мл',
+  )
+})
+
+test('the strip places the commonest unit on a log scale, when there is a spread', () => {
+  const row = (unitPrice, unit = 'мл', currency = 'RUB') => ({ unitPrice, unit, currency })
+  const strip = priceStrip([row(1), row(10), row(100), row(5, 'г'), { unitPrice: null }])
+  assert.equal(strip.unit, 'мл')
+  assert.deepEqual(strip.points.map(point => Math.round(point.at)), [0, 50, 100])
+  assert.equal(strip.median, 10)
+  assert.equal(Math.round(strip.medianAt), 50)
+  assert.equal(priceStrip([row(1), row(2)]), null)
+  assert.equal(priceStrip([row(3), row(3), row(3)]), null)
+  assert.equal(priceStrip([]), null)
 })

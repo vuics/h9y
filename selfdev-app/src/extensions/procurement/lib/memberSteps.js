@@ -104,3 +104,66 @@ export function webOfferRows(run) {
   return rows.sort((left, right) =>
     rank(left.unitPrice) - rank(right.unitPrice) || rank(left.amount) - rank(right.amount))
 }
+
+const money = (value, currency) =>
+  `${Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${currency === 'RUB' ? '₽' : currency || ''}`.trim()
+
+const sellerWord = count => {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod10 === 1 && mod100 !== 11) return 'продавец'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'продавца'
+  return 'продавцов'
+}
+
+/** The position's row on its site prices. A position searched before the summary
+ * was stored has only the count. */
+export function webPriceLine(member) {
+  const count = member.webPriceCount || 0
+  if (!count) return null
+  const head = `На сайтах: ${count} ${sellerWord(count)}`
+  const prices = member.webPrices
+  if (!prices) return head
+  const unit = prices.unit ? `/${prices.unit}` : ''
+  const sign = prices.currency === 'RUB' ? '₽' : prices.currency || ''
+  const number = value => Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+  const range = prices.min === prices.max
+    ? `${number(prices.min)} ${sign}${unit}`
+    : `${number(prices.min)}–${number(prices.max)} ${sign}${unit}`
+  return [
+    head,
+    range.trim(),
+    prices.median != null ? `медиана ${money(prices.median, prices.currency)}${unit}` : null,
+  ].filter(Boolean).join(' · ')
+}
+
+/** Site prices placed on one log scale, for the strip above their table: from 2 to
+ * 116 ₽/ml a plain scale would pile nearly every price at one end. Only the commonest
+ * unit and currency, and only with enough prices to show a spread. */
+export function priceStrip(rows = []) {
+  const priced = rows.filter(row => row.unitPrice > 0)
+  const counts = new Map()
+  for (const row of priced) {
+    const key = `${row.currency}|${row.unit}`
+    counts.set(key, (counts.get(key) || 0) + 1)
+  }
+  const [top] = [...counts.entries()].sort((left, right) => right[1] - left[1])
+  if (!top || top[1] < 3) return null
+  const points = priced.filter(row => `${row.currency}|${row.unit}` === top[0])
+  const values = points.map(row => row.unitPrice).sort((left, right) => left - right)
+  const min = values[0]
+  const max = values[values.length - 1]
+  if (min === max) return null
+  const place = value => (Math.log(value / min) / Math.log(max / min)) * 100
+  const middle = values.length >> 1
+  const median = values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2
+  return {
+    unit: points[0].unit,
+    currency: points[0].currency,
+    min,
+    max,
+    median,
+    medianAt: place(median),
+    points: points.map(row => ({ ...row, at: place(row.unitPrice) })),
+  }
+}

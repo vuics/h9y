@@ -9,7 +9,7 @@ import { NormalizedMark } from './NormalizedMark'
 import { ChevronDown, ChevronRight, MoreVertical } from './icons'
 import { readableAgentError } from '../lib/agentText'
 import { memberPhase, phaseLabel, phaseOfFilter } from '../lib/campaignPhases'
-import { memberStep, stepLabel, stepOfFilter } from '../lib/memberSteps'
+import { memberStep, stepLabel, stepOfFilter, webPriceLine } from '../lib/memberSteps'
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
 import { offerBasis, offerNote, priceSummary, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
@@ -503,9 +503,19 @@ export function CampaignMembers({
                     </>
                     : <span className="pr-primary-meta">{offers.offers.length} {plural(offers.offers.length, 'ответ', 'ответа', 'ответов')}, {priceSummary(offers.offers)[0] || 'цены нет'} · сравнить</span>}
                 </Link>
-                : member.webPriceCount > 0
-                  ? <span className="pr-primary-meta">цены на сайтах: {member.webPriceCount}</span>
-                  : <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
+                : !webPriceLine(member) && <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
+              {webPriceLine(member) && <button
+                type="button"
+                className="pr-members__web-prices"
+                title="Цены, опубликованные на сайтах продавцов. Показать таблицу"
+                onClick={() => {
+                  setManual(() => ({
+                    ...current,
+                    rows: new Map(current.rows).set(member.cardId, true),
+                    sections: new Map(current.sections).set(sectionKey('offers'), true),
+                  }))
+                }}
+              >{webPriceLine(member)}</button>}
             </td>
             <td>
               {/* The flex box is inside the cell, not the cell itself: a
