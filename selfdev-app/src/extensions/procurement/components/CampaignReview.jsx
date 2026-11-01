@@ -115,7 +115,7 @@ function CandidateTable({ review, item, candidates, editable, scroll = false }) 
   </tr></thead><tbody>{candidates.map(candidate => <tr key={candidate.candidateId}>
     <td>
       <strong>{candidate.name}</strong>
-      <div className="pr-primary-meta">{candidate.country || '—'}{candidate.website && <> · <a href={candidate.website} target="_blank" rel="noreferrer"><ExternalLink size={12} />сайт</a></>}{candidate.promotedSupplierId && <> · <Link to={`/procurement/suppliers/${candidate.promotedSupplierId}`}>в справочнике</Link></>}</div>
+      <div className="pr-primary-meta">{candidate.country || '—'}{candidate.productPage && <> · <a href={candidate.productPage.url} target="_blank" rel="noreferrer" title={candidate.productPage.quote}><ExternalLink size={12} />{candidate.productPage.ownSite ? 'страница вещества' : `вещество на ${candidate.productPage.domain}`}</a></>}{candidate.website && <> · <a href={candidate.website} target="_blank" rel="noreferrer"><ExternalLink size={12} />сайт</a></>}{candidate.promotedSupplierId && <> · <Link to={`/procurement/suppliers/${candidate.promotedSupplierId}`}>в справочнике</Link></>}</div>
       {editable && candidate.signals.length > 0 && <ul className="pr-review-signals">{candidate.signals.map((signal, index) => <li key={index}>{signal}</li>)}</ul>}
       {editable && candidate.risks.length > 0 && <ul className="pr-review-signals pr-review-signals--risk">{candidate.risks.map((risk, index) => <li key={index}>{risk}</li>)}</ul>}
     </td>
