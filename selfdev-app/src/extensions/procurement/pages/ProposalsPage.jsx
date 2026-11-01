@@ -33,7 +33,7 @@ function ProposalList({ filters, setFilters, viewSwitch }) {
       { id: 'basis', header: 'Базис', cell: row => row.incoterm ? `${row.incoterm} ${row.namedPlace || ''}` : <StatusBadge status="UNKNOWN" /> },
       { id: 'quantity', header: 'Количество / MOQ', cell: row => <span>{row.quantity || '—'} / {row.moq || '—'}</span> },
       { id: 'documents', header: 'Документы', cell: row => <div className="pr-doc-status"><span>CoA <StatusBadge status={row.coa} compact /></span><span>TDS <StatusBadge status={row.tds} compact /></span></div> },
-      { id: 'completeness', header: 'Готовность', cell: row => <StatusBadge status={row.completeness} /> },
+      { id: 'completeness', header: 'Готовность', cell: row => row.excluded ? <StatusBadge status="muted" tone="muted" label="исключено" /> : <StatusBadge status={row.completeness} /> },
     ]} /><Pagination {...query.data} onChange={page => setFilters({ page })} /></>}
   </div>
 }

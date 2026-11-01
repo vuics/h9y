@@ -71,3 +71,11 @@ test('every conversation keeps its offer, people first, then offers', () => {
   const rows = threadsWithOffers([offer(1, 10, { id: 'R2', negotiationId: 'NEG-2' })], threads)
   assert.deepEqual(rows.map(row => [row.thread.assignmentId, row.offer?.id ?? null]), [['NEG-3', null], ['NEG-2', 'R2'], ['NEG-1', null]])
 })
+
+test('an offer set aside is not among the offers of its substance', () => {
+  const groups = groupOffersBySubstance([
+    { id: 'A', cardId: 1, price: '100', currency: 'USD', priceUnit: 'KG' },
+    { id: 'B', cardId: 1, price: '1', currency: 'USD', priceUnit: 'KG', excluded: { reason: 'поддельный домен' } },
+  ])
+  assert.deepEqual(groups[0].offers.map(offer => offer.id), ['A'])
+})

@@ -149,6 +149,11 @@ export const proposalEndpoints = {
   // Suppliers not yet read keep their previous result.
   stopSiteGrades: mutation(cardId =>
     request('/proposals/compare/site-grades/stop', { method: 'post', data: { cardId: Number(cardId) } })),
+  // Without a quote index, the whole offer. Nothing recorded is removed.
+  excludeProposal: mutation((responseId, reason, quoteIndex) =>
+    request(`/proposals/${id(responseId)}/exclusion`, { method: 'post', data: { reason, quoteIndex } })),
+  restoreProposal: mutation((responseId, quoteIndex) =>
+    request(`/proposals/${id(responseId)}/exclusion/restore`, { method: 'post', data: { quoteIndex } })),
   prepareSupplierClarification: mutation((responseId, language) =>
     request(`/proposals/${id(responseId)}/clarification`, { method: 'post', data: { language } })),
   // Not routed through `request`: the export is a file download, so it needs a

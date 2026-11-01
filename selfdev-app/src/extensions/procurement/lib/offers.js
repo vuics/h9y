@@ -39,6 +39,8 @@ export function priceRanges(offers) {
 export function groupOffersBySubstance(offers = []) {
   const groups = new Map()
   for (const offer of offers) {
+    // Set aside by a specialist: on its own page, not among the offers.
+    if (offer.excluded) continue
     const cardId = offer.cardId || 0
     const group = groups.get(cardId) || {
       cardId,
