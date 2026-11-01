@@ -33,6 +33,18 @@ export const RATINGS = [
   { id: 'MAKER', label: 'Производитель', detail: 'Кто производит: официальный сайт, заявленное производство, разрешения. Торговцы получают меньше баллов.' },
 ]
 
+/** What a candidate's colour says under its run's rating. Under the seller's rating
+ * yellow names what is missing, since one word could not cover a shop at 60 points
+ * and a mention at 10. Under the maker's the badge keeps its own words. */
+export function candidateLightLabel(candidate, ratingMode) {
+  if (ratingMode !== 'SELLER') return undefined
+  if (candidate.preliminaryStatus === 'GREEN') return 'Можно запрашивать'
+  if (candidate.preliminaryStatus !== 'YELLOW') return undefined
+  if (!(candidate.webOffers || []).some(offer => offer.amount != null)) return 'Нет цены'
+  if ((candidate.evidenceGaps || []).some(gap => String(gap?.text ?? gap).includes('сайте самой компании'))) return 'Не на своём сайте'
+  return 'Проверьте вручную'
+}
+
 export const plural = (count, one, few, many) => {
   const mod10 = count % 10
   const mod100 = count % 100

@@ -19,7 +19,7 @@ import { depthOfRun,
   sourcesPerSubstance,
   useSourcingSettings,
 } from '../components/SourcingSettings'
-import { effectiveSourcing, profileSettings } from '../lib/sourcingProfiles'
+import { candidateLightLabel, effectiveSourcing, profileSettings } from '../lib/sourcingProfiles'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { webOfferPrice, webOfferStock, webOfferUnitPrice } from '../components/WebOffers'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
@@ -88,6 +88,24 @@ const scoringSubtracts = [
   ['−20', 'С одним названием связаны несколько официальных доменов'],
   ['−20', 'Источник описывает поставщика аналитических стандартов и реактивов, а не сырья'],
   ['−15', 'Компания или источник указывает на роль дистрибьютора либо трейдера'],
+]
+
+// The same for a run rated as a seller: `_qualify_seller` in the backend.
+const sellerScoringAdds = [
+  ['+30', 'Вещество продаётся на сайте самой компании'],
+  ['+10', '…или найдено только стороннее упоминание'],
+  ['+25', 'На сайте указана цена'],
+  ['+20', 'Поставщик находится в России'],
+  ['+15', 'Вещество указано в наличии'],
+  ['+5', '…или доступно под заказ'],
+  ['+5', 'Сертификация системы или продукции'],
+]
+
+const sellerScoringSubtracts = [
+  ['−50', 'Источник указывает на несоответствие запрошенному продукту или CAS'],
+  ['−35', 'Явный негативный регуляторный или репутационный сигнал'],
+  ['−20', 'Источники содержат противоречивые сведения'],
+  ['−10', 'Вещества нет в наличии'],
 ]
 
 const decisionLabels = {
@@ -166,7 +184,8 @@ function ScoringRules({ rows, tone }) {
   return <dl className={`pr-sourcing-scoring__rules pr-sourcing-scoring__rules--${tone}`}>{rows.map(([weight, text]) => <div key={`${weight}-${text}`}><dt>{weight}</dt><dd>{text}</dd></div>)}</dl>
 }
 
-function ScoreExplanation({ candidate }) {
+function ScoreExplanation({ candidate, ratingMode }) {
+  const seller = ratingMode === 'SELLER'
   const notes = [...(candidate?.reliabilitySignals || []), ...(candidate?.riskSignals || [])]
   const sum = notes.reduce((total, item) => total + notePoints(item), 0)
   // The stored score is clamped to 0..100, so on a candidate with many risks the
@@ -178,16 +197,17 @@ function ScoreExplanation({ candidate }) {
     {clamped && <p className="pr-note">Сумма пунктов выше — {sum}, показано {candidate.score}: итог ограничен диапазоном 0–100.</p>}
     <p className="pr-note">Оценка — сумма правил ниже, ограниченная диапазоном 0–100. Она считается кодом, а не моделью: каждое слагаемое требует доказательства с дословной цитатой из сохранённого источника. Модель только извлекает доказательства и не влияет ни на баллы, ни на цвет.</p>
     <div className="pr-sourcing-scoring__grid">
-      <section><h4>Добавляет</h4><ScoringRules rows={scoringAdds} tone="good" /></section>
-      <section><h4>Вычитает</h4><ScoringRules rows={scoringSubtracts} tone="risk" /></section>
+      <section><h4>Добавляет</h4><ScoringRules rows={seller ? sellerScoringAdds : scoringAdds} tone="good" /></section>
+      <section><h4>Вычитает</h4><ScoringRules rows={seller ? sellerScoringSubtracts : scoringSubtracts} tone="risk" /></section>
     </div>
     <h4>Цвет</h4>
     <ul className="pr-sourcing-scoring__lights">
       <li><StatusBadge status="RED" compact /><span>Найдено несоответствие продукту или явный негативный сигнал.</span></li>
-      <li><StatusBadge status="GREEN" compact /><span>Одновременно: не менее 70 баллов, продукт <b>и</b> роль производителя подтверждены на официальном сайте компании, есть подтверждение регулятора либо независимых источников, и не найдено ни одного риска.</span></li>
-      <li><StatusBadge status="YELLOW" compact /><span>Во всех остальных случаях.</span></li>
+      {seller && <li><StatusBadge status="GREEN" label="Можно запрашивать" compact /><span>Одновременно: не менее 70 баллов, вещество на сайте самой компании, указана цена и нет рисков. Это не проверка поставщика и письмо само не уйдёт.</span></li>}
+      {!seller && <li><StatusBadge status="GREEN" compact /><span>Одновременно: не менее 70 баллов, продукт <b>и</b> роль производителя подтверждены на официальном сайте компании, есть подтверждение регулятора либо независимых источников, и не найдено ни одного риска.</span></li>}
+      <li><StatusBadge status="YELLOW" label={seller ? 'Чего-то не хватает' : undefined} compact /><span>Во всех остальных случаях.</span></li>
     </ul>
-    <p className="pr-note">Отсюда обычная причина жёлтого статуса: если продукт и производство подтверждены только сторонними источниками, а официальный сайт компании в выдачу не попал, потолок оценки — около 20–40 баллов, и зелёный недостижим независимо от того, насколько компания известна. Что именно не хватает этому кандидату, перечислено в блоке «Пробелы».</p>
+    {!seller && <p className="pr-note">Отсюда обычная причина жёлтого статуса: если продукт и производство подтверждены только сторонними источниками, а официальный сайт компании в выдачу не попал, потолок оценки — около 20–40 баллов, и зелёный недостижим независимо от того, насколько компания известна. Что именно не хватает этому кандидату, перечислено в блоке «Пробелы».</p>}
     <p className="pr-note">Зелёный статус — не проверка поставщика. Автоматическая оценка не может присвоить статус «подтверждённый производитель»: это делает только специалист явным решением.</p>
   </details>
 }
@@ -390,15 +410,15 @@ export default function SourcingPage() {
       {run && <>
         <SourcingProgress run={run} isRunning={isRunning} depthLabel={depthOfRun(run)?.label} />
         <ContactScanProgress run={run} />
-        <div className="pr-sourcing-kpis"><div className="is-neutral"><span>Кандидаты</span><strong>{run.candidates?.length || 0}</strong></div><div className="is-green"><span>Высокая уверенность</span><strong>{counts.GREEN || 0}</strong></div><div className="is-yellow"><span>Нужны доказательства</span><strong>{counts.YELLOW || 0}</strong></div><div className="is-red"><span>Высокий риск</span><strong>{counts.RED || 0}</strong></div><div className="is-ink"><span>Источники</span><strong>{run.sources?.length || 0}</strong></div></div>
+        <div className="pr-sourcing-kpis"><div className="is-neutral"><span>Кандидаты</span><strong>{run.candidates?.length || 0}</strong></div><div className="is-green"><span>{run.ratingMode === 'SELLER' ? 'Можно запрашивать' : 'Высокая уверенность'}</span><strong>{counts.GREEN || 0}</strong></div><div className="is-yellow"><span>{run.ratingMode === 'SELLER' ? 'Чего-то не хватает' : 'Нужны доказательства'}</span><strong>{counts.YELLOW || 0}</strong></div><div className="is-red"><span>Высокий риск</span><strong>{counts.RED || 0}</strong></div><div className="is-ink"><span>Источники</span><strong>{run.sources?.length || 0}</strong></div></div>
 
         <Alert><AlertTriangle /><AlertTitle>Светофор — предварительная оценка</AlertTitle><AlertDescription>Рейтинг объясняет найденные сигналы, но не является верификацией. Подтвердить роль компании может только уполномоченный специалист после изучения доказательств.</AlertDescription></Alert>
 
         <div className="pr-sourcing-workbench">
-          <Card><CardHeader><CardTitle>Кандидаты</CardTitle><span>{run.candidates?.length || 0} найдено</span></CardHeader><CardContent>{!run.candidates?.length ? <EmptyState title={isRunning ? 'Анализируем источники' : 'Кандидаты не найдены'} description={isRunning ? 'Первые кандидаты появятся здесь сразу после обработки подтверждающего источника.' : 'Добавьте релевантный источник вручную или запустите новый поиск с большим лимитом.'} /> : <div className="pr-sourcing-candidates">{run.candidates.map(item => <button type="button" key={item.id} className={selectedId === item.id ? 'is-selected' : ''} onClick={() => { setSelectedId(item.id); setPromotionCandidateId('') }}><Score candidate={item} /><span><strong>{item.name}</strong><small>{item.country || 'Страна не определена'} · {statusLabel(item.role)}</small><span className="pr-sourcing-badges"><StatusBadge status={item.preliminaryStatus} compact /><StatusBadge status={item.reviewDecision} compact /></span><KnownSupplierNote known={item.knownSupplier} requestedCas={run.requestedCas} compact /></span></button>)}</div>}</CardContent></Card>
+          <Card><CardHeader><CardTitle>Кандидаты</CardTitle><span>{run.candidates?.length || 0} найдено</span></CardHeader><CardContent>{!run.candidates?.length ? <EmptyState title={isRunning ? 'Анализируем источники' : 'Кандидаты не найдены'} description={isRunning ? 'Первые кандидаты появятся здесь сразу после обработки подтверждающего источника.' : 'Добавьте релевантный источник вручную или запустите новый поиск с большим лимитом.'} /> : <div className="pr-sourcing-candidates">{run.candidates.map(item => <button type="button" key={item.id} className={selectedId === item.id ? 'is-selected' : ''} onClick={() => { setSelectedId(item.id); setPromotionCandidateId('') }}><Score candidate={item} /><span><strong>{item.name}</strong><small>{item.country || 'Страна не определена'} · {statusLabel(item.role)}</small><span className="pr-sourcing-badges"><StatusBadge status={item.preliminaryStatus} label={candidateLightLabel(item, run.ratingMode)} compact /><StatusBadge status={item.reviewDecision} compact /></span><KnownSupplierNote known={item.knownSupplier} requestedCas={run.requestedCas} compact /></span></button>)}</div>}</CardContent></Card>
 
           {candidate && <div className="pr-sourcing-detail">
-            <Card><CardHeader><div><CardTitle>{candidate.name}</CardTitle><p>{candidate.aliases?.length ? `Также: ${candidate.aliases.join(', ')}` : 'Другие названия не найдены'}</p></div><StatusBadge status={candidate.preliminaryStatus} /></CardHeader><CardContent>
+            <Card><CardHeader><div><CardTitle>{candidate.name}</CardTitle><p>{candidate.aliases?.length ? `Также: ${candidate.aliases.join(', ')}` : 'Другие названия не найдены'}</p></div><StatusBadge status={candidate.preliminaryStatus} label={candidateLightLabel(candidate, run.ratingMode)} /></CardHeader><CardContent>
               <div className="pr-sourcing-identity"><Score candidate={candidate} /><div><span>Предполагаемая роль</span><strong>{statusLabel(candidate.role)}</strong></div><div><span>Страна</span><strong>{candidate.country || 'Не определена'}</strong></div>{externalUrl(candidate.website) && <a href={externalUrl(candidate.website)} target="_blank" rel="noreferrer"><ExternalLink />Сайт компании</a>}</div>
               <KnownSupplierNote known={candidate.knownSupplier} requestedCas={run.requestedCas} />
               {candidate.webOffers?.length > 0 && <ul className="pr-candidate-offers">{candidate.webOffers.map(offer => <li key={offer.id}>
@@ -407,7 +427,7 @@ export default function SourcingPage() {
               </li>)}</ul>}
               <div className="pr-sourcing-signal-grid"><SignalList title="Надёжность" items={candidate.reliabilitySignals} tone="good" /><SignalList title="Риски" items={candidate.riskSignals} tone="risk" /><SignalList title="Пробелы" items={candidate.evidenceGaps} tone="gap" /></div>
               <ContactList contacts={candidate.contacts} />
-              <ScoreExplanation candidate={candidate} />
+              <ScoreExplanation candidate={candidate} ratingMode={run.ratingMode} />
             </CardContent></Card>
 
             <Card><CardHeader><CardTitle>Проверяемые доказательства</CardTitle><span>{candidate.evidence?.length || 0} утверждений</span></CardHeader><CardContent>{!candidate.evidence?.length ? <EmptyState title="Доказательств пока нет" /> : <div className="pr-sourcing-evidence">{candidate.evidence.map(claim => <article key={claim.id} className={`is-${claim.polarity?.toLowerCase()}`}><header><strong>{evidenceLabels[claim.category] || claim.category}</strong><StatusBadge status={claim.polarity} compact /></header><p>{claim.value}</p><blockquote>{claim.quote}</blockquote><footer><SourceLink source={sourceMap.get(claim.sourceId)} /><span>Получено {formatDate(claim.sourceRetrievedAt)}</span>{claim.validUntil && <span>Действует до {claim.validUntil}</span>}</footer></article>)}</div>}</CardContent></Card>

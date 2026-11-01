@@ -93,7 +93,7 @@ export const sourcingEngines = {
 
 export function sourcingFixtureForCard(cardId) {
   // 90001 is the purchase's position with prices on sites.
-  if (String(cardId) === '90001') return { ...sourcingRun, cardId: 90001 }
+  if (String(cardId) === '90001') return { ...sourcingRun, cardId: 90001, ratingMode: 'SELLER' }
   return String(cardId) === String(sourcingRun.cardId) ? sourcingRun : null
 }
 

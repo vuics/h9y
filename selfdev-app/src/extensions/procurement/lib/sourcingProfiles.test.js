@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { multipliedBySynonyms, profileOfPlan, profileSettings, planProfile, profileNameProblem, effectiveSourcing, profileChanges, profileSummary } from './sourcingProfiles.js'
+import { multipliedBySynonyms, profileOfPlan, profileSettings, planProfile, profileNameProblem, effectiveSourcing, profileChanges, profileSummary, candidateLightLabel } from './sourcingProfiles.js'
 
 const settings = {
   defaultProfileId: 'production',
@@ -115,4 +115,15 @@ test('the summary says what this launch will do', () => {
   assert.equal(profileSummary({}, none)[1], 'нет доступных источников')
   const world = { ...laboratory, templates: [{ id: 'P', template: '"{cas}" plant' }], defaultQueryIds: ['P'] }
   assert.equal(profileSummary({}, world)[0], '1 запрос, поиск по миру')
+})
+
+test('the colour says what it means under the rating of the run', () => {
+  const priced = [{ amount: 290 }]
+  assert.equal(candidateLightLabel({ preliminaryStatus: 'GREEN' }, 'SELLER'), 'Можно запрашивать')
+  assert.equal(candidateLightLabel({ preliminaryStatus: 'YELLOW' }, 'SELLER'), 'Нет цены')
+  assert.equal(candidateLightLabel({ preliminaryStatus: 'YELLOW', webOffers: [{ amount: null }] }, 'SELLER'), 'Нет цены')
+  assert.equal(candidateLightLabel({ preliminaryStatus: 'YELLOW', webOffers: priced, evidenceGaps: [{ text: 'Нет подтверждения на сайте самой компании.' }] }, 'SELLER'), 'Не на своём сайте')
+  assert.equal(candidateLightLabel({ preliminaryStatus: 'YELLOW', webOffers: priced }, 'SELLER'), 'Проверьте вручную')
+  assert.equal(candidateLightLabel({ preliminaryStatus: 'RED' }, 'SELLER'), undefined)
+  assert.equal(candidateLightLabel({ preliminaryStatus: 'GREEN' }, 'MAKER'), undefined)
 })
