@@ -66,6 +66,7 @@ export const CHECK_LABELS = {
   VERBATIM_BLOCKS_PRESENT: 'Дословные блоки не изменены',
   NO_FORBIDDEN_DISCLOSURE: 'Закрытые данные не раскрыты',
   NO_UNFILLED_PLACEHOLDER: 'Нет незаполненных заготовок',
+  INCOTERM_AS_IN_RFQ: 'Условия поставки как в RFQ',
   RFQ_APPROVED: 'Новый RFQ утверждён',
 }
 

@@ -43,11 +43,17 @@ function PriceStrip({ rows }) {
 }
 
 /** Prices a position's candidates publish on their sites. Read when opened: the
- * search it comes from is the heaviest thing a position has. */
-export function WebOffers({ cardId }) {
+ * search it comes from is the heaviest thing a position has.
+ *
+ * From `runId`, the search the campaign counts them in, when there is one: the
+ * card's latest is a search started again and still running, and it showed
+ * "Цены с сайтов (9)" over an empty list until it finished. */
+export function WebOffers({ cardId, runId = null }) {
   const query = useQuery({
-    queryKey: procurementKeys.sourcing(cardId),
-    queryFn: ({ signal }) => procurementApi.sourcing(cardId, signal),
+    queryKey: runId ? procurementKeys.sourcingRun(runId) : procurementKeys.sourcing(cardId),
+    queryFn: ({ signal }) => (runId
+      ? procurementApi.sourcingRun(runId, signal)
+      : procurementApi.sourcing(cardId, signal)),
   })
   const rows = webOfferRows(query.data)
   if (query.isLoading) return <p className="pr-note">Загружаем цены с сайтов…</p>

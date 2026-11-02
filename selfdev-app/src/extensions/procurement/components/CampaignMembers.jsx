@@ -177,7 +177,7 @@ function MemberSections({
       open={isOpen('webPrices')}
       onToggle={() => onToggle('webPrices')}
     >
-      <WebOffers cardId={member.cardId} />
+      <WebOffers cardId={member.cardId} runId={member.sourcingRunId} />
     </Section>
 
     <Section
