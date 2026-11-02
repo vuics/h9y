@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { reviewBadges, reviewOpen, suggestedVerdict, verdictKey } from './campaignReview.js'
+import { dispatchProblems, reviewBadges, reviewOpen, suggestedVerdict, verdictKey } from './campaignReview.js'
 
 const candidate = (decision = 'UNREVIEWED') => ({ candidateId: 'C', reviewDecision: decision })
 const item = extra => ({ cardId: 1, candidates: [], rfq: null, normalization: null, blockedBy: null, ...extra })
@@ -39,4 +39,12 @@ test('a company starts on its concluded role, else a price request, else evidenc
   assert.deepEqual(suggestedVerdict({ role: 'UNKNOWN', contactCount: 0 }), { value: 'NEEDS_MORE_EVIDENCE', reason: 'нет данных' })
   // High risk is a person's call even with someone to write to.
   assert.deepEqual(suggestedVerdict({ role: 'UNKNOWN', contactCount: 3, preliminaryStatus: 'RED' }), { value: 'NEEDS_MORE_EVIDENCE', reason: 'нет данных' })
+})
+
+test('a problem with sending names the company it is about', () => {
+  const problems = dispatchProblems({ results: [{ cardId: 3, errors: [
+    { supplierId: 'SUP-1', supplierName: 'Химпром-М', code: 'NO_USABLE_CONTACT' },
+    { supplierId: 'SUP-2', code: 'NO_USABLE_CONTACT' },
+  ] }] })
+  assert.deepEqual(problems.map(problem => problem.supplier), ['Химпром-М', 'SUP-2'])
 })

@@ -1689,3 +1689,7 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-candidate-offers li + li { margin-top: 3px; }
 .pr-candidate-offer { color: var(--pr-text); font-size: 12px; font-weight: 600; }
 .pr-sourcing-candidates .pr-candidate-offer { display: block; margin: -3px 0 5px; }
+
+/* Done, but not everything: a list of what did not go out reads as a warning. */
+.procurement-shell .pr-alert--warning { background: var(--pr-status-amber-soft); border-color: color-mix(in oklch, var(--pr-status-amber) 35%, transparent); }
+.pr-candidate-contacts { font-size: 12px; overflow-wrap: anywhere; min-width: 160px; }

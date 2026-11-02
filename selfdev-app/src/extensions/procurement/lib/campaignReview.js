@@ -92,7 +92,12 @@ export const DECISION_LABEL = Object.fromEntries(VERDICTS)
  * specialist there is a problem and nothing about which substance has it.
  */
 export const dispatchProblems = outreach => (outreach.results || []).flatMap(result =>
-  (result.errors || []).map(error => ({ cardId: result.cardId, code: error.code })))
+  (result.errors || []).map(error => ({
+    cardId: result.cardId,
+    code: error.code,
+    // Which company: "#3 — нет контакта" twice said there were two to look at.
+    supplier: error.supplierName || error.supplierId || null,
+  })))
 
 export const dispatchTitle = outreach => {
   if (outreach.queued > 0) return `Запросы отправлены: ${outreach.queued}`

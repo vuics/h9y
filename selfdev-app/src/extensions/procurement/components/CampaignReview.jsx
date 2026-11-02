@@ -31,10 +31,10 @@ export function ReviewAlerts({ review }) {
         ? <>Заявки уходят по одной через общий браузер — это минуты на вещество. Ход видно на странице закупки.</>
         : MARKETPLACE_SKIPPED[posted.skipped] || posted.message || posted.skipped}
     </AlertDescription></Alert>}
-    {dispatched && <Alert>{dispatched.queued > 0 ? <Check /> : <CircleAlert />}<AlertTitle>{dispatchTitle(dispatched)}</AlertTitle><AlertDescription>
+    {dispatched && <Alert className={dispatchProblems(dispatched).length > 0 ? 'pr-alert--warning' : undefined}>{dispatched.queued > 0 ? <Check /> : <CircleAlert />}<AlertTitle>{dispatchTitle(dispatched)}</AlertTitle><AlertDescription>
       {dispatched.queued > 0 && <p>Закупка перешла к рассылке — ход видно на странице закупки.</p>}
       {dispatched.skipped === 'NEGOTIATION_QUEUE_REQUIRED' && <p>Решения записаны, но отправка требует разрешения NEGOTIATION_QUEUE. Запросы уйдут, когда её запустит сотрудник с этим правом.</p>}
-      {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}><Link to={`/procurement/requests/${problem.cardId}`}>#{problem.cardId}</Link> — {blockedText(problem.code)}</li>)}</ul>}
+      {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}><Link to={`/procurement/requests/${problem.cardId}`}>#{problem.cardId}</Link>{problem.supplier && <> · {problem.supplier}</>} — {blockedText(problem.code)}</li>)}</ul>}
     </AlertDescription></Alert>}
     {prepare.data?.failed?.length > 0 && <Alert><CircleAlert /><AlertTitle>RFQ подготовлен не по всем веществам</AlertTitle><AlertDescription><ul className="pr-plain-list">{prepare.data.failed.map(item => <li key={item.cardId}><Link to={`/procurement/requests/${item.cardId}`}>#{item.cardId}</Link> — {blockedText(item.code)}</li>)}</ul></AlertDescription></Alert>}
     {identity.error && <Alert><AlertTriangle /><AlertTitle>Не удалось</AlertTitle><AlertDescription>{mutationMessage(identity.error)}</AlertDescription></Alert>}
@@ -115,6 +115,30 @@ const bestOfferLine = offers => {
   return [webOfferPrice(best), best.pack, webOfferStock(best)].filter(Boolean).join(' · ') + (offers.length > 1 ? ` · ещё ${offers.length - 1}` : '')
 }
 
+const CONTACT_LIMIT = 4
+
+const contactHref = contact => {
+  if (contact.channel === 'email') return `mailto:${contact.address}`
+  if (contact.channel === 'phone' || contact.channel === 'whatsapp') return `tel:${contact.address.replace(/[^\d+]/g, '')}`
+  return /^https?:\/\//.test(contact.address) ? contact.address : null
+}
+
+/** The addresses a request would go to, so "нет контакта" after sending is
+ * seen before it, under the company it is about. */
+function CandidateContacts({ candidate }) {
+  const contacts = candidate.contacts
+  if (!contacts) return candidate.contactCount || <span className="pr-import-missing">нет</span>
+  if (!contacts.length) return <span className="pr-import-missing">нет</span>
+  const shown = contacts.slice(0, CONTACT_LIMIT)
+  return <ul className="pr-plain-list pr-candidate-contacts">{shown.map((contact, index) => {
+    const href = contactHref(contact)
+    const label = CONTACT_CHANNEL_LABEL[contact.channel] || contact.channel
+    return <li key={index} title={contact.sourceUrl || undefined}><span className="pr-primary-meta">{label}</span> {href ? <a href={href} target="_blank" rel="noreferrer">{contact.address}</a> : contact.address}</li>
+  })}{contacts.length > shown.length && <li className="pr-primary-meta">ещё {contacts.length - shown.length}</li>}</ul>
+}
+
+const CONTACT_CHANNEL_LABEL = { email: 'почта', phone: 'тел.', whatsapp: 'WhatsApp', web_form: 'форма' }
+
 function CandidateTable({ review, item, candidates, editable, scroll = false }) {
   const table = <table className={scroll ? 'pr-table pr-review-candidates pr-member-review__candidates' : 'pr-table pr-review-candidates'}><thead><tr>
     <th>Компания</th><th>Оценка</th><th>Контакты</th><th>Решение</th>
@@ -127,7 +151,7 @@ function CandidateTable({ review, item, candidates, editable, scroll = false }) 
       {editable && candidate.risks.length > 0 && <ul className="pr-review-signals pr-review-signals--risk">{candidate.risks.map((risk, index) => <li key={index}>{risk}</li>)}</ul>}
     </td>
     <td><StatusBadge status={candidate.preliminaryStatus} label={`${candidate.score}/100`} /></td>
-    <td>{candidate.contactCount || <span className="pr-import-missing">нет</span>}</td>
+    <td><CandidateContacts candidate={candidate} /></td>
     <td>{editable ? <VerdictRadios review={review} item={item} candidate={candidate} /> : <StatusBadge status={candidate.reviewDecision} label={DECISION_LABEL[candidate.reviewDecision]} />}</td>
   </tr>)}</tbody></table>
   // Inside a position it is drawn like the offers above it, and scrolls on its
