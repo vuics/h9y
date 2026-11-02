@@ -30,7 +30,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Check, ChevronsLeft, ChevronsRight, CircleAlert, Pause, Pencil, Play, Refresh, Send, Sliders, Trash } from '../components/icons'
+import { AlertTriangle, Check, ChevronsLeft, ChevronsRight, CircleAlert, Pause, Pencil, Play, Send, Sliders, Trash } from '../components/icons'
 import { normalizeSummary, prepareSummary } from '../lib/bulkSummary'
 
 /** One campaign: substance by stage, with the decisions it is waiting for.
@@ -825,6 +825,9 @@ export default function CampaignPage() {
           land on when it meant "wait a moment". */}
       {holdable && <Button variant="outline" isDisabled={hold.isPending} onPress={() => hold.mutate()}><Pause />{hold.isPending ? 'Останавливаем…' : 'Пауза'}</Button>}
       {campaign.status === 'PAUSED' && <Button isDisabled={carryOn.isPending} onPress={() => carryOn.mutate()}><Play className={carryOn.isPending ? 'pr-spin' : undefined} />{carryOn.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
+      {/* A restart leaves the campaign where a paused one stands, so its way
+          on sits in the same place: inside the alert's text it went unseen. */}
+      {campaign.status === 'INTERRUPTED' && <Button isDisabled={resume.isPending} onPress={() => resume.mutate()}><Play className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}
       {(stoppable || campaignDeletable(campaign)) && !moreActions && <Button variant="ghost" onPress={() => setMoreActions(true)}>Ещё…</Button>}
       {moreActions && stoppable && <Button variant="ghost" isDisabled={cancel.isPending} onPress={() => cancel.mutate()} aria-description="Останавливает закупку и закрывает её переговоры: напоминания и неотправленные письма не уйдут"><CircleAlert />{cancel.isPending ? 'Останавливаем…' : 'Остановить совсем'}</Button>}
       {moreActions && campaignDeletable(campaign) && (confirmDelete
@@ -853,7 +856,7 @@ export default function CampaignPage() {
       </AlertDescription></Alert>}
             {(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error) && <Alert><AlertTriangle /><AlertTitle>Операция не выполнена</AlertTitle><AlertDescription>{mutationMessage(cancel.error || resume.error || dispatch.error || hold.error || carryOn.error)}</AlertDescription></Alert>}
       {campaign.status === 'PAUSED' && <Alert><Pause /><AlertTitle>Закупка на паузе</AlertTitle><AlertDescription>Поиск и рассылка по ней стоят, найденное сохранено. Уже начатые переписки продолжают идти сами: переговоры принадлежат карточке и согласованному RFQ, а не закупке, поэтому остановить их можно на странице конкретных переговоров.</AlertDescription></Alert>}
-      {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Закупка прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно. {canResearchSourcing && <Button variant="outline" size="sm" isDisabled={resume.isPending} onPress={() => resume.mutate()}><Refresh className={resume.isPending ? 'pr-spin' : undefined} />{resume.isPending ? 'Продолжаем…' : 'Продолжить'}</Button>}</AlertDescription></Alert>}
+      {campaign.status === 'INTERRUPTED' && <Alert><AlertTriangle /><AlertTitle>Закупка прервана перезапуском сервиса</AlertTitle><AlertDescription>Найденное сохранено — оно в таблице ниже. Продолжение подхватит только те вещества, которые ничем не закончились: уже найденное не ищется заново, а решения специалиста не спрашиваются повторно.{canResearchSourcing && ' Чтобы продолжить, нажмите «Продолжить» вверху страницы.'}</AlertDescription></Alert>}
       {errors.length > 0 && <Alert><CircleAlert /><AlertTitle>Замечания по запуску</AlertTitle><AlertDescription><ul className="pr-plain-list">{errors.map(code => <li key={code}>{code.startsWith('card:CARD_NOT_FOUND:') ? `Карточка #${code.split(':').pop()} не найдена и в закупку не вошла` : errorText(code)}</li>)}</ul></AlertDescription></Alert>}
     </>}
   >
