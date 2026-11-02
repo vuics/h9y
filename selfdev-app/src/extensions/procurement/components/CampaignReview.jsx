@@ -34,7 +34,11 @@ export function ReviewAlerts({ review }) {
     {dispatched && <Alert className={dispatchProblems(dispatched).length > 0 ? 'pr-alert--warning' : undefined}>{dispatched.queued > 0 ? <Check /> : <CircleAlert />}<AlertTitle>{dispatchTitle(dispatched)}</AlertTitle><AlertDescription>
       {dispatched.queued > 0 && <p>Закупка перешла к рассылке — ход видно на странице закупки.</p>}
       {dispatched.skipped === 'NEGOTIATION_QUEUE_REQUIRED' && <p>Решения записаны, но отправка требует разрешения NEGOTIATION_QUEUE. Запросы уйдут, когда её запустит сотрудник с этим правом.</p>}
-      {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}><Link to={`/procurement/requests/${problem.cardId}`}>#{problem.cardId}</Link>{problem.supplier && <> · {problem.supplier}</>} — {blockedText(problem.code)}</li>)}</ul>}
+      {dispatchProblems(dispatched).length > 0 && <ul className="pr-plain-list">{dispatchProblems(dispatched).map((problem, index) => <li key={index}><Link to={`/procurement/requests/${problem.cardId}`}>#{problem.cardId}</Link>{problem.supplier && <> · {problem.supplierId
+        // The supplier's record, where its site and contacts are and where the
+        // missing address is added.
+        ? <Link to={`/procurement/suppliers/${problem.supplierId}`}>{problem.supplier}</Link>
+        : problem.supplier}</>} — {blockedText(problem.code)}</li>)}</ul>}
     </AlertDescription></Alert>}
     {prepare.data?.failed?.length > 0 && <Alert><CircleAlert /><AlertTitle>RFQ подготовлен не по всем веществам</AlertTitle><AlertDescription><ul className="pr-plain-list">{prepare.data.failed.map(item => <li key={item.cardId}><Link to={`/procurement/requests/${item.cardId}`}>#{item.cardId}</Link> — {blockedText(item.code)}</li>)}</ul></AlertDescription></Alert>}
     {identity.error && <Alert><AlertTriangle /><AlertTitle>Не удалось</AlertTitle><AlertDescription>{mutationMessage(identity.error)}</AlertDescription></Alert>}

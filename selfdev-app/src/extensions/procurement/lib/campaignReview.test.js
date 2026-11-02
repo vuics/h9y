@@ -47,4 +47,5 @@ test('a problem with sending names the company it is about', () => {
     { supplierId: 'SUP-2', code: 'NO_USABLE_CONTACT' },
   ] }] })
   assert.deepEqual(problems.map(problem => problem.supplier), ['Химпром-М', 'SUP-2'])
+  assert.deepEqual(problems.map(problem => problem.supplierId), ['SUP-1', 'SUP-2'])
 })

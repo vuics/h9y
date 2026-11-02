@@ -97,6 +97,7 @@ export const dispatchProblems = outreach => (outreach.results || []).flatMap(res
     code: error.code,
     // Which company: "#3 — нет контакта" twice said there were two to look at.
     supplier: error.supplierName || error.supplierId || null,
+    supplierId: error.supplierId || null,
   })))
 
 export const dispatchTitle = outreach => {
