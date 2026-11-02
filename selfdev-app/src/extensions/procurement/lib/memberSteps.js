@@ -96,9 +96,10 @@ export function stepsBeyondReach(plan = {}) {
 }
 
 /** What a site publishes across a position's candidates, cheapest per millilitre
- * or gram first; a price with no pack to divide by comes after those. */
+ * or gram first; a price with no pack to divide by comes after those. A seller
+ * rejected on the approval is out of the list, as it is out of the count. */
 export function webOfferRows(run) {
-  const rows = (run?.candidates || []).flatMap(candidate =>
+  const rows = (run?.candidates || []).filter(candidate => candidate.reviewDecision !== 'REJECTED').flatMap(candidate =>
     (candidate.webOffers || []).map(offer => ({ ...offer, seller: candidate.name, candidateId: candidate.id })))
   const rank = value => (value == null ? Number.POSITIVE_INFINITY : value)
   return rows.sort((left, right) =>

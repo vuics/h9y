@@ -70,6 +70,7 @@ test('site prices read cheapest per unit first, a price with no pack after them'
     { id: 'B', name: 'Без фасовки', webOffers: [{ id: '2', amount: 10, unitPrice: null }] },
     { id: 'C', name: 'Дешёвый', webOffers: [{ id: '3', amount: 900, unitPrice: 9 }] },
     { id: 'D', name: 'Без цен' },
+    { id: 'E', name: 'Агромагазин', reviewDecision: 'REJECTED', webOffers: [{ id: '4', amount: 3575, unitPrice: 1 }] },
   ] })
   assert.deepEqual(rows.map(row => row.seller), ['Дешёвый', 'Дорогой', 'Без фасовки'])
   assert.deepEqual(webOfferRows(null), [])
