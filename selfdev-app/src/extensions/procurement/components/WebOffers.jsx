@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
 import { priceStrip, webOfferRows } from '../lib/memberSteps'
-import { ExternalLink } from './icons'
+import { ExternalLink, Refresh } from './icons'
 
 const AVAILABILITY = { IN_STOCK: 'в наличии', ON_ORDER: 'под заказ', OUT_OF_STOCK: 'нет в наличии' }
 
@@ -56,8 +56,21 @@ export function WebOffers({ cardId, runId = null }) {
       : procurementApi.sourcing(cardId, signal)),
   })
   const rows = webOfferRows(query.data)
+  // Only asked when there is nothing to list: whether a search is still under
+  // way is what tells "not yet" from "none".
+  const latest = useQuery({
+    queryKey: procurementKeys.sourcing(cardId),
+    queryFn: ({ signal }) => procurementApi.sourcing(cardId, signal),
+    enabled: !query.isLoading && !rows.length,
+    refetchInterval: current => (current.state.data?.status === 'RUNNING' ? 30000 : false),
+  })
   if (query.isLoading) return <p className="pr-note">Загружаем цены с сайтов…</p>
-  if (!rows.length) return null
+  if (!rows.length) {
+    if (latest.isLoading) return <p className="pr-note">Загружаем цены с сайтов…</p>
+    return latest.data?.status === 'RUNNING'
+      ? <p className="pr-note pr-web-offers__pending"><Refresh size={14} className="pr-spin" />Поиск ещё идёт — цены с сайтов появятся, когда он закончится.</p>
+      : <p className="pr-note">Цен для показа нет: страницы продавцов не загрузились или в них нет цены этого вещества.</p>
+  }
   return <div className="pr-member-offers pr-web-offers">
     <p className="pr-note">Как опубликовано на странице; это не коммерческое предложение, наличие и цену подтвердит поставщик.</p>
     <PriceStrip rows={rows} />

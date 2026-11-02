@@ -1693,3 +1693,4 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 /* Done, but not everything: a list of what did not go out reads as a warning. */
 .procurement-shell .pr-alert--warning { background: var(--pr-status-amber-soft); border-color: color-mix(in oklch, var(--pr-status-amber) 35%, transparent); }
 .pr-candidate-contacts { font-size: 12px; overflow-wrap: anywhere; min-width: 160px; }
+.pr-web-offers__pending { display: flex; align-items: center; gap: 8px; padding: 10px 0; }
