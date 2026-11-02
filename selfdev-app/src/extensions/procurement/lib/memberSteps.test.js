@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { memberStep, memberStepCounts, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, webOfferRows, webPriceLine, webPriceSummary } from './memberSteps.js'
+import { memberStep, memberStepCounts, stepSquares, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, webOfferRows, webPriceLine, webPriceSummary } from './memberSteps.js'
 
 test('a position stands on the step its stage has reached', () => {
   assert.equal(memberStep({ stage: 'QUEUED' }), 'search')
@@ -49,9 +49,9 @@ test('the counts add up to the list and say what waits for a person', () => {
     { cardId: 6, stage: 'FAILED' },
   ]
   const counts = memberStepCounts(members, new Map([[5, { priced: 1 }]]))
-  assert.deepEqual(counts.search, { count: 1, waiting: 0 })
-  assert.deepEqual(counts.companies, { count: 1, waiting: 1 })
-  assert.deepEqual(counts.rfq, { count: 1, waiting: 1 })
+  assert.deepEqual(counts.search, { count: 1, waiting: 0, again: 0 })
+  assert.deepEqual(counts.companies, { count: 1, waiting: 1, again: 0 })
+  assert.deepEqual(counts.rfq, { count: 1, waiting: 1, again: 0 })
   assert.equal(counts.replies.count, 1)
   assert.equal(counts.result.count, 1)
   assert.equal(counts.failed.count, 1)
@@ -111,4 +111,22 @@ test('the strip places the commonest unit on a log scale, when there is a spread
   assert.equal(priceStrip([row(1), row(2)]), null)
   assert.equal(priceStrip([row(3), row(3), row(3)]), null)
   assert.equal(priceStrip([]), null)
+})
+
+test('a position searched again keeps its step and is counted on the search step too', () => {
+  const counts = memberStepCounts([
+    { cardId: 1, stage: 'NEGOTIATION', requestCount: 3, responseCount: 1, stepProgress: { research: true } },
+    { cardId: 2, stage: 'NEGOTIATION', requestCount: 3, responseCount: 1 },
+  ])
+  assert.deepEqual(counts.replies, { count: 2, waiting: 0, again: 1 })
+  assert.deepEqual(counts.search, { count: 0, waiting: 0, again: 1 })
+})
+
+test('a step draws a square per position, and a number past the limit', () => {
+  assert.deepEqual(stepSquares({ count: 3, waiting: 1, again: 1 }).kinds, ['waiting', 'plain', 'again'])
+  // Waiting and searched again at once is still one position.
+  assert.deepEqual(stepSquares({ count: 2, waiting: 2, again: 1 }).kinds, ['waiting', 'again'])
+  const many = stepSquares({ count: 40, waiting: 0, again: 0 }, 18)
+  assert.equal(many.kinds.length, 17)
+  assert.equal(many.more, 23)
 })

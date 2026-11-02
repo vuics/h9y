@@ -1694,3 +1694,19 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .procurement-shell .pr-alert--warning { background: var(--pr-status-amber-soft); border-color: color-mix(in oklch, var(--pr-status-amber) 35%, transparent); }
 .pr-candidate-contacts { font-size: 12px; overflow-wrap: anywhere; min-width: 160px; }
 .pr-web-offers__pending { display: flex; align-items: center; gap: 8px; padding: 10px 0; }
+
+/* A square per position on a step: filled in the step's colour, amber where it
+   waits for you, pulsing where it is searched again; hollow on the search step
+   for positions searched again from further on. */
+.pr-steps__count { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pr-steps__squares { display: flex; flex-wrap: wrap; align-content: center; gap: 3px; min-width: 0; max-height: 19px; overflow: hidden; color: var(--pr-progress); }
+.pr-steps__step.is-priced .pr-steps__squares { color: var(--pr-accent); }
+.pr-steps__step.is-failed .pr-steps__squares { color: var(--pr-danger); }
+.pr-steps__step.is-empty .pr-steps__squares, .pr-steps__step.is-off .pr-steps__squares { color: var(--pr-muted); }
+.pr-steps__squares i { flex: none; width: 8px; height: 8px; border-radius: 2px; background: currentColor; opacity: .7; }
+.pr-steps__squares i.is-waiting { background: var(--pr-warning); opacity: 1; }
+.pr-steps__squares i.is-again { animation: pr-square-again 1.6s ease-in-out infinite; }
+.pr-steps__squares i.is-elsewhere { background: transparent; box-shadow: inset 0 0 0 1px currentColor; animation: pr-square-again 1.6s ease-in-out infinite; }
+.pr-steps__squares em { font-size: 11px; font-style: normal; line-height: 7px; color: var(--pr-muted); }
+@keyframes pr-square-again { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .pr-steps__squares i.is-again, .pr-steps__squares i.is-elsewhere { animation: none; opacity: .45; } }

@@ -76,16 +76,40 @@ export function memberStep(member, offers = {}, plan = {}) {
 export const memberWaitsOnStep = member =>
   !member.errorCode && member.stage !== 'FAILED' && Boolean(waitingStep(member))
 
-/** Each step's count, how many of them wait for a person, and whether the purchase
- * was set up to reach it. */
+/** Whether a position's substance is being searched again from its own step. */
+export const memberSearchesAgain = member => Boolean(member.stepProgress?.research)
+
+/** Each step's count, how many of them wait for a person, and how many are being
+ * searched again; the search step also counts every position searched again,
+ * wherever it stands, since that is the work it is doing. */
 export function memberStepCounts(members = [], offersByCard = new Map(), plan = {}) {
-  const counts = Object.fromEntries(ALL_STEPS.map(([id]) => [id, { count: 0, waiting: 0 }]))
+  const counts = Object.fromEntries(ALL_STEPS.map(([id]) => [id, { count: 0, waiting: 0, again: 0 }]))
   for (const member of members) {
     const step = memberStep(member, offersByCard.get(member.cardId), plan)
     counts[step].count += 1
     if (step !== 'result' && step !== 'replies' && memberWaitsOnStep(member)) counts[step].waiting += 1
+    if (step !== 'search' && memberSearchesAgain(member)) {
+      counts[step].again += 1
+      counts.search.again += 1
+    }
   }
   return counts
+}
+
+/** The squares a step draws: one per position, those waiting for a person
+ * first, those searched again last; past `limit` the rest are a number. */
+export function stepSquares({ count = 0, waiting = 0, again = 0 }, limit = 18) {
+  // A position can both wait for you and be searched again: it is one square,
+  // drawn as searched again, so the squares add up to the count.
+  const searched = Math.min(again, count)
+  const waits = Math.min(waiting, count - searched)
+  const kinds = [
+    ...Array(waits).fill('waiting'),
+    ...Array(count - waits - searched).fill('plain'),
+    ...Array(searched).fill('again'),
+  ]
+  if (kinds.length <= limit) return { kinds, more: 0 }
+  return { kinds: kinds.slice(0, limit - 1), more: kinds.length - (limit - 1) }
 }
 
 export function stepsBeyondReach(plan = {}) {
