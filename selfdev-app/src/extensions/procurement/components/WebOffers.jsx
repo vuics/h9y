@@ -62,7 +62,8 @@ export function WebOffers({ cardId, runId = null }) {
     queryKey: procurementKeys.sourcing(cardId),
     queryFn: ({ signal }) => procurementApi.sourcing(cardId, signal),
     enabled: !query.isLoading && !rows.length,
-    refetchInterval: current => (current.state.data?.status === 'RUNNING' ? 30000 : false),
+    // React Query 4 hands this the data itself, not the query.
+    refetchInterval: data => (data?.status === 'RUNNING' ? 30000 : false),
   })
   if (query.isLoading) return <p className="pr-note">Загружаем цены с сайтов…</p>
   if (!rows.length) {
