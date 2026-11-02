@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { contentOf, memberAwaitsReview, modeOf, resolveOpen, rowOpenByMode, sectionOpenByMode, waitingOf } from './memberSections.js'
+import { contentOf, memberAwaitsReview, memberStuck, modeOf, resolveOpen, rowOpenByMode, sectionOpenByMode, waitingOf } from './memberSections.js'
 
 const withOffers = contentOf({ offers: [{}, {}], threads: [{}], marketplace: { status: 'POSTED' } })
 const bare = contentOf({})
@@ -23,6 +23,16 @@ test('a mode opens only the positions that have something for it', () => {
   assert.equal(rowOpenByMode('offers', bare), false)
   assert.equal(rowOpenByMode('threads', withOffers), true)
   assert.equal(rowOpenByMode('echemi', bare), false)
+})
+
+test('a supplier to find is no approval, and waits only while nobody was written to', () => {
+  const deadEnd = { stage: 'AWAITING_REVIEW', waitingFor: 'SUPPLIER_EVIDENCE' }
+  assert.equal(memberAwaitsReview(deadEnd), false)
+  assert.equal(memberAwaitsReview({ stage: 'AWAITING_REVIEW', waitingFor: 'CANDIDATE_REVIEW' }), true)
+  assert.equal(memberStuck(deadEnd, []), true)
+  assert.equal(memberStuck(deadEnd, [{ assignmentId: 'NEG-1' }]), false)
+  assert.equal(waitingOf({ stuck: true }).waits, true)
+  assert.equal(waitingOf({ stuck: true }).sections.size, 0)
 })
 
 test('site prices are their own section, not counted as offers', () => {

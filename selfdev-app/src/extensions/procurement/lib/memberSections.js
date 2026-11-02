@@ -46,24 +46,34 @@ export function modeOf(value) {
  * An RFQ regenerated after the letters went out waits too: the position has
  * moved on, but its queued letters are held until the new text is approved.
  */
-export const memberAwaitsReview = member => member.stage === 'AWAITING_REVIEW'
+export const memberAwaitsReview = member => (member.stage === 'AWAITING_REVIEW' && !DEAD_END_WAITS.includes(member.waitingFor))
   || ['CANDIDATE_REVIEW', 'RFQ_APPROVAL'].includes(member.waitingFor)
   || member.rfqAwaitingApproval === true
+
+/** Waiting for a person, for work no approval can do: a supplier found or
+ * proven, a contact added. The server counts them out of the approval too. */
+export const DEAD_END_WAITS = ['SUPPLIER_EVIDENCE', 'SUPPLIER_CONTACT']
+
+/** Whether a position stands at such a dead end. One already talking to
+ * suppliers does not: on CMP-B24A6FE2EB Тебуконазол had three answers, two
+ * of them priced, and still offered «Найти поставщика». */
+export const memberStuck = (member, threads = []) => DEAD_END_WAITS.includes(member.waitingFor) && !threads.length
 
 /** Which sections of a position wait for a person, and whether it waits at all.
  *
  * A letter prepared and unsent, a stopped agent, a confirmed company with
  * nowhere to write to, an open escalation, an Echemi request held for a
  * person, an approval — each opens its own section. A card in error waits too,
- * though no section holds it: its row says what to do.
+ * though no section holds it: its row says what to do; so does a position with
+ * no supplier to write to.
  */
-export function waitingOf({ threads = [], unreachable = [], escalations = [], echemi = false, review = false, error = false } = {}) {
+export function waitingOf({ threads = [], unreachable = [], escalations = [], echemi = false, review = false, error = false, stuck = false } = {}) {
   const sections = new Set()
   if (threads.some(thread => thread.awaitingPerson) || unreachable.length) sections.add('threads')
   if (escalations.length) sections.add('escalations')
   if (echemi) sections.add('echemi')
   if (review) sections.add('review')
-  return { sections, waits: sections.size > 0 || Boolean(error) }
+  return { sections, waits: sections.size > 0 || Boolean(error) || Boolean(stuck) }
 }
 
 /** What one position has to show in each section. */

@@ -13,7 +13,7 @@ import { memberStep, stepLabel, stepOfFilter, webPriceLine, webPriceSummary } fr
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
 import { offerBasis, offerNote, priceSummary, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
-import { contentOf, memberAwaitsReview, resolveOpen, rowOpenByMode, sectionOpenByMode, waitingOf } from '../lib/memberSections'
+import { contentOf, memberAwaitsReview, memberStuck, resolveOpen, rowOpenByMode, sectionOpenByMode, waitingOf } from '../lib/memberSections'
 import { reviewBadges, reviewOpen } from '../lib/campaignReview'
 import { ReviewItem } from './CampaignReview'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
@@ -66,9 +66,17 @@ function RowMenu({ label, children }) {
   </>
 }
 
+/** What a person is to do on a conversation, when it waits for them. */
+const WAITING_FOR = {
+  SEND: 'ждёт отправки',
+  PAUSED: 'агент остановлен',
+  WEB_FORM: 'заполнить веб-форму',
+  REPLY: 'ответ ждёт решения',
+}
+
 /** What a person says about a conversation's state, in the row's own words. */
 const threadLabel = (thread, labels) => (thread.awaitingPerson
-  ? (thread.automationPaused ? 'агент остановлен' : 'ждёт отправки')
+  ? WAITING_FOR[thread.waitingFor] || (thread.automationPaused ? 'агент остановлен' : 'ждёт отправки')
   : labels[thread.status] || thread.status)
 
 /** One conversation on one line: who, through what, where it stands. */
@@ -340,6 +348,7 @@ export function CampaignMembers({
         echemi: marketplaceWaits(member, marketplaceByCard.get(member.cardId)),
         review: reviewWaits,
         error: Boolean(member.errorCode),
+        stuck: memberStuck(member, threads),
       }),
     })
   }
@@ -450,7 +459,9 @@ export function CampaignMembers({
         <th aria-label="Действия" />
       </tr></thead>
       <tbody>{rows.map(member => {
-        const actions = nextActions(member, campaign.campaignId)
+        const actions = nextActions(member, campaign.campaignId, {
+          talking: Boolean(conversationsByCard.get(member.cardId)?.conversations?.length),
+        })
         const offers = offersByCard.get(member.cardId)
         const threads = conversationsByCard.get(member.cardId)
         const marketplace = marketplaceByCard.get(member.cardId)

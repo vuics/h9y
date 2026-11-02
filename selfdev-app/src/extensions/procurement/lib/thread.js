@@ -161,9 +161,12 @@ export function holdReason(negotiation) {
   return null
 }
 
-/** How long the supplier has been silent, when that is the live question. */
+/** How long the supplier has been silent, when that is the live question: not
+ * when theirs is the last word. Then it is we who are silent, and Win-Win's
+ * "we will quote you soon" read «поставщик молчит 2 дн.». */
 export function silenceSince(negotiation, now = Date.now()) {
   const messages = negotiation?.messages || []
+  if (messages.at(-1)?.kind === 'supplier') return null
   const inbound = [...messages].reverse().find(item => item.kind === 'supplier')
   const last = inbound?.createdAt || negotiation?.lastDispatchAt
   const at = Date.parse(last ?? '')

@@ -36,11 +36,11 @@ export const filterMembers = (members, filter) =>
  * substance of the campaign, and as the only button it hid the rows that
  * really were waiting for a decision.
  */
-export function nextActions(member, campaignId) {
+export function nextActions(member, campaignId, { talking = false } = {}) {
   const actions = []
   // A substance can be two things at once: a card that failed and a request
   // the platform never confirmed. Both are offered, in that order.
-  const own = ownAction(member, campaignId)
+  const own = ownAction(member, campaignId, { talking })
   if (own) actions.push(own)
   if (member.marketplaceStatus === 'NEEDS_REVIEW') {
     actions.push({ label: 'Закончить заявку', to: `/procurement/requests/${member.cardId}/echemi`, tone: 'muted' })
@@ -50,10 +50,13 @@ export function nextActions(member, campaignId) {
 
 // `review` marks the presses the purchase page answers in place, by opening
 // the position's approval; `to` stays the page that answers it elsewhere.
-function ownAction(member, campaignId) {
+// A supplier to find or a contact to add is no question once letters are out:
+// the answers in the row are the way on.
+function ownAction(member, campaignId, { talking = false } = {}) {
   if (member.errorCode) {
     return { label: 'Открыть карточку', to: `/procurement/requests/${member.cardId}`, tone: 'danger' }
   }
+  if (talking && ['SUPPLIER_EVIDENCE', 'SUPPLIER_CONTACT'].includes(member.waitingFor)) return null
   switch (member.waitingFor) {
     case 'CANDIDATE_REVIEW':
       return { label: 'Согласовать', to: `/procurement/campaigns/${campaignId}?view=review`, tone: 'warning', review: true }

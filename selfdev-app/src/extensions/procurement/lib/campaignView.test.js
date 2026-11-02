@@ -26,6 +26,8 @@ test('a row offers its own decision first and the marketplace check after', () =
     [['Найти поставщика', '/procurement/requests/7/sourcing']],
   )
   assert.equal(nextActions(member({ stage: 'AWAITING_REVIEW', waitingFor: 'SUPPLIER_CONTACT' }), 'CMP-1')[0].label, 'Добавить контакт')
+  // Letters out and answers in: no supplier is left to find.
+  assert.deepEqual(nextActions(member({ stage: 'AWAITING_REVIEW', waitingFor: 'SUPPLIER_EVIDENCE' }), 'CMP-1', { talking: true }), [])
   // Both: the card failed and the platform never confirmed its request.
   assert.deepEqual(
     nextActions(member({ errorCode: 'CARD_NOT_NORMALIZED', marketplaceStatus: 'NEEDS_REVIEW' }), 'CMP-1')

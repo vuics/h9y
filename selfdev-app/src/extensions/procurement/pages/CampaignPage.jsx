@@ -21,7 +21,7 @@ import { readableAgentError } from '../lib/agentText'
 import { CampaignHistory } from '../components/CampaignHistory'
 import { CampaignMembers } from '../components/CampaignMembers'
 import { groupOffersBySubstance } from '../lib/offers'
-import { MODES, PRIMARY_MODES, memberAwaitsReview, modeOf, waitingOf } from '../lib/memberSections'
+import { MODES, PRIMARY_MODES, memberAwaitsReview, memberStuck, modeOf, waitingOf } from '../lib/memberSections'
 import { marketplaceWaits } from '../lib/campaignView'
 import { useCampaignReview } from '../hooks/useCampaignReview'
 import { BulkVerdicts, IdentitySummary, ReviewAlerts, ReviewBar } from '../components/CampaignReview'
@@ -786,6 +786,7 @@ export default function CampaignPage() {
     echemi: marketplaceWaits(member, marketplaceByCard.get(member.cardId)),
     review: memberAwaitsReview(member),
     error: Boolean(member.errorCode),
+    stuck: memberStuck(member, conversationsByCard.get(member.cardId)?.conversations || []),
   }).waits).length
   const waitingPresses = (awaitingPerson > 0 && canQueueNegotiations)
     || (progress.awaitingReview > 0 && undispatched > 0 && canQueueNegotiations)

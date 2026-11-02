@@ -95,6 +95,19 @@ test('silence is counted from the supplier, not from our own last message', () =
   assert.equal(silenceSince({ messages: [] }, now), null)
 })
 
+test('a supplier who spoke last is not silent: the reply is ours to give', () => {
+  const now = Date.parse('2026-11-02T12:00:00Z')
+  const negotiation = {
+    lastDispatchAt: '2026-10-30T13:17:07Z',
+    messages: [
+      { kind: 'system_outbound', createdAt: '2026-10-30T13:17:07Z' },
+      { kind: 'supplier', createdAt: '2026-10-30T17:53:20Z' },
+    ],
+  }
+
+  assert.equal(silenceSince(negotiation, now), null)
+})
+
 test('channels are named as the specialist knows them', () => {
   assert.equal(channelLabel('whatsapp'), 'WhatsApp')
   assert.equal(channelLabel('web_form'), 'Веб-форма')
