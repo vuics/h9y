@@ -234,6 +234,10 @@ export function campaignReviewFixture(campaignId) {
           approvedAt: null,
           subject: `Request for quotation — ${member.title} (CAS ${member.casNumber})`,
           bodyMarkdown: `Dear Sir or Madam,\n\nWe are sourcing ${member.title}, CAS ${member.casNumber}.`,
+          russian: {
+            subject: `Запрос цены — ${member.title} (CAS ${member.casNumber})`,
+            bodyMarkdown: `Здравствуйте!\n\nНас интересует ${member.title}, CAS ${member.casNumber}.`,
+          },
         }
         : null,
     })),

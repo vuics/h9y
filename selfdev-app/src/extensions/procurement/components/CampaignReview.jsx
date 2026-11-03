@@ -1,5 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { procurementApi } from '../api/client'
+import { procurementKeys } from '../api/queryKeys'
 
 import { StatusBadge } from './StatusBadge'
 import { webOfferPrice, webOfferStock } from './WebOffers'
@@ -79,10 +83,11 @@ export function BulkVerdicts({ review, scope }) {
 }
 
 /** The two presses that act on the whole approval: write the missing RFQs, and apply. */
-export function ReviewActions({ review }) {
-  const { missingRfqs, prepare, apply, decisions, candidateCount, rfqCount, canReviewSourcing, canWriteCards } = review
+export function ReviewActions({ review, scope = null }) {
+  const { missingRfqs, prepare, apply, canReviewSourcing, canWriteCards } = review
+  const { decisions, candidateCount, rfqCount } = scopedDecisions(review, scope)
   return <>
-    {missingRfqs > 0 && canWriteCards && <Button variant="outline" isDisabled={prepare.isPending} onPress={() => prepare.mutate()}><Refresh className={prepare.isPending ? 'pr-spin' : undefined} />{prepare.isPending ? 'Готовим…' : `Подготовить RFQ (${missingRfqs})`}</Button>}
+    {missingRfqs > 0 && canWriteCards && !scope && <Button variant="outline" isDisabled={prepare.isPending} onPress={() => prepare.mutate()}><Refresh className={prepare.isPending ? 'pr-spin' : undefined} />{prepare.isPending ? 'Готовим…' : `Подготовить RFQ (${missingRfqs})`}</Button>}
     {canReviewSourcing && <Button isDisabled={!decisions.length || apply.isPending} onPress={() => apply.mutate(decisions)}><Check />{apply.isPending ? 'Применяем…' : `Согласовать: ${candidateCount} ${plural(candidateCount, 'решение', 'решения', 'решений')} по компаниям и ${rfqCount} RFQ`}</Button>}
   </>
 }
@@ -249,7 +254,7 @@ export function ReviewItem({ review, item }) {
         {/* Last: the one thing on the line that may be cut short. */}
         {rfq.subject && <span className="pr-pos-review__subject" title={rfq.subject}>{rfq.subject}</span>}
       </div>
-      {opened[item.cardId] && rfq.bodyMarkdown && <pre className="pr-review-rfq__body">{rfq.bodyMarkdown}</pre>}
+      {opened[item.cardId] && rfq.bodyMarkdown && <RfqText review={review} item={item} rfq={rfq} />}
       {rfq.status !== 'APPROVED' && (rfq.documentFingerprint
         ? <label className="pr-pos-review__approve">
           <input
@@ -266,20 +271,83 @@ export function ReviewItem({ review, item }) {
   </div>
 }
 
+const RFQ_VERSIONS = [['english', 'English'], ['russian', 'Русский']]
+
+/** Both letters of a position's RFQ, each editable where it is read. A Moscow
+ * shop gets the Russian one, so it is approved as much as the English. Saving
+ * changes the card's RFQ for every letter still to go, and withdraws its
+ * approval: the tick below then approves the new wording. */
+function RfqText({ review, item, rfq }) {
+  const queryClient = useQueryClient()
+  const [shown, setShown] = useState('english')
+  const [draft, setDraft] = useState(null)
+  const versions = {
+    english: { subject: rfq.subject, bodyMarkdown: rfq.bodyMarkdown },
+    russian: rfq.russian,
+  }
+  const current = versions[shown]
+  const save = useMutation({
+    mutationFn: () => procurementApi.editRFQ(item.cardId, {
+      [shown]: { subject: draft.subject, bodyMarkdown: draft.bodyMarkdown },
+    }),
+    onSuccess: () => {
+      setDraft(null)
+      queryClient.invalidateQueries({ queryKey: procurementKeys.campaignReview(review.campaignId) })
+    },
+  })
+  const pick = name => { setShown(name); setDraft(null); save.reset() }
+  return <div className="pr-review-rfq">
+    <div className="pr-review-rfq__tabs" role="tablist" aria-label="Версия RFQ">
+      {RFQ_VERSIONS.filter(([name]) => versions[name]).map(([name, label]) => <button
+        key={name} type="button" role="tab" aria-selected={shown === name}
+        className={shown === name ? 'is-on' : undefined}
+        disabled={save.isPending}
+        onClick={() => pick(name)}
+      >{label}</button>)}
+      {review.canWriteCards && !draft && current && <Button size="sm" variant="ghost" onPress={() => setDraft({ ...current })}>Править</Button>}
+    </div>
+    {draft
+      ? <div className="pr-review-rfq__edit">
+        <input aria-label="Тема письма" value={draft.subject || ''} onChange={event => setDraft({ ...draft, subject: event.target.value })} />
+        <textarea aria-label="Текст запроса" rows={14} value={draft.bodyMarkdown || ''} onChange={event => setDraft({ ...draft, bodyMarkdown: event.target.value })} />
+        <p className="pr-note">Правка заменит RFQ этой позиции для всех следующих писем; уже отправленные не меняются. После сохранения RFQ снова ждёт согласования.</p>
+        {save.error && <p className="pr-note" role="alert">Не сохранено: {mutationMessage(save.error)}</p>}
+        <div className="pr-inline-actions">
+          <Button size="sm" isDisabled={save.isPending || !draft.subject?.trim() || !draft.bodyMarkdown?.trim()} onPress={() => save.mutate()}>{save.isPending ? 'Сохраняем…' : 'Сохранить'}</Button>
+          <Button size="sm" variant="ghost" isDisabled={save.isPending} onPress={() => { setDraft(null); save.reset() }}>Отмена</Button>
+        </div>
+      </div>
+      : current && <pre className="pr-review-rfq__body">{current.bodyMarkdown}</pre>}
+  </div>
+}
+
 /** The approval's two presses, pinned to the bottom of the screen while there
  * is something to send: on a purchase of twenty-eight substances the button at
  * the top is a long way back from the last company decided.
  */
-export function ReviewBar({ review }) {
-  const { decisions, missingRfqs, candidateCount, rfqCount, touched, reset, apply } = review
-  if (!decisions.length && !missingRfqs) return null
+/** Only the decisions of the positions in `scope` (card ids), when given: from
+ * the positions table that is the approvals a person has opened, so a press
+ * never sends a recommendation on a position nobody looked at. */
+export const scopedDecisions = (review, scope) => {
+  const decisions = scope ? review.decisions.filter(decision => scope.includes(decision.cardId)) : review.decisions
+  return {
+    decisions,
+    candidateCount: decisions.reduce((total, item) => total + item.candidates.length, 0),
+    rfqCount: decisions.filter(item => item.rfqFingerprint).length,
+  }
+}
+
+export function ReviewBar({ review, scope = null }) {
+  const { missingRfqs, touched, reset, apply } = review
+  const { decisions, candidateCount, rfqCount } = scopedDecisions(review, scope)
+  if (!decisions.length && (!missingRfqs || scope)) return null
   return <div className="pr-review-bar" role="region" aria-label="Согласование закупки">
     <span>{decisions.length
-      ? <>К согласованию: <b>{candidateCount}</b> {plural(candidateCount, 'решение', 'решения', 'решений')} по компаниям и <b>{rfqCount}</b> RFQ{touched ? '' : ' — по рекомендации'}</>
+      ? <>{scope ? `По ${scope.length} ${plural(scope.length, 'открытой позиции', 'открытым позициям', 'открытым позициям')}: ` : 'К согласованию: '}<b>{candidateCount}</b> {plural(candidateCount, 'решение', 'решения', 'решений')} по компаниям и <b>{rfqCount}</b> RFQ{touched ? '' : ' — по рекомендации'}</>
       : 'Решений к отправке нет'}</span>
     <div className="pr-inline-actions">
-      {touched && <Button variant="ghost" isDisabled={apply.isPending} onPress={reset}>Вернуть рекомендации</Button>}
-      <ReviewActions review={review} />
+      {touched && !scope && <Button variant="ghost" isDisabled={apply.isPending} onPress={reset}>Вернуть рекомендации</Button>}
+      <ReviewActions review={review} scope={scope} />
     </div>
   </div>
 }

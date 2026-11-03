@@ -1710,3 +1710,13 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-steps__squares em { font-size: 11px; font-style: normal; line-height: 7px; color: var(--pr-muted); }
 @keyframes pr-square-again { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .pr-steps__squares i.is-again, .pr-steps__squares i.is-elsewhere { animation: none; opacity: .45; } }
+
+/* An RFQ's two letters on the approval, each editable in place. */
+.pr-review-rfq { display: grid; gap: 6px; margin-top: 8px; }
+.pr-review-rfq__tabs { display: flex; align-items: center; gap: 4px; }
+.pr-review-rfq__tabs > button[role="tab"] { border: 1px solid var(--pr-border); border-radius: 6px; background: var(--pr-surface); color: var(--pr-muted); font: inherit; font-size: 12px; padding: 2px 10px; cursor: pointer; }
+.pr-review-rfq__tabs > button[role="tab"].is-on { color: var(--pr-text); border-color: var(--pr-text); }
+.pr-review-rfq__edit { display: grid; gap: 6px; }
+.pr-review-rfq__edit input, .pr-review-rfq__edit textarea { width: 100%; border: 1px solid var(--pr-border); border-radius: 7px; background: var(--pr-surface); color: var(--pr-text); font: inherit; font-size: 12px; padding: 6px 8px; }
+.pr-review-rfq__edit textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; resize: vertical; }
+.pr-review-rfq .pr-review-rfq__body { margin: 0; }

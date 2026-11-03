@@ -298,6 +298,8 @@ export default function CampaignPage() {
     enabled: canReadEscalations,
   })
   const [reviewWanted, setReviewWanted] = useState(false)
+  // Positions whose approval is open in the table, for the bar's scope there.
+  const [openReviews, setOpenReviews] = useState([])
   // Waiting for you holds the approvals too, so it loads them when one waits.
   const anyAwaitsReview = (query.data?.members || []).some(memberAwaitsReview)
   const review = useCampaignReview(campaignId, {
@@ -1034,6 +1036,7 @@ export default function CampaignPage() {
         review={reviewData ? review : null}
         reviewLoading={review.query.isLoading && review.query.fetchStatus !== 'idle'}
         onReviewWanted={() => setReviewWanted(true)}
+        onReviewOpen={setOpenReviews}
         escalationsByCard={escalationsByCard}
         unreachableByCard={unreachableByCard}
         onModeChange={showView}
@@ -1045,7 +1048,10 @@ export default function CampaignPage() {
           brief
         /> : null}
       />
-      {reviewData && (view === 'review' || view === 'all' || (view === 'waiting' && reviewWaiting > 0) || review.touched) && <ReviewBar review={review} />}
+      {reviewData && (view === 'review' || view === 'all' || (view === 'waiting' && reviewWaiting > 0)) && <ReviewBar review={review} />}
+      {/* Opened from a row's «Согласовать»: the same bar, for those positions
+          only — never for one whose approval nobody has opened. */}
+      {reviewData && !(view === 'review' || view === 'all' || (view === 'waiting' && reviewWaiting > 0)) && openReviews.length > 0 && <ReviewBar review={review} scope={openReviews} />}
 
       {/* What explains the run rather than asks for anything: kept, one click
           away, so the page opens on what needs a person and what came in. */}

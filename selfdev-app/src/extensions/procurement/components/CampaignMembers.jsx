@@ -293,6 +293,8 @@ export function CampaignMembers({
   mode = 'members',
   // The approval, loaded once someone asks for it; asking is `onReviewWanted`.
   review = null, reviewLoading = false, onReviewWanted,
+  // The positions whose approval is open in the table, reported as they change.
+  onReviewOpen,
   // Open escalations of this purchase, per position.
   escalationsByCard = new Map(),
   // Confirmed companies with no address in the allowed channels, per position.
@@ -360,6 +362,19 @@ export function CampaignMembers({
       ? stepRows.filter(member => contentFor(member).webPrices > 0)
       : stepRows
   const anyHas = rows.some(member => contentFor(member)[mode] > 0)
+  // The approvals open in the table: what the page's «Согласовать» acts on
+  // when pressed from here, and nothing else.
+  const openReviews = rows
+    .filter(member => {
+      const content = contentFor(member)
+      const rowOpen = resolveOpen(current.rows, member.cardId, rowOpenByMode(mode, content, { anyHas }))
+      return rowOpen && resolveOpen(current.sections, `${member.cardId}:review`, sectionOpenByMode(mode, 'review', content))
+    })
+    .map(member => member.cardId)
+  const openReviewsKey = openReviews.join(',')
+  useEffect(() => {
+    onReviewOpen?.(openReviewsKey ? openReviewsKey.split(',').map(Number) : [])
+  }, [openReviewsKey, onReviewOpen])
   const visible = rows.map(member => member.cardId)
   const allVisible = visible.length > 0 && visible.every(cardId => selected.has(cardId))
   const pick = cardId => setSelected(current => {
