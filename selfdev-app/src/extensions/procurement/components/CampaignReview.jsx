@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -242,6 +242,7 @@ export function ReviewItem({ review, item }) {
       <div className="pr-pos-review__head">
         <b>RFQ</b>
         {rfqBadge}
+        {rfq.editedAt && <span className="pr-pos-review__muted" title="Текст правили вручную, а не система">изменён вручную {new Date(rfq.editedAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>}
         {/* A fold, drawn like the escalation's «Решить»: the chevron says
             whether the letter is open. */}
         {rfq.subject && <button
@@ -249,7 +250,9 @@ export function ReviewItem({ review, item }) {
           className="pr-supplier-line__toggle pr-pos-review__out"
           aria-expanded={Boolean(opened[item.cardId])}
           onClick={() => setOpened(current => ({ ...current, [item.cardId]: !current[item.cardId] }))}
-        >{opened[item.cardId] ? <ChevronDown size={13} /> : <ChevronRight size={13} />}Текст</button>}
+        >{opened[item.cardId] ? <ChevronDown size={13} /> : <ChevronRight size={13} />}Текст{rfq.status !== 'APPROVED' && rfq.documentFingerprint
+          && (!review.rfqWasSeen(rfq.documentFingerprint, 'english') || (rfq.russian && !review.rfqWasSeen(rfq.documentFingerprint, 'russian')))
+          && <i className="pr-review-rfq__unread" aria-label="есть непрочитанный текст" />}</button>}
         <RouterLinkButton className={rfq.subject ? undefined : 'pr-pos-review__out'} size="sm" variant="ghost" to={`/procurement/requests/${item.cardId}/rfq`}><ExternalLink size={13} />RFQ</RouterLinkButton>
         {/* Last: the one thing on the line that may be cut short. */}
         {rfq.subject && <span className="pr-pos-review__subject" title={rfq.subject}>{rfq.subject}</span>}
@@ -264,7 +267,7 @@ export function ReviewItem({ review, item }) {
             disabled={!canWriteCards || apply.isPending}
             onChange={event => tickRfq(item.cardId, event.target.checked)}
           />
-          <span>Согласовать этот текст</span>
+          <span>{rfq.russian ? 'Согласовать оба текста: English и Русский' : 'Согласовать этот текст'}</span>
         </label>
         : <p className="pr-note">{item.normalization ? 'RFQ появится, когда идентичность вещества будет подтверждена.' : 'RFQ ещё не подготовлен — «Подготовить RFQ» на панели внизу.'}</p>)}
     </div>}
@@ -286,6 +289,13 @@ function RfqText({ review, item, rfq }) {
     russian: rfq.russian,
   }
   const current = versions[shown]
+  const fingerprint = rfq.documentFingerprint
+  const { markRfqSeen, rfqWasSeen } = review
+  useEffect(() => {
+    if (fingerprint && current) markRfqSeen(fingerprint, shown)
+  }, [fingerprint, shown, current, markRfqSeen])
+  // Lit only while there is something to approve: once approved, unread is history.
+  const unread = name => rfq.status !== 'APPROVED' && fingerprint && !rfqWasSeen(fingerprint, name)
   const save = useMutation({
     mutationFn: () => procurementApi.editRFQ(item.cardId, {
       [shown]: { subject: draft.subject, bodyMarkdown: draft.bodyMarkdown },
@@ -303,7 +313,8 @@ function RfqText({ review, item, rfq }) {
         className={shown === name ? 'is-on' : undefined}
         disabled={save.isPending}
         onClick={() => pick(name)}
-      >{label}</button>)}
+        title={unread(name) ? 'Ещё не открывали — согласование одобрит и этот текст' : undefined}
+      >{label}{unread(name) && <i className="pr-review-rfq__unread" aria-label="не просмотрено" />}</button>)}
       {review.canWriteCards && !draft && current && <Button size="sm" variant="ghost" onPress={() => setDraft({ ...current })}>Править</Button>}
     </div>
     {draft

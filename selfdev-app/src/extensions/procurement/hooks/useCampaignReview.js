@@ -83,6 +83,14 @@ export function useCampaignReview(campaignId, { enabled = true } = {}) {
   // Whether a person changed anything the suggestion put there: only then is
   // leaving the page a loss worth asking about.
   const [touched, setTouched] = useState(false)
+  // Which RFQ letters were shown, per approved document: one tick approves
+  // both, and the Russian one is easily approved unread. Kept for the page's
+  // life only.
+  const [rfqSeen, setRfqSeen] = useState({})
+  const markRfqSeen = useCallback((fingerprint, version) => setRfqSeen(current => (
+    current[`${fingerprint}:${version}`] ? current : { ...current, [`${fingerprint}:${version}`]: true }
+  )), [])
+  const rfqWasSeen = (fingerprint, version) => Boolean(rfqSeen[`${fingerprint}:${version}`])
 
   const query = useQuery({
     queryKey: procurementKeys.campaignReview(campaignId),
@@ -230,7 +238,7 @@ export function useCampaignReview(campaignId, { enabled = true } = {}) {
     verdicts, rfqs, opened, setOpened, revising, setRevising,
     applied, appliedById, dispatched, posted, touched,
     prepare, apply, identity, decisions, candidateCount, rfqCount, missingRfqs,
-    openTargets, setAll, suggestAll, choose, tickRfq, reset,
+    openTargets, setAll, suggestAll, choose, tickRfq, reset, markRfqSeen, rfqWasSeen,
     canReviewSourcing, canWriteCards,
   }
 }
