@@ -1721,3 +1721,4 @@ a.pr-supplier-line__channel:hover { color: var(--pr-text); }
 .pr-review-rfq__edit textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; resize: vertical; }
 .pr-review-rfq .pr-review-rfq__body { margin: 0; }
 .pr-review-rfq__unread { display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--pr-warning); vertical-align: middle; }
+.pr-web-offers__unpriced { margin: 8px 0 0; }

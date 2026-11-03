@@ -130,6 +130,20 @@ export function webOfferRows(run) {
     rank(left.unitPrice) - rank(right.unitPrice) || rank(left.amount) - rank(right.amount))
 }
 
+/** The sellers whose pages show packs and no price, one line each: Rearus's
+ * five packs read as five rows of «цена не указана» above the prices. */
+export function unpricedSellers(rows = []) {
+  const bySeller = new Map()
+  for (const row of rows) {
+    if (row.amount != null) continue
+    const seller = bySeller.get(row.candidateId) || { seller: row.seller, candidateId: row.candidateId, url: row.url, packs: 0, availability: null }
+    seller.packs += 1
+    seller.availability = seller.availability || (row.availability !== 'UNKNOWN' ? row.availability : null)
+    bySeller.set(row.candidateId, seller)
+  }
+  return [...bySeller.values()]
+}
+
 const money = (value, currency) =>
   `${Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${currency === 'RUB' ? '₽' : currency || ''}`.trim()
 

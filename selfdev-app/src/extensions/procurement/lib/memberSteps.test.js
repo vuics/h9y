@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { memberStep, memberStepCounts, stepSquares, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, webOfferRows, webPriceLine, webPriceSummary } from './memberSteps.js'
+import { memberStep, memberStepCounts, stepSquares, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, unpricedSellers, webOfferRows, webPriceLine, webPriceSummary } from './memberSteps.js'
 
 test('a position stands on the step its stage has reached', () => {
   assert.equal(memberStep({ stage: 'QUEUED' }), 'search')
@@ -129,4 +129,17 @@ test('a step draws a square per position, and a number past the limit', () => {
   const many = stepSquares({ count: 40, waiting: 0, again: 0 }, 18)
   assert.equal(many.kinds.length, 17)
   assert.equal(many.more, 23)
+})
+
+test('sellers with packs and no price are one line each, not a row a pack', () => {
+  const rows = [
+    { candidateId: 'R', seller: 'Реарус', amount: null, availability: 'ON_ORDER', url: 'https://rearus.ru/1' },
+    { candidateId: 'R', seller: 'Реарус', amount: null, availability: 'ON_ORDER' },
+    { candidateId: 'M', seller: 'Молекулаб', amount: 1344.9, availability: 'ON_ORDER' },
+    { candidateId: 'G', seller: 'Гермеон', amount: null, availability: 'UNKNOWN' },
+  ]
+  assert.deepEqual(unpricedSellers(rows), [
+    { seller: 'Реарус', candidateId: 'R', url: 'https://rearus.ru/1', packs: 2, availability: 'ON_ORDER' },
+    { seller: 'Гермеон', candidateId: 'G', url: undefined, packs: 1, availability: null },
+  ])
 })
