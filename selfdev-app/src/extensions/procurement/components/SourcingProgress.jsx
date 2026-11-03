@@ -27,6 +27,7 @@ const contactScanLabels = {
   RUNNING: 'Собираем контакты',
   COMPLETED: 'Сбор контактов завершён',
   CANCELLED: 'Сбор контактов остановлен пользователем',
+  INTERRUPTED: 'Сбор контактов прерван перезапуском',
 }
 
 export function ContactScanProgress({ run }) {
