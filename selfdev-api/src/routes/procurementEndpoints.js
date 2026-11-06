@@ -131,6 +131,7 @@ export const PROCUREMENT_ENDPOINTS = [
   { method: 'POST', path: '/negotiations/{negotiation_id}/drafts' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/follow-up' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/messages/{communication_id}/translation' },
+  { method: 'POST', path: '/negotiations/{negotiation_id}/messages/{communication_id}/undelivered' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/queue' },
   { method: 'POST', path: '/negotiations/{negotiation_id}/responses' },
   { method: 'GET', path: '/negotiations/{negotiation_id}/web-form' },
