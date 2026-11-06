@@ -22,7 +22,7 @@ This protects Vuics LLC’s IP while allowing contributors to participate safely
 
 * **Contribution:** Any work of authorship, including code, documentation, designs, or other materials submitted to the Work.  
 * **Work:** HyperAgency Agentic AI OS, including all modules, submodules, and derivative works.  
-* **Licensor:** Vuics LLC, copyright holder.  
+* **Licensor:** Vuics LLC, licensing the Work under license from the copyright holder, Artem Arakcheev.  
 * **Contributor:** Individual or entity submitting a Contribution.
 
 ---
