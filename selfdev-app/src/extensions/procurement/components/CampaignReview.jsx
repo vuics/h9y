@@ -121,7 +121,8 @@ function VerdictRadios({ review, item, candidate }) {
 
 const bestOfferLine = offers => {
   const best = offers[0]
-  return [webOfferPrice(best), best.pack, webOfferStock(best)].filter(Boolean).join(' · ') + (offers.length > 1 ? ` · ещё ${offers.length - 1}` : '')
+  // Bulk packs come last, so a bag leads only where it is all the seller has.
+  return [webOfferPrice(best), best.pack, best.bulk && 'крупная фасовка', webOfferStock(best)].filter(Boolean).join(' · ') + (offers.length > 1 ? ` · ещё ${offers.length - 1}` : '')
 }
 
 const CONTACT_LIMIT = 4

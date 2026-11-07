@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { memberStep, memberStepCounts, stepSquares, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, unpricedSellers, webOfferRows, webPriceLine, webPriceSummary } from './memberSteps.js'
+import { bulkSellers, memberStep, memberStepCounts, stepSquares, memberWaitsOnStep, priceStrip, stepOfFilter, stepsBeyondReach, unpricedSellers, webOfferRows, webPriceLine, webPriceSummary } from './memberSteps.js'
 
 test('a position stands on the step its stage has reached', () => {
   assert.equal(memberStep({ stage: 'QUEUED' }), 'search')
@@ -142,4 +142,16 @@ test('sellers with packs and no price are one line each, not a row a pack', () =
     { seller: 'Реарус', candidateId: 'R', url: 'https://rearus.ru/1', packs: 2, availability: 'ON_ORDER' },
     { seller: 'Гермеон', candidateId: 'G', url: undefined, packs: 1, availability: null },
   ])
+})
+
+test('sellers of packs far beyond the card are one line each, with what they offer', () => {
+  const rows = [
+    { candidateId: 'S', seller: 'СкладКстово', amount: 725000, pack: 'Мешок 25 кг', bulk: true, url: 'https://chemm.ru/1' },
+    { candidateId: 'L', seller: 'Лабтех', amount: 900, pack: '5 г', bulk: false },
+  ]
+  const [bag] = bulkSellers(rows)
+  assert.equal(bulkSellers(rows).length, 1)
+  assert.equal(bag.seller, 'СкладКстово')
+  assert.deepEqual(bag.offers.map(offer => offer.pack), ['Мешок 25 кг'])
+  assert.deepEqual(bulkSellers([]), [])
 })

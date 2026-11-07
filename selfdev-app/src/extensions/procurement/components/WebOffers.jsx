@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
-import { priceStrip, unpricedSellers, webOfferRows } from '../lib/memberSteps'
+import { bulkSellers, priceStrip, unpricedSellers, webOfferRows } from '../lib/memberSteps'
 import { ExternalLink, Refresh } from './icons'
 
 const AVAILABILITY = { IN_STOCK: 'в наличии', ON_ORDER: 'под заказ', OUT_OF_STOCK: 'нет в наличии' }
@@ -72,8 +72,9 @@ export function WebOffers({ cardId, runId = null }) {
       ? <p className="pr-note pr-web-offers__pending"><Refresh size={14} className="pr-spin" />Поиск ещё идёт — цены с сайтов появятся, когда он закончится.</p>
       : <p className="pr-note">Цен для показа нет: страницы продавцов не загрузились или в них нет цены этого вещества.</p>
   }
-  const priced = rows.filter(offer => offer.amount != null)
-  const unpriced = unpricedSellers(rows)
+  const priced = rows.filter(offer => offer.amount != null && !offer.bulk)
+  const unpriced = unpricedSellers(rows.filter(offer => !offer.bulk))
+  const bulk = bulkSellers(rows)
   return <div className="pr-member-offers pr-web-offers">
     <p className="pr-note">Как опубликовано на странице; это не коммерческое предложение, наличие и цену подтвердит поставщик.</p>
     <PriceStrip rows={priced} />
@@ -98,6 +99,13 @@ export function WebOffers({ cardId, runId = null }) {
         {index > 0 && ', '}
         {item.url ? <a href={item.url} target="_blank" rel="noreferrer">{item.seller}</a> : item.seller}
         {[item.packs > 1 && `${item.packs} фас.`, webOfferStock(item)].filter(Boolean).length > 0 && ` (${[item.packs > 1 && `${item.packs} фас.`, webOfferStock(item)].filter(Boolean).join(', ')})`}
+      </React.Fragment>)}
+    </p>}
+    {bulk.length > 0 && <p className="pr-note pr-web-offers__unpriced">
+      Крупная фасовка, не под нужный объём: {bulk.map((item, index) => <React.Fragment key={item.candidateId}>
+        {index > 0 && ', '}
+        {item.url ? <a href={item.url} target="_blank" rel="noreferrer">{item.seller}</a> : item.seller}
+        {` (${item.offers.map(offer => [offer.pack, offer.amount != null && webOfferPrice(offer)].filter(Boolean).join(', ')).join('; ')})`}
       </React.Fragment>)}
     </p>}
   </div>

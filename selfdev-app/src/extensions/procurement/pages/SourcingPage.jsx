@@ -423,7 +423,7 @@ export default function SourcingPage() {
               <KnownSupplierNote known={candidate.knownSupplier} requestedCas={run.requestedCas} />
               {candidate.webOffers?.length > 0 && <ul className="pr-candidate-offers">{candidate.webOffers.map(offer => <li key={offer.id}>
                 <a href={offer.url} target="_blank" rel="noreferrer" title={offer.quote}>{webOfferPrice(offer)}</a>
-                {[offer.pack, webOfferUnitPrice(offer), offer.purity, offer.brand, webOfferStock(offer)].filter(Boolean).map(part => ` · ${part}`).join('')}
+                {[offer.pack, offer.bulk && 'крупная фасовка', webOfferUnitPrice(offer), offer.purity, offer.brand, webOfferStock(offer)].filter(Boolean).map(part => ` · ${part}`).join('')}
               </li>)}</ul>}
               <div className="pr-sourcing-signal-grid"><SignalList title="Надёжность" items={candidate.reliabilitySignals} tone="good" /><SignalList title="Риски" items={candidate.riskSignals} tone="risk" /><SignalList title="Пробелы" items={candidate.evidenceGaps} tone="gap" /></div>
               <ContactList contacts={candidate.contacts} />

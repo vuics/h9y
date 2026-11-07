@@ -144,6 +144,20 @@ export function unpricedSellers(rows = []) {
   return [...bySeller.values()]
 }
 
+/** Sellers whose packs are far beyond what the card asks for, one line each,
+ * with what they offer: a 25 kg bag of a standard asked for by the gram is worth
+ * knowing about, and nothing to compare a vial's price with. */
+export function bulkSellers(rows = []) {
+  const bySeller = new Map()
+  for (const row of rows) {
+    if (!row.bulk) continue
+    const seller = bySeller.get(row.candidateId) || { seller: row.seller, candidateId: row.candidateId, url: row.url, offers: [] }
+    seller.offers.push(row)
+    bySeller.set(row.candidateId, seller)
+  }
+  return [...bySeller.values()]
+}
+
 const money = (value, currency) =>
   `${Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${currency === 'RUB' ? '₽' : currency || ''}`.trim()
 
