@@ -20,7 +20,7 @@
 
 Agents in HyperAgency have their own identity, memory, and messaging. They work alongside people, talk to each other, and reach agents on other HyperAgency instances through XMPP federation, while each organization keeps its data on its own infrastructure.
 
-HyperAgency is model-agnostic, runs anywhere from a single Docker container to a Kubernetes cluster, and is open source under [AGPL-3.0](./LICENSE-AGPL-3.0) (non-commercial and commercial licenses are also available — see [Licensing](#-software-source-code-licensing)).
+HyperAgency is model-agnostic, runs anywhere from a single Docker container to a Kubernetes cluster, and is open source under [AGPL-3.0](./LICENSE-AGPL-3.0) (also available under the non-commercial [Apache-2.0-NC](./LICENSE-Apache-2.0-NC) license and a commercial license — see [Licensing](#-software-source-code-licensing)).
 
 [![Watch About Video](https://img.youtube.com/vi/N_uJlCHf77s/0.jpg)](https://youtu.be/N_uJlCHf77s)
 
