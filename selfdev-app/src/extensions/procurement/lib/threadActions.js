@@ -56,6 +56,8 @@ export function primaryAction(thread, { decidable = new Set() } = {}) {
   if (pending) return { kind: 'decide', label: 'Решить', escalationId: pending.id }
   if (thread.automationPaused) return { kind: 'resume', label: 'Возобновить' }
   switch (thread.waitingFor) {
+    case 'UNDELIVERED':
+      return { kind: 'channel', label: 'Сменить канал' }
     case 'SEND':
       return { kind: 'send', label: 'Отправить' }
     case 'WEB_FORM':
@@ -81,6 +83,7 @@ export function menuActions(thread) {
   if (live && !thread.automationPaused && thread.status === 'QUEUED' && thread.waitingFor !== 'WEB_FORM') {
     items.push({ kind: 'remind', label: 'Отправить сейчас' })
   }
+  if (live && thread.waitingFor !== 'UNDELIVERED') items.push({ kind: 'channel', label: 'Сменить канал…' })
   items.push({ kind: 'link', label: 'Открыть переписку', to: `/procurement/negotiations/${thread.assignmentId}` })
   if (live) items.push({ kind: 'close', label: 'Закрыть переписку…', danger: true })
   return items
@@ -111,3 +114,18 @@ export function sendOutcome(result, assignmentId) {
 
 /** How many of a position's conversations a «закрыть все» would end. */
 export const liveCount = threads => threads.filter(isLive).length
+
+/** Whether a conversation may be sent again right after its channel changes.
+ *
+ * An escalated one waits for its case to be decided; one already queued goes
+ * on its own; a prepared one is sent by «Отправить», which checks the RFQ.
+ */
+export const canResendAfterChannel = thread =>
+  ['ACTIVE', 'WAITING_SUPPLIER', 'FOLLOW_UP_DUE'].includes(thread.status) && !thread.automationPaused
+
+/** The addresses a conversation can move to: usable, and not the one it is on. */
+export function channelChoices(contacts = [], currentContactId) {
+  return contacts
+    .filter(contact => contact.usable && contact.contactId !== currentContactId)
+    .sort((left, right) => Number(Boolean(right.workerDispatch)) - Number(Boolean(left.workerDispatch)))
+}

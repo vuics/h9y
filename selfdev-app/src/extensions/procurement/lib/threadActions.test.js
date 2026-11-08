@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { endedNote, liveCount, menuActions, primaryAction, sendOutcome } from './threadActions.js'
+import { canResendAfterChannel, channelChoices, endedNote, liveCount, menuActions, primaryAction, sendOutcome } from './threadActions.js'
 
 const thread = extra => ({ assignmentId: 'NEG-1', status: 'WAITING_SUPPLIER', events: [], ...extra })
 const kinds = items => items.map(item => `${item.kind}:${item.label}`)
@@ -48,13 +48,13 @@ test('an ended conversation has no button and nothing to close', () => {
 
 test('the menu offers to stop a running agent, chase a silent supplier, and close', () => {
   assert.deepEqual(kinds(menuActions(thread())), [
-    'pause:Остановить агента', 'remind:Напомнить сейчас', 'link:Открыть переписку', 'close:Закрыть переписку…',
+    'pause:Остановить агента', 'remind:Напомнить сейчас', 'channel:Сменить канал…', 'link:Открыть переписку', 'close:Закрыть переписку…',
   ])
 })
 
 test('a stopped agent is resumed from the menu and sends nothing until it is', () => {
   assert.deepEqual(kinds(menuActions(thread({ automationPaused: true }))), [
-    'resume:Возобновить агента', 'link:Открыть переписку', 'close:Закрыть переписку…',
+    'resume:Возобновить агента', 'channel:Сменить канал…', 'link:Открыть переписку', 'close:Закрыть переписку…',
   ])
 })
 
@@ -81,4 +81,27 @@ test('a send from the line reports what became of that one letter', () => {
 
 test('«закрыть все» counts only what is still open', () => {
   assert.equal(liveCount([thread(), thread({ status: 'COMPLETE' }), thread({ status: 'READY' })]), 2)
+})
+
+test('a letter that bounced asks for another channel, not for patience', () => {
+  const stuck = thread({ waitingFor: 'UNDELIVERED', awaitingPerson: true })
+  assert.deepEqual(primaryAction(stuck), { kind: 'channel', label: 'Сменить канал' })
+  // Offered once, as the button; the menu does not repeat it.
+  assert.ok(!menuActions(stuck).some(item => item.kind === 'channel'))
+})
+
+test('the channels offered are the usable other ones, those the worker can send first', () => {
+  const contacts = [
+    { contactId: 'A', usable: true, workerDispatch: true },
+    { contactId: 'B', usable: true, workerDispatch: false },
+    { contactId: 'C', usable: false, workerDispatch: true },
+    { contactId: 'D', usable: true, workerDispatch: true },
+  ]
+  assert.deepEqual(channelChoices(contacts, 'A').map(item => item.contactId), ['D', 'B'])
+})
+
+test('only a conversation waiting on the supplier is sent again on the new channel', () => {
+  assert.equal(canResendAfterChannel(thread()), true)
+  assert.equal(canResendAfterChannel(thread({ status: 'ESCALATED' })), false)
+  assert.equal(canResendAfterChannel(thread({ automationPaused: true })), false)
 })

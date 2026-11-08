@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom'
 
 import { procurementApi } from '../api/client'
 import { procurementKeys } from '../api/queryKeys'
-import { channelLabel } from '../lib/thread'
+import { channelLabel, contactWarning } from '../lib/thread'
 import { rfqVersionText } from '../lib/rfqVersions'
-import { CLOSE_REASONS, menuActions, sendOutcome } from '../lib/threadActions'
+import { CLOSE_REASONS, canResendAfterChannel, channelChoices, menuActions, sendOutcome } from '../lib/threadActions'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { RowMenu } from './RowMenu'
@@ -83,8 +83,25 @@ export function useConversationActions(campaignId) {
     },
     onError: failed('Не закрыто'),
   })
-  const pending = [send, automation, remind, close, closeAll].some(mutation => mutation.isPending)
-  return { send, automation, remind, close, closeAll, outcomes, forget, pending }
+  // Moved to another address, and — when the supplier is waited on — written
+  // to there at once: the server sends the request itself if no letter ever
+  // arrived, and a reminder only if one did.
+  const channel = useMutation({
+    mutationFn: async ({ assignmentId, contactId, resend }) => {
+      await procurementApi.setNegotiationChannel(assignmentId, contactId)
+      if (resend) await procurementApi.queueNegotiation(assignmentId, { priority: 50, next_action_at: null })
+    },
+    onSuccess: (_result, { key, resend }) => {
+      report(key, { tone: 'success', text: resend ? 'Канал сменён, письмо поставлено на отправку.' : 'Канал сменён.' })
+      refresh()
+    },
+    onError: (error, variables) => {
+      report(variables.key, { tone: 'danger', text: `Не сменено: ${failureText(error)}` })
+      refresh()
+    },
+  })
+  const pending = [send, automation, remind, close, closeAll, channel].some(mutation => mutation.isPending)
+  return { send, automation, remind, close, closeAll, channel, outcomes, forget, pending }
 }
 
 /** The line's button and its «⋮»: one thing it waits on, the rest tucked away. */
@@ -133,6 +150,53 @@ export function SendPreview({ thread, cardId, onSend, onCancel, pending }) {
     <div className="pr-line-panel__bar">
       <Button size="sm" isDisabled={pending || !text} onPress={onSend}>{pending ? 'Отправляем…' : 'Отправить'}</Button>
       <Link to={`/procurement/negotiations/${thread.assignmentId}`}>Открыть переписку</Link>
+      <Button size="sm" variant="ghost" onPress={onCancel}>Отмена</Button>
+    </div>
+  </div>
+}
+
+/** Another address for a conversation, chosen from the supplier's own. */
+export function ChannelPanel({ thread, onChange, onCancel, pending }) {
+  const negotiation = useQuery({
+    queryKey: procurementKeys.negotiation(thread.assignmentId),
+    queryFn: ({ signal }) => procurementApi.negotiation(thread.assignmentId, signal),
+  })
+  const contacts = negotiation.data?.contacts || []
+  const current = contacts.find(contact => contact.isCurrent)
+  const choices = channelChoices(contacts, current?.contactId)
+  const [picked, setPicked] = useState('')
+  const resendable = canResendAfterChannel(thread)
+  const choose = resend => onChange({ contactId: picked, resend })
+  return <div className="pr-line-panel">
+    <p className="pr-line-panel__title">
+      Сменить канал для <b>{thread.supplierName || thread.assignmentId}</b>
+      {current && <> · сейчас {channelLabel(current.channel)} {current.address}</>}
+    </p>
+    {thread.waitingFor === 'UNDELIVERED' && <p className="pr-muted">
+      Последнее письмо в этом канале не доставлено. Если до поставщика не дошло ни одно письмо, в новом канале уйдёт сам запрос, а не напоминание.
+    </p>}
+    {negotiation.isLoading
+      ? <p className="pr-muted">Загружаем контакты…</p>
+      : choices.length
+        ? <fieldset className="pr-line-panel__reasons pr-line-panel__contacts">
+          <legend>Куда писать</legend>
+          {choices.map(contact => {
+            const warning = contactWarning(contact)
+            return <label key={contact.contactId} title={warning || undefined}>
+              <input type="radio" name={`channel-${thread.assignmentId}`} value={contact.contactId} checked={picked === contact.contactId} onChange={() => setPicked(contact.contactId)} />
+              {channelLabel(contact.channel)} · {contact.address}
+              {warning && <span className="pr-muted"> — {warning}</span>}
+            </label>
+          })}
+        </fieldset>
+        : <p>Других рабочих контактов у поставщика нет. <Link to={`/procurement/suppliers/${thread.supplierId}`}>Добавить контакт</Link> или закройте переписку.</p>}
+    <div className="pr-line-panel__bar">
+      {choices.length > 0 && resendable && <Button size="sm" isDisabled={pending || !picked} onPress={() => choose(true)}>
+        {pending ? 'Меняем…' : 'Сменить и отправить'}
+      </Button>}
+      {choices.length > 0 && <Button size="sm" variant={resendable ? 'outline' : 'default'} isDisabled={pending || !picked} onPress={() => choose(false)}>
+        {resendable ? 'Только сменить' : pending ? 'Меняем…' : 'Сменить'}
+      </Button>}
       <Button size="sm" variant="ghost" onPress={onCancel}>Отмена</Button>
     </div>
   </div>

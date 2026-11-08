@@ -21,7 +21,7 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { escalationKind } from '../lib/escalation'
 import { EscalationQuick } from './EscalationQuick'
 import { ThreadRibbon } from './ThreadRibbon'
-import { ClosePanel, LineControls, LineOutcome, SendPreview, useConversationActions } from './ThreadLineControls'
+import { ChannelPanel, ClosePanel, LineControls, LineOutcome, SendPreview, useConversationActions } from './ThreadLineControls'
 import { endedNote, liveCount, primaryAction } from '../lib/threadActions'
 import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { longestSilence } from '../lib/threadRibbon'
@@ -40,6 +40,7 @@ const WAITING_FOR = {
   PAUSED: 'агент остановлен',
   WEB_FORM: 'заполнить веб-форму',
   REPLY: 'ответ ждёт решения',
+  UNDELIVERED: 'не доставлено',
 }
 
 /** What a person says about a conversation's state, in the row's own words. */
@@ -129,6 +130,7 @@ function MemberSections({
     switch (action.kind) {
       case 'send':
       case 'close':
+      case 'channel':
         setPanel(current => (current?.key === key && current.kind === action.kind ? null : { key, kind: action.kind }))
         break
       case 'decide':
@@ -238,6 +240,17 @@ function MemberSections({
                 pending={actions.send.isPending}
                 onCancel={() => setPanel(null)}
                 onSend={() => actions.send.mutate({ key, assignmentId: key }, { onSettled: () => setPanel(null) })}
+              />
+            </li>}
+            {panel?.key === key && panel.kind === 'channel' && <li className="pr-supplier-line__panel">
+              <ChannelPanel
+                thread={thread}
+                pending={actions.channel.isPending}
+                onCancel={() => setPanel(null)}
+                onChange={({ contactId, resend }) => actions.channel.mutate(
+                  { key, assignmentId: key, contactId, resend },
+                  { onSuccess: () => setPanel(null) },
+                )}
               />
             </li>}
             {panel?.key === key && panel.kind === 'close' && <li className="pr-supplier-line__panel">
