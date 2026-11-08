@@ -64,8 +64,17 @@ export const campaignEndpoints = {
     (campaignId, signal) => request(`/campaigns/${id(campaignId)}/conversations`, { signal }),
     async campaignId => (await fixtures()).campaignConversationsFixture(campaignId),
   ),
-  sendCampaignConversations: mutation(campaignId =>
-    request(`/campaigns/${id(campaignId)}/conversations/send`, { method: 'post' })),
+  // All prepared letters, or only the named ones: one supplier's letter sent
+  // from its line passes the same RFQ check as the batch.
+  sendCampaignConversations: mutation((campaignId, assignmentIds) =>
+    request(`/campaigns/${id(campaignId)}/conversations/send`, {
+      method: 'post', ...(assignmentIds ? { data: { assignmentIds } } : {}),
+    })),
+  // Every live conversation of one position, ended with a reason.
+  closeCampaignConversations: mutation((campaignId, { cardId, reason, note }) =>
+    request(`/campaigns/${id(campaignId)}/conversations/close`, {
+      method: 'post', data: { cardId, reason, note: note || null },
+    })),
   // Requests on the marketplace, which are not conversations: one per
   // substance, published to every seller, with no contact behind them. The
   // read answers from the cards, so it still works while the browser worker

@@ -378,7 +378,7 @@ export default function CampaignPage() {
     },
   })
   const sendPrepared = useMutation({
-    mutationFn: () => procurementApi.sendCampaignConversations(campaignId),
+    mutationFn: () => procurementApi.sendCampaignConversations(campaignId, null),
     onSuccess: result => {
       queryClient.setQueryData(procurementKeys.campaignConversations(campaignId), result.conversations)
       queryClient.invalidateQueries({ queryKey: procurementKeys.campaign(campaignId) })

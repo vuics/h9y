@@ -278,6 +278,7 @@ export function campaignConversationsFixture(campaignId) {
         automationPaused: false,
         answered: false,
         awaitingPerson: true,
+        waitingFor: 'SEND',
       },
       // And one that is not a letter at all: the supplier declined and the
       // agent was stopped on it. «Отправить» cannot settle it; its page can.
@@ -291,6 +292,7 @@ export function campaignConversationsFixture(campaignId) {
         automationPaused: true,
         answered: true,
         awaitingPerson: true,
+        waitingFor: 'PAUSED',
         events: [
           ribbonMessage('C1', 'OUTBOUND', 9, 'Request for quotation: CAS 64-17-5'),
           ribbonMessage('C2', 'INBOUND', 7, 'Could you confirm the quantity and purity?'),

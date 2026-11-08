@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -6,7 +6,8 @@ import { StatusBadge } from './StatusBadge'
 import { CampaignMemberProgress } from './CampaignMemberProgress'
 import { WebOffers } from './WebOffers'
 import { NormalizedMark } from './NormalizedMark'
-import { ChevronDown, ChevronRight, MoreVertical } from './icons'
+import { ChevronDown, ChevronRight } from './icons'
+import { RowMenu } from './RowMenu'
 import { readableAgentError } from '../lib/agentText'
 import { memberPhase, phaseLabel, phaseOfFilter } from '../lib/campaignPhases'
 import { memberStep, stepLabel, stepOfFilter, webPriceLine, webPriceSummary } from '../lib/memberSteps'
@@ -20,6 +21,9 @@ import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { escalationKind } from '../lib/escalation'
 import { EscalationQuick } from './EscalationQuick'
 import { ThreadRibbon } from './ThreadRibbon'
+import { ClosePanel, LineControls, LineOutcome, SendPreview, useConversationActions } from './ThreadLineControls'
+import { endedNote, liveCount, primaryAction } from '../lib/threadActions'
+import { useProcurementPermissions } from '../hooks/useProcurementPermissions'
 import { longestSilence } from '../lib/threadRibbon'
 import {
   filterMembers, foundSummary, marketplaceWaits, memberGroup, needsMarketplaceAction,
@@ -27,46 +31,8 @@ import {
 } from '../lib/campaignView'
 import { plural } from './SourcingSettings'
 
-/** The per-substance actions nobody needs while reading the table.
- *
- * Positioned against the viewport rather than the row: the table scrolls
- * inside its own box, and a menu laid out inside it is cut off at the edge.
- */
-function RowMenu({ label, children }) {
-  const [at, setAt] = useState(null)
-  const button = useRef(null)
-  const menu = useRef(null)
-  useEffect(() => {
-    if (!at) return undefined
-    const close = event => {
-      if (event.type === 'keydown' ? event.key === 'Escape' : !menu.current?.contains(event.target)) setAt(null)
-    }
-    document.addEventListener('mousedown', close)
-    document.addEventListener('keydown', close)
-    window.addEventListener('scroll', () => setAt(null), { once: true, capture: true })
-    return () => {
-      document.removeEventListener('mousedown', close)
-      document.removeEventListener('keydown', close)
-    }
-  }, [at])
-  const open = () => {
-    const rect = button.current?.getBoundingClientRect()
-    setAt(rect ? { top: rect.bottom + 6, right: Math.max(8, window.innerWidth - rect.right) } : null)
-  }
-  return <>
-    <button
-      ref={button}
-      type="button"
-      className="pr-row-menu__trigger"
-      aria-label={label}
-      aria-expanded={Boolean(at)}
-      onClick={() => (at ? setAt(null) : open())}
-    ><MoreVertical size={16} /></button>
-    {at && <div ref={menu} className="pr-row-menu" role="menu" style={{ top: at.top, right: at.right }} onClick={() => setAt(null)}>
-      {children}
-    </div>}
-  </>
-}
+/** The panel key for the position as a whole, apart from any one conversation. */
+const ALL = '__position__'
 
 /** What a person is to do on a conversation, when it waits for them. */
 const WAITING_FOR = {
@@ -86,7 +52,8 @@ const threadLabel = (thread, labels) => (thread.awaitingPerson
  * Laid out on the list's shared columns, so the marks of every supplier start
  * at the same place and the lines can be compared by eye.
  */
-function SupplierLine({ thread, offer, labels, decidable, onDecide }) {
+function SupplierLine({ thread, offer, labels, decidable, onDecide, controls }) {
+  const ended = endedNote(thread)
   return <li className={thread.awaitingPerson ? 'pr-supplier-line is-waiting' : 'pr-supplier-line'}>
     <Link to={`/procurement/negotiations/${thread.assignmentId}`} title={thread.supplierName || thread.assignmentId}>{thread.supplierName || thread.assignmentId}</Link>
     <span className="pr-supplier-line__channel">{channelLabel(thread.channel)}</span>
@@ -95,10 +62,12 @@ function SupplierLine({ thread, offer, labels, decidable, onDecide }) {
       : <StatusBadge status={thread.status} label={threadLabel(thread, labels)} compact />}
     <span className="pr-supplier-line__history">
       <ThreadRibbon thread={thread} decidable={decidable} onDecide={onDecide} />
+      {ended && <span className="pr-primary-meta" title={ended.title}>{ended.text}</span>}
       {offer
         ? <Link className="pr-supplier-line__offer" to={`/procurement/proposals/${offer.id}`}>есть предложение{formatPrice(offer) ? ` · ${formatPrice(offer)}` : ''}</Link>
         : thread.answered && <span className="pr-primary-meta">есть ответ</span>}
     </span>
+    {controls || <span />}
   </li>
 }
 
@@ -147,6 +116,36 @@ function MemberSections({
   const openCases = new Map(escalations.map(item => [item.id, item]))
   const decidable = new Set(openCases.keys())
   const quiet = longestSilence(threads)
+  // The line's controls: whoever may queue conversations may also steer them.
+  const { canQueueNegotiations: canAct } = useProcurementPermissions()
+  const actions = useConversationActions(campaignId)
+  // One panel open at a time under the lines: a letter to read before it goes,
+  // or a close to give a reason for.
+  const [panel, setPanel] = useState(null)
+  const live = liveCount(threads)
+  const act = (thread, action) => {
+    const key = thread.assignmentId
+    actions.forget(key)
+    switch (action.kind) {
+      case 'send':
+      case 'close':
+        setPanel(current => (current?.key === key && current.kind === action.kind ? null : { key, kind: action.kind }))
+        break
+      case 'decide':
+        toggleDeciding(`line:${action.escalationId}`)
+        break
+      case 'resume':
+        actions.automation.mutate({ key, assignmentId: key, paused: false })
+        break
+      case 'pause':
+        actions.automation.mutate({ key, assignmentId: key, paused: true })
+        break
+      case 'remind':
+        actions.remind.mutate({ key, assignmentId: key })
+        break
+      default:
+    }
+  }
   return <div className="pr-member-suppliers">
     <Section
       title={`Предложения${offered.length ? ` (${offered.length})` : ''}`}
@@ -210,21 +209,73 @@ function MemberSections({
     >
       {lines.length > 0 && <ul className="pr-supplier-lines pr-supplier-lines--history">
         {lines.map(({ thread, offer }) => {
+          const key = thread.assignmentId
           const cases = (thread.events || [])
             .filter(event => event.kind === 'escalation' && deciding.has(`line:${event.id}`) && openCases.has(event.id))
-          return <React.Fragment key={thread.assignmentId}>
+          const outcome = actions.outcomes.get(key)
+          return <React.Fragment key={key}>
             <SupplierLine
               thread={thread}
               offer={offer}
               labels={threadStatusLabels}
               decidable={decidable}
               onDecide={id => toggleDeciding(`line:${id}`)}
+              controls={canAct && <LineControls
+                thread={thread}
+                primary={primaryAction(thread, { decidable })}
+                disabled={actions.pending}
+                onPrimary={action => act(thread, action)}
+                onMenu={action => act(thread, action)}
+              />}
             />
             {cases.map(event => <li key={event.id} className="pr-supplier-line__panel">
               <EscalationQuick escalation={openCases.get(event.id)} campaignId={campaignId} />
             </li>)}
+            {panel?.key === key && panel.kind === 'send' && <li className="pr-supplier-line__panel">
+              <SendPreview
+                thread={thread}
+                cardId={member.cardId}
+                pending={actions.send.isPending}
+                onCancel={() => setPanel(null)}
+                onSend={() => actions.send.mutate({ key, assignmentId: key }, { onSettled: () => setPanel(null) })}
+              />
+            </li>}
+            {panel?.key === key && panel.kind === 'close' && <li className="pr-supplier-line__panel">
+              <ClosePanel
+                subject={thread.supplierName || key}
+                pending={actions.close.isPending}
+                onCancel={() => setPanel(null)}
+                onClose={({ reason, note }) => actions.close.mutate(
+                  { key, assignmentId: key, reason, note },
+                  { onSuccess: () => setPanel(null) },
+                )}
+              />
+            </li>}
+            {outcome && <li className="pr-supplier-line__note">
+              <LineOutcome outcome={outcome} onDismiss={() => actions.forget(key)} />
+            </li>}
           </React.Fragment>
         })}
+        {canAct && live > 1 && <li className="pr-supplier-line__all">
+          <button type="button" className="pr-link-button" onClick={() => setPanel({ key: ALL, kind: 'close' })}>
+            Закрыть все переписки по позиции ({live})…
+          </button>
+        </li>}
+        {panel?.key === ALL && <li className="pr-supplier-line__panel">
+          <ClosePanel
+            subject={member.title}
+            count={live}
+            pending={actions.closeAll.isPending}
+            onCancel={() => setPanel(null)}
+            onClose={({ reason, note }) => actions.closeAll.mutate(
+              { key: ALL, cardId: member.cardId, reason, note },
+              { onSuccess: () => setPanel(null) },
+            )}
+          />
+        </li>}
+        {actions.outcomes.get(ALL) && <li className="pr-supplier-line__note">
+          <LineOutcome outcome={actions.outcomes.get(ALL)} onDismiss={() => actions.forget(ALL)} />
+        </li>}
       </ul>}
       {unreachable.length > 0 && <ul className="pr-supplier-lines">
         {/* Confirmed, and nowhere to write to in the allowed channels: the one

@@ -13,6 +13,7 @@ export const developmentCapabilities = {
       'ECHEMI_OPERATE',
       'ECHEMI_SUBMIT',
       'COMMUNICATION_READ',
+      'NEGOTIATION_QUEUE',
       'ESCALATION_READ',
       'ESCALATION_CLAIM',
       'ESCALATION_RESOLVE',

@@ -105,6 +105,11 @@ export const negotiationEndpoints = {
     request(`/negotiations/${id(negotiationId)}/automation`, {
       method: 'post', data: { paused },
     })),
+  // End one conversation for good, saying why; its unsent letters are withdrawn.
+  closeNegotiation: mutation((negotiationId, { reason, note }) =>
+    request(`/negotiations/${id(negotiationId)}/close`, {
+      method: 'post', data: { reason, note: note || null },
+    })),
   translateNegotiationMessage: mutation((negotiationId, communicationId, language = 'ru') =>
     request(`/negotiations/${id(negotiationId)}/messages/${id(communicationId)}/translation`, {
       method: 'post', data: { language },
