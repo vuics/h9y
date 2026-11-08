@@ -6,8 +6,6 @@
 
 **The open-source operating system for AI agents — multi-user, federated, and self-hosted.**
 
-[![Release](https://img.shields.io/github/v/release/vuics/h9y?style=flat)](https://github.com/vuics/h9y/releases)
-[![GitHub stars](https://img.shields.io/github/stars/vuics/h9y?style=flat)](https://github.com/vuics/h9y/stargazers)
 [![License](./images/badges/license.svg)](./LICENSE)
 [![Docs](./images/badges/docs.svg)](https://docs.h9y.ai)
 [![Paper](./images/badges/paper.svg)](https://doi.org/10.13140/RG.2.2.27454.55365)
