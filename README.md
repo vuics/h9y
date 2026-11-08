@@ -8,9 +8,9 @@
 
 [![Release](https://img.shields.io/github/v/release/vuics/h9y?style=flat)](https://github.com/vuics/h9y/releases)
 [![GitHub stars](https://img.shields.io/github/stars/vuics/h9y?style=flat)](https://github.com/vuics/h9y/stargazers)
-[![License](https://img.shields.io/badge/license-AGPL--3.0%20%7C%20NC%20%7C%20Commercial-blue?style=flat)](./LICENSE)
-[![Docs](https://img.shields.io/badge/docs-docs.h9y.ai-blue?style=flat&logo=read-the-docs)](https://docs.h9y.ai)
-[![Paper](https://img.shields.io/badge/paper-DOI-blueviolet?style=flat)](https://doi.org/10.13140/RG.2.2.27454.55365)
+[![License](./images/badges/license.svg)](./LICENSE)
+[![Docs](./images/badges/docs.svg)](https://docs.h9y.ai)
+[![Paper](./images/badges/paper.svg)](https://doi.org/10.13140/RG.2.2.27454.55365)
 
 [Website](https://h9y.ai) · [Docs](https://docs.h9y.ai) · [Quick Start](#-quick-start) · [Architecture](./docs/ARCHITECTURE.md) · [Contributing](#-contributing) · [Cloud](https://h9y.ai)
 
