@@ -248,6 +248,14 @@ export function campaignFixtureById(campaignId) {
   return campaigns.find(item => item.campaignId === String(campaignId)) || null
 }
 
+const daysAgo = days => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+
+/** One event of a conversation's row of marks, as the digest sends it. */
+const ribbonMessage = (id, direction, days, preview, extra = {}) => ({
+  kind: 'message', id: `COMM-DEMO-${id}`, at: daysAgo(days), direction, channel: 'email',
+  automatic: false, failed: false, preview, ...extra,
+})
+
 export function campaignConversationsFixture(campaignId) {
   const campaign = campaigns.find(item => item.campaignId === String(campaignId))
   if (!campaign) return null
@@ -283,6 +291,49 @@ export function campaignConversationsFixture(campaignId) {
         automationPaused: true,
         answered: true,
         awaitingPerson: true,
+        events: [
+          ribbonMessage('C1', 'OUTBOUND', 9, 'Request for quotation: CAS 64-17-5'),
+          ribbonMessage('C2', 'INBOUND', 7, 'Could you confirm the quantity and purity?'),
+          ribbonMessage('C3', 'OUTBOUND', 7, '10 kg, 99.5% min, CoA required'),
+          ribbonMessage('C4', 'INBOUND', 3, 'Sorry, we cannot offer this grade.'),
+          { kind: 'escalation', id: 'ESC-DEMO-1', at: daysAgo(3), resolved: true, title: 'Отказ поставщика: продолжать ли' },
+        ],
+        eventTotal: 5,
+      },
+      // The rows of marks the conversations section is read by: one supplier
+      // silent for over a week, one whose letter bounced, one that answered.
+      {
+        assignmentId: `NEG-${member.cardId}-${index}W`,
+        supplierId: suppliers[3 % suppliers.length].id,
+        supplierName: `${suppliers[3 % suppliers.length].name} (тишина)`,
+        channel: 'email',
+        status: 'WAITING_SUPPLIER',
+        nextAction: 'FOLLOW_UP',
+        automationPaused: false,
+        answered: false,
+        awaitingPerson: false,
+        events: [
+          ribbonMessage('W1', 'OUTBOUND', 14, 'Request for quotation'),
+          ribbonMessage('W2', 'INBOUND', 14, 'Out of office until Monday', { automatic: true }),
+          ribbonMessage('W3', 'OUTBOUND', 9, 'Reminder: request for quotation'),
+        ],
+        eventTotal: 3,
+      },
+      {
+        assignmentId: `NEG-${member.cardId}-${index}B`,
+        supplierId: suppliers[4 % suppliers.length].id,
+        supplierName: `${suppliers[4 % suppliers.length].name} (недоставлено)`,
+        channel: 'email',
+        status: 'ESCALATED',
+        nextAction: null,
+        automationPaused: false,
+        answered: false,
+        awaitingPerson: false,
+        events: [
+          ribbonMessage('B1', 'OUTBOUND', 4, 'Request for quotation', { failed: true }),
+          { kind: 'escalation', id: 'ESC-90001-5', at: daysAgo(4), resolved: false, title: 'Адрес не существует: нужен другой контакт' },
+        ],
+        eventTotal: 2,
       }] : [])],
     }))
   return {

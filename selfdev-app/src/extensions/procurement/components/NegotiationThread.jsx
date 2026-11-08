@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 
 import { EmptyState } from './AsyncState'
 import { StatusBadge } from './StatusBadge'
@@ -113,6 +114,22 @@ export function NegotiationThread({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [folded, matches, needle, focused])
+
+  // A mark on the campaign page leads to one letter: `#msg-<id>` lands on it,
+  // focused as j/k would focus it. Once per address, so reading on from there
+  // is not pulled back on every refresh.
+  const { hash } = useLocation()
+  const landed = useRef('')
+  useEffect(() => {
+    const wanted = hash.startsWith('#msg-') ? hash.slice('#msg-'.length) : ''
+    if (!wanted || landed.current === wanted) return
+    const index = folded.findIndex(entry => entry.kind === 'message' && String(entry.id) === wanted)
+    if (index < 0) return
+    landed.current = wanted
+    setFocused(index)
+    window.document.getElementById(`entry-${folded[index].id}`)
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [hash, folded])
 
   const renderEntry = entry => {
     if (entry.kind === 'message') {

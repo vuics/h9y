@@ -19,6 +19,8 @@ import { ReviewItem } from './CampaignReview'
 import { RouterLinkButton } from '../../../components/RouterLinkButton'
 import { escalationKind } from '../lib/escalation'
 import { EscalationQuick } from './EscalationQuick'
+import { ThreadRibbon } from './ThreadRibbon'
+import { longestSilence } from '../lib/threadRibbon'
 import {
   filterMembers, foundSummary, marketplaceWaits, memberGroup, needsMarketplaceAction,
   nextActions, requestsSummary,
@@ -79,17 +81,24 @@ const threadLabel = (thread, labels) => (thread.awaitingPerson
   ? WAITING_FOR[thread.waitingFor] || (thread.automationPaused ? 'агент остановлен' : 'ждёт отправки')
   : labels[thread.status] || thread.status)
 
-/** One conversation on one line: who, through what, where it stands. */
-function SupplierLine({ thread, offer, labels }) {
+/** One conversation on one line: who, through what, where it stands, and how it got there.
+ *
+ * Laid out on the list's shared columns, so the marks of every supplier start
+ * at the same place and the lines can be compared by eye.
+ */
+function SupplierLine({ thread, offer, labels, decidable, onDecide }) {
   return <li className={thread.awaitingPerson ? 'pr-supplier-line is-waiting' : 'pr-supplier-line'}>
     <Link to={`/procurement/negotiations/${thread.assignmentId}`} title={thread.supplierName || thread.assignmentId}>{thread.supplierName || thread.assignmentId}</Link>
     <span className="pr-supplier-line__channel">{channelLabel(thread.channel)}</span>
     {thread.awaitingPerson
       ? <StatusBadge status="NEEDS_REVIEW" label={threadLabel(thread, labels)} compact />
       : <StatusBadge status={thread.status} label={threadLabel(thread, labels)} compact />}
-    {offer
-      ? <Link className="pr-supplier-line__offer" to={`/procurement/proposals/${offer.id}`}>есть предложение{formatPrice(offer) ? ` · ${formatPrice(offer)}` : ''}</Link>
-      : thread.answered && <span className="pr-primary-meta">есть ответ</span>}
+    <span className="pr-supplier-line__history">
+      <ThreadRibbon thread={thread} decidable={decidable} onDecide={onDecide} />
+      {offer
+        ? <Link className="pr-supplier-line__offer" to={`/procurement/proposals/${offer.id}`}>есть предложение{formatPrice(offer) ? ` · ${formatPrice(offer)}` : ''}</Link>
+        : thread.answered && <span className="pr-primary-meta">есть ответ</span>}
+    </span>
   </li>
 }
 
@@ -133,6 +142,11 @@ function MemberSections({
   const lines = threadsWithOffers(offers, threads)
   const prices = priceSummary(offers)
   const webPrices = member.webPriceCount || 0
+  // An open case marked on a supplier's line is decided under that line, as in
+  // «Эскалации» below; only the ones this position holds can be.
+  const openCases = new Map(escalations.map(item => [item.id, item]))
+  const decidable = new Set(openCases.keys())
+  const quiet = longestSilence(threads)
   return <div className="pr-member-suppliers">
     <Section
       title={`Предложения${offered.length ? ` (${offered.length})` : ''}`}
@@ -183,14 +197,36 @@ function MemberSections({
     <Section
       title={`Переписки${threads.length ? ` (${threads.length})` : ''}`}
       meta={threads.length || unreachable.length
-        ? [threads.length ? statusTally(threads, thread => threadLabel(thread, threadStatusLabels)) : '', unreachable.length ? `${unreachable.length} без адреса` : ''].filter(Boolean).join(' · ')
+        ? [
+          threads.length ? statusTally(threads, thread => threadLabel(thread, threadStatusLabels)) : '',
+          unreachable.length ? `${unreachable.length} без адреса` : '',
+          // The one name worth reading while folded: who has been silent too long.
+          quiet?.late ? `${quiet.supplierName} молчит ${quiet.label}` : '',
+        ].filter(Boolean).join(' · ')
         : 'пока нет'}
       empty={!threads.length && !unreachable.length}
       open={isOpen('threads')}
       onToggle={() => onToggle('threads')}
     >
-      <ul className="pr-supplier-lines">
-        {lines.map(({ thread, offer }) => <SupplierLine key={thread.assignmentId} thread={thread} offer={offer} labels={threadStatusLabels} />)}
+      {lines.length > 0 && <ul className="pr-supplier-lines pr-supplier-lines--history">
+        {lines.map(({ thread, offer }) => {
+          const cases = (thread.events || [])
+            .filter(event => event.kind === 'escalation' && deciding.has(`line:${event.id}`) && openCases.has(event.id))
+          return <React.Fragment key={thread.assignmentId}>
+            <SupplierLine
+              thread={thread}
+              offer={offer}
+              labels={threadStatusLabels}
+              decidable={decidable}
+              onDecide={id => toggleDeciding(`line:${id}`)}
+            />
+            {cases.map(event => <li key={event.id} className="pr-supplier-line__panel">
+              <EscalationQuick escalation={openCases.get(event.id)} campaignId={campaignId} />
+            </li>)}
+          </React.Fragment>
+        })}
+      </ul>}
+      {unreachable.length > 0 && <ul className="pr-supplier-lines">
         {/* Confirmed, and nowhere to write to in the allowed channels: the one
             thing to do is give them an address, on the supplier's card. */}
         {unreachable.map(supplier => <li key={supplier.supplierId} className="pr-supplier-line is-waiting">
@@ -199,7 +235,7 @@ function MemberSections({
           <span className="pr-primary-meta">{supplier.otherChannels?.length ? `отвечает в других каналах: ${supplier.otherChannels.join(', ')}` : 'контактов нет вовсе'}</span>
           <RouterLinkButton className="pr-supplier-line__press" size="sm" variant="ghost" to={`/procurement/suppliers/${supplier.supplierId}`}>Добавить контакт</RouterLinkButton>
         </li>)}
-      </ul>
+      </ul>}
     </Section>
 
     {marketplace && <Section

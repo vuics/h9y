@@ -33,3 +33,8 @@ export const Pause = props => <Icon {...props}><path d="M9 5v14M15 5v14" /></Ico
 export const Play = props => <Icon {...props}><path d="M7 4v16l13-8Z" /></Icon>
 export const Pencil = props => <Icon {...props}><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="m14 6 4 4"/></Icon>
 export const Send = props => <Icon {...props}><path d="M21 3 3 10l7 3 3 7Z"/><path d="m10 13 5-5"/></Icon>
+export const ArrowUpRight = props => <Icon {...props}><path d="M7 17 17 7M8 7h9v9"/></Icon>
+export const ArrowDownLeft = props => <Icon {...props}><path d="M17 7 7 17M16 17H7V8"/></Icon>
+export const MailOff = props => <Icon {...props}><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6M3 3l18 18"/></Icon>
+export const Bot = props => <Icon {...props}><rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 4v4M9 13h.01M15 13h.01"/></Icon>
+export const Form = props => <Icon {...props}><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></Icon>
