@@ -1,20 +1,26 @@
-# 🐙 HyperAgency (h9y.ai)
+<div align="center">
 
-![HyperAgency Text Logo](hyperagency.png)
+<img src="selfdev-app/public/images/logo-chip-animated.svg" width="160" alt="HyperAgency logo: an octopus inside a chip">
 
-[![Website](https://img.shields.io/badge/h9y.ai-Visit-blue)](https://h9y.ai)
-[![Docs](https://img.shields.io/badge/Docs-HyperAgency-blue?logo=read-the-docs&style=flat)](https://docs.h9y.ai)
-[![Paper](https://img.shields.io/badge/Paper-DOI-blueviolet?style=flat)](https://doi.org/10.13140/RG.2.2.27454.55365)
-[![Contribute](https://img.shields.io/badge/Contribute-Here-brightgreen)](./CONTRIBUTING.md)
-[![License](https://img.shields.io/badge/License-Multi%20License-lightgrey?style=flat)](./LICENSE)
-[![Pilot](https://img.shields.io/badge/Pilot-Early%20Access-orange?style=flat)](https://forms.gle/bCACFoXj7so4paDg8)
+# HyperAgency
 
-**HyperAgency is a self-hosted, multi-user operating system for AI agents.**
-Agents have their own identity, memory, and messaging. They work alongside people, talk to each other, and reach agents on other HyperAgency instances through XMPP federation, while each organization keeps its data on its own infrastructure.
+**The open-source operating system for AI agents — multi-user, federated, and self-hosted.**
+
+[![Release](https://img.shields.io/github/v/release/vuics/h9y?style=flat)](https://github.com/vuics/h9y/releases)
+[![GitHub stars](https://img.shields.io/github/stars/vuics/h9y?style=flat)](https://github.com/vuics/h9y/stargazers)
+[![License](https://img.shields.io/badge/license-AGPL--3.0%20%7C%20NC%20%7C%20Commercial-blue?style=flat)](./LICENSE)
+[![Docs](https://img.shields.io/badge/docs-docs.h9y.ai-blue?style=flat&logo=read-the-docs)](https://docs.h9y.ai)
+[![Paper](https://img.shields.io/badge/paper-DOI-blueviolet?style=flat)](https://doi.org/10.13140/RG.2.2.27454.55365)
+
+[Website](https://h9y.ai) · [Docs](https://docs.h9y.ai) · [Quick Start](#-quick-start) · [Architecture](./docs/ARCHITECTURE.md) · [Contributing](#-contributing) · [Cloud](https://h9y.ai)
+
+</div>
+
+---
+
+Agents in HyperAgency have their own identity, memory, and messaging. They work alongside people, talk to each other, and reach agents on other HyperAgency instances through XMPP federation, while each organization keeps its data on its own infrastructure.
 
 HyperAgency is model-agnostic, runs anywhere from a single Docker container to a Kubernetes cluster, and is open source under [AGPL-3.0](./LICENSE-AGPL-3.0) (non-commercial and commercial licenses are also available — see [Licensing](#-software-source-code-licensing)).
-
-📘 [Documentation](https://docs.h9y.ai) · 📄 [Research paper](https://doi.org/10.13140/RG.2.2.27454.55365) · 🏛 [Architecture](./docs/ARCHITECTURE.md) · ☁️ [HyperAgency Cloud](https://h9y.ai)
 
 [![Watch About Video](https://img.youtube.com/vi/N_uJlCHf77s/0.jpg)](https://youtu.be/N_uJlCHf77s)
 
