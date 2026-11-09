@@ -24,10 +24,18 @@ const trimNumber = value => (Number.isInteger(value) ? String(value) : String(Nu
 export function priceSummary(offers) {
   const comparable = priceRanges(offers)
   const rest = offers
-    .filter(offer => !hasComparablePrice(offer) && String(offer.price ?? '').trim())
-    .map(offer => `${offer.price}${offer.currency ? ` ${offer.currency}` : ''}, единица не указана`)
+    .filter(offer => !hasComparablePrice(offer) && present(offer.price))
+    .map(offer => {
+      const price = `${offer.price}${present(offer.currency) ? ` ${offer.currency}` : ''}`
+      // "2250 CNY" for the 5 g quoted: a pack price, said with its pack.
+      if (present(offer.priceUnit)) return `${price}/${offer.priceUnit}`
+      return present(offer.quantity) ? `${price} за ${offer.quantity}` : `${price}, единица не указана`
+    })
   return [...comparable, ...rest]
 }
+
+/** Offers that name any price, comparable or not. */
+export const pricedCount = offers => offers.filter(offer => present(offer.price)).length
 
 export function priceRanges(offers) {
   const spans = new Map()

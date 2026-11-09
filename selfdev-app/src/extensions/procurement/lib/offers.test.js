@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { groupOffersBySubstance, hasComparablePrice, offerBasis, offerNote, priceRanges, sortByPrice, splitSuppliers, statusTally, threadsWithOffers } from './offers.js'
+import { groupOffersBySubstance, hasComparablePrice, offerBasis, offerNote, priceRanges, priceSummary, pricedCount, sortByPrice, splitSuppliers, statusTally, threadsWithOffers } from './offers.js'
 
 const offer = (cardId, price, extra = {}) => ({ cardId, cardTitle: `Вещество ${cardId}`, price, currency: 'USD', priceUnit: 'KG', completeness: 'NEEDS_CLARIFICATION', updatedAt: '2026-09-18', ...extra })
 
@@ -78,4 +78,23 @@ test('an offer set aside is not among the offers of its substance', () => {
     { id: 'B', cardId: 1, price: '1', currency: 'USD', priceUnit: 'KG', excluded: { reason: 'поддельный домен' } },
   ])
   assert.deepEqual(groups[0].offers.map(offer => offer.id), ['A'])
+})
+
+test('every price is named, a pack price with its pack', () => {
+  // CMP-B24A6FE2EB, 09.11: Chemdad's "1700 CNY" for 5 ml stood behind
+  // Gentaur's "140 EUR, единица не указана", and Пущинские's КП had no currency.
+  const offers = [
+    offer(7, 140, { currency: 'EUR', priceUnit: null, quantity: null }),
+    offer(7, 1700, { currency: 'CNY', priceUnit: null, quantity: '5 ML' }),
+    offer(7, 7947.45, { currency: null, priceUnit: 'ШТ' }),
+    offer(7, 13.5, { priceUnit: 'MG' }),
+    offer(7, null),
+  ]
+  assert.deepEqual(priceSummary(offers), [
+    '13.5 USD/MG',
+    '140 EUR, единица не указана',
+    '1700 CNY за 5 ML',
+    '7947.45/ШТ',
+  ])
+  assert.equal(pricedCount(offers), 4)
 })

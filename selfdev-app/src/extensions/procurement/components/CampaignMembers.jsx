@@ -13,7 +13,7 @@ import { memberPhase, phaseLabel, phaseOfFilter } from '../lib/campaignPhases'
 import { memberStep, stepLabel, stepOfFilter, webPriceLine, webPriceSummary } from '../lib/memberSteps'
 import { formatPrice } from '../lib/price'
 import { channelLabel } from '../lib/thread'
-import { offerBasis, offerNote, priceSummary, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
+import { offerBasis, offerNote, priceSummary, pricedCount, splitSuppliers, statusTally, threadsWithOffers } from '../lib/offers'
 import { contentOf, memberAwaitsReview, memberStuck, resolveOpen, rowOpenByMode, sectionOpenByMode, waitingOf } from '../lib/memberSections'
 import { reviewBadges, reviewOpen } from '../lib/campaignReview'
 import { ReviewItem } from './CampaignReview'
@@ -641,12 +641,18 @@ export function CampaignMembers({
                   the result the whole purchase is run for. */}
               {offers
                 ? <Link to={`/procurement/proposals/compare?cardId=${member.cardId}`} title="Открыть сравнение предложений">
-                  {offers.prices.length
-                    ? <>
-                      <strong>{offers.prices[0]}</strong>
-                      <span className="pr-primary-meta">{offers.priced} с ценой из {offers.offers.length} · сравнить</span>
+                  {/* Every price, a pack price with its pack: the first one alone hid
+                      Chemdad's 1700 CNY behind Gentaur's 140 EUR. */}
+                  {(() => {
+                    const summary = priceSummary(offers.offers)
+                    if (!summary.length) {
+                      return <span className="pr-primary-meta">{offers.offers.length} {plural(offers.offers.length, 'ответ', 'ответа', 'ответов')}, цены нет · сравнить</span>
+                    }
+                    return <>
+                      <strong>{summary.slice(0, 3).join(' · ')}{summary.length > 3 ? ` · ещё ${summary.length - 3}` : ''}</strong>
+                      <span className="pr-primary-meta">{pricedCount(offers.offers)} с ценой из {offers.offers.length} · сравнить</span>
                     </>
-                    : <span className="pr-primary-meta">{offers.offers.length} {plural(offers.offers.length, 'ответ', 'ответа', 'ответов')}, {priceSummary(offers.offers)[0] || 'цены нет'} · сравнить</span>}
+                  })()}
                 </Link>
                 : !webPriceLine(member) && <span className="pr-muted">{offersLoading ? '…' : '—'}</span>}
               {webPriceLine(member) && <button
