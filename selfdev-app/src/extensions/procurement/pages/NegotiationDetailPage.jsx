@@ -314,7 +314,8 @@ export default function NegotiationDetailPage() {
               <CardContent>
                 <dl className="pr-rail-list">
                   <div><dt>Цена</dt><dd>{negotiation.proposal.price
-                    ? `${negotiation.proposal.price} ${negotiation.proposal.currency}/${negotiation.proposal.priceUnit}`
+                    ? [negotiation.proposal.price, negotiation.proposal.currency].filter(Boolean).join(' ')
+                      + (negotiation.proposal.priceUnit ? `/${negotiation.proposal.priceUnit}` : '')
                     : 'нет данных'}</dd></div>
                   <div><dt>Базис</dt><dd>{negotiation.proposal.incoterm || '—'} {negotiation.proposal.namedPlace || ''}</dd></div>
                   <div><dt>MOQ</dt><dd>{negotiation.proposal.moq || '—'}</dd></div>
