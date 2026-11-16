@@ -4,6 +4,7 @@ import axios from 'axios'
 import conf from '../../conf'
 import { useIndexContext } from '../../components/IndexContext'
 import { evaluateExtensionActivation } from './activation'
+import { loadExtensionState } from './loadState'
 import { organizationHeaders } from '../procurement/lib/organization'
 
 const buildIncludesProcurement = import.meta.env.VITE_BUILD_PROCUREMENT === 'true'
@@ -52,29 +53,31 @@ export function ExtensionProvider({ children }) {
       }
       if (!attempt.quiet) setLoading(true)
       try {
-        const loadedManifests = {}
-        await Promise.all(Object.entries(manifestLoaders).map(async ([id, loader]) => {
-          loadedManifests[id] = (await loader()).default
-        }))
-        const response = useDevFixtures && developmentCapabilitiesLoader
-          ? (await developmentCapabilitiesLoader()).developmentCapabilities
-          : (await axios.get(`${conf.api.url}/extensions`, {
-            // The permissions reported depend on the organization a person
-            // works in, so the capability check must ask about the same one
-            // the procurement requests will use.
-            headers: organizationHeaders(),
-            withCredentials: true,
-            timeout: 10000,
-          })).data
+        const state = await loadExtensionState({
+          manifestLoaders,
+          fetchCapabilities: async () => (useDevFixtures && developmentCapabilitiesLoader
+            ? (await developmentCapabilitiesLoader()).developmentCapabilities
+            : (await axios.get(`${conf.api.url}/extensions`, {
+              // The permissions reported depend on the organization a person
+              // works in, so the capability check must ask about the same one
+              // the procurement requests will use.
+              headers: organizationHeaders(),
+              withCredentials: true,
+              // A slow network is not an absent section: past this the page
+              // shows «Закупки перезапускаются» and asks again on its own.
+              timeout: 20000,
+            })).data),
+        })
         if (!cancelled) {
-          setManifests(loadedManifests)
-          setCapabilities(response)
-          setError(null)
+          setManifests(state.manifests)
+          setCapabilities(state.capabilities)
+          setError(state.error)
         }
-      } catch (requestError) {
+      } catch (loadError) {
+        // Only a manifest that failed to load lands here: a broken build.
         if (!cancelled) {
           setCapabilities(null)
-          setError(requestError)
+          setError(loadError)
         }
       } finally {
         if (!cancelled) setLoading(false)
