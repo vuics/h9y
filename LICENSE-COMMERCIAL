@@ -8,7 +8,8 @@ using the Licensed Work under a commercial entitlement, Licensee agrees to be
 bound by the terms below.
 
 Effective Date: _______________________
-Licensor: Vuics LLC, [Address]
+Licensor: Vuics LLC, [Address], under license from the copyright holder
+(Artem Arakcheev)
 Licensee: _____________________________
 
 --------------------------------------------------------------------------------
@@ -127,12 +128,14 @@ Licensee is entitled to receive:
 --------------------------------------------------------------------------------
 
 6.1 Ownership  
-All intellectual property rights in the Work remain exclusively with Licensor.
-No ownership rights transfer to Licensee.
+All intellectual property rights in the Work remain with the copyright holder,
+Artem Arakcheev. Licensor grants the rights under this Agreement under license
+from the copyright holder. No ownership rights transfer to Licensee.
 
 6.2 Patent Grant  
 Licensor grants Licensee a **limited, non-exclusive, royalty-free patent license**
-to practice any Vuics-contributed patents necessary to use the Work.
+to practice any patents held by Licensor or the copyright holder, if any, that
+are necessary to use the Work.
 
 6.3 Feedback  
 Any feedback or improvements proposed by Licensee may be used by Licensor
@@ -141,7 +144,8 @@ without restriction.
 6.4 Trademarks  
 Nothing in this Agreement grants Licensee any rights to use the trademarks,
 logos, service marks, brand names, marketplace names, or other branding
-belonging to Vuics LLC. Licensee may not use the “HyperAgency” name or any
+used by Vuics LLC (the HyperAgency brand is owned by Artem Arakcheev and is not
+a registered trademark yet). Licensee may not use the “HyperAgency” name or any
 related marks for marketing, promotion, or product naming without prior written
 permission from Vuics LLC.
 

@@ -694,7 +694,7 @@ Answers on the most frequent licensing questions are listed in [Licensing FAQ](.
 
 For commercial licensing inquiries, contact **[artem@h9y.ai](mailto:artem@h9y.ai)**.
 
-⚠️  HyperAgency name and logo are trademarked. See [TRADEMARK.md](./TRADEMARK.md).
+⚠️  HyperAgency name and logo are brand assets of Artem Arakcheev (not registered trademarks yet) and are not covered by the open-source licenses. See [TRADEMARK.md](./TRADEMARK.md).
 
 ---
 

@@ -1,6 +1,7 @@
 # 🛡️ HyperAgency Trademark Policy
 
-The **HyperAgency name, logo, and related brand assets** are trademarks of **VUICS**.
+The **HyperAgency name, logo, and related brand assets** are owned by **Artem Arakcheev** and used by his licensees, including **Vuics LLC**.
+They are used as trademarks but are **not registered trademarks** yet.
 
 This policy explains **how HyperAgency trademarks may and may not be used**.
 It applies to all users, contributors, partners, and third parties.
@@ -48,7 +49,7 @@ You MAY NOT use HyperAgency trademarks to:
 
 ## 🤝 Allowed With Explicit Permission
 
-The following require **written permission from VUICS**:
+The following require **written permission from the brand owner**:
 
 * Commercial partnerships or integrations
 * Certified or managed HyperAgency offerings
@@ -61,10 +62,10 @@ Contact: **[artem@h9y.ai](mailto:artem@h9y.ai)**
 
 ### ⚖️ Enforcement
 
-VUICS reserves the right to:
+The brand owner reserves the right to:
 
 * Revoke trademark permissions at any time
-* Enforce trademark rights to prevent confusion or misuse
+* Enforce the rights in the brand to prevent confusion or misuse
 * Protect the integrity, reputation, and security of the HyperAgency ecosystem
 
 ---
