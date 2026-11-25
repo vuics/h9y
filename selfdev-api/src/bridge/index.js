@@ -17,12 +17,22 @@ import Scheduler from './scheduler.js'
 import Webhook from './webhook.js'
 import Email from './email.js'
 import WhatsApp from './whatsapp.js'
-import Baileys from './baileys.js'
 import Mcp from './mcp.js'
 import Webapp from './webapp.js'
 import A2a from './a2a.js'
 
 const verbose = Verbose('sd:bridge/index'); verbose('')
+
+// Baileys pulls in libsignal (GPL-3.0). Builds that ship to customers remove the
+// package (EXCLUDE_PACKAGES in the Dockerfiles), so the connector loads only when
+// the package is installed; without it the bridge runs every other connector.
+let Baileys = null
+try {
+  Baileys = (await import('./baileys.js')).default
+} catch (e) {
+  if (e?.code !== 'ERR_MODULE_NOT_FOUND' || !String(e.message).includes('@whiskeysockets/baileys')) throw e
+  warn('Baileys connector disabled: @whiskeysockets/baileys is not installed')
+}
 
 log('public conf:', inspect(revealConf(), { colors: true, depth: null }))
 
@@ -34,7 +44,7 @@ const connectorClasses = {
   "webhook": Webhook,
   "email": Email,
   "whatsapp": WhatsApp,
-  "baileys": Baileys,
+  ...(Baileys ? { "baileys": Baileys } : {}),
   "mcp": Mcp,
   "webapp": Webapp,
   "a2a": A2a,

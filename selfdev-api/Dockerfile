@@ -4,7 +4,10 @@ FROM node:24.16.0
 
 WORKDIR /opt/app/
 COPY package*.json ./
-RUN npm install
+# Customer builds drop packages that must not ship, e.g.
+# --build-arg EXCLUDE_PACKAGES="@whiskeysockets/baileys @anthropic-ai/claude-agent-sdk"
+ARG EXCLUDE_PACKAGES=""
+RUN npm install && if [ -n "$EXCLUDE_PACKAGES" ]; then npm uninstall --no-save $EXCLUDE_PACKAGES; fi
 COPY . .
 
 RUN mkdir -p /var/lib/data/api
